@@ -1,0 +1,52 @@
+---
+// Precios: se renderiza en servidor en cada petición (con caché corta) para que
+// los planes y la marca salgan siempre de la API sin necesitarla en el build.
+import Footer from '../components/Footer';
+import AppFixed from '../components/AppFixed';
+import SuscriptionPlans from '../components/SuscriptionPlans';
+import OptimizedHead from '../components/OptimizedHead.astro';
+import JsonLd from '../components/seo/JsonLd.astro';
+import FaqList from '../components/sections/FaqList.astro';
+import { BRAND_CACHE, breadcrumbJsonLd, businessJsonLd, faqJsonLd } from '../seo/site';
+import { getFaqs, getPlans, getSchedules } from '../seo/catalog';
+import { formatMoney, getSiteConfig } from '../lib/site';
+
+Astro.response.headers.set('Cache-Control', BRAND_CACHE);
+
+// Planes y FAQs (page=prices) en el servidor: el HTML trae precios y preguntas
+// para buscadores e IA; la isla de precios los recibe y no repite el fetch.
+const [site, plans, faqs, schedules] = await Promise.all([getSiteConfig(), getPlans(), getFaqs('prices'), getSchedules()]);
+const packs = plans.filter((p) => p.type === 'pack');
+const subs = plans.filter((p) => p.type === 'sub').sort((a, b) => Number(a.price_eur) - Number(b.price_eur));
+const money = (n: number) => formatMoney(n, site, 'es');
+const dropIn = money(Number(site.drop_in_price));
+const description = `Precios de ${site.studio_name}: clase suelta ${dropIn}${packs.length ? ', bonos de créditos' : ''}${subs[0] ? ` y membresías desde ${money(Number(subs[0].price_eur))} al mes` : ''}.`;
+const jsonLd = [
+  businessJsonLd(site, 'es', { schedules, plans }),
+  breadcrumbJsonLd([{ name: 'Inicio', path: '/' }, { name: 'Precios', path: '/prices' }]),
+  // Los planes van como hasOfferCatalog dentro del negocio
+  faqJsonLd(faqs, 'es'),
+].filter(Boolean);
+---
+
+<html lang="es">
+  <head>
+    <OptimizedHead
+      title="Precios, bonos y membresías"
+      titleEn="Prices and plans"
+      description={description}
+      canonicalPath="/prices"
+    />
+    {jsonLd.map((d) => <JsonLd data={d} />)}
+  </head>
+  <body class="format">
+    <AppFixed client:only="react" />
+
+    <main id="contenido">
+      <SuscriptionPlans client:load lang="es" initialPlans={plans} />
+      <FaqList faqs={faqs} lang="es" />
+    </main>
+
+    <Footer client:visible lang="es" />
+  </body>
+</html>

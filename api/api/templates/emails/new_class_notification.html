@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>¡Nueva clase en {{ brand_name }}!</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      body {
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        font-family: Arial, sans-serif;
+        color: #333;
+        padding: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+      }
+      .header { font-size: 24px; font-weight: bold; color: {{ brand_color }}; }
+      .content { font-size: 16px; line-height: 1.5; }
+      .class-image {
+        width: 100%;
+        max-width: 600px;
+        height: auto;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+      .details-box {
+        background-color: {{ brand_color_light }};
+        padding: 20px;
+        border-radius: 8px;
+        margin-top: 25px;
+      }
+      .cta-button {
+        display: block;
+        width: fit-content;
+        margin: 30px auto;
+        padding: 14px 28px;
+        background-color: {{ brand_color }};
+        color: #ffffff !important;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 5px;
+      }
+      .footer { text-align: center; color: #777; font-size: 14px; margin-top: 30px; }
+    </style>
+  </head>
+  <body>
+    <div class="container" style="font-family: Arial, sans-serif; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+      {% include "emails/_brand_header.html" %}
+
+      <h1 class="header" style="font-size: 24px; font-weight: bold; color: {{ brand_color }};">
+        ¡Hola, {{ name }}! Tenemos algo nuevo para ti
+      </h1>
+
+      <p class="content" style="font-size: 16px; line-height: 1.5;">
+        ¡Buenas noticias! Hemos añadido una nueva clase a nuestro horario que creemos que te encantará.
+      </p>
+
+      {% if class_image %}
+      <img
+        src="{{ class_image }}"
+        alt="{{ class_title }}"
+        class="class-image"
+        style="width: 100%; max-width: 600px; height: auto; border-radius: 8px; margin-top: 20px;"
+      />
+      {% endif %}
+
+      <div class="details-box" style="background-color: {{ brand_color_light }}; padding: 20px; border-radius: 8px; margin-top: 25px;">
+        <h3 style="margin-top: 0; font-size: 20px; color: {{ brand_color }};">{{ class_title }}</h3>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>Cuándo:</strong> {{ class_schedule }}</p>
+        <p style="margin: 10px 0; font-size: 16px;"><strong>Con:</strong> {{ instructor_name }}</p>
+      </div>
+
+      <p class="content" style="font-size: 16px; line-height: 1.5; margin-top: 25px;">
+        Las plazas son limitadas. ¡Visita nuestro horario para ver todos los detalles y reservar tu sitio!
+      </p>
+
+      <a
+        href="{{ cta_url }}"
+        class="cta-button"
+        style="display: block; width: fit-content; margin: 30px auto; padding: 14px 28px; background-color: {{ brand_color }}; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px;"
+      >
+        Ver el horario completo
+      </a>
+
+      <p class="footer" style="text-align: center; color: #777; font-size: 14px; margin-top: 30px;">
+        ¡Te esperamos!<br />El equipo de {{ brand_name }}
+      </p>
+
+    </div>
+  </body>
+</html>

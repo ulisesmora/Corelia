@@ -1,0 +1,176 @@
+---
+/**
+ * PageLoader — overlay de carga full-screen que se monta como HTML estático
+ * (cero JS para mostrarse) y se desvanece cuando la app está lista.
+ *
+ * Por qué es importante:
+ *   - Las islands client:only="react" hidratan a tiempos distintos. Sin este
+ *     overlay, el usuario ve la página "construirse en pedazos" (FOUC).
+ *   - El overlay es HTML+CSS inline → aparece INMEDIATAMENTE con el primer
+ *     paint, antes incluso de descargar React.
+ *   - Se oculta cuando el window dispara `load` (todos los recursos críticos
+ *     listos: CSS, fuentes, primer JS bundle) o tras un timeout máximo.
+ *
+ * Uso:
+ *   <PageLoader />          → loader genérico (logo + spinner)
+ *   <PageLoader minMs={300} → muestra mínimo 300ms para evitar flash
+ *               maxMs={6000}  máximo 6s aunque load no dispare */
+
+interface Props {
+  /** Tiempo mínimo visible en ms — evita flash si la carga es muy rápida. Default 250. */
+  minMs?: number;
+  /** Timeout duro en ms tras el cual se oculta sí o sí. Default 6000. */
+  maxMs?: number;
+  /** Color de fondo del overlay. Default beige de la marca. */
+  bg?: string;
+}
+const { minMs = 250, maxMs = 3000, bg = 'var(--brand-bg)' } = Astro.props;
+import { getSiteConfig } from '../lib/site';
+const site = await getSiteConfig();
+---
+
+<div id="page-loader" data-min={minMs} data-max={maxMs} aria-hidden="false" role="status" aria-live="polite">
+  <div class="pl-inner">
+    {site.logo_url
+      ? <img src={site.logo_url} alt={site.studio_name} width="180" height="auto" />
+      : <span class="pl-name">{site.studio_name}</span>}
+    <div class="pl-spinner" aria-hidden="true"></div>
+  </div>
+</div>
+
+<style is:global define:vars={{ bg }}>
+  /* PERF (CLS): sin esto el body empieza con el margen de 8 px del navegador y
+     salta a 0 cuando llega el CSS de la app, moviendo toda la página. */
+  html, body { margin: 0; padding: 0; }
+  #page-loader {
+    position: fixed;
+    inset: 0;
+    z-index: 99999;
+    background: var(--bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 1;
+    transition: opacity 0.45s ease, visibility 0.45s ease;
+    /* GPU-accelerated fade */
+    will-change: opacity;
+  }
+
+  #page-loader.is-hidden {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  #page-loader .pl-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    animation: pl-fadeIn 0.5s ease 0.05s both;
+  }
+
+  #page-loader img {
+    width: 180px;
+    max-width: 60vw;
+    height: auto;
+    max-height: 120px;
+    object-fit: contain;
+    animation: pl-pulse 1.6s ease-in-out infinite;
+  }
+
+  /* Sin logo en la config: nombre del estudio con la fuente de títulos */
+  #page-loader .pl-name {
+    font-family: var(--font-heading);
+    font-size: clamp(1.8rem, 7vw, 2.6rem);
+    color: var(--brand-secondary);
+    letter-spacing: .02em;
+    text-align: center;
+    padding: 0 1.5rem;
+    animation: pl-pulse 1.6s ease-in-out infinite;
+  }
+
+  #page-loader .pl-spinner {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2.5px solid color-mix(in srgb, var(--brand-primary) 18%, transparent);
+    border-top-color: var(--brand-primary);
+    animation: pl-spin 0.8s linear infinite;
+  }
+
+  @keyframes pl-spin {
+    to { transform: rotate(360deg); }
+  }
+  @keyframes pl-pulse {
+    0%, 100% { opacity: 0.85; transform: scale(1); }
+    50%      { opacity: 1;    transform: scale(1.03); }
+  }
+  @keyframes pl-fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Bloquea el scroll mientras el loader esté visible */
+  html:has(#page-loader:not(.is-hidden)) body {
+    overflow: hidden;
+  }
+
+  /* Respetar usuarios con prefers-reduced-motion */
+  @media (prefers-reduced-motion: reduce) {
+    #page-loader img,
+    #page-loader .pl-spinner,
+    #page-loader .pl-inner { animation: none; }
+    #page-loader { transition: opacity 0.2s linear, visibility 0.2s linear; }
+  }
+</style>
+
+<script is:inline>
+  (function () {
+    var el = document.getElementById('page-loader');
+    if (!el) return;
+    var minMs = parseInt(el.dataset.min || '250', 10);
+    var maxMs = parseInt(el.dataset.max || '6000', 10);
+    var start = performance.now();
+    var hidden = false;
+
+    function hide() {
+      if (hidden) return;
+      hidden = true;
+      var elapsed = performance.now() - start;
+      var delay = Math.max(0, minMs - elapsed);
+      setTimeout(function () {
+        el.classList.add('is-hidden');
+        // limpia el nodo del DOM tras la transición para no dejar overlay invisible
+        setTimeout(function () {
+          el.parentNode && el.parentNode.removeChild(el);
+        }, 600);
+      }, delay);
+    }
+
+    // Se oculta en cuanto las islas visibles arriba (menú, hero) están montadas.
+    // Antes esperaba a `load`, que incluye TODAS las fotos y el vídeo: en móvil
+    // el velo tapaba una página ya pintada durante segundos.
+    function aboveFoldReady() {
+      var islands = document.querySelectorAll('astro-island');
+      for (var i = 0; i < islands.length; i++) {
+        var isl = islands[i];
+        if (!isl.hasAttribute('ssr')) continue; // ya hidratada
+        if (isl.getBoundingClientRect().top < window.innerHeight) return false;
+      }
+      return true;
+    }
+    (function poll() {
+      if (hidden) return;
+      if (document.readyState !== 'loading' && aboveFoldReady()) { hide(); return; }
+      setTimeout(poll, 80);
+    })();
+    window.addEventListener('load', hide, { once: true });
+
+    // Timeout duro — aunque load nunca dispare (red lenta, error de un script)
+    setTimeout(hide, maxMs);
+
+    // Hide cuando una vista de Astro termina su transition (si activas view transitions)
+    document.addEventListener('astro:page-load', hide, { once: true });
+  })();
+</script>

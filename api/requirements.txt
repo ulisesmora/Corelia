@@ -1,0 +1,31 @@
+# Núcleo
+Django==5.1.2
+djangorestframework==3.15.2
+djangorestframework-simplejwt==5.3.1
+django-filter==24.3
+django-cors-headers==4.6.0
+drf-spectacular==0.28.0
+whitenoise==6.8.2
+python-dotenv==1.1.1
+tzdata==2025.3
+
+# Base de datos y tareas programadas
+psycopg[binary]==3.2.3
+celery==5.6.0
+redis==7.1.0
+
+# Servidor
+granian==2.7.5
+uvloop==0.22.1
+
+# Funcionalidad
+stripe==13.0.1
+pillow==11.3.0
+orjson==3.11.9
+pywebpush>=2.0
+cryptography>=44
+requests>=2.32
+google-auth>=2.30          # verificar el login con Google
+
+# Opcionales (solo se usan si se configuran)
+sentry-sdk[django]>=2.35,<3.0

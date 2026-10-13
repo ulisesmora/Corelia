@@ -1,0 +1,26 @@
+---
+import Footer from '../components/Footer';
+import AppFixed from './../components/AppFixed';
+import AuthPage from '../components/AuthPage';
+import OptimizedHead from '../components/OptimizedHead.astro';
+---
+
+<html lang="es">
+  <head>
+    <OptimizedHead
+      noindex
+      title="Entrar o crear cuenta"
+      titleEn="Sign in or create an account"
+      description="Entra en tu cuenta o crea una para reservar tus clases."
+    />
+  </head>
+  <body class="format" style="background:color-mix(in srgb, var(--brand-bg) 55%, white)">
+    <AppFixed client:only="react" />
+
+    <main id="contenido">
+      <AuthPage client:only="react" />
+    </main>
+
+    <Footer client:only="react" />
+  </body>
+</html>

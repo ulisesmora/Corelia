@@ -1,0 +1,8 @@
+---
+// Datos estructurados. OJO: dentro de <script type="application/ld+json"> Astro
+// NO evalúa {expresiones}; hay que inyectarlas con set:html o salen como texto.
+interface Props { data: unknown }
+const { data } = Astro.props;
+const json = JSON.stringify(data).replace(/</g, '\\u003c');
+---
+<script type="application/ld+json" set:html={json} />

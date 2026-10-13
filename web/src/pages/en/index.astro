@@ -1,0 +1,8 @@
+---
+// Portada en inglés: mismas secciones que la española (components/home/HomePage.astro).
+import HomePage from '../../components/home/HomePage.astro';
+import { BRAND_CACHE } from '../../seo/site';
+
+Astro.response.headers.set('Cache-Control', BRAND_CACHE);
+---
+<HomePage lang="en" />

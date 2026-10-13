@@ -1,0 +1,23 @@
+---
+import Footer from '../components/Footer';
+import AppFixed from './../components/AppFixed';
+import VerifyAccountPage from '../components/VerifiAccount';
+import OptimizedHead from '../components/OptimizedHead.astro';
+---
+
+<html lang="es">
+  <head>
+    <!-- noAnalytics: la URL lleva el token de verificación; no debe llegar a Clarity -->
+    <OptimizedHead title="Confirmar email" titleEn="Confirm email" noAnalytics noindex />
+    <meta name="referrer" content="no-referrer" />
+  </head>
+  <body class="format" style="background:color-mix(in srgb, var(--brand-bg) 55%, white)">
+    <AppFixed client:only="react" />
+
+    <main id="contenido">
+      <VerifyAccountPage client:only="react" />
+    </main>
+
+    <Footer client:only="react" />
+  </body>
+</html>

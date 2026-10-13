@@ -1,0 +1,32 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<div id="content-main">
+    <h2>{{ title }}</h2>
+    <p style="margin-bottom:16px">
+        Balance actual de <strong>{{ user_obj.email }}</strong>: <strong>{{ user_obj.wallet.balance }}</strong> créditos
+    </p>
+    <form method="post">
+        {% csrf_token %}
+        <fieldset class="module aligned">
+            {% for field in form %}
+            <div class="form-row">
+                <div class="field-box">
+                    {{ field.errors }}
+                    {{ field.label_tag }} {{ field }}
+                    {% if field.help_text %}
+                    <div class="help">{{ field.help_text|safe }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </fieldset>
+        <div class="submit-row">
+            <input type="submit" value="Ajustar créditos" class="default">
+        </div>
+    </form>
+    <br>
+    <a href="{% url 'admin:api_user_change' user_obj.id %}">← Volver al usuario</a>
+</div>
+{% endblock %}

@@ -1,0 +1,110 @@
+---
+// Privacy policy and terms of service (English). Holder details (legal name,
+// tax ID, address, email) come from the studio settings.
+import LegalLayout from '../../components/legal/LegalLayout.astro';
+import { getSiteConfig, addressLine } from '../../lib/site';
+import { origin } from '../../seo/site';
+
+const site = await getSiteConfig();
+const ORIGIN = origin();
+const holder = site.legal.name;
+const taxId = site.legal.tax_id;
+const address = addressLine(site);
+const email = site.contact.email;
+const domain = ORIGIN.replace(/^https?:\/\//, '');
+const hours = site.cancel_min_hours;
+const currencyName = site.currency === 'EUR' ? 'euros (€)' : site.currency;
+---
+<LegalLayout title="Terms and Conditions" lang="en">
+  <h1>Privacy Policy</h1>
+
+  <p>At {site.studio_name} we value your privacy and are committed to protecting your personal data. This policy explains how we collect, process and protect your data in accordance with the General Data Protection Regulation (GDPR) and Spanish Organic Law 3/2018 on Personal Data Protection and the guarantee of digital rights (LOPDGDD).</p>
+
+  <h2>1. Data Controller</h2>
+  <p>The controller of the data collected through the website {domain} is:</p>
+  <ul>
+    <li><strong>Identity:</strong> {holder || <span class="legal-missing">[legal name]</span>}</li>
+    <li><strong>Tax ID (NIF/CIF):</strong> {taxId || <span class="legal-missing">[tax ID]</span>}</li>
+    <li><strong>Postal address:</strong> {address || <span class="legal-missing">[full address]</span>}</li>
+    <li><strong>Email:</strong> {email ? <a href={`mailto:${email}`}>{email}</a> : <span class="legal-missing">[contact email]</span>}</li>
+  </ul>
+
+  <h2>2. Data We Collect</h2>
+  <p>We collect the following types of personal data when you use our booking platform:</p>
+  <ul>
+    <li><strong>Contact and identification data:</strong> first name, last name, email address and phone number.</li>
+    <li><strong>Payment data:</strong> card payments are handled by a secure third-party provider (Stripe). We do not store your card details on our servers.</li>
+    <li><strong>Health data (sensitive data):</strong> information you may voluntarily provide about injuries, medical conditions or fitness so we can adapt classes to your needs. Processing this data requires your <strong>explicit consent</strong>.</li>
+  </ul>
+
+  <h2>3. Purposes of Processing</h2>
+  <ul>
+    <li><strong>Booking management:</strong> to process and confirm your class bookings.</li>
+    <li><strong>Communication:</strong> to send you booking-related notifications (confirmations, reminders, schedule changes).</li>
+    <li><strong>Billing and payments:</strong> to manage class payments and issue invoices.</li>
+    <li><strong>Service improvement:</strong> to analyse website usage and improve the user experience.</li>
+    <li><strong>Marketing communications:</strong> to send newsletters or promotions about our services, only if you have given explicit consent.</li>
+  </ul>
+
+  <h2>4. Legal Basis</h2>
+  <ul>
+    <li><strong>Performance of a contract:</strong> to manage bookings and the service you request.</li>
+    <li><strong>Consent:</strong> for marketing communications and the processing of health data.</li>
+  </ul>
+
+  <h2>5. Data Retention</h2>
+  <p>Your personal data will be kept for as long as necessary to fulfil the purposes for which it was collected and, afterwards, for the applicable legal periods to handle possible liabilities or claims.</p>
+
+  <h2>6. Recipients</h2>
+  <p>Your data will not be shared with third parties except where legally required or necessary to provide the service (for example, the payment gateway to process a card payment).</p>
+
+  <h2>7. Your Rights</h2>
+  <ul>
+    <li><strong>Access:</strong> request a copy of your personal data.</li>
+    <li><strong>Rectification:</strong> correct inaccurate or incomplete data.</li>
+    <li><strong>Erasure:</strong> request deletion of your data when it is no longer needed.</li>
+    <li><strong>Restriction:</strong> ask us to limit the use of your data.</li>
+    <li><strong>Objection:</strong> object to processing for direct marketing purposes.</li>
+    <li><strong>Portability:</strong> receive your data in a structured, commonly used format.</li>
+  </ul>
+  <p>To exercise these rights, write to {email ? <a href={`mailto:${email}`}>{email}</a> : <span class="legal-missing">[contact email]</span>}. You may also lodge a complaint with the Spanish Data Protection Agency (www.aepd.es).</p>
+
+  <h2>8. Cookies</h2>
+  <p>We use the browser's local storage to keep you signed in and remember your preferences (such as language). If analytics tools are enabled, they are used only to improve the website.</p>
+
+  <h1>Terms and Conditions of Service</h1>
+
+  <p>These Terms and Conditions govern the use of the website <a href={ORIGIN}>{domain}</a> and the booking of classes offered by {site.studio_name}.</p>
+
+  <h2>1. Owner Identification</h2>
+  <p>This website is owned by {holder || <span class="legal-missing">[legal name]</span>}, tax ID {taxId || <span class="legal-missing">[tax ID]</span>}, with registered address at {address || <span class="legal-missing">[full address]</span>}.</p>
+
+  <h2>2. Acceptance of Terms</h2>
+  <p>By accessing, browsing or using this website, you acknowledge that you have read and accepted these Terms and Conditions.</p>
+
+  <h2>3. Booking Process</h2>
+  <p>Users can book classes through the website. Bookings are subject to availability. The process includes choosing the class, registering personal details and confirming the booking.</p>
+
+  <h2>4. Prices and Payments</h2>
+  <p>Class and pack prices are shown on the website in {currencyName}. {site.payments_enabled
+    ? 'Online payments are processed through a secure payment gateway (Stripe).'
+    : 'Packs and classes are paid directly at the studio.'} Prices include applicable taxes.</p>
+
+  <h2>5. Cancellation and Refund Policy</h2>
+  <ul>
+    <li><strong>Cancellations by the client:</strong> bookings can be cancelled from "My account" up to {hours} {hours === 1 ? 'hour' : 'hours'} before the class starts, and credits are returned automatically. Late cancellations forfeit the session.</li>
+    <li><strong>Cancellations by the studio:</strong> if {site.studio_name} cancels a class, the session will be returned to the client or they will be offered a free reschedule.</li>
+  </ul>
+
+  <h2>6. User Responsibility</h2>
+  <p>Users agree to provide truthful information when booking and to inform the instructor of any medical condition or injury relevant to the practice.</p>
+
+  <h2>7. Intellectual Property</h2>
+  <p>All website content, including text, graphics, logos, images and designs, is owned by {holder || site.studio_name} or used under licence, and is protected by intellectual property laws.</p>
+
+  <h2>8. Personal Data Protection</h2>
+  <p>Personal information collected through the website will be processed in accordance with the Privacy Policy above, which users must read and accept before making any booking.</p>
+
+  <h2>9. Governing Law and Jurisdiction</h2>
+  <p>These Terms and Conditions are governed by Spanish law. Any dispute will be submitted to the courts that are competent under applicable law, including consumer protection rules.</p>
+</LegalLayout>

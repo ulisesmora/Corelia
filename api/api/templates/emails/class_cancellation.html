@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Actualización de tu reserva en {{ brand_name }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      body {
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        font-family: Arial, sans-serif;
+        color: #333;
+        padding: 40px 20px;
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+      }
+      .header { font-size: 24px; font-weight: bold; color: {{ brand_color }}; margin-bottom: 20px; }
+      .content { font-size: 16px; line-height: 1.6; color: #333333; }
+      .details-box {
+        background-color: {{ brand_color_light }};
+        padding: 25px;
+        border-radius: 8px;
+        margin-top: 25px;
+        margin-bottom: 25px;
+        border-left: 5px solid {{ brand_color }};
+      }
+      .cta-button {
+        display: block;
+        width: fit-content;
+        margin: 30px auto;
+        padding: 14px 28px;
+        background-color: {{ brand_color }};
+        color: #ffffff !important;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 5px;
+        text-align: center;
+      }
+      .footer {
+        text-align: center;
+        color: #999999;
+        font-size: 13px;
+        margin-top: 40px;
+        border-top: 1px solid #eeeeee;
+        padding-top: 20px;
+      }
+    </style>
+  </head>
+  <body style="margin: 0; padding: 0; background-color: #f4f4f4;">
+    <div class="container" style="font-family: Arial, sans-serif; color: #333; padding: 40px 20px; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+      {% include "emails/_brand_header.html" %}
+
+      <h1 class="header" style="font-size: 24px; font-weight: bold; color: {{ brand_color }}; margin-top: 0;">
+        Hola, {{ name }}
+      </h1>
+
+      <h2 style="font-size: 20px; font-weight: normal; color: #333; margin-top: 0;">{{ headline }}</h2>
+
+      <p class="content" style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">{{ intro_copy }}</p>
+
+      <div class="details-box" style="background-color: {{ brand_color_light }}; padding: 20px; border-radius: 8px; margin-top: 25px; border-left: 5px solid {{ brand_color }};">
+        <h3 style="margin-top: 0; font-size: 18px; color: {{ brand_color }};">No tienes que hacer nada</h3>
+        <p style="margin: 10px 0; font-size: 15px; line-height: 1.5;">
+          La devolución es <strong>automática</strong>: los créditos vuelven a tu cuenta al momento y
+          los pagos con tarjeta se reembolsan a la misma tarjeta.
+        </p>
+      </div>
+
+      <p class="content" style="font-size: 16px; line-height: 1.6; margin-top: 25px;">
+        Sentimos las molestias que esto pueda causarte. Echa un vistazo al horario para encontrar otra sesión que te encaje.
+      </p>
+
+      <a
+        href="{{ cta_url }}"
+        class="cta-button"
+        style="display: block; width: fit-content; margin: 30px auto; padding: 14px 28px; background-color: {{ brand_color }}; color: #ffffff; text-decoration: none; font-weight: bold; border-radius: 5px; text-align: center;"
+      >
+        {{ cta_text }}
+      </a>
+
+      <p class="footer" style="text-align: center; color: #999999; font-size: 13px; margin-top: 40px; border-top: 1px solid #eeeeee; padding-top: 20px;">
+        {{ brand_name }}<br />¿Tienes dudas? Responde a este correo.
+      </p>
+
+    </div>
+  </body>
+</html>

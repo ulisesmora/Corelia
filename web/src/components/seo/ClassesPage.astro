@@ -1,0 +1,102 @@
+---
+// Listado de todas las clases (/classes y /en/classes), renderizado en servidor
+// para que el catálogo esté en el HTML inicial. El listado interactivo de React
+// sustituye al catálogo en cuanto carga.
+import Footer from '../Footer';
+import ClassesSection from '../ClassSection';
+import AppFixed from '../AppFixed';
+import JsonLd from './JsonLd.astro';
+import SiteHead from '../SiteHead.astro';
+import ClassCatalog from './ClassCatalog.astro';
+import { abs, breadcrumbJsonLd, business, businessJsonLd, classPath, niceTitle, type Lang } from '../../seo/site';
+import { getSiteConfig } from '../../lib/site';
+import { getClassTypes, getSchedules, offeredClasses, tr } from '../../seo/catalog';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const es = lang === 'es';
+
+const [classes, schedules, site] = await Promise.all([getClassTypes(), getSchedules(), getSiteConfig()]);
+const BUSINESS = business(site);
+const items = offeredClasses(classes, schedules);
+
+const path = es ? '/classes' : '/en/classes';
+const cityTail = site.contact.city ? (es ? ` en ${site.contact.city}` : ` in ${site.contact.city}`) : '';
+const titleEs = `Clases${site.contact.city ? ` en ${site.contact.city}` : ''} | ${site.studio_name}`;
+const titleEn = `Classes${site.contact.city ? ` in ${site.contact.city}` : ''} | ${site.studio_name}`;
+const title = es ? titleEs : titleEn;
+const description = es
+  ? `${items.length ? `${items.length} clases semanales` : 'Clases semanales'} de Pilates, Yoga y movimiento${cityTail} en ${site.studio_name}. Grupos reducidos, todos los niveles y reserva online.`
+  : `${items.length ? `${items.length} weekly classes` : 'Weekly classes'} of Pilates, Yoga and movement${cityTail} at ${site.studio_name}. Small groups, all levels and online booking.`;
+
+const jsonLd = [
+  businessJsonLd(site, lang),
+  breadcrumbJsonLd([
+    { name: es ? 'Inicio' : 'Home', path: es ? '/' : '/en' },
+    { name: es ? 'Clases' : 'Classes', path },
+  ]),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: es ? `Clases de ${site.studio_name}` : `${site.studio_name} classes`,
+    numberOfItems: items.length,
+    itemListElement: items.map(({ cls }, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      url: abs(classPath(cls.slug, lang)),
+      name: niceTitle(tr(cls, 'title', lang)),
+    })),
+  },
+];
+---
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <SiteHead />
+    <style is:inline>html,body{margin:0;padding:0}</style>
+    <title>{title}</title>
+    <meta name="site:title-es" content={titleEs} />
+    <meta name="site:title-en" content={titleEn} />
+    <meta name="description" content={description} />
+    <link rel="canonical" href={abs(path)} />
+    <link rel="alternate" hreflang="es" href={abs('/classes')} />
+    <link rel="alternate" hreflang="en" href={abs('/en/classes')} />
+    <link rel="alternate" hreflang="x-default" href={abs('/classes')} />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.studio_name} />
+    <meta property="og:locale" content={es ? 'es_ES' : 'en_GB'} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={abs(path)} />
+    <meta property="og:image" content={BUSINESS.ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={BUSINESS.ogImage} />
+    {jsonLd.map((d) => <JsonLd data={d} />)}
+    {!es && (
+      <script is:inline>
+        try {
+          localStorage.setItem('site.lang', JSON.stringify({ state: { lang: 'en' }, version: 1 }));
+          localStorage.setItem('language_setup_complete', 'true');
+        } catch (e) {}
+        document.documentElement.lang = 'en';
+      </script>
+    )}
+  </head>
+  <body class="format">
+    <AppFixed client:only="react" />
+    <main id="contenido" style="margin-top: 4rem">
+      <section aria-label={es ? 'Clases' : 'Classes'}>
+        <ClassesSection client:only="react">
+          <div slot="fallback">
+            <ClassCatalog lang={lang} items={items} />
+          </div>
+        </ClassesSection>
+      </section>
+    </main>
+    <Footer client:only="react" />
+  </body>
+</html>

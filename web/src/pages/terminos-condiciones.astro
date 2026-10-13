@@ -1,0 +1,112 @@
+---
+// Política de privacidad y términos de contratación. Los datos del titular
+// (nombre legal, NIF/CIF, dirección, email) salen de la config del estudio.
+import LegalLayout from '../components/legal/LegalLayout.astro';
+import { getSiteConfig, addressLine } from '../lib/site';
+import { origin } from '../seo/site';
+
+const site = await getSiteConfig();
+const ORIGIN = origin();
+const holder = site.legal.name;
+const taxId = site.legal.tax_id;
+const address = addressLine(site);
+const email = site.contact.email;
+const domain = ORIGIN.replace(/^https?:\/\//, '');
+const hours = site.cancel_min_hours;
+const currencyName = site.currency === 'EUR' ? 'euros (€)' : site.currency;
+---
+<LegalLayout title="Términos y Condiciones" lang="es">
+  <h1>Política de Privacidad</h1>
+
+  <p>En {site.studio_name} valoramos su privacidad y nos comprometemos a proteger sus datos personales. Esta política le informa sobre cómo recopilamos, tratamos y protegemos sus datos de acuerdo con el Reglamento General de Protección de Datos (RGPD) y la Ley Orgánica 3/2018 de Protección de Datos Personales y garantía de los derechos digitales (LOPDGDD).</p>
+
+  <h2>1. Responsable del Tratamiento de sus Datos</h2>
+  <p>El responsable del tratamiento de los datos recabados a través de la web {domain} es:</p>
+  <ul>
+    <li><strong>Identidad:</strong> {holder || <span class="legal-missing">[nombre o razón social]</span>}</li>
+    <li><strong>NIF/CIF:</strong> {taxId || <span class="legal-missing">[NIF/CIF]</span>}</li>
+    <li><strong>Dirección postal:</strong> {address || <span class="legal-missing">[dirección completa]</span>}</li>
+    <li><strong>Correo electrónico:</strong> {email ? <a href={`mailto:${email}`}>{email}</a> : <span class="legal-missing">[email de contacto]</span>}</li>
+  </ul>
+
+  <h2>2. Tipos de Datos que Recopilamos</h2>
+  <p>Recopilamos los siguientes tipos de datos personales cuando usted utiliza nuestra plataforma de reservas:</p>
+  <ul>
+    <li><strong>Datos de contacto e identificación:</strong> nombre, apellidos, dirección de correo electrónico y número de teléfono.</li>
+    <li><strong>Datos de pago:</strong> los pagos con tarjeta los gestiona un proveedor externo seguro (Stripe). Nosotros no almacenamos los datos de su tarjeta en nuestros servidores.</li>
+    <li><strong>Datos de salud (datos sensibles):</strong> información que pueda proporcionarnos voluntariamente sobre lesiones, condiciones médicas o estado físico para adaptar las clases a sus necesidades. El tratamiento de estos datos requiere su <strong>consentimiento explícito</strong>.</li>
+  </ul>
+
+  <h2>3. Finalidad del Tratamiento de los Datos</h2>
+  <p>Sus datos personales se utilizan para las siguientes finalidades:</p>
+  <ul>
+    <li><strong>Gestión de reservas:</strong> procesar y confirmar su reserva de clases.</li>
+    <li><strong>Comunicación:</strong> enviarle notificaciones relacionadas con su reserva (confirmaciones, recordatorios, cambios de horario).</li>
+    <li><strong>Facturación y pagos:</strong> gestionar el cobro de las clases y emitir las facturas correspondientes.</li>
+    <li><strong>Mejora del servicio:</strong> analizar el uso de nuestra web para mejorar la experiencia de usuario.</li>
+    <li><strong>Comunicaciones comerciales:</strong> enviar boletines o promociones sobre nuestros servicios, solo si usted ha dado su consentimiento explícito.</li>
+  </ul>
+
+  <h2>4. Base Legal para el Tratamiento</h2>
+  <ul>
+    <li><strong>Ejecución de un contrato:</strong> para gestionar las reservas y el servicio que nos solicita.</li>
+    <li><strong>Consentimiento del interesado:</strong> para el envío de comunicaciones comerciales y el tratamiento de datos de salud.</li>
+  </ul>
+
+  <h2>5. Plazo de Conservación de los Datos</h2>
+  <p>Sus datos personales se conservarán durante el tiempo necesario para cumplir con las finalidades para las que fueron recogidos y, posteriormente, durante los plazos legales aplicables para atender posibles responsabilidades o reclamaciones.</p>
+
+  <h2>6. Destinatarios de los Datos</h2>
+  <p>Sus datos no se cederán a terceros, salvo obligación legal o cuando sea necesario para prestar el servicio (por ejemplo, la pasarela de pago para procesar un cobro con tarjeta).</p>
+
+  <h2>7. Derechos del Interesado</h2>
+  <p>Usted puede ejercer en cualquier momento los siguientes derechos:</p>
+  <ul>
+    <li><strong>Acceso:</strong> solicitar una copia de sus datos personales.</li>
+    <li><strong>Rectificación:</strong> corregir datos inexactos o incompletos.</li>
+    <li><strong>Supresión:</strong> solicitar la eliminación de sus datos cuando ya no sean necesarios.</li>
+    <li><strong>Limitación del tratamiento:</strong> pedir que limitemos el uso de sus datos.</li>
+    <li><strong>Oposición:</strong> oponerse al tratamiento de sus datos con fines de marketing directo.</li>
+    <li><strong>Portabilidad:</strong> recibir sus datos en un formato estructurado y de uso común.</li>
+  </ul>
+  <p>Para ejercer estos derechos, escríbanos a {email ? <a href={`mailto:${email}`}>{email}</a> : <span class="legal-missing">[email de contacto]</span>}. También puede presentar una reclamación ante la Agencia Española de Protección de Datos (www.aepd.es).</p>
+
+  <h2>8. Uso de Cookies</h2>
+  <p>Utilizamos almacenamiento local del navegador para mantener su sesión y sus preferencias (como el idioma). Si se activan herramientas de análisis, se usarán únicamente para mejorar la web.</p>
+
+  <h1>Términos y Condiciones de Contratación</h1>
+
+  <p>Estos Términos y Condiciones regulan el uso del sitio web <a href={ORIGIN}>{domain}</a> y la contratación de las clases ofrecidas por {site.studio_name}.</p>
+
+  <h2>1. Identificación del Titular</h2>
+  <p>El presente sitio web es propiedad de {holder || <span class="legal-missing">[nombre o razón social]</span>}, con NIF/CIF {taxId || <span class="legal-missing">[NIF/CIF]</span>} y domicilio en {address || <span class="legal-missing">[dirección completa]</span>}.</p>
+
+  <h2>2. Aceptación de los Términos</h2>
+  <p>Al acceder, navegar o utilizar este sitio web, usted reconoce haber leído y aceptado estos Términos y Condiciones.</p>
+
+  <h2>3. Proceso de Reserva</h2>
+  <p>Los usuarios pueden reservar clases a través de la plataforma web. Las reservas están sujetas a la disponibilidad de plazas. El proceso de reserva incluye la selección de la clase, el registro de datos personales y la confirmación de la reserva.</p>
+
+  <h2>4. Precios y Pagos</h2>
+  <p>Los precios de las clases y bonos se muestran en el sitio web y están expresados en {currencyName}. {site.payments_enabled
+    ? 'El pago online se realiza a través de una pasarela de pago segura (Stripe).'
+    : 'Los bonos y clases se abonan directamente en el estudio.'} Los precios incluyen los impuestos legalmente aplicables.</p>
+
+  <h2>5. Política de Cancelación y Reembolso</h2>
+  <ul>
+    <li><strong>Cancelaciones por el cliente:</strong> las reservas pueden cancelarse desde «Mi cuenta» hasta {hours} {hours === 1 ? 'hora' : 'horas'} antes del inicio de la clase, y los créditos se devuelven automáticamente. Las cancelaciones fuera de este plazo suponen la pérdida de la sesión.</li>
+    <li><strong>Cancelaciones por el estudio:</strong> si {site.studio_name} cancela una clase, la sesión se devolverá al cliente o se le ofrecerá reprogramarla sin coste adicional.</li>
+  </ul>
+
+  <h2>6. Responsabilidad del Usuario</h2>
+  <p>El usuario se compromete a proporcionar información veraz al realizar una reserva y a informar al instructor de cualquier condición médica o lesión relevante para la práctica.</p>
+
+  <h2>7. Propiedad Intelectual</h2>
+  <p>Todo el contenido del sitio web, incluidos textos, gráficos, logotipos, imágenes y diseños, es propiedad de {holder || site.studio_name} o se utiliza con licencia, y está protegido por las leyes de propiedad intelectual.</p>
+
+  <h2>8. Protección de Datos Personales</h2>
+  <p>La información personal recopilada a través del sitio web se tratará conforme a la Política de Privacidad anterior, que el usuario debe leer y aceptar antes de realizar cualquier reserva.</p>
+
+  <h2>9. Legislación Aplicable y Jurisdicción</h2>
+  <p>Estos Términos y Condiciones se rigen por la legislación española. Cualquier conflicto se someterá a los juzgados y tribunales que correspondan conforme a la normativa aplicable, incluida la de protección de los consumidores.</p>
+</LegalLayout>

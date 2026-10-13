@@ -1,0 +1,27 @@
+# Entornos y secretos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+**/firebase*.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+api/db.sqlite3
+api/staticfiles/
+api/panel_dist/
+celerybeat-schedule*
+
+# Node
+node_modules/
+dist/
+.astro/
+.vercel/
+
+# Sistema
+.DS_Store
+*.log
+**/*.tsbuildinfo

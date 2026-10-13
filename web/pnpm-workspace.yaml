@@ -1,0 +1,10 @@
+# Scripts de instalación permitidos (pnpm ≥10 los bloquea por defecto).
+# esbuild y sharp traen binarios nativos; el resto no los necesita.
+allowBuilds:
+  esbuild: true
+  sharp: true
+  '@parcel/watcher': false
+# Equivalente para pnpm 9/10 (p. ej. la imagen Docker)
+onlyBuiltDependencies:
+  - esbuild
+  - sharp

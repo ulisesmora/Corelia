@@ -1,0 +1,70 @@
+---
+// Catálogo de clases en HTML de servidor (buscadores e IA). Se usa como
+// contenido `fallback` del listado interactivo: se ve hasta que carga React.
+import { classPath, niceTitle, metaDescription, type Lang } from '../../seo/site';
+import { WEEKDAYS, hhmm, tr, type ApiClassType, type ApiSchedule } from '../../seo/catalog';
+import { formatMoney, getSiteConfig } from '../../lib/site';
+
+interface Props {
+  lang: Lang;
+  items: { cls: ApiClassType; slots: ApiSchedule[] }[];
+  headingLevel?: 'h1' | 'h2';
+}
+const { lang, items, headingLevel = 'h1' } = Astro.props;
+const es = lang === 'es';
+const site = await getSiteConfig();
+
+// Agrupado por la categoría de cada clase (la define el estudio en el panel)
+const groups = new Map<string, { title: string; rows: typeof items }>();
+for (const it of items) {
+  const cat = it.cls.category;
+  const key = cat ? String(cat.id) : 'other';
+  const title = cat ? niceTitle(tr(cat, 'name', lang)) : (es ? 'Otras clases' : 'Other classes');
+  if (!groups.has(key)) groups.set(key, { title, rows: [] });
+  groups.get(key)!.rows.push(it);
+}
+const grouped = [...groups.values()];
+const dropIn = formatMoney(Number(site.drop_in_price), site, lang);
+
+const Heading = headingLevel;
+---
+<section class="catalog">
+  <Heading class="catalog-title">
+    {es ? `Clases en ${site.studio_name}` : `Classes at ${site.studio_name}`}
+  </Heading>
+  <p class="catalog-intro">
+    {es
+      ? `Todas nuestras clases semanales, en grupos reducidos y para todos los niveles. Una clase suelta cuesta ${dropIn} (1 crédito).`
+      : `All our weekly classes, in small groups and for all levels. A drop-in class is ${dropIn} (1 credit).`}
+  </p>
+  {grouped.map((g) => (
+    <div class="catalog-group">
+      <h2>{g.title}</h2>
+      <ul>
+        {g.rows.map(({ cls, slots }) => (
+          <li>
+            <a href={classPath(cls.slug, lang)}>
+              <strong>{niceTitle(tr(cls, 'title', lang))}</strong>
+              <span class="when">
+                {slots.map((s) => `${WEEKDAYS[lang][s.weekday!]} ${hhmm(s.start_time)}`).join(' · ')}
+              </span>
+              {tr(cls, 'description', lang) && <span class="what">{metaDescription(tr(cls, 'description', lang), 140)}</span>}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  ))}
+</section>
+
+<style>
+  .catalog { max-width: 1100px; margin: 0 auto; padding: 6.5rem 1.25rem 2.5rem; font-family: var(--font-body); color: var(--brand-dark); }
+  .catalog-title { font-family: var(--font-heading); font-size: clamp(2.2rem, 5vw, 3.2rem); letter-spacing: .02em; margin: 0 0 .5rem; line-height: 1.05; }
+  .catalog-intro { max-width: 75ch; line-height: 1.7; margin: 0 0 1.75rem; color: color-mix(in srgb, var(--brand-secondary) 47%, var(--brand-dark)); }
+  .catalog-group h2 { font-family: var(--font-heading); font-size: 1.8rem; letter-spacing: .02em; margin: 1.5rem 0 .75rem; }
+  .catalog ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+  .catalog a { display: flex; flex-direction: column; gap: .25rem; height: 100%; padding: 1rem 1.1rem; border-radius: 16px; background: rgba(255,255,255,.8); border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent); color: var(--brand-dark); text-decoration: none; }
+  .catalog a:hover { border-color: var(--brand-primary); }
+  .catalog .when { color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); font-weight: 600; font-size: .92rem; }
+  .catalog .what { color: color-mix(in srgb, var(--brand-secondary) 47%, var(--brand-dark)); font-size: .9rem; line-height: 1.5; }
+</style>

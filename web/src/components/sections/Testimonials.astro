@@ -1,0 +1,49 @@
+---
+// Opiniones del panel, solo en HTML. NO se marcan como Review/AggregateRating
+// en JSON-LD: Google considera autopromoción las reseñas que publica el propio
+// negocio. Si no hay opiniones, la sección no se muestra.
+import type { Lang } from '../../seo/site';
+import type { ApiTestimonial } from '../../seo/catalog';
+
+interface Props { items: ApiTestimonial[]; lang: Lang }
+const { items, lang } = Astro.props;
+const es = lang === 'es';
+const text = (t: ApiTestimonial) => (lang === 'en' && t.text_en?.trim()) || t.text;
+const stars = (n: number) => Math.max(0, Math.min(5, Math.round(n)));
+---
+{items.length > 0 && (
+  <section class="tst" id="opiniones" aria-labelledby="tst-title">
+    <h2 id="tst-title">{es ? 'Lo que dicen nuestras alumnas y alumnos' : 'What our members say'}</h2>
+    <ul>
+      {items.map((t) => (
+        <li>
+          <figure>
+            {t.rating ? (
+              <p class="tst-stars" aria-label={es ? `${stars(t.rating)} de 5` : `${stars(t.rating)} out of 5`}>
+                <span aria-hidden="true">{'★'.repeat(stars(t.rating))}{'☆'.repeat(5 - stars(t.rating))}</span>
+              </p>
+            ) : null}
+            <blockquote>{text(t)}</blockquote>
+            <figcaption>
+              {t.photo_url && <img src={t.photo_url} alt="" width="40" height="40" loading="lazy" decoding="async" />}
+              <span><strong>{t.author}</strong>{t.source && <small>{t.source}</small>}</span>
+            </figcaption>
+          </figure>
+        </li>
+      ))}
+    </ul>
+  </section>
+)}
+
+<style>
+  .tst { max-width: 1100px; margin: 0 auto; padding: 4rem 1.25rem; font-family: var(--font-body); color: var(--brand-dark); }
+  .tst h2 { font-family: var(--font-heading); font-size: clamp(2rem, 5vw, 2.75rem); text-align: center; letter-spacing: .02em; margin: 0 0 2rem; }
+  .tst ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
+  .tst figure { margin: 0; height: 100%; display: flex; flex-direction: column; gap: .75rem; padding: 1.5rem; border-radius: 20px; background: rgba(255,255,255,.8); border: 1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent); box-shadow: 0 4px 18px color-mix(in srgb, var(--brand-dark) 6%, transparent); }
+  .tst-stars { margin: 0; color: var(--brand-primary); letter-spacing: .1em; }
+  .tst blockquote { margin: 0; flex: 1; line-height: 1.7; white-space: pre-line; }
+  .tst figcaption { display: flex; align-items: center; gap: .75rem; }
+  .tst figcaption img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
+  .tst figcaption span { display: flex; flex-direction: column; }
+  .tst small { color: color-mix(in srgb, var(--brand-secondary) 70%, var(--brand-dark)); }
+</style>

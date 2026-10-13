@@ -1,0 +1,38 @@
+---
+// Promotions and coupons terms (English). The owner comes from the studio settings.
+import LegalLayout from '../../components/legal/LegalLayout.astro';
+import { getSiteConfig } from '../../lib/site';
+
+const site = await getSiteConfig();
+const who = site.studio_name;
+---
+<LegalLayout title="Promotions and Coupons Terms" lang="en">
+  <h1>Terms &amp; Conditions for Promotions and Coupons</h1>
+
+  <p>These terms and conditions govern the use of promotions, discounts and coupons offered by <strong>{who}</strong> through its website. By using a coupon or promotion, you agree to these terms.</p>
+
+  <h2>1. General Provisions</h2>
+  <ul>
+    <li><strong>Promotion validity:</strong> each coupon or promo code has a specific validity period shown in the promotion (until a certain date or for a limited number of uses). After it expires, the coupon cannot be used.</li>
+    <li><strong>Not combinable:</strong> coupons and promotions cannot be combined. Only one coupon may be applied per purchase or booking.</li>
+    <li><strong>Not redeemable for cash:</strong> coupons have no monetary value and cannot be exchanged for cash.</li>
+  </ul>
+
+  <h2>2. Restrictions and Use</h2>
+  <ul>
+    <li><strong>Personal and non-transferable:</strong> coupons are intended for a single person and may not be transferred, sold or assigned to third parties.</li>
+    <li><strong>Per-customer limit:</strong> each coupon or promotion is limited to one use per person, email address and/or user account, including accounts created with different emails that belong to the same person.</li>
+    <li><strong>First-time promotions:</strong> coupons for "new customers" or "first booking" are limited to a single use per customer, even if a new account is created.</li>
+    <li><strong>Fraud detection:</strong> {who} reserves the right to void any coupon or promotion if fraudulent or improper use is detected, such as creating multiple accounts to obtain the same discount.</li>
+  </ul>
+
+  <h2>3. How to Redeem</h2>
+  <p>To apply a promotion, enter the coupon code in the corresponding field during booking or checkout. The discount will be applied automatically.</p>
+  <p>Any attempt to alter, duplicate or manipulate a coupon will result in its cancellation.</p>
+
+  <h2>4. Changes and Cancellations</h2>
+  <ul>
+    <li>{who} reserves the right to modify or cancel any promotion or coupon at any time, without prior notice, when necessary for technical, operational or force majeure reasons.</li>
+    <li>If a class or service purchased with a coupon is cancelled, the value of the session will be refunded to the client, but the coupon cannot be reused.</li>
+  </ul>
+</LegalLayout>

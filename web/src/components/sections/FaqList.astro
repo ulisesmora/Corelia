@@ -1,0 +1,44 @@
+---
+// Preguntas frecuentes del panel (portada y precios), en HTML de servidor:
+// buscadores e IA leen preguntas y respuestas sin ejecutar JavaScript. Acordeón
+// accesible con <details>/<summary> (teclado y lectores de pantalla, sin JS).
+// El JSON-LD FAQPage lo añade la página (seo/site.ts → faqJsonLd).
+import { faqText, type Lang } from '../../seo/site';
+import type { ApiFaq } from '../../seo/catalog';
+
+interface Props { faqs: ApiFaq[]; lang: Lang; id?: string }
+const { faqs, lang, id = 'faq' } = Astro.props;
+const es = lang === 'es';
+const items = faqs.map((f) => {
+  const { q, a } = faqText(f, lang);
+  return { q, paragraphs: a.split(/\n{2,}/) };
+});
+---
+{items.length > 0 && (
+  <section class="faq" id={id} aria-labelledby={`${id}-title`}>
+    <h2 id={`${id}-title`}>{es ? 'Preguntas frecuentes' : 'Frequently asked questions'}</h2>
+    <div class="faq-list">
+      {items.map((f, i) => (
+        <details open={i === 0}>
+          <summary>{f.q}</summary>
+          <div class="faq-a">{f.paragraphs.map((p) => <p>{p}</p>)}</div>
+        </details>
+      ))}
+    </div>
+  </section>
+)}
+
+<style>
+  .faq { max-width: 760px; margin: 0 auto; padding: 4rem 1.25rem; font-family: var(--font-body); color: var(--brand-dark); }
+  .faq h2 { font-family: var(--font-heading); font-size: clamp(2rem, 5vw, 2.75rem); text-align: center; letter-spacing: .02em; margin: 0 0 1.5rem; }
+  .faq-list { border-radius: 22px; overflow: hidden; background: rgba(255,255,255,.7); border: 1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent); }
+  .faq details + details { border-top: 1px solid color-mix(in srgb, var(--brand-primary) 15%, transparent); }
+  .faq summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1rem 1.25rem; min-height: 56px; font-weight: 700; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: '+'; flex-shrink: 0; font-size: 1.4rem; line-height: 1; color: var(--brand-primary); transition: transform .2s ease; }
+  .faq details[open] summary::after { transform: rotate(45deg); }
+  .faq summary:hover { background: color-mix(in srgb, var(--brand-primary) 5%, transparent); }
+  .faq summary:focus-visible { outline: 2px solid var(--brand-primary); outline-offset: -2px; }
+  .faq-a { padding: 0 1.25rem 1rem; color: color-mix(in srgb, var(--brand-secondary) 70%, var(--brand-dark)); line-height: 1.7; }
+  .faq-a p { margin: 0 0 .6rem; white-space: pre-line; }
+</style>

@@ -1,0 +1,27 @@
+---
+import AppFixed from '../components/AppFixed';
+import MemberDashboard from '../components/MemberDashboard';
+import Footer from '../components/Footer';
+import OptimizedHead from '../components/OptimizedHead.astro';
+import PageLoader from '../components/PageLoader.astro';
+import PushNotifications from '../components/PushNotifications';
+---
+
+<html lang="es">
+  <head>
+    <OptimizedHead title="Mi cuenta" titleEn="My account" noindex />
+  </head>
+  <body>
+    <PageLoader minMs={300} maxMs={4000} />
+    <AppFixed client:only="react" />
+    <main>
+      <MemberDashboard client:only="react" />
+    </main>
+    <Footer client:only="react" />
+    <PushNotifications client:only="react" />
+  </body>
+</html>
+
+<style>
+  html, body { margin: 0; width: 100%; height: 100%; }
+</style>

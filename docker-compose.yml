@@ -1,0 +1,56 @@
+# Todo Studio Kit en tu ordenador:  docker compose up --build
+#   Panel del estudio → http://localhost:8000   (entra con ADMIN_EMAIL / ADMIN_PASSWORD)
+#   Web de reservas   → http://localhost:4321
+services:
+  db:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: studio
+      POSTGRES_USER: studio
+      POSTGRES_PASSWORD: studio
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U studio"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+
+  api:
+    build: .
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgres://studio:studio@db:5432/studio
+      REDIS_URL: redis://redis:6379/0
+      API_URL: http://localhost:8000
+      WEB_URL: http://localhost:4321
+      SECRET_KEY: ${SECRET_KEY:-local-docker-secret-change-me}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@example.com}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-cambia-esta-clave}
+      STUDIO_NAME: ${STUDIO_NAME:-Mi Estudio}
+      SEED_DEMO: ${SEED_DEMO:-1}
+    ports:
+      - "8000:8000"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+
+  web:
+    build: ./web
+    environment:
+      API_URL: http://api:8000
+      PUBLIC_SITE_URL: http://localhost:4321
+      PORT: 4321
+    ports:
+      - "4321:4321"
+    depends_on:
+      - api
+
+volumes:
+  db-data:

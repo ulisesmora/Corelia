@@ -1,0 +1,21 @@
+---
+import Footer from '../components/Footer';
+import AppFixed from '../components/AppFixed';
+import UpdatePreferencesForm from '../components/UpdatePreferencesForm';
+import OptimizedHead from '../components/OptimizedHead.astro';
+---
+
+<html lang="es">
+  <head>
+    <OptimizedHead title="Actualizar preferencias" titleEn="Update preferences" noindex />
+  </head>
+  <body class="format">
+    <AppFixed client:only="react" />
+
+    <main id="contenido" style="">
+      <UpdatePreferencesForm client:only="react"/>
+    </main>
+
+    <Footer client:only="react" />
+  </body>
+</html>

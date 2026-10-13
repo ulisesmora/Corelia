@@ -1,0 +1,15 @@
+**/node_modules
+**/dist
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.astro
+**/.vercel
+**/db.sqlite3
+**/staticfiles
+**/panel_dist
+.git
+.env
+.env.*
+!.env.example
+**/*.tsbuildinfo

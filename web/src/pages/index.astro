@@ -1,0 +1,9 @@
+---
+// Portada en español. Todo el contenido vive en components/home/HomePage.astro
+// (compartido con /en): si cambias una sección, cambia las dos versiones.
+import HomePage from '../components/home/HomePage.astro';
+import { BRAND_CACHE } from '../seo/site';
+
+Astro.response.headers.set('Cache-Control', BRAND_CACHE);
+---
+<HomePage lang="es" />

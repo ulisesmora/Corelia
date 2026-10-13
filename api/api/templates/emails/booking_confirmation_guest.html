@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Confirmación de tu reserva en {{ brand_name }}</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      body {
+        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+      }
+      .container {
+        font-family: Arial, sans-serif;
+        color: #333;
+        padding: 20px;
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+      }
+      .header {
+        font-size: 24px;
+        font-weight: bold;
+        color: {{ brand_color }};
+      }
+      .content {
+        font-size: 16px;
+        line-height: 1.5;
+      }
+      .payment-details {
+        background-color: {{ brand_color_light }};
+        padding: 15px;
+        border-radius: 8px;
+        margin-top: 20px;
+      }
+      .bookings-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 20px;
+      }
+      .bookings-table th {
+        background-color: {{ brand_color_light }};
+        padding: 12px;
+        text-align: left;
+        border-bottom: 2px solid #ddd;
+      }
+      .bookings-table td {
+        padding: 12px;
+        border-bottom: 1px solid #eee;
+      }
+      .cta-button {
+        display: block;
+        width: fit-content;
+        margin: 30px auto;
+        padding: 14px 28px;
+        background-color: {{ brand_color }};
+        color: #ffffff;
+        text-decoration: none;
+        font-weight: bold;
+        border-radius: 5px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container" style="font-family: Arial, sans-serif; color: #333; padding: 20px; max-width: 600px; margin: 0 auto; background-color: #ffffff;">
+      {% include "emails/_brand_header.html" %}
+
+      <h1 class="header" style="font-size: 24px; font-weight: bold; color: {{ brand_color }};">
+        ¡Gracias por tu reserva, {{ name }}!
+      </h1>
+
+      <p class="content" style="font-size: 16px; line-height: 1.5;">
+        Hemos confirmado tu pago y tus reservas están listas. Aquí tienes un resumen de tu compra.
+      </p>
+
+      <div class="payment-details" style="background-color: {{ brand_color_light }}; padding: 15px; border-radius: 8px; margin-top: 20px;">
+        <h3 style="margin-top: 0;">Detalles del Pago</h3>
+        <p style="margin: 5px 0;"><strong>ID de Pago:</strong> {{ payment_id }}</p>
+        <p style="margin: 5px 0;"><strong>Fecha de Pago:</strong> {{ payment_date }}</p>
+        <p style="margin: 5px 0; font-weight: bold; font-size: 18px;">
+          <strong>Importe Total:</strong> {{ payment_total }}
+        </p>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;" />
+
+      <h2 style="font-size: 20px;">Tus {{ total_reservas }} Reserva(s) Confirmada(s)</h2>
+
+      <table class="bookings-table" style="width: 100%; border-collapse: collapse; margin-top: 20px;">
+        <thead>
+          <tr>
+            <th style="background-color: {{ brand_color_light }}; padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Clase</th>
+            <th style="background-color: {{ brand_color_light }}; padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Fecha</th>
+            <th style="background-color: {{ brand_color_light }}; padding: 12px; text-align: left; border-bottom: 2px solid #ddd;">Hora</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in bookings_list %}
+          <tr>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ item.clase }}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ item.fecha }}</td>
+            <td style="padding: 12px; border-bottom: 1px solid #eee;">{{ item.hora }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p style="text-align: center; color: #777; font-size: 14px;">
+        ¡Te esperamos!<br />El equipo de {{ brand_name }}
+      </p>
+
+    </div>
+  </body>
+</html>

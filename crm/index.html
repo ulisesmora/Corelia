@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/png" href="/api/v1/site-config/icon/32.png?variant=panel" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#F5F5F4" />
+    <!-- Título genérico: al arrancar se cambia por "<nombre del estudio> · Panel"
+         (src/site/SiteProvider.tsx). Las fuentes de Google también se cargan
+         ahí, según las que haya elegido el estudio. -->
+    <title>Panel del estudio</title>
+    <!-- Instalable en el móvil: nombre e iconos del estudio (variante oscura),
+         generados por el API (/panel.webmanifest y /api/v1/site-config/icon/) -->
+    <link rel="manifest" href="/panel.webmanifest" />
+    <link rel="apple-touch-icon" href="/api/v1/site-config/icon/180.png?variant=panel" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Panel" />
+    <meta name="application-name" content="Panel del estudio" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

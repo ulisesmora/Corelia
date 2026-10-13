@@ -1,0 +1,266 @@
+---
+// Ficha de clase renderizada en SERVIDOR: título, descripción, horario y datos
+// estructurados en el HTML inicial, para Google y para asistentes de IA que no
+// ejecutan JavaScript. El componente React interactivo sustituye al bloque
+// `fallback` en cuanto carga, así que la clienta ve lo mismo que antes.
+import Footer from '../Footer';
+import AppFixed from '../AppFixed';
+import PilatesClassDetail from '../ClassDetails';
+import JsonLd from './JsonLd.astro';
+import SiteHead from '../SiteHead.astro';
+import { optimizedImage } from '../../utils/img';
+import {
+  abs, breadcrumbJsonLd, business, businessJsonLd, classPath,
+  metaDescription, niceTitle, type Lang,
+} from '../../seo/site';
+import { formatMoney, getSiteConfig } from '../../lib/site';
+import {
+  LEVELS, SCHEMA_DAYS, WEEKDAYS, currentWeeklySlots, getClassTypes, getSchedules, hhmm,
+  offeredClasses, tr, type ApiClassType,
+} from '../../seo/catalog';
+
+interface Props { lang: Lang; slug: string; cls: ApiClassType | null }
+// La página resuelve la clase y pone el estado 404 / la caché (desde un
+// componente ya sería tarde: las cabeceras se envían antes).
+const { lang, slug, cls } = Astro.props;
+const es = lang === 'es';
+
+const [schedules, allClasses, site] = await Promise.all([getSchedules(), getClassTypes(), getSiteConfig()]);
+const BUSINESS = business(site);
+const DROP_IN = Number(site.drop_in_price) || 0;
+const place = [site.studio_name, BUSINESS.addressLine].filter(Boolean).join(' · ');
+const cityTail = site.contact.city ? (es ? ` en ${site.contact.city}` : ` in ${site.contact.city}`) : '';
+
+const T = {
+  es: {
+    home: 'Inicio', classes: 'Clases', where: 'Dónde', schedule: 'Horario', level: 'Nivel', duration: 'Duración',
+    price: 'Precio', teacher: 'Profesor/a', every: 'Cada', from: 'de', to: 'a', minutes: 'min',
+    credit: (n: number) => (n === 1 ? '1 crédito' : `${n} créditos`),
+    dropIn: `clase suelta ${formatMoney(DROP_IN, site, 'es')}`,
+    unavailable: 'No disponible por el momento. Mira otras clases o escríbenos.',
+    place,
+    book: 'Ver días y reservar', all: 'Ver todas las clases', whatsapp: 'Preguntar por WhatsApp',
+    more: `Otras clases en ${site.studio_name}`, moreText: 'Más clases en grupos reducidos y para todos los niveles.',
+    notFound: 'Esta clase no existe o ya no se ofrece.',
+    titleSuffix: cityTail.trim(), metaTail: `Reserva online en ${site.studio_name}.`,
+  },
+  en: {
+    home: 'Home', classes: 'Classes', where: 'Where', schedule: 'Schedule', level: 'Level', duration: 'Duration',
+    price: 'Price', teacher: 'Teacher', every: 'Every', from: 'from', to: 'to', minutes: 'min',
+    credit: (n: number) => (n === 1 ? '1 credit' : `${n} credits`),
+    dropIn: `${formatMoney(DROP_IN, site, 'en')} drop-in`,
+    unavailable: 'Not available at the moment. Have a look at our other classes or get in touch.',
+    place,
+    book: 'See dates and book', all: 'See all classes', whatsapp: 'Ask on WhatsApp',
+    more: `More classes at ${site.studio_name}`, moreText: 'More classes in small groups, for all levels.',
+    notFound: 'This class does not exist or is no longer offered.',
+    titleSuffix: cityTail.trim(), metaTail: `Book online at ${site.studio_name}.`,
+  },
+}[lang];
+
+const name = cls ? niceTitle(tr(cls, 'title', lang)) : '';
+const description = cls ? tr(cls, 'description', lang).trim() : '';
+const slots = cls ? currentWeeklySlots(schedules, cls.id) : [];
+const credits = cls ? Number(cls.default_price_credits || 1) : 1;
+const priceEur = cls
+  ? (Number(cls.default_price_eur || 0) > 0 ? Number(cls.default_price_eur) : credits === 1 && DROP_IN > 0 ? DROP_IN : null)
+  : null;
+const teacherNames = [...new Set(
+  slots.map((s) => s.override_instructor?.name).concat(cls?.instructor?.name).filter(Boolean) as string[],
+)];
+const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+const durationMin = slots.length
+  ? toMin(hhmm(slots[0].end_time)) - toMin(hhmm(slots[0].start_time))
+  : cls?.duration_minutes;
+const slotText = (s: (typeof slots)[number]) =>
+  `${T.every} ${WEEKDAYS[lang][s.weekday!]} ${T.from} ${hhmm(s.start_time)} ${T.to} ${hhmm(s.end_time)}`;
+
+const indexable = !!cls && cls.is_active !== false;
+
+const pathEs = classPath(slug, 'es');
+const pathEn = classPath(slug, 'en');
+const canonical = abs(es ? pathEs : pathEn);
+
+const titleBase = name ? `${name}${T.titleSuffix ? ` ${T.titleSuffix}` : ''}` : site.studio_name;
+const pageTitle = cls ? `${titleBase} | ${site.studio_name}` : `${T.notFound} | ${site.studio_name}`;
+const slotsShort = slots.slice(0, 2).map((s) => `${WEEKDAYS[lang][s.weekday!]} ${hhmm(s.start_time)}`).join(', ');
+const metaDesc = cls
+  ? `${metaDescription(description || BUSINESS.description[lang], slotsShort ? 105 : 125)}${slotsShort ? ` ${es ? 'Horario' : 'Times'}: ${slotsShort}.` : ''} ${T.metaTail}`.slice(0, 180)
+  : T.notFound;
+const ogImage = cls?.image ? abs(optimizedImage(cls.image, 1200, 80)) : BUSINESS.ogImage;
+
+const related = offeredClasses(allClasses, schedules)
+  .filter((x) => x.cls.slug !== slug)
+  .sort((a, b) => Number(b.cls.category?.id === cls?.category?.id) - Number(a.cls.category?.id === cls?.category?.id))
+  .slice(0, 10);
+
+const jsonLd = cls ? [
+  businessJsonLd(site, lang),
+  breadcrumbJsonLd([
+    { name: T.home, path: es ? '/' : '/en' },
+    { name: T.classes, path: es ? '/classes' : '/en/classes' },
+    { name, path: es ? pathEs : pathEn },
+  ]),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Course',
+    '@id': `${canonical}#course`,
+    name,
+    description: description || BUSINESS.description[lang],
+    url: canonical,
+    inLanguage: lang,
+    ...(cls.image ? { image: ogImage } : {}),
+    educationalLevel: LEVELS[cls.level || 'all']?.[lang],
+    provider: { '@id': BUSINESS.id },
+    ...(priceEur != null ? {
+      offers: {
+        '@type': 'Offer',
+        category: es ? 'Clase suelta' : 'Drop-in class',
+        price: priceEur,
+        priceCurrency: site.currency,
+        availability: slots.length ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock',
+        url: canonical,
+      },
+    } : {}),
+    hasCourseInstance: slots.map((s) => ({
+      '@type': 'CourseInstance',
+      courseMode: 'Onsite',
+      ...(s.override_instructor?.name || cls.instructor?.name
+        ? { instructor: { '@type': 'Person', name: s.override_instructor?.name || cls.instructor?.name } } : {}),
+      location: {
+        '@type': 'Place',
+        name: BUSINESS.name,
+        ...(BUSINESS.addressLine ? { address: { '@type': 'PostalAddress', ...BUSINESS.address } } : {}),
+      },
+      courseSchedule: {
+        '@type': 'Schedule',
+        repeatFrequency: 'P1W',
+        byDay: `https://schema.org/${SCHEMA_DAYS[s.weekday!]}`,
+        startTime: hhmm(s.start_time),
+        endTime: hhmm(s.end_time),
+        duration: `PT${toMin(hhmm(s.end_time)) - toMin(hhmm(s.start_time))}M`,
+        scheduleTimezone: site.timezone,
+        ...(s.start_date ? { startDate: s.start_date } : {}),
+        ...(s.end_date ? { endDate: s.end_date } : {}),
+      },
+    })),
+  },
+] : [];
+---
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <SiteHead />
+    <style is:inline>html,body{margin:0;padding:0}</style>
+    <title>{pageTitle}</title>
+    <meta name="description" content={metaDesc} />
+    <meta name="robots" content={indexable ? 'index,follow,max-image-preview:large' : 'noindex,follow'} />
+    {cls && <link rel="canonical" href={canonical} />}
+    {cls && <link rel="alternate" hreflang="es" href={abs(pathEs)} />}
+    {cls && <link rel="alternate" hreflang="en" href={abs(pathEn)} />}
+    {cls && <link rel="alternate" hreflang="x-default" href={abs(pathEs)} />}
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.studio_name} />
+    <meta property="og:locale" content={es ? 'es_ES' : 'en_GB'} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={metaDesc} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={metaDesc} />
+    <meta name="twitter:image" content={ogImage} />
+    {jsonLd.map((d) => <JsonLd data={d} />)}
+    {!es && (
+      <script is:inline>
+        try {
+          localStorage.setItem('site.lang', JSON.stringify({ state: { lang: 'en' }, version: 1 }));
+          localStorage.setItem('language_setup_complete', 'true');
+        } catch (e) {}
+        document.documentElement.lang = 'en';
+      </script>
+    )}
+    <style>
+      .ssr-class { max-width: 960px; margin: 0 auto; padding: 7rem 1.25rem 2rem; font-family: var(--font-body); color: var(--brand-dark); }
+      .ssr-class h1 { font-family: var(--font-heading); font-size: clamp(2.4rem, 6vw, 3.6rem); letter-spacing: .02em; margin: 0 0 .5rem; line-height: 1.05; }
+      .ssr-class .where { color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); font-weight: 600; margin: 0 0 1.25rem; }
+      .ssr-class .desc { font-size: 1.08rem; line-height: 1.7; margin: 0 0 1.5rem; max-width: 70ch; }
+      .ssr-class dl { display: grid; grid-template-columns: max-content 1fr; gap: .5rem 1.25rem; margin: 0 0 1.75rem; }
+      .ssr-class dt { font-weight: 700; color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); }
+      .ssr-class dd { margin: 0; }
+      .ssr-class ul.slots { margin: 0; padding-left: 1.1rem; }
+      .ssr-class .cta { display: flex; flex-wrap: wrap; gap: .75rem; }
+      .ssr-class .cta a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 1.4rem; border-radius: 999px; font-weight: 700; text-decoration: none; }
+      .ssr-class .cta a.primary { background: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); color: #fff; }
+      .ssr-class .cta a.secondary { border: 1.5px solid var(--brand-primary); color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); }
+      .related { max-width: 960px; margin: 0 auto; padding: 1rem 1.25rem 3rem; font-family: var(--font-body); color: var(--brand-dark); }
+      .related h2 { font-family: var(--font-heading); font-size: 2rem; letter-spacing: .02em; margin: 0 0 .25rem; }
+      .related p { color: color-mix(in srgb, var(--brand-secondary) 47%, var(--brand-dark)); margin: 0 0 1rem; }
+      .related ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .6rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+      .related a { display: block; padding: .8rem 1rem; border-radius: 14px; background: rgba(255,255,255,.75); border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent); color: var(--brand-dark); text-decoration: none; }
+      .related a:hover { border-color: var(--brand-primary); }
+      .related a span { display: block; font-size: .85rem; color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); margin-top: .15rem; }
+      @media (max-width: 520px) { .ssr-class dl { grid-template-columns: 1fr; } .ssr-class dt { margin-top: .4rem; } }
+    </style>
+  </head>
+  <body class="format">
+    <AppFixed client:only="react" />
+    <main id="contenido">
+      <section aria-label={name || T.classes}>
+        <PilatesClassDetail client:only="react">
+          <article class="ssr-class" slot="fallback">
+            <nav aria-label="breadcrumb">
+              <a href={es ? '/' : '/en'}>{T.home}</a> › <a href={es ? '/classes' : '/en/classes'}>{T.classes}</a>{name && <> › <span>{name}</span></>}
+            </nav>
+            {cls ? (
+              <>
+                <h1>{name}</h1>
+                {T.place && <p class="where">{T.place}</p>}
+                {description && <p class="desc">{description}</p>}
+                <dl>
+                  <dt>{T.schedule}</dt>
+                  <dd>
+                    {slots.length ? (
+                      <ul class="slots">{slots.map((s) => <li>{slotText(s)}</li>)}</ul>
+                    ) : T.unavailable}
+                  </dd>
+                  {cls.level && LEVELS[cls.level] && <><dt>{T.level}</dt><dd>{LEVELS[cls.level][lang]}</dd></>}
+                  {durationMin && durationMin > 0 && <><dt>{T.duration}</dt><dd>{durationMin} {T.minutes}</dd></>}
+                  <dt>{T.price}</dt>
+                  <dd>{T.credit(credits)}{credits === 1 ? ` · ${T.dropIn}` : ''}</dd>
+                  {teacherNames.length > 0 && <><dt>{T.teacher}</dt><dd>{teacherNames.join(', ')}</dd></>}
+                </dl>
+                <div class="cta">
+                  <a class="primary" href={es ? '/calendar' : '/calendar'}>{T.book}</a>
+                  {BUSINESS.whatsapp && <a class="secondary" href={BUSINESS.whatsapp} rel="noopener">{T.whatsapp}</a>}
+                  <a class="secondary" href={es ? '/classes' : '/en/classes'}>{T.all}</a>
+                </div>
+              </>
+            ) : (
+              <h1>{T.notFound}</h1>
+            )}
+          </article>
+        </PilatesClassDetail>
+      </section>
+
+      {related.length > 0 && (
+        <nav class="related" aria-labelledby="related-title">
+          <h2 id="related-title">{T.more}</h2>
+          <p>{T.moreText}</p>
+          <ul>
+            {related.map(({ cls: c, slots: sl }) => (
+              <li>
+                <a href={classPath(c.slug, lang)}>
+                  {niceTitle(tr(c, 'title', lang))}
+                  <span>{sl.slice(0, 2).map((s) => `${WEEKDAYS[lang][s.weekday!]} ${hhmm(s.start_time)}`).join(' · ')}</span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
+    </main>
+    <Footer client:only="react" />
+  </body>
+</html>

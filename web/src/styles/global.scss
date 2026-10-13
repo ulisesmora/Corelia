@@ -1,0 +1,237 @@
+
+/* Fuentes y colores de marca: variables CSS (--font-heading, --font-body,
+   --brand-*) que inyecta components/SiteHead.astro desde la config del estudio. */
+@import './react-big-calendar.css';
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* ─────────────────────────────────────────────────────────────────
+   PERF MÓVIL — anular backdrop-filter en pantallas pequeñas.
+   backdrop-filter es la causa #1 de calor en iPhone Safari (lo procesa
+   en GPU continuamente). En el código hay 85 ocurrencias en JS inline.
+   Sobrescribimos TODAS desde aquí con !important para reducir carga GPU.
+   El efecto visual cambia ligeramente (sin blur), pero el dispositivo
+   sigue frío y la batería dura mucho más.
+   ────────────────────────────────────────────────────────────────── */
+@media (hover: none) and (pointer: coarse), (max-width: 900px) {
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    /* will-change: auto previene que Safari mantenga capas extra en GPU */
+    will-change: auto !important;
+  }
+}
+
+/* PERF: respetar usuarios con reduced-motion — apaga animaciones pesadas */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* PERF: content-visibility en secciones below-the-fold marcadas con .lazy-section
+   le dice al browser "no calcules layout/paint de esto hasta que esté cerca".
+   Reduce drásticamente el trabajo del primer paint. */
+.lazy-section {
+  content-visibility: auto;
+  contain-intrinsic-size: 0 600px;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   GLASS UTILITY CLASSES — reemplazo eficiente de backdrop-filter.
+
+   USO desde React/Chakra:
+     <Box className="glass-card">...</Box>          // card sobre fondo claro
+     <Box className="glass-card-strong">...</Box>   // card sobre imágenes/video
+     <Box className="glass-card-dark">...</Box>     // card sobre hero oscuro
+
+   Desktop: aplica backdrop-filter real (blur) — Mac/PC procesa esto barato.
+   Mobile: cae automáticamente a gradiente con opacidad mayor — sin blur,
+           sin carga GPU continua. Visual ~95% equivalente.
+   ────────────────────────────────────────────────────────────── */
+
+.glass-card {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.78) 0%,
+    color-mix(in srgb, var(--brand-bg) 72%, transparent) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.70);
+  box-shadow: 0 4px 24px color-mix(in srgb, var(--brand-dark) 6%, transparent);
+  border-radius: 16px;
+}
+
+.glass-card-strong {
+  background: linear-gradient(135deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    color-mix(in srgb, var(--brand-bg) 86%, transparent) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 8px 32px color-mix(in srgb, var(--brand-dark) 12%, transparent);
+  border-radius: 16px;
+}
+
+.glass-card-dark {
+  background: linear-gradient(135deg,
+    color-mix(in srgb, var(--brand-dark) 75%, transparent) 0%,
+    color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 60%, transparent) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+  border-radius: 16px;
+  color: #fff;
+}
+
+/* Solo en DESKTOP volvemos a permitir backdrop-filter para que se vea elegante.
+   Mobile ya está bloqueado arriba por el @media de "pointer: coarse". */
+@media (hover: hover) and (pointer: fine) and (min-width: 901px) {
+  .glass-card,
+  .glass-card-strong,
+  .glass-card-dark {
+    /* Reducimos opacidad ahora que el blur sí funciona */
+    background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.55) 0%,
+      rgba(255, 255, 255, 0.40) 100%);
+    backdrop-filter: blur(14px) saturate(160%);
+    -webkit-backdrop-filter: blur(14px) saturate(160%);
+  }
+  .glass-card-strong {
+    background: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.72) 0%,
+      rgba(255, 255, 255, 0.58) 100%);
+    backdrop-filter: blur(18px) saturate(160%);
+    -webkit-backdrop-filter: blur(18px) saturate(160%);
+  }
+  .glass-card-dark {
+    background: linear-gradient(135deg,
+      color-mix(in srgb, var(--brand-dark) 45%, transparent) 0%,
+      color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 35%, transparent) 100%);
+    backdrop-filter: blur(12px) saturate(140%);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+  }
+}
+
+body {
+  background: color-mix(in srgb, var(--brand-bg) 55%, white);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-heading);
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+a{
+  font-family: var(--font-heading);
+  text-transform: uppercase;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+p, li {
+  font-family: var(--font-body);
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.inter {
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+}
+
+.white-gradient {
+  background-image: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+  margin:0 !important;
+  padding: 0 !important;
+}
+
+.zen-section {
+  background: linear-gradient(180deg, color-mix(in srgb, var(--brand-bg) 55%, white) 0%, color-mix(in srgb, var(--brand-primary) 17%, white) 50%, color-mix(in srgb, var(--brand-bg) 55%, white) 100%);
+  padding: 5rem 0;
+}
+
+.blue-color{
+  color: #0f2d5a;
+}
+
+.bg-1{
+  background-image: linear-gradient(to top, #fbc2eb 0%, #a6c1ee 100%);
+  background-image: linear-gradient(to top, #c1dfc4 0%, #deecdd 100%);
+}
+
+.brown-gradient{
+  background-image: linear-gradient(to top, #e6b980 0%, #eacda3 100%);
+  background-image: linear-gradient(to top, #e6b980 0%, #eacda3 100%);
+}
+
+
+
+/* src/components/WhatsAppButton.module.css */
+
+/* Estilo base para el botón (Escritorio) */
+.waButton {
+  /* --- Posición Fija --- */
+  position: fixed;
+  bottom: 25px;
+  right: 25px;
+  z-index: 1000; /* Asegura que esté por encima de todo */
+
+  /* --- Apariencia --- */
+  background-color: #25D366; /* Verde oficial de WhatsApp */
+  color: white;
+  border-radius: 50px; /* Forma de píldora */
+  padding: 12px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  
+  /* --- Contenido (Icono y Texto) --- */
+  display: flex;
+  align-items: center;
+  gap: 10px; /* Espacio entre icono y texto */
+
+  /* --- Otros --- */
+  text-decoration: none;
+  font-family: Arial, sans-serif;
+  font-weight: bold;
+  font-size: 16px;
+  transition: all 0.3s ease;
+}
+
+/* Efecto al pasar el ratón */
+.waButton:hover {
+  transform: scale(1.05); /* Ligeramente más grande */
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.3);
+}
+
+.waIcon {
+  font-size: 24px; /* Tamaño del icono */
+}
+
+
+/* --- ✅ MEDIA QUERY PARA MÓVIL --- */
+/* Cuando la pantalla sea de 768px o menos */
+@media (max-width: 768px) {
+  
+  .waButton {
+    /* Lo convertimos en un círculo perfecto */
+    border-radius: 50%;
+    /* Ajustamos el padding para que sea un círculo */
+    padding: 16px; 
+    bottom: 20px;
+    right: 20px;
+  }
+  
+  .waLabel {
+    /* Ocultamos el texto "Ayuda" en móvil */
+    display: none; 
+  }
+
+  .waIcon {
+     /* Hacemos el icono un poco más grande en el círculo */
+     font-size: 28px;
+     margin: 0;
+  }
+}

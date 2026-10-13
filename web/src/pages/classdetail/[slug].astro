@@ -1,0 +1,12 @@
+---
+// Ficha de clase (español), renderizada en servidor para SEO.
+import ClassDetailPage from '../../components/seo/ClassDetailPage.astro';
+import { getClassBySlug } from '../../seo/catalog';
+import { SSR_CACHE } from '../../seo/site';
+
+const slug = Astro.params.slug || '';
+const cls = await getClassBySlug(slug);
+if (!cls) Astro.response.status = 404;
+Astro.response.headers.set('Cache-Control', SSR_CACHE);
+---
+<ClassDetailPage lang="es" slug={slug} cls={cls} />

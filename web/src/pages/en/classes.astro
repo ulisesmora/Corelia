@@ -1,0 +1,8 @@
+---
+// All classes (English), renderizada en servidor para SEO: ver ClassesPage.
+import ClassesPage from '../../components/seo/ClassesPage.astro';
+import { SSR_CACHE } from '../../seo/site';
+
+Astro.response.headers.set('Cache-Control', SSR_CACHE);
+---
+<ClassesPage lang="en" />

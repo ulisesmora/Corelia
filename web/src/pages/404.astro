@@ -1,0 +1,45 @@
+---
+// Página 404 con la marca del estudio (nombre, colores y fuentes de la config).
+import OptimizedHead from '../components/OptimizedHead.astro';
+import { getSiteConfig } from '../lib/site';
+
+export const prerender = false;
+
+Astro.response.status = 404;
+const site = await getSiteConfig();
+const en = Astro.url.pathname.startsWith('/en');
+---
+<html lang={en ? 'en' : 'es'}>
+  <head>
+    <OptimizedHead title={en ? 'Page not found' : 'Página no encontrada'} noindex />
+    <style is:inline>
+      body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--brand-bg); color: var(--brand-dark); }
+      .nf { max-width: 520px; padding: 2rem 1.25rem; text-align: center; }
+      .nf-logo { max-width: 180px; max-height: 90px; height: auto; margin: 0 auto 1.5rem; display: block; }
+      .nf-name { font-family: var(--font-heading); font-size: 1.6rem; margin: 0 0 1.5rem; color: var(--brand-secondary); }
+      .nf-code { font-family: var(--font-heading); font-size: clamp(4rem, 18vw, 7rem); line-height: 1; margin: 0; color: var(--brand-primary); }
+      .nf h1 { font-family: var(--font-heading); font-size: 1.8rem; margin: .5rem 0 .75rem; }
+      .nf p { line-height: 1.6; margin: 0 0 1.75rem; color: color-mix(in srgb, var(--brand-secondary) 70%, var(--brand-dark)); }
+      .nf-actions { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
+      .nf-actions a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 1.5rem; border-radius: 999px; font-weight: 700; text-decoration: none; }
+      .nf-primary { background: var(--brand-primary); color: #fff; }
+      .nf-secondary { border: 1.5px solid var(--brand-primary); color: var(--brand-dark); }
+    </style>
+  </head>
+  <body>
+    <main class="nf">
+      {site.logo_url
+        ? <img class="nf-logo" src={site.logo_url} alt={site.studio_name} />
+        : <p class="nf-name">{site.studio_name}</p>}
+      <p class="nf-code" aria-hidden="true">404</p>
+      <h1>{en ? 'Page not found' : 'Página no encontrada'}</h1>
+      <p>{en
+        ? "The page you are looking for doesn't exist or has moved."
+        : 'La página que buscas no existe o ha cambiado de sitio.'}</p>
+      <div class="nf-actions">
+        <a class="nf-primary" href={en ? '/en' : '/'}>{en ? 'Back to home' : 'Volver al inicio'}</a>
+        <a class="nf-secondary" href="/calendar">{en ? 'See the timetable' : 'Ver el horario'}</a>
+      </div>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,116 @@
+---
+/**
+ * OptimizedHead — bloque <head> reutilizable con todas las optimizaciones de carga
+ * y la marca del estudio (SiteHead: colores, fuentes, favicon, manifest…).
+ *
+ * El título se pasa SIN el nombre del estudio: se añade solo
+ * ("Horario" → "Horario | Mi Estudio").
+ *
+ * Úsalo así en cada page:
+ *
+ *   ---
+ *   import OptimizedHead from '../components/OptimizedHead.astro';
+ *   ---
+ *   <head>
+ *     <OptimizedHead title="Mi Dashboard" />
+ *     <other-meta />
+ *   </head>
+ */
+import { abs, business } from '../seo/site';
+import { getSiteConfig } from '../lib/site';
+import SiteHead from './SiteHead.astro';
+
+interface Props {
+  /** Título de la página sin el nombre del estudio. */
+  title?: string;
+  /** Título en inglés: se aplica en el cliente al cambiar de idioma. */
+  titleEn?: string;
+  description?: string;
+  /** Si true, NO carga analítica (útil en páginas legales). Default false. */
+  noAnalytics?: boolean;
+  /** Ruta canónica (p. ej. "/calendar"). Solo en páginas públicas. */
+  canonicalPath?: string;
+  /** Páginas privadas (cuenta, pago, formularios con token): fuera de Google. */
+  noindex?: boolean;
+}
+const { title, titleEn, description, noAnalytics = false, canonicalPath, noindex = false } = Astro.props;
+
+const site = await getSiteConfig();
+const withBrand = (t?: string) => (t ? `${t} | ${site.studio_name}` : site.studio_name);
+const fullTitle = withBrand(title);
+const fullTitleEn = titleEn ? withBrand(titleEn) : '';
+const desc = description || business(site).description.es;
+---
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>{fullTitle}</title>
+{fullTitleEn && <meta name="site:title-es" content={fullTitle} />}
+{fullTitleEn && <meta name="site:title-en" content={fullTitleEn} />}
+<meta name="description" content={desc} />
+<meta name="robots" content={noindex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large'} />
+{canonicalPath && !noindex && <link rel="canonical" href={abs(canonicalPath)} />}
+{canonicalPath && !noindex && (
+  <>
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.studio_name} />
+    <meta property="og:url" content={abs(canonicalPath)} />
+    <meta property="og:title" content={fullTitle} />
+    <meta property="og:description" content={desc} />
+    <meta property="og:image" content={business(site).ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+  </>
+)}
+
+<SiteHead noAnalytics={noAnalytics} />
+
+{/* PERF: preconnect en paralelo al HTML → ahorra RTT en móvil 4G/5G */}
+<link rel="preconnect" href="https://js.stripe.com" crossorigin />
+<link rel="dns-prefetch" href="https://api.stripe.com" />
+
+{/* PERF: CSS crítico inline — aplica ANTES del primer paint, sin esperar
+    a que React hidrate. Dirigido a iPhone Safari donde backdrop-filter es la
+    causa principal del calor del dispositivo. */}
+<style is:inline>{`
+  html, body { margin: 0; padding: 0; }
+  @media (hover: none) and (pointer: coarse), (max-width: 900px) {
+    * {
+      backdrop-filter: none !important;
+      -webkit-backdrop-filter: none !important;
+      will-change: auto !important;
+    }
+    /* Reducir motion-trigger en hover (no aplica en touch pero algunos libs lo escuchan) */
+    *:hover {
+      transition-duration: 0.01ms !important;
+    }
+    /* Fallback automático para preservar el look "glass" sin backdrop-filter:
+       sustituye bg translúcido blanco por un gradiente más opaco. Cero coste GPU. */
+    [style*="rgba(255,255,255,0.5"],
+    [style*="rgba(255,255,255,0.6"],
+    [style*="rgba(255,255,255,0.7"],
+    [style*="rgba(255, 255, 255, 0.5"],
+    [style*="rgba(255, 255, 255, 0.6"],
+    [style*="rgba(255, 255, 255, 0.7"] {
+      background: linear-gradient(135deg, rgba(255,255,255,0.92) 0%, color-mix(in srgb, var(--brand-bg) 85%, transparent) 100%) !important;
+    }
+    [style*="rgba(255,255,255,0.1"],
+    [style*="rgba(255,255,255,0.2"],
+    [style*="rgba(255,255,255,0.3"],
+    [style*="rgba(255, 255, 255, 0.1"],
+    [style*="rgba(255, 255, 255, 0.2"],
+    [style*="rgba(255, 255, 255, 0.3"] {
+      background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.18) 100%) !important;
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+  .lazy-section {
+    content-visibility: auto;
+    contain-intrinsic-size: 0 600px;
+  }
+`}</style>

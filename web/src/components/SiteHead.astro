@@ -1,0 +1,72 @@
+---
+/**
+ * SiteHead — marca del estudio en el <head>. Va en TODAS las páginas (directo
+ * o a través de OptimizedHead).
+ *
+ * - Serializa la config del estudio en `window.__SITE__` (la leen los
+ *   componentes React con useSite()/getSiteClient()).
+ * - Variables CSS de marca: --brand-primary, --brand-secondary, --brand-dark,
+ *   --brand-bg, --font-heading, --font-body.
+ * - Carga las dos fuentes de Google Fonts de la config sin bloquear el pintado.
+ * - Favicon, manifest (PWA), theme-color y nombre de la app al instalarla
+ *   (los iconos los genera el backend: /api/v1/site-config/icon/…).
+ * - Analítica opcional: Microsoft Clarity solo si existe PUBLIC_CLARITY_ID.
+ */
+import {
+  ICON_URL, getSiteConfig, googleFontsHref, shortName, siteJsonForScript, themeCss,
+} from '../lib/site';
+
+interface Props {
+  /** Si true, no carga analítica (páginas legales, pagos…). */
+  noAnalytics?: boolean;
+}
+const { noAnalytics = false } = Astro.props;
+
+const site = await getSiteConfig();
+const fontsHref = googleFontsHref(site);
+const appName = shortName(site);
+
+// Clarity: en tiempo de ejecución (process.env) o fijado en el build (import.meta.env)
+const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+const rawClarity = env?.PUBLIC_CLARITY_ID || (import.meta.env.PUBLIC_CLARITY_ID as string | undefined) || '';
+const clarityId = /^[a-z0-9]{4,20}$/i.test(rawClarity) ? rawClarity : '';
+---
+<script is:inline set:html={`window.__SITE__=${siteJsonForScript(site)};`} />
+<style is:inline set:html={`${themeCss(site)}body{font-family:var(--font-body);}`} />
+
+{/* Fuentes de la marca: preconnect + carga no bloqueante (print → all) */}
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href={fontsHref} media="print" onload="this.media='all'" />
+<noscript><link rel="stylesheet" href={fontsHref} /></noscript>
+
+{/* Iconos generados por el backend a partir del icono/logo del estudio */}
+<link rel="icon" type="image/png" sizes="32x32" href={ICON_URL.favicon} />
+{/* PWA: instalable + notificaciones push (manifest generado con la config) */}
+<link rel="manifest" href="/manifest.webmanifest" />
+<meta name="theme-color" content={site.theme.primary} />
+<link rel="apple-touch-icon" sizes="180x180" href={ICON_URL.appleTouch} />
+{/* Nombre bajo el icono al instalar (máx. 12 caracteres para que no se corte):
+    sin esto iOS usa el <title> de la página */}
+<meta name="apple-mobile-web-app-title" content={appName} />
+<meta name="application-name" content={appName} />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="default" />
+
+{!noAnalytics && clarityId && (
+  <script is:inline define:vars={{ clarityId }}>
+    // Clarity diferido a requestIdleCallback: no bloquea el primer pintado.
+    (function () {
+      var load = function () {
+        (function (c, l, a, r, i, t, y) {
+          c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments); };
+          t = l.createElement(r); t.async = 1; t.src = 'https://www.clarity.ms/tag/' + i;
+          y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
+        })(window, document, 'clarity', 'script', clarityId);
+      };
+      if ('requestIdleCallback' in window) requestIdleCallback(load, { timeout: 4000 });
+      else setTimeout(load, 2500);
+    })();
+  </script>
+)}

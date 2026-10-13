@@ -1,0 +1,267 @@
+---
+// Portada (ES en / y EN en /en). Se renderiza en servidor en cada petición:
+// nombre, colores, logo y textos salen de la config del estudio y el catálogo
+// de la API, así que el build no necesita el backend y re-marcar la web no
+// requiere redesplegar.
+import WelcomeSection from '../WelcomeSection';
+import App from '../App';
+import HorizontalScrollText from '../HorizontalScrollText';
+import ContactSection from '../Contact';
+import HeroWithVideo from '../VideoComponent';
+import OurClasses from '../OurClasses';
+import Team from '../Team';
+import RoomsSection from '../RoomsSection';
+import SuscriptionPlans from '../SuscriptionPlans';
+import Footer from '../Footer';
+import SiteHead from '../SiteHead.astro';
+import { PhoneUpdateDialogDeferred, PushNotificationsDeferred } from '../Deferred';
+import JsonLd from '../seo/JsonLd.astro';
+import FaqList from '../sections/FaqList.astro';
+import Testimonials from '../sections/Testimonials.astro';
+import Location from '../sections/Location.astro';
+import { abs, business, businessJsonLd, classPath, faqJsonLd, niceTitle, origin, type Lang } from '../../seo/site';
+import {
+  getClassTypes, getFaqs, getInstructors, getPlans, getRooms, getSchedules, getSiteImages,
+  getTestimonials, offeredClasses, tr,
+} from '../../seo/catalog';
+import { getSiteConfig, lt } from '../../lib/site';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const es = lang === 'es';
+
+// Todo el contenido se carga en el servidor, en paralelo y con tolerancia a
+// fallos (cada función devuelve null/[] si la API no responde). Las islas de
+// React lo reciben como props: el HTML del servidor ya trae clases, equipo,
+// salas, precios, FAQs y opiniones (buscadores e IA) y no repiten el fetch.
+const [site, classes, schedules, instructors, rooms, plans, faqs, testimonials, gallery, heroImgs] = await Promise.all([
+  getSiteConfig(), getClassTypes(), getSchedules(), getInstructors(), getRooms(), getPlans(),
+  getFaqs('home'), getTestimonials(), getSiteImages('gallery'), getSiteImages('hero'),
+]);
+const offered = offeredClasses(classes, schedules);
+const b = business(site);
+const hero = heroImgs[0]?.image || '';
+const headline = (es ? site.tagline : site.tagline_en) || (es ? 'Pilates, Yoga y movimiento' : 'Pilates, Yoga and movement');
+// Textos del hero del panel (Ajustes → Contenido de la web)
+const heroTitle = lt(site.content, 'hero_title', lang);
+const heroSubtitle = lt(site.content, 'hero_subtitle', lang);
+// Cinta de texto: nombres de las clases que se ofrecen (sin repetir)
+const classNames = [...new Set(offered.map(({ cls }) => niceTitle(tr(cls, 'title', lang))))].slice(0, 8);
+const activeRooms = (rooms || []).filter((r) => r.is_active !== false);
+const PAGE = {
+  url: abs(es ? '/' : '/en'),
+  title: `${site.studio_name} · ${headline}`,
+  description: b.description[lang],
+  ogImage: b.ogImage,
+};
+const jsonLd = [
+  businessJsonLd(site, lang, { schedules, instructors, plans }),
+  {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    '@id': `${origin()}/#website`,
+    name: site.studio_name,
+    url: PAGE.url,
+    inLanguage: lang,
+    publisher: { '@id': b.id },
+  },
+  faqJsonLd(faqs, lang),
+].filter(Boolean);
+const heroBg = hero
+  ? `center / cover no-repeat url("${hero.replace(/"/g, '%22')}")`
+  : 'linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-secondary) 55%, var(--brand-primary) 100%)';
+const L = es
+  ? { book: 'Reserva ya', explore: 'Explorar clases', prices: 'Ver precios', classes: 'Clases', team: 'Nuestro equipo', rooms: 'Nuestras salas', contact: 'Contacto y ubicación', allClasses: 'Todas las clases' }
+  : { book: 'Book now', explore: 'Explore classes', prices: 'View prices', classes: 'Classes', team: 'Our team', rooms: 'Our studios', contact: 'Contact and location', allClasses: 'All classes' };
+---
+
+<html lang={lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{PAGE.title}</title>
+    <meta name="description" content={PAGE.description} />
+    <link rel="canonical" href={PAGE.url} />
+    <link rel="alternate" hreflang="es" href={abs('/')} />
+    <link rel="alternate" hreflang="en" href={abs('/en')} />
+    <link rel="alternate" hreflang="x-default" href={abs('/')} />
+    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <SiteHead />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={site.studio_name} />
+    <meta property="og:locale" content={es ? 'es_ES' : 'en_GB'} />
+    <meta property="og:title" content={PAGE.title} />
+    <meta property="og:description" content={PAGE.description} />
+    <meta property="og:url" content={PAGE.url} />
+    <meta property="og:image" content={PAGE.ogImage} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={PAGE.title} />
+    <meta name="twitter:description" content={PAGE.description} />
+    <meta name="twitter:image" content={PAGE.ogImage} />
+
+    <!-- PERF: resource hints — el browser empieza a abrir conexiones en paralelo
+         con el HTML, ahorrando 100-300ms de RTT en móvil 4G/5G. -->
+    <link rel="preconnect" href="https://js.stripe.com" crossorigin>
+    <link rel="dns-prefetch" href="https://js.stripe.com">
+    {hero && <link rel="preload" as="image" href={hero} fetchpriority="high" />}
+    {site.logo_light_url && <link rel="preload" as="image" href={site.logo_light_url} fetchpriority="high" />}
+
+    <style is:inline set:html={`.hero-ssr{background:${heroBg};}`} />
+    <style is:inline>
+      /* Réplica en HTML del hero (VideoComponent) mientras carga React: se ve al
+         instante y es lo que mide Google como carga principal (LCP). */
+      .hero-ssr { position: relative; width: 100%; height: 100vh; overflow: hidden; font-family: var(--font-body); }
+      .hero-ssr-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
+      .hero-ssr-content { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 0 24px; text-align: center; }
+      .hero-ssr-content img { width: 280px; max-width: 70vw; height: auto; }
+      .hero-ssr-name { color: #fff; font-family: var(--font-heading); font-size: clamp(3rem, 9vw, 4.5rem); line-height: 1; letter-spacing: .02em; text-shadow: 0 2px 20px rgba(0,0,0,0.3); }
+      .hero-ssr-title { color: #fff; font-family: var(--font-heading); font-size: clamp(1.9rem, 6vw, 3.75rem); font-weight: 700; line-height: 1.1; letter-spacing: .02em; margin: 0; text-shadow: 0 2px 20px rgba(0,0,0,0.3); }
+      .hero-ssr-sub { color: rgba(255,255,255,0.92); font-size: clamp(1rem, 2.4vw, 1.25rem); max-width: 600px; margin: 0; text-shadow: 0 1px 10px rgba(0,0,0,0.2); }
+      .hero-ssr-h1 { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+      .hero-ssr-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 0 40px; height: 56px; border-radius: 999px; color: #fff; font-size: 1.125rem; font-weight: 700; text-decoration: none; background: linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))); border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 8px 30px color-mix(in srgb, var(--brand-primary) 45%, transparent); }
+      .hero-ssr-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+      .hero-ssr-ghost { display: inline-flex; align-items: center; height: 40px; padding: 0 24px; border-radius: 999px; color: #fff; font-size: 0.875rem; font-weight: 600; text-decoration: none; background: rgba(255,255,255,0.10); border: 1.5px solid rgba(255,255,255,0.55); }
+    </style>
+    {jsonLd.map((d) => <JsonLd data={d} />)}
+
+    <!-- PERF móvil — bloque CSS crítico inline. Apaga backdrop-filter en iPhone
+         y respeta reduced-motion. Aplica ANTES del primer paint, sin esperar
+         a que React hidrate ni a que llegue el CSS bundle. -->
+    <style is:inline>{`
+      @media (hover: none) and (pointer: coarse), (max-width: 900px) {
+        * {
+          backdrop-filter: none !important;
+          -webkit-backdrop-filter: none !important;
+          will-change: auto !important;
+        }
+        /* Fallback automático: cualquier elemento con bg rgba blanco translúcido
+           obtiene un gradiente más opaco para preservar el efecto "card flotante"
+           sin necesitar backdrop-filter. */
+        [style*="rgba(255,255,255,0.5"],
+        [style*="rgba(255,255,255,0.6"],
+        [style*="rgba(255,255,255,0.7"],
+        [style*="rgba(255, 255, 255, 0.5"],
+        [style*="rgba(255, 255, 255, 0.6"],
+        [style*="rgba(255, 255, 255, 0.7"] {
+          background: linear-gradient(135deg, rgba(255,255,255,0.92) 0%, color-mix(in srgb, var(--brand-bg) 85%, transparent) 100%) !important;
+        }
+        /* Versión más sutil para overlays oscuros sobre video/imagen */
+        [style*="rgba(255,255,255,0.1"],
+        [style*="rgba(255,255,255,0.2"],
+        [style*="rgba(255,255,255,0.3"],
+        [style*="rgba(255, 255, 255, 0.1"],
+        [style*="rgba(255, 255, 255, 0.2"],
+        [style*="rgba(255, 255, 255, 0.3"] {
+          background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.18) 100%) !important;
+        }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *::before, *::after {
+          animation-duration: 0.01ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 0.01ms !important;
+          scroll-behavior: auto !important;
+        }
+      }
+      .lazy-section {
+        content-visibility: auto;
+        contain-intrinsic-size: 0 600px;
+      }
+    `}</style>
+
+    {/* Idioma: la URL /en es la versión inglesa. Fijamos "en" en el store
+        persistido (zustand · clave site.lang) ANTES de que hidraten las islas,
+        así todo lo que pinta React sale ya en inglés y sin parpadeo. */}
+    {!es && (
+      <script is:inline>
+        try {
+          localStorage.setItem('site.lang', JSON.stringify({ state: { lang: 'en' }, version: 1 }));
+          localStorage.setItem('language_setup_complete', 'true');
+        } catch (e) {}
+        document.documentElement.lang = 'en';
+      </script>
+    )}
+  </head>
+
+  <body class="format">
+    {/* ABOVE THE FOLD — eager (client:only):
+        Hidratan inmediatamente porque el usuario los ve al cargar.
+        App necesita auth state al mount. HeroWithVideo pinta el hero. */}
+    <App client:only="react" />
+    <HeroWithVideo client:only="react">
+      <div slot="fallback" class="hero-ssr">
+        <div class="hero-ssr-overlay"></div>
+        <div class="hero-ssr-content">
+          {site.logo_light_url
+            ? <img src={site.logo_light_url} width="280" alt={site.studio_name} fetchpriority="high" />
+            : <span class="hero-ssr-name" aria-hidden="true">{site.studio_name}</span>}
+          {heroTitle
+            ? <h1 class="hero-ssr-title">{heroTitle}</h1>
+            : <h1 class="hero-ssr-h1">{site.studio_name} · {headline}</h1>}
+          {heroSubtitle && <p class="hero-ssr-sub">{heroSubtitle}</p>}
+          <a class="hero-ssr-cta" href="/calendar">{L.book} <span aria-hidden="true">→</span></a>
+          <div class="hero-ssr-row">
+            <a class="hero-ssr-ghost" href={es ? '/classes' : '/en/classes'}>{L.explore}</a>
+            <a class="hero-ssr-ghost" href="/prices">{L.prices}</a>
+          </div>
+        </div>
+      </div>
+    </HeroWithVideo>
+
+    {/* BELOW THE FOLD — lazy con client:visible (IntersectionObserver de Astro):
+        - Astro renderiza el HTML en el servidor.
+        - El JS NO se descarga hasta que el componente está cerca del viewport.
+        - Una vez hidratado se queda montado, NO se desmonta al scrollear fuera.
+        - Cada sección reserva min-height para evitar Cumulative Layout Shift. */}
+
+    {/* Contenido renderizado en el servidor (client:visible con datos
+        iniciales): el HTML ya trae el texto; el JS de cada sección se descarga
+        cuando se acerca a la pantalla y la hace interactiva. */}
+    <div class="white-gradient">
+      <WelcomeSection client:visible lang={lang} initialImages={gallery.map((g) => g.image)} />
+      <HorizontalScrollText client:visible={{ rootMargin: "600px" }} lang={lang} phrases={classNames} />
+    </div>
+
+    <section id="clases" aria-label={L.classes}>
+      <OurClasses client:visible={{ rootMargin: "600px" }} lang={lang} initialClasses={classes || []} />
+      {offered.length > 0 && (
+        <nav class="class-links" aria-label={L.allClasses}>
+          {offered.map(({ cls }) => <a href={classPath(cls.slug, lang)}>{niceTitle(tr(cls, 'title', lang))}</a>)}
+        </nav>
+      )}
+    </section>
+
+    <section id="team" aria-label={L.team}>
+      <Team client:visible={{ rootMargin: "600px" }} lang={lang} initialInstructors={instructors || []} />
+    </section>
+
+    <section id="salas" aria-label={L.rooms}>
+      <RoomsSection client:visible={{ rootMargin: "600px" }} lang={lang} initialRooms={activeRooms} />
+    </section>
+
+    <div class="white-gradient">
+      <section id="precios">
+        <SuscriptionPlans client:visible={{ rootMargin: "600px" }} lang={lang} initialPlans={plans} />
+      </section>
+
+      <Testimonials items={testimonials} lang={lang} />
+      <FaqList faqs={faqs} lang={lang} />
+
+      <section id="contacto" aria-label={L.contact}>
+        <ContactSection client:visible={{ rootMargin: "600px" }} lang={lang} />
+        <Location site={site} lang={lang} />
+      </section>
+    </div>
+
+    <Footer client:visible={{ rootMargin: "600px" }} lang={lang} />
+    <PhoneUpdateDialogDeferred client:idle />
+    <PushNotificationsDeferred client:idle />
+
+    <style>
+      /* Todas las clases como enlaces (las fichas): el carrusel solo enseña unas pocas */
+      .class-links { max-width: 1100px; margin: -1rem auto 3rem; padding: 0 1.25rem; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
+      .class-links a { font-family: var(--font-body); text-transform: none; font-size: .9rem; font-weight: 600; padding: .45rem .9rem; border-radius: 999px; text-decoration: none; color: var(--brand-dark); background: rgba(255,255,255,.75); border: 1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent); }
+      .class-links a:hover { border-color: var(--brand-primary); }
+    </style>
+  </body>
+</html>

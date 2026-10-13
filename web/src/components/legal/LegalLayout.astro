@@ -1,0 +1,46 @@
+---
+// Marco común de las páginas legales (términos, privacidad, promociones).
+// Los datos del titular salen de la config del estudio (panel → Ajustes). Si
+// faltan los datos legales se muestra un aviso visible, sin romper la página.
+import SiteHead from '../SiteHead.astro';
+import { getSiteConfig } from '../../lib/site';
+
+interface Props { title: string; lang: 'es' | 'en' }
+const { title, lang } = Astro.props;
+const es = lang === 'es';
+const site = await getSiteConfig();
+const missingLegal = !site.legal.name || !site.legal.tax_id;
+---
+<!DOCTYPE html>
+<html lang={lang}>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} | {site.studio_name}</title>
+  <meta name="robots" content="noindex, nofollow" />
+  <SiteHead noAnalytics />
+  <style is:inline>
+    body { line-height: 1.6; color: #333; background: #fff; max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    h1, h2, h3 { color: var(--brand-dark); font-family: var(--font-heading); }
+    h1 { border-bottom: 2px solid color-mix(in srgb, var(--brand-primary) 35%, white); padding-bottom: 10px; }
+    ul, ol { margin-bottom: 20px; }
+    a { color: var(--brand-secondary); }
+    .legal-back { display: inline-block; margin-bottom: 1.5rem; font-size: .95rem; }
+    .legal-warning { border: 2px solid #B7791F; background: #FFF4E5; color: #7C2D12; border-radius: 12px; padding: 14px 18px; margin: 0 0 2rem; font-weight: 600; }
+    .legal-missing { background: #FFF4E5; color: #7C2D12; padding: 0 4px; border-radius: 4px; }
+  </style>
+</head>
+<body>
+  <main>
+    <a class="legal-back" href={es ? '/' : '/en'}>← {site.studio_name}</a>
+    {missingLegal && (
+      <div class="legal-warning" role="alert">
+        {es
+          ? 'Completa tus datos legales en el panel → Ajustes (nombre o razón social y NIF/CIF). Mientras tanto, esta página está incompleta.'
+          : 'Complete your legal details in the admin panel → Settings (legal name and tax ID). Until then, this page is incomplete.'}
+      </div>
+    )}
+    <slot />
+  </main>
+</body>
+</html>

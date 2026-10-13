@@ -1,0 +1,23 @@
+---
+import Footer from '../components/Footer';
+import AppFixed from '../components/AppFixed';
+import CheckoutPage from '../components/CheckoutPage';
+import PageLoader from '../components/PageLoader.astro';
+import OptimizedHead from '../components/OptimizedHead.astro';
+---
+
+<html lang="es">
+  <head>
+    <OptimizedHead title="Finalizar reserva" titleEn="Checkout" noindex />
+  </head>
+  <body class="format">
+    <PageLoader minMs={300} maxMs={4000} />
+    <AppFixed client:only="react" />
+
+    <main id="contenido" style="">
+      <CheckoutPage client:only="react"/>
+    </main>
+
+    <Footer client:only="react" />
+  </body>
+</html>

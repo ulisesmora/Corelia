@@ -1,0 +1,5 @@
+# Dependencias a las que pnpm deja ejecutar su script de instalación
+# (binarios nativos que usa Vite para compilar)
+allowBuilds:
+  '@swc/core': true
+  esbuild: true

@@ -1,0 +1,30 @@
+---
+import Footer from '../components/Footer';
+import AppFixed from '../components/AppFixed';
+import CalendarViewPage from '../components/CalendarSection';
+import OptimizedHead from '../components/OptimizedHead.astro';
+import PageLoader from '../components/PageLoader.astro';
+---
+
+<html lang="es">
+  <head>
+    <OptimizedHead
+      title="Horario de clases"
+      titleEn="Class timetable"
+      description="Horario semanal de clases: mira las plazas libres y reserva online en un momento."
+      canonicalPath="/calendar"
+    />
+  </head>
+  <body class="format">
+    <PageLoader minMs={300} maxMs={4000} />
+    <AppFixed client:only="react" />
+
+    <main id="contenido" style="">
+      <CalendarViewPage client:only="react"/>
+
+   
+    </main>
+
+    <Footer client:only="react" />
+  </body>
+</html>

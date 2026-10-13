@@ -1,0 +1,38 @@
+---
+// Condiciones de promociones y cupones. El titular sale de la config del estudio.
+import LegalLayout from '../components/legal/LegalLayout.astro';
+import { getSiteConfig } from '../lib/site';
+
+const site = await getSiteConfig();
+const who = site.studio_name;
+---
+<LegalLayout title="Términos de Promociones y Cupones" lang="es">
+  <h1>Términos y Condiciones de Promociones y Cupones</h1>
+
+  <p>Estos términos y condiciones regulan el uso de las promociones, descuentos y cupones ofrecidos por <strong>{who}</strong> a través de su sitio web. Al utilizar un cupón o promoción, el usuario acepta estas condiciones.</p>
+
+  <h2>1. Disposiciones Generales</h2>
+  <ul>
+    <li><strong>Validez de la promoción:</strong> cada cupón o código promocional tiene un período de validez que se indica en la promoción (hasta una fecha determinada o por un número de usos). Pasado ese plazo, el cupón no podrá utilizarse.</li>
+    <li><strong>No acumulables:</strong> los cupones y promociones no son acumulables entre sí. Solo se puede aplicar un cupón por compra o reserva.</li>
+    <li><strong>No canjeables:</strong> los cupones no tienen valor monetario y no pueden canjearse por dinero en efectivo.</li>
+  </ul>
+
+  <h2>2. Restricciones y Uso</h2>
+  <ul>
+    <li><strong>Uso personal e intransferible:</strong> los cupones están destinados a una única persona y no pueden transferirse, venderse ni cederse a terceros.</li>
+    <li><strong>Límite por cliente:</strong> cada cupón o promoción está limitado a un único uso por persona, correo electrónico y/o cuenta de usuario, incluidas las cuentas creadas con distintos correos que pertenezcan a la misma persona.</li>
+    <li><strong>Promociones de primer uso:</strong> los cupones para «nuevos clientes» o «primera reserva» están limitados a una única vez por cliente, aunque se cree una cuenta nueva.</li>
+    <li><strong>Detección de fraude:</strong> {who} se reserva el derecho de anular cualquier cupón o promoción si detecta un uso fraudulento o indebido, como la creación de varias cuentas para aprovechar el mismo descuento.</li>
+  </ul>
+
+  <h2>3. Proceso de Uso</h2>
+  <p>Para aplicar la promoción, introduce el código del cupón en el campo correspondiente durante la reserva o la compra. El descuento se aplicará automáticamente.</p>
+  <p>Cualquier intento de modificar, duplicar o manipular un cupón supondrá su anulación.</p>
+
+  <h2>4. Cambios y Cancelaciones</h2>
+  <ul>
+    <li>{who} se reserva el derecho de modificar o cancelar cualquier promoción o cupón en cualquier momento, sin previo aviso, cuando sea necesario por razones técnicas, operativas o de fuerza mayor.</li>
+    <li>Si se cancela una clase o servicio adquirido con un cupón, se devolverá al cliente el valor de la sesión, pero el cupón no podrá reutilizarse.</li>
+  </ul>
+</LegalLayout>
