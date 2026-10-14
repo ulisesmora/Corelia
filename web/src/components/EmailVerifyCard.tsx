@@ -1,21 +1,22 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from 'react';
-import { FaCheckCircle, FaEnvelope } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { useLangStore } from './stores/lang.store';
 import { API_ROOT } from '../config';
 import { getSiteClient } from '../lib/site';
 
 const API = `${API_ROOT}/`;
 
+// Solo tokens del estilo visual (presets.css): se lee igual en estilos oscuros.
 const C = {
-  brand: 'var(--brand-primary)',
-  brandDark: 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  muted: 'color-mix(in srgb, var(--brand-secondary) 64%, var(--brand-dark))',
-  ok: '#2D7D46',
-  warn: '#B7791F',
-  err: '#B42318',
+  brand: 'var(--accent)',
+  brandDark: 'var(--accent-text)',
+  brown: 'var(--page-text)',
+  muted: 'var(--text-muted)',
+  ok: 'var(--success)',
+  warn: 'var(--warning)',
+  err: 'var(--danger)',
 };
 
 function token(): string | null {
@@ -231,11 +232,11 @@ export default function EmailVerifyCard({
     return (
       <div role="status" style={{
         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
-        padding: '14px 16px', borderRadius: 16, background: 'rgba(45,125,70,0.08)',
-        border: '1px solid rgba(45,125,70,0.25)', color: C.ok, fontWeight: 700,
+        padding: '14px 16px', borderRadius: 'var(--radius-card)', background: 'var(--success-soft)',
+        border: '1px solid color-mix(in srgb, var(--success) 30%, transparent)', color: C.ok, fontWeight: 700,
         fontFamily: 'var(--font-body)', textAlign: 'center',
       }}>
-        <FaCheckCircle aria-hidden /> {tx.done}
+        <Icon name="check-circle" aria-hidden /> {tx.done}
       </div>
     );
   }
@@ -243,19 +244,15 @@ export default function EmailVerifyCard({
   const canSubmit = !busy && code.length === 6;
 
   return (
-    <div style={{
-      padding: 18, borderRadius: 20, background: '#fff',
-      border: '1px solid color-mix(in srgb, var(--brand-primary) 30%, white)', boxShadow: '0 6px 24px color-mix(in srgb, var(--brand-dark) 8%, transparent)',
-      fontFamily: 'var(--font-body)',
-    }}>
+    <div className="sk-card" style={{ padding: 18, fontFamily: 'var(--font-body)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 6 }}>
         <span aria-hidden style={{
-          width: 36, height: 36, borderRadius: 999, background: 'color-mix(in srgb, var(--brand-primary) 18%, white)', color: C.brandDark,
+          width: 36, height: 36, borderRadius: 999, background: 'var(--accent-soft)', color: C.brandDark,
           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
         }}>
-          <FaEnvelope />
+          <Icon name="mail" />
         </span>
-        <div style={{ fontWeight: 800, fontSize: '1.05rem', color: C.brown }}>{tx.title}</div>
+        <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--heading-color)' }}>{tx.title}</div>
       </div>
       <div id={descId} style={{ fontSize: '0.9rem', color: C.muted, lineHeight: 1.5, marginBottom: 12 }}>
         {variant === 'gate' ? tx.descGate : tx.desc(email)}
@@ -285,22 +282,23 @@ export default function EmailVerifyCard({
           disabled={busy}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } }}
           style={{
-            flex: 1, minWidth: 0, height: 56, borderRadius: 14, textAlign: 'center',
+            flex: 1, minWidth: 0, height: 56, borderRadius: 'var(--radius-input)', textAlign: 'center',
             fontSize: '1.6rem', letterSpacing: '0.4em', fontWeight: 800, color: C.brown,
-            border: `2px solid ${error ? C.err : 'var(--brand-primary)'}`,
-            fontFamily: '"Courier New", monospace', background: 'color-mix(in srgb, var(--brand-bg) 55%, white)',
+            border: `2px solid ${error ? C.err : C.brand}`,
+            fontFamily: '"Courier New", monospace', background: 'var(--input-bg)',
           }}
         />
+        {/* Acabado (fondo, texto, borde, radio, sombra) de la clase sk-btn */}
         <button
           type="button"
+          className="sk-btn"
           onClick={() => submit()}
           disabled={!canSubmit}
           aria-busy={busy || undefined}
           style={{
-            flexShrink: 0, minWidth: 116, minHeight: 56, borderRadius: 14, border: 'none',
+            flexShrink: 0, minWidth: 116, minHeight: 56,
             cursor: canSubmit ? 'pointer' : 'not-allowed',
-            background: C.brandDark, color: '#fff',
-            fontWeight: 800, fontSize: '0.95rem', opacity: canSubmit ? 1 : 0.6,
+            fontSize: '0.95rem',
             fontFamily: 'var(--font-body)',
           }}
         >

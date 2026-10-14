@@ -21,10 +21,10 @@ interface Props {
   minMs?: number;
   /** Timeout duro en ms tras el cual se oculta sí o sí. Default 6000. */
   maxMs?: number;
-  /** Color de fondo del overlay. Default beige de la marca. */
+  /** Color de fondo del overlay. Default: el fondo de página del estilo visual. */
   bg?: string;
 }
-const { minMs = 250, maxMs = 3000, bg = 'var(--brand-bg)' } = Astro.props;
+const { minMs = 250, maxMs = 3000, bg = 'var(--page-bg)' } = Astro.props;
 import { getSiteConfig } from '../lib/site';
 const site = await getSiteConfig();
 ---
@@ -83,7 +83,7 @@ const site = await getSiteConfig();
   #page-loader .pl-name {
     font-family: var(--font-heading);
     font-size: clamp(1.8rem, 7vw, 2.6rem);
-    color: var(--brand-secondary);
+    color: var(--accent-text);
     letter-spacing: .02em;
     text-align: center;
     padding: 0 1.5rem;
@@ -94,8 +94,8 @@ const site = await getSiteConfig();
     width: 28px;
     height: 28px;
     border-radius: 50%;
-    border: 2.5px solid color-mix(in srgb, var(--brand-primary) 18%, transparent);
-    border-top-color: var(--brand-primary);
+    border: 2.5px solid var(--accent-soft);
+    border-top-color: var(--accent);
     animation: pl-spin 0.8s linear infinite;
   }
 

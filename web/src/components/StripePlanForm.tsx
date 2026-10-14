@@ -5,8 +5,8 @@ import {
   EmbeddedCheckoutProvider,
   EmbeddedCheckout
 } from '@stripe/react-stripe-js';
-import { Box, Spinner, Center, Text, Alert, Icon } from '@chakra-ui/react';
-import { FaExclamationTriangle } from 'react-icons/fa';
+import { Box, Spinner, Center, Text, Alert } from '@chakra-ui/react';
+import { Icon } from './ui/Icon';
 import { useT } from '../i18n';
 import PaymentsDisabledNotice from './PaymentsDisabledNotice';
 import { getStripe, isPaymentsDisabled, paymentsEnabled } from '../utils/payments';
@@ -104,15 +104,15 @@ const StripePlanForm = ({ planId, couponCode }: StripePlanFormProps) => {
   if (loading) {
     return (
       <Center py={10}>
-        <Spinner size="xl" color="var(--brand-secondary)" />
+        <Spinner size="xl" color="var(--accent)" />
       </Center>
     );
   }
 
   if (error) {
     return (
-       <Alert.Root status="error" rounded="md">
-        <Alert.Indicator> <Icon as={FaExclamationTriangle} /> </Alert.Indicator>
+       <Alert.Root status="error" rounded="var(--radius-input)">
+        <Alert.Indicator> <Icon name="warning" /> </Alert.Indicator>
         <Alert.Title>
           {error}
         </Alert.Title>
@@ -121,11 +121,13 @@ const StripePlanForm = ({ planId, couponCode }: StripePlanFormProps) => {
   }
 
   if (!clientSecret) {
-    return <Text color="red.500">{t('checkout.payFormError')}</Text>;
+    return <Text color="var(--danger)">{t('checkout.payFormError')}</Text>;
   }
 
   return (
-    <Box id="checkout" w="full">
+    // El iframe de Stripe no se puede oscurecer: va SIEMPRE sobre una
+    // superficie clara fija (también en energy/neon) para que se lea.
+    <Box id="checkout" w="full" bg="#fff" color="#1a1a1a" borderRadius="var(--radius-input)" overflow="hidden">
       {/* key: el provider de Stripe no admite cambiar el clientSecret una vez
           montado — al regenerar la sesión (cupón aplicado) se remonta entero. */}
       <EmbeddedCheckoutProvider

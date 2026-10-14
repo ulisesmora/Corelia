@@ -3,6 +3,7 @@ import { Alert, Box, Button, CircularProgress, Paper, Stack, Tab } from '@mui/ma
 import { PageIntro, SectionTabs, useNotify } from '../components/guide';
 import ContentSection from '../components/setup/ContentSection';
 import DomainSection from '../components/setup/DomainSection';
+import PushSection from '../components/setup/PushSection';
 import EmailSection from '../components/setup/EmailSection';
 import FaqEditor from '../components/setup/FaqEditor';
 import GoogleSection from '../components/setup/GoogleSection';
@@ -13,12 +14,12 @@ import StyleSection from '../components/setup/StyleSection';
 import { loadSettings, saveSettings, type StudioSettings as Settings } from '../components/setup/api';
 import { useSite } from '../site/SiteProvider';
 
-// Pestañas: 0 Mi estudio · 1 Aspecto · 2 Textos · 3 Preguntas · 4 Opiniones · 5 Emails · 6 Pagos · 7 Google · 8 Dominio
+// Pestañas: 0 Mi estudio · 1 Aspecto · 2 Textos · 3 Preguntas · 4 Opiniones · 5 Emails · 6 Avisos al móvil · 7 Pagos · 8 Google · 9 Dominio
 const STUDIO_FIELDS = [
   'studio_name', 'logo_url', 'icon_url', 'phone', 'whatsapp', 'contact_email', 'instagram',
   'address', 'city', 'postal_code', 'area_served', 'maps_url', 'legal_name', 'tax_id',
 ] as const;
-const STYLE_FIELDS = ['color_primary', 'color_secondary', 'color_dark', 'color_background', 'font_heading', 'font_body'] as const;
+const STYLE_FIELDS = ['style_preset', 'icon_style', 'color_primary', 'color_secondary', 'color_dark', 'color_background', 'font_heading', 'font_body'] as const;
 const CONTENT_FIELDS = [
   'hero_title', 'hero_title_en', 'hero_subtitle', 'hero_subtitle_en', 'about_title', 'about_title_en',
   'about_text', 'about_text_en', 'about_image_url', 'description', 'description_en', 'tagline', 'tagline_en',
@@ -80,6 +81,7 @@ export default function StudioSettings() {
         <Tab label="Preguntas frecuentes" />
         <Tab label="Opiniones" />
         <Tab label="Emails" />
+        <Tab label="Avisos al móvil" />
         <Tab label="Pagos online" />
         <Tab label="Acceso con Google" />
         <Tab label="Tu dominio" />
@@ -91,9 +93,10 @@ export default function StudioSettings() {
         {tab === 3 && <FaqEditor />}
         {tab === 4 && <TestimonialEditor />}
         {tab === 5 && <EmailSection value={settings} onSaved={onSaved} />}
-        {tab === 6 && <PaymentsSection value={settings} onSaved={onSaved} />}
-        {tab === 7 && <GoogleSection value={settings} onSaved={onSaved} />}
-        {tab === 8 && <DomainSection value={settings} onSaved={onSaved} />}
+        {tab === 6 && <PushSection value={settings} />}
+        {tab === 7 && <PaymentsSection value={settings} onSaved={onSaved} />}
+        {tab === 8 && <GoogleSection value={settings} onSaved={onSaved} />}
+        {tab === 9 && <DomainSection value={settings} onSaved={onSaved} />}
         {isForm && (
           <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
             <Button variant="contained" size="large" onClick={save} disabled={!dirty || saving || uploading}

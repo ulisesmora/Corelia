@@ -5,7 +5,7 @@ import { motion } from 'framer-motion';
 import Chakra from './ChakraProvider';
 import ImageSlider from './ImageSlider/ImageCarrousel';
 import { useT } from '../i18n/index';
-import { FaArrowRight, FaLeaf } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { lt, useSite } from '../lib/site';
 import { useLangStore, withSsrLang } from './stores/lang.store';
 
@@ -39,7 +39,7 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
         px={{ base: 5, md: 8, lg: 12 }}
         position="relative"
         overflow="hidden"
-        bg="linear-gradient(150deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 45%, color-mix(in srgb, var(--brand-primary) 25%, white) 100%)"
+        bg="var(--section-bg)"
       >
         {/* Grain texture overlay */}
         <Box
@@ -80,15 +80,15 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
             {/* Etiqueta con la ciudad o el lema del estudio (si los hay) */}
             {(site.contact.city || lt(site, 'tagline', lang)) && (
             <MotionBox variants={fadeUp} mb={5}>
+              {/* Etiqueta (eyebrow): fondo, color, borde y mayúsculas del estilo */}
               <Flex
+                className="sk-eyebrow"
                 display="inline-flex" align="center" gap={2}
-                px={4} py={1.5} borderRadius="full"
-                bg="color-mix(in srgb, var(--brand-primary) 12%, transparent)"
-                border="1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)"
+                px={4} py={1.5}
               >
-                <FaLeaf size={11} color="var(--brand-primary)" />
-                <Text fontSize="11px" fontWeight={700} color="var(--brand-primary)"
-                  fontFamily='var(--font-body)' letterSpacing="0.10em" textTransform="uppercase">
+                <Icon name="leaf" size={11} />
+                <Text fontSize="11px" fontWeight={700}
+                  fontFamily='var(--font-body)'>
                   {site.contact.city || lt(site, 'tagline', lang)}
                 </Text>
               </Flex>
@@ -99,9 +99,10 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
             <MotionText
               variants={fadeUp}
               as="h2"
+              className="sk-section-title"
               fontSize={{ base: '4xl', sm: '5xl', md: '6xl', lg: '7xl' }}
               fontFamily='var(--font-heading)'
-              color="var(--brand-dark)"
+              color="var(--heading-color)"
               letterSpacing="0.03em"
               lineHeight="0.95"
               mb={3}
@@ -112,7 +113,7 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
             {/* Decorative line */}
             <MotionBox variants={fadeUp} mb={6}>
               <Box w="56px" h="2px" borderRadius="full"
-                bg="linear-gradient(90deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 20%, transparent))" />
+                bg="linear-gradient(90deg, var(--accent), color-mix(in srgb, var(--accent) 20%, transparent))" />
             </MotionBox>
 
             {/* Subheading */}
@@ -120,7 +121,7 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
               variants={fadeUp}
               fontSize={{ base: 'lg', md: 'xl' }}
               fontWeight={600}
-              color="var(--brand-primary)"
+              color="var(--accent-text)"
               fontFamily='var(--font-body)'
               mb={4}
               lineHeight="1.45"
@@ -130,7 +131,7 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
 
             {/* Description */}
             <MotionBox variants={fadeUp} mb={6}>
-              <Text fontSize={{ base: 'md', md: 'lg' }} color="color-mix(in srgb, var(--brand-secondary) 64%, var(--brand-dark))"
+              <Text fontSize={{ base: 'md', md: 'lg' }} color="var(--text-muted)"
                 fontFamily='var(--font-body)' lineHeight="1.75"
                 maxW="540px" whiteSpace="pre-line">
                 {/* Texto "Sobre nosotros" del panel; si no hay, el genérico */}
@@ -142,14 +143,10 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
             <MotionFlex variants={fadeUp} gap={3} mb={9} wrap="wrap">
               {[t('home.welcome.pillMovement'), t('home.welcome.pillCalm'), t('home.welcome.pillConnection')].map((pill) => (
                 <Box key={pill}
-                  px={4} py={2} borderRadius="full"
-                  bg="rgba(255,255,255,0.55)"
-                  backdropFilter="blur(12px)"
-                  style={{ WebkitBackdropFilter: 'blur(12px)' }}
-                  border="1px solid rgba(255,255,255,0.70)"
-                  boxShadow="0 2px 10px color-mix(in srgb, var(--brand-dark) 6%, transparent)"
+                  className="sk-chip"
+                  px={4} py={2}
                 >
-                  <Text fontSize="sm" fontWeight={600} color="color-mix(in srgb, var(--brand-primary) 28%, var(--brand-dark))"
+                  <Text fontSize="sm" fontWeight={600} color="var(--page-text)"
                     fontFamily='var(--font-body)' letterSpacing="0.02em">
                     {pill}
                   </Text>
@@ -159,29 +156,21 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
 
             {/* CTA */}
             <MotionBox variants={fadeUp}>
+              {/* Botón principal del estilo (fondo, texto, borde, sombra y hover) */}
               <Button
                 as="a"
+                className="sk-btn"
                 href={t('nav.items.classes.href') || '/classes'}
                 size="lg"
-                borderRadius="full"
                 px={8}
                 py={6}
-                fontWeight={600}
                 fontFamily='var(--font-body)'
                 fontSize="md"
-                bg="linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)))"
-                color="white"
-                boxShadow="0 8px 28px color-mix(in srgb, var(--brand-primary) 35%, transparent)"
                 cursor="pointer"
                 gap={2}
-                _hover={{
-                  boxShadow: '0 12px 36px color-mix(in srgb, var(--brand-primary) 45%, transparent)',
-                  transform: 'translateY(-2px)',
-                }}
-                transition="all 0.25s ease"
               >
                 {t("home.welcome.cta")}
-                <FaArrowRight size={13} />
+                <Icon name="arrow-right" size={13} />
               </Button>
             </MotionBox>
           </MotionFlex>
@@ -199,17 +188,17 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
             <Box
               position="absolute"
               inset="-12px"
-              borderRadius="3xl"
-              border="1px solid color-mix(in srgb, var(--brand-primary) 15%, transparent)"
+              borderRadius="var(--radius-card-lg)"
+              border="1px solid var(--accent-soft)"
               zIndex={0}
               pointerEvents="none"
             />
             <Box
-              borderRadius="2xl"
+              borderRadius="var(--radius-card-lg)"
               overflow="hidden"
-              boxShadow="0 20px 60px color-mix(in srgb, var(--brand-dark) 14%, transparent), 0 4px 16px color-mix(in srgb, var(--brand-dark) 8%, transparent)"
+              boxShadow="var(--shadow-card)"
               position="relative" zIndex={1}
-              border="1px solid rgba(255,255,255,0.60)"
+              border="var(--border-width) solid var(--surface-border)"
             >
               <ImageSlider initialImages={initialImages} />
             </Box>
@@ -221,16 +210,16 @@ function WelcomeSectionInner({ initialImages }: { initialImages?: string[] | nul
               left={{ base: '50%', lg: '24px' }}
               transform={{ base: 'translateX(-50%)', lg: 'none' }}
               px={4} py={2.5}
-              borderRadius="full"
-              bg="rgba(255,255,255,0.80)"
-              backdropFilter="blur(16px)"
-              style={{ WebkitBackdropFilter: 'blur(16px)' }}
-              border="1px solid rgba(255,255,255,0.75)"
-              boxShadow="0 8px 24px color-mix(in srgb, var(--brand-dark) 10%, transparent)"
+              borderRadius="var(--radius-chip)"
+              bg="var(--surface-strong)"
+              backdropFilter="var(--surface-blur)"
+              style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
+              border="var(--border-width) solid var(--surface-border)"
+              boxShadow="var(--shadow-float)"
               zIndex={2}
               whiteSpace="nowrap"
             >
-              <Text fontSize="xs" fontWeight={700} color="color-mix(in srgb, var(--brand-primary) 28%, var(--brand-dark))"
+              <Text fontSize="xs" fontWeight={700} color="var(--page-text)"
                 fontFamily='var(--font-body)' letterSpacing="0.04em">
                 {t('home.welcome.featureBadge')}
               </Text>

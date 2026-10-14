@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import {
   Box, Flex, Text, HStack, CloseButton, Portal, Spinner, Center, Dialog, chakra,
 } from '@chakra-ui/react';
-import { FaInstagram, FaGlobe, FaLinkedin, FaLeaf } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { useLangStore } from './stores/lang.store';
 import { tr } from '../utils/localized';
 
@@ -12,9 +12,10 @@ import { optimizedImage, withOriginalFallback } from '../utils/img';
 import { API_V1 } from '../config';
 const API_BASE_URL = API_V1;
 
+// Paleta del diálogo: tokens del estilo visual (presets.css)
 const C = {
-  accent: 'var(--brand-primary)', brandDark: 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))', brown: 'var(--brand-dark)', brownMid: 'color-mix(in srgb, var(--brand-primary) 28%, var(--brand-dark))',
-  cream: 'color-mix(in srgb, var(--brand-bg) 45%, white)', focus: 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
+  accent: 'var(--accent)', brandDark: 'var(--accent-text)', brown: 'var(--page-text)', brownMid: 'var(--text-muted)',
+  cream: 'var(--surface-strong)', focus: 'var(--accent)',
 };
 
 type InstructorTr = { name?: string; short_bio?: string; description?: string; vision?: string };
@@ -91,9 +92,9 @@ function SocialLink({ href, label, children }: { href: string; label: string; ch
       href={href} target="_blank" rel="noopener noreferrer" aria-label={label}
       w="44px" h="44px" borderRadius="full" display="inline-flex"
       alignItems="center" justifyContent="center"
-      bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)"
+      bg="var(--accent-soft)" border="1px solid var(--accent-border)"
       color={C.brandDark} transition="background 0.2s, color 0.2s"
-      _hover={{ bg: C.accent, color: 'white', borderColor: C.accent }}
+      _hover={{ bg: C.accent, color: 'var(--on-primary)', borderColor: C.accent }}
       _focusVisible={{ outline: `2px solid ${C.focus}`, outlineOffset: '2px' }}
     >
       {children}
@@ -164,17 +165,15 @@ export default function InstructorDialog({ instructorId, open, onClose, lang, pr
     >
       <Portal>
         <Dialog.Backdrop
-          bg="color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 50%, black) 55%, transparent)"
-          backdropFilter="blur(6px)"
-          style={{ WebkitBackdropFilter: 'blur(6px)' }}
+          bg="var(--overlay)"
+          backdropFilter="var(--surface-blur)"
+          style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
         />
         <Dialog.Positioner px={{ base: 3, md: 6 }}>
           <Dialog.Content
-            bg={C.cream}
-            borderRadius={{ base: '24px', md: '28px' }}
+            // Panel del estilo: superficie, borde, radio, sombra flotante y blur
+            className="sk-panel"
             overflow="hidden"
-            boxShadow="0 24px 80px color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 50%, black) 28%, transparent)"
-            border="1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent)"
             w="full"
             maxW={{ base: '560px', md: '860px' }}
             maxH={{ base: 'calc(100dvh - 24px)', md: 'min(680px, calc(100dvh - 64px))' }}
@@ -186,9 +185,9 @@ export default function InstructorDialog({ instructorId, open, onClose, lang, pr
               <CloseButton
                 aria-label={T.close}
                 w="44px" h="44px" minW="44px" borderRadius="full"
-                bg="rgba(255,255,255,0.88)" color={C.brown}
-                boxShadow="0 2px 10px color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 50%, black) 18%, transparent)"
-                _hover={{ bg: 'white' }}
+                bg="var(--surface-strong)" color={C.brown}
+                boxShadow="var(--shadow-card)"
+                _hover={{ bg: 'var(--surface)' }}
                 _focusVisible={{ outline: `2px solid ${C.focus}`, outlineOffset: '2px' }}
               />
             </Dialog.CloseTrigger>
@@ -225,7 +224,7 @@ export default function InstructorDialog({ instructorId, open, onClose, lang, pr
                   h={{ base: 'min(52dvh, 380px)', md: 'auto' }}
                   flexShrink={0}
                   position="relative" overflow="hidden"
-                  bg="linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 22%, white), color-mix(in srgb, var(--brand-primary) 50%, white))"
+                  bg="var(--surface-muted)"
                 >
                   {showImg ? (
                     <chakra.img
@@ -236,9 +235,9 @@ export default function InstructorDialog({ instructorId, open, onClose, lang, pr
                     />
                   ) : (
                     <Flex h="full" align="center" justify="center" aria-hidden>
-                      <Flex w="96px" h="96px" borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 20%, transparent)"
+                      <Flex w="96px" h="96px" borderRadius="full" bg="var(--accent-soft)"
                         align="center" justify="center">
-                        <FaLeaf size={34} color={C.accent} />
+                        <Icon name="leaf" size={34} color={C.accent} />
                       </Flex>
                     </Flex>
                   )}
@@ -248,7 +247,7 @@ export default function InstructorDialog({ instructorId, open, onClose, lang, pr
 
                   <Box position="absolute" bottom={0} left={0} right={0} p={{ base: 5, md: 6 }}>
                     {level && (
-                      <Box display="inline-flex" px={2.5} py={0.5} borderRadius="full" mb={2}
+                      <Box display="inline-flex" px={2.5} py={0.5} borderRadius="var(--radius-chip)" mb={2}
                         bg="rgba(255,255,255,0.20)" border="1px solid rgba(255,255,255,0.35)">
                         <Text fontSize="11px" fontWeight={700} color="white"
                           fontFamily='var(--font-body)' letterSpacing="0.08em" textTransform="uppercase">
@@ -280,7 +279,7 @@ export default function InstructorDialog({ instructorId, open, onClose, lang, pr
                   css={{
                     overscrollBehavior: 'contain',
                     '&::-webkit-scrollbar': { width: '6px' },
-                    '&::-webkit-scrollbar-thumb': { background: 'color-mix(in srgb, var(--brand-primary) 35%, transparent)', borderRadius: '6px' },
+                    '&::-webkit-scrollbar-thumb': { background: 'var(--accent-border)', borderRadius: '6px' },
                   }}
                 >
                   {shortBio && (
@@ -306,8 +305,8 @@ export default function InstructorDialog({ instructorId, open, onClose, lang, pr
                   )}
 
                   {vision && (
-                    <Box p={4} borderRadius="16px"
-                      bg="color-mix(in srgb, var(--brand-primary) 8%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent)">
+                    <Box p={4} borderRadius="var(--radius-card)"
+                      bg="var(--accent-soft)" border="1px solid var(--accent-border)">
                       <Text as="h3" {...sectionLabel}>{T.vision}</Text>
                       <Text fontSize="15px" color={C.brownMid} fontFamily='var(--font-body)'
                         lineHeight="1.7" whiteSpace="pre-line">
@@ -324,9 +323,9 @@ export default function InstructorDialog({ instructorId, open, onClose, lang, pr
                     <Box mt="auto" pt={2}>
                       <Text as="h3" {...sectionLabel}>{T.follow}</Text>
                       <HStack gap={3}>
-                        {ig && <SocialLink href={ig} label={T.ig(name)}><FaInstagram size={17} aria-hidden /></SocialLink>}
-                        {web && <SocialLink href={web} label={T.web(name)}><FaGlobe size={16} aria-hidden /></SocialLink>}
-                        {li && <SocialLink href={li} label={T.li(name)}><FaLinkedin size={16} aria-hidden /></SocialLink>}
+                        {ig && <SocialLink href={ig} label={T.ig(name)}><Icon name="instagram" size={17} aria-hidden /></SocialLink>}
+                        {web && <SocialLink href={web} label={T.web(name)}><Icon name="globe" size={16} aria-hidden /></SocialLink>}
+                        {li && <SocialLink href={li} label={T.li(name)}><Icon name="linkedin" size={16} aria-hidden /></SocialLink>}
                       </HStack>
                     </Box>
                   )}

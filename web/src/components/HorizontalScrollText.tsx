@@ -53,7 +53,7 @@ const HorizontalScrollText = ({ phrases }: { phrases?: string[] | null }) => {
                   letterSpacing="tight"
                   lineHeight="1"
                   textTransform="uppercase"
-                  color="var(--brand-secondary)"
+                  color="var(--text-muted)"
                   display="inline-block"
                   mr={8}
                 >

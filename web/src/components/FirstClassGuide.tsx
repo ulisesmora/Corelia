@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Flex, Text, Button, SimpleGrid } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaArrowLeft, FaArrowRight, FaCheck, FaChevronDown, FaRedo, FaWhatsapp } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { useLangStore } from './stores/lang.store';
 import { cachedFetch } from '../utils/fetchCache';
 import { prettyTitle } from '../utils/classTitles';
@@ -18,13 +18,16 @@ const MotionBox = motion.create(Box as any);
 const API_BASE_URL = `${API_ROOT}/`;
 const SEEN_KEY = 'domFirstClassGuideSeen';
 
+// Paleta de la guía: tokens del estilo visual (styles/presets.css)
 const C = {
-  accent: 'var(--brand-primary)',
-  accentDeep: 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))',
-  border: 'color-mix(in srgb, var(--brand-primary) 25%, transparent)',
-  grad: 'linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 100%)',
+  accent: 'var(--accent)',            // rellenos, bordes e iconos
+  accentDeep: 'var(--accent-text)',   // primario como texto
+  heading: 'var(--heading-color)',
+  brown: 'var(--page-text)',
+  textMuted: 'var(--text-muted)',
+  border: 'var(--accent-border)',
+  // Relleno primario de puntos/píldoras (texto var(--on-primary))
+  grad: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%)',
 };
 
 type Goal = 'strength' | 'machines' | 'relax' | 'music' | 'mom' | 'senior';
@@ -174,9 +177,9 @@ function useScheduledClasses() {
 function Choice({ selected, label, hint, onClick }: { selected: boolean; label: string; hint: string; onClick: () => void }) {
   return (
     <Box as="button" onClick={onClick} aria-pressed={selected} textAlign="left"
-      p={4} minH="68px" borderRadius="16px" border="2px solid"
+      p={4} minH="68px" borderRadius="var(--radius-card)" border="2px solid"
       borderColor={selected ? C.accent : C.border}
-      bg={selected ? 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' : 'rgba(255,255,255,0.8)'}
+      bg={selected ? 'var(--accent-soft)' : 'var(--surface-strong)'}
       cursor="pointer" transition="all .15s ease"
       _hover={{ borderColor: C.accent, transform: 'translateY(-2px)' }}
       _focusVisible={{ outline: `3px solid ${C.accent}`, outlineOffset: '2px' }}>
@@ -186,9 +189,9 @@ function Choice({ selected, label, hint, onClick }: { selected: boolean; label: 
           <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted}>{hint}</Text>
         </Box>
         <Flex w="22px" h="22px" borderRadius="full" flexShrink={0} border="2px solid"
-          borderColor={selected ? C.accentDeep : C.border} bg={selected ? C.accentDeep : 'transparent'}
+          borderColor={selected ? C.accent : C.border} bg={selected ? C.accent : 'transparent'}
           align="center" justify="center">
-          {selected && <FaCheck size={10} color="white" />}
+          {selected && <Icon name="check" size={10} color="var(--on-primary)" />}
         </Flex>
       </Flex>
     </Box>
@@ -241,17 +244,18 @@ export default function FirstClassGuide({ dropIn = Number(getSiteClient().drop_i
     return (
       <Box id="guia" maxW="900px" mx="auto" px={4} mb={6} style={{ scrollMarginTop: '90px' }}>
         <Flex as="button" w="full" onClick={() => { setOpen(true); }}
+          className="sk-card"
           align="center" justify="space-between" gap={3} textAlign="left"
-          p={4} borderRadius="18px" cursor="pointer"
-          bg="rgba(255,255,255,0.65)" border={`1px solid ${C.border}`}
-          boxShadow="0 4px 18px color-mix(in srgb, var(--brand-dark) 6%, transparent)" _hover={{ borderColor: C.accent }}>
+          p={4} cursor="pointer"
+          _hover={{ borderColor: C.accent }}>
           <Box>
             <Text fontFamily='var(--font-body)' fontWeight={800} color={C.brown}>{tx.teaserTitle}</Text>
             <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>{tx.teaserText}</Text>
           </Box>
-          <Flex align="center" gap={2} flexShrink={0} px={4} py={2} borderRadius="full" bg={C.grad} color="white">
-            <Text fontFamily='var(--font-body)' fontWeight={800} fontSize="sm">{tx.teaserCta}</Text>
-            <FaArrowRight size={11} />
+          {/* Aspecto de botón principal (no es un <button> aparte: toda la barra lo es) */}
+          <Flex className="sk-btn" align="center" gap={2} flexShrink={0} px={4} py={2}>
+            <Text fontFamily='var(--font-body)' fontSize="sm">{tx.teaserCta}</Text>
+            <Icon name="arrow-right" size={11} />
           </Flex>
         </Flex>
       </Box>
@@ -260,21 +264,18 @@ export default function FirstClassGuide({ dropIn = Number(getSiteClient().drop_i
 
   return (
     <Box id="guia" maxW="900px" mx="auto" px={4} mb={10} style={{ scrollMarginTop: '90px' }}>
-      <Box bg="rgba(255,255,255,0.72)" backdropFilter="blur(18px)"
-        style={{ WebkitBackdropFilter: 'blur(18px)' }}
-        borderRadius="26px" border="1px solid rgba(255,255,255,0.8)"
-        boxShadow="0 10px 40px color-mix(in srgb, var(--brand-dark) 10%, transparent)" p={{ base: 5, md: 7 }}>
+      <Box className="sk-card" p={{ base: 5, md: 7 }}>
 
         {/* Cabecera + recorrido completo (dónde estás en el proceso de reservar) */}
         <Flex justify="space-between" align="flex-start" gap={3} mb={4}>
           <Text fontFamily='var(--font-heading)' fontSize={{ base: '2xl', md: '4xl' }}
-            color={C.brown} letterSpacing="0.03em" lineHeight="1.1">
+            color={C.heading} letterSpacing="0.03em" lineHeight="1.1">
             {step === 3 ? tx.resultTitle : tx.title}
           </Text>
           <Button variant="ghost" size="sm" color={C.textMuted} minH="40px"
             fontFamily='var(--font-body)'
             onClick={() => { markSeen(); setOpen(false); }}>
-            <Flex align="center" gap={1}><FaChevronDown size={10} style={{ transform: 'rotate(180deg)' }} />{tx.hide}</Flex>
+            <Flex align="center" gap={1}><Icon name="chevron-down" size={10} style={{ transform: 'rotate(180deg)' }} />{tx.hide}</Flex>
           </Button>
         </Flex>
 
@@ -285,11 +286,11 @@ export default function FirstClassGuide({ dropIn = Number(getSiteClient().drop_i
             return (
               <Flex as="li" key={label} align="center" gap={2}>
                 <Flex w="24px" h="24px" borderRadius="full" align="center" justify="center"
-                  bg={active ? C.grad : 'color-mix(in srgb, var(--brand-primary) 14%, transparent)'} color={active ? 'white' : C.textMuted}
+                  bg={active ? C.grad : 'var(--accent-soft)'} color={active ? 'var(--on-primary)' : C.textMuted}
                   fontFamily='var(--font-body)' fontWeight={800} fontSize="xs">{i + 1}</Flex>
                 <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={active ? 800 : 600}
                   color={active ? C.brown : C.textMuted}>{label}</Text>
-                {i < tx.journey.length - 1 && <Box w="18px" h="2px" bg="color-mix(in srgb, var(--brand-primary) 25%, transparent)" borderRadius="full" />}
+                {i < tx.journey.length - 1 && <Box w="18px" h="2px" bg="var(--accent-border)" borderRadius="full" />}
               </Flex>
             );
           })}
@@ -323,28 +324,28 @@ export default function FirstClassGuide({ dropIn = Number(getSiteClient().drop_i
           {step === 3 && (
             <MotionBox key="g3" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.25 }}>
               {results.length === 0 ? (
-                <Box p={5} borderRadius="18px" bg="color-mix(in srgb, var(--brand-primary) 7%, transparent)" textAlign="center">
+                <Box p={5} borderRadius="var(--radius-card)" bg="var(--accent-soft)" textAlign="center">
                   <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={4}>{tx.none}</Text>
                   {contactUrl(getSiteClient()) && <Button as="a" target="_blank" rel="noopener"
                     href={contactUrl(getSiteClient(), lang === 'en' ? 'Hi! Please let me know when there are classes of this type' : 'Hola, avisadme cuando haya clases de este tipo')}
-                    minH="46px" px={5} borderRadius="full" bg="#25D366" color="white"
+                    minH="46px" px={5} borderRadius="var(--radius-button)" bg="#25D366" color="white"
                     fontFamily='var(--font-body)' fontWeight={800} gap={2}>
-                    <FaWhatsapp size={15} />{tx.noneCta}
+                    <Icon name="whatsapp" size={15} />{tx.noneCta}
                   </Button>}
                 </Box>
               ) : (
                 <SimpleGrid columns={{ base: 1, md: Math.min(results.length, 3) }} gap={4}>
                   {results.map((c, i) => (
-                    <Box key={c.id} borderRadius="20px" overflow="hidden" bg="white"
-                      border={i === 0 ? `2px solid ${C.accent}` : `1px solid ${C.border}`}
-                      boxShadow={i === 0 ? '0 10px 28px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 18%, transparent)' : '0 4px 14px color-mix(in srgb, var(--brand-dark) 6%, transparent)'}
+                    // sk-card; la primera (recomendada) con borde primario más grueso
+                    <Box key={c.id} className="sk-card" overflow="hidden"
+                      style={i === 0 ? { borderColor: 'var(--accent)', borderWidth: '2px' } : undefined}
                       display="flex" flexDirection="column">
                       {c.image && (
                         <Box h="120px" bgImage={`url(${optimizedImage(c.image, 640)})`} bgSize="cover" bgPos="center" position="relative">
                           {i === 0 && (
                             <Flex position="absolute" top={2} left={2} align="center" gap={1.5}
-                              px={2.5} py={1} borderRadius="full" bg="color-mix(in srgb, var(--brand-dark) 78%, transparent)" color="white">
-                              <FaCheck size={9} />
+                              px={2.5} py={1} borderRadius="var(--radius-chip)" bg="color-mix(in srgb, var(--brand-dark) 78%, transparent)" color="white">
+                              <Icon name="check" size={9} />
                               <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={800}>{tx.first}</Text>
                             </Flex>
                           )}
@@ -362,7 +363,7 @@ export default function FirstClassGuide({ dropIn = Number(getSiteClient().drop_i
                         <Text fontFamily='var(--font-body)' fontSize="11px" fontWeight={700} color={C.textMuted} mb={1}>{tx.when}</Text>
                         <Flex gap={1.5} wrap="wrap" mb={4} flex={1} alignContent="flex-start">
                           {c.sessions.slice(0, 6).map((s) => (
-                            <Box key={`${s.weekday}-${s.start}`} px={2.5} py={1} borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 9%, transparent)">
+                            <Box key={`${s.weekday}-${s.start}`} px={2.5} py={1} borderRadius="var(--radius-chip)" bg="var(--accent-soft)">
                               <Text fontFamily='var(--font-body)' fontSize="12px" fontWeight={700} color={C.brown} textTransform="capitalize">
                                 {tx.days[s.weekday]} {s.start}
                               </Text>
@@ -370,12 +371,10 @@ export default function FirstClassGuide({ dropIn = Number(getSiteClient().drop_i
                           ))}
                         </Flex>
                         <Button as="a" href={classUrl(c.slug, lang)}
-                          w="full" minH="46px" borderRadius="full"
-                          bg={i === 0 ? C.grad : 'transparent'} color={i === 0 ? 'white' : C.accentDeep}
-                          border={i === 0 ? 'none' : `1.5px solid ${C.border}`}
-                          fontFamily='var(--font-body)' fontWeight={800} gap={2}
-                          _hover={{ opacity: 0.92 }}>
-                          {tx.cta}<FaArrowRight size={11} />
+                          className={i === 0 ? 'sk-btn' : 'sk-btn-ghost'}
+                          w="full" minH="46px"
+                          fontFamily='var(--font-body)' gap={2}>
+                          {tx.cta}<Icon name="arrow-right" size={11} />
                         </Button>
                       </Box>
                     </Box>
@@ -384,13 +383,13 @@ export default function FirstClassGuide({ dropIn = Number(getSiteClient().drop_i
               )}
 
               <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mt={5}
-                p={3} borderRadius="12px" bg="color-mix(in srgb, var(--brand-primary) 7%, transparent)">
+                p={3} borderRadius="var(--radius-input)" bg="var(--accent-soft)">
                 💡 {tx.tip(formatPrice(dropIn, lang, 'auto'))}
               </Text>
 
               <Button variant="ghost" size="sm" mt={3} color={C.textMuted} minH="44px"
                 fontFamily='var(--font-body)' onClick={restart}>
-                <Flex align="center" gap={1.5}><FaRedo size={10} />{tx.restart}</Flex>
+                <Flex align="center" gap={1.5}><Icon name="refresh" size={10} />{tx.restart}</Flex>
               </Button>
             </MotionBox>
           )}
@@ -399,7 +398,7 @@ export default function FirstClassGuide({ dropIn = Number(getSiteClient().drop_i
         {step === 2 && (
           <Button variant="ghost" size="sm" mt={4} color={C.textMuted} minH="44px"
             fontFamily='var(--font-body)' onClick={() => setStep(1)}>
-            <Flex align="center" gap={1.5}><FaArrowLeft size={10} />{tx.back}</Flex>
+            <Flex align="center" gap={1.5}><Icon name="arrow-left" size={10} />{tx.back}</Flex>
           </Button>
         )}
       </Box>

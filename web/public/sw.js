@@ -24,7 +24,7 @@ self.addEventListener('push', (event) => {
     // Badge (barra de estado de Android): 96 px. Lo ideal sería una versión
     // monocroma (silueta blanca sobre transparente) del icono; el backend aún
     // no la genera, así que Android usará la silueta del icono a color.
-    badge: '/api/v1/site-config/icon/96.png',
+    badge: '/api/v1/site-config/badge.png',
     data: { url: data.url || '/' },
   };
   event.waitUntil(self.registration.showNotification(title, options));

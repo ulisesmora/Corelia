@@ -149,6 +149,36 @@ def render_icon(cfg, size: int, maskable: bool = False, panel: bool = False) -> 
     return data
 
 
+def render_badge(cfg, size: int = 96) -> bytes:
+    """Icono pequeño de las notificaciones (barra de estado de Android).
+    Android solo usa la silueta (canal alfa): fondo transparente y figura
+    blanca. Con un icono transparente se usa su forma; si no, la inicial."""
+    key = ('badge', size, cfg.updated_at)
+    if key in _cache:
+        return _cache[key]
+    out = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    src = _source_icon(cfg)
+    if src is not None:
+        src = ImageOps.exif_transpose(src).convert('RGBA')
+    if src is not None and _has_alpha(src):
+        fitted = ImageOps.contain(src, (int(size * 0.9), int(size * 0.9)), Image.LANCZOS)
+        white = Image.new('RGBA', fitted.size, (255, 255, 255, 255))
+        white.putalpha(fitted.getchannel('A'))
+        out.paste(white, ((size - fitted.width) // 2, (size - fitted.height) // 2), white)
+    else:
+        initial = (cfg.studio_name or 'S').strip()[:1].upper() or 'S'
+        draw = ImageDraw.Draw(out)
+        font = _font(int(size * 0.8), cfg.font_heading)
+        box = draw.textbbox((0, 0), initial, font=font)
+        w, h = box[2] - box[0], box[3] - box[1]
+        draw.text(((size - w) / 2 - box[0], (size - h) / 2 - box[1]), initial, fill=(255, 255, 255, 255), font=font)
+    buf = io.BytesIO()
+    out.save(buf, 'PNG', optimize=True)
+    data = buf.getvalue()
+    _cache[key] = data
+    return data
+
+
 def render_og_image(cfg) -> bytes:
     """Imagen 1200x630 para WhatsApp, Instagram, Facebook… al compartir la web."""
     key = ('og', cfg.updated_at)

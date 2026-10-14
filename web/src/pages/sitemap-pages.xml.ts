@@ -10,7 +10,8 @@ const PAGES: { loc: string; alt?: { es: string; en: string }; priority: string; 
   { loc: '/', alt: { es: '/', en: '/en' }, priority: '1.0', changefreq: 'weekly' },
   { loc: '/en', alt: { es: '/', en: '/en' }, priority: '0.9', changefreq: 'weekly' },
   { loc: '/calendar', priority: '0.9', changefreq: 'daily' },
-  { loc: '/prices', priority: '0.8', changefreq: 'monthly' },
+  { loc: '/prices', alt: { es: '/prices', en: '/en/prices' }, priority: '0.8', changefreq: 'monthly' },
+  { loc: '/en/prices', alt: { es: '/prices', en: '/en/prices' }, priority: '0.7', changefreq: 'monthly' },
 ];
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');

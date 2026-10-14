@@ -147,38 +147,35 @@ export default function PushNotifications() {
   if (!showPrompt) return null;
 
   return (
-    <div style={{
+    <div className="sk-panel" style={{
       position: 'fixed', bottom: '86px', right: '16px', zIndex: 1400,
-      maxWidth: '320px', background: '#fff', borderRadius: '14px',
-      boxShadow: '0 8px 28px rgba(0,0,0,0.18)', padding: '14px 16px',
-      fontFamily: 'var(--font-body)', border: '1px solid #eee',
+      maxWidth: '320px', padding: '14px 16px',
+      fontFamily: 'var(--font-body)',
     }}>
-      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'color-mix(in srgb, var(--brand-secondary) 40%, var(--brand-dark))', marginBottom: '4px' }}>
+      <div style={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--heading-color)', marginBottom: '4px' }}>
         {mode === 'ios' ? L.iosTitle : L.enableTitle}
       </div>
-      <div style={{ fontSize: '0.85rem', color: 'color-mix(in srgb, var(--brand-secondary) 67%, var(--brand-dark))', marginBottom: '10px' }}>
+      <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '10px' }}>
         {mode === 'ios' ? L.iosBody : L.enableBody}
       </div>
       <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
         <button onClick={dismiss} disabled={busy} style={{
-          background: 'none', border: 'none', color: 'color-mix(in srgb, var(--brand-secondary) 95%, white)',
+          background: 'none', border: 'none', color: 'var(--text-muted)',
           fontSize: '0.85rem', cursor: 'pointer', padding: '8px 10px',
         }}>
           {L.notNow}
         </button>
         {mode === 'enable' && (
-          <button onClick={enable} disabled={busy} style={{
-            background: 'var(--brand-secondary)', color: '#fff', border: 'none',
-            borderRadius: '999px', padding: '8px 16px', fontWeight: 700,
+          <button className="sk-btn" onClick={enable} disabled={busy} style={{
+            padding: '8px 16px',
             fontSize: '0.85rem', cursor: 'pointer', opacity: busy ? 0.7 : 1,
           }}>
             {busy ? L.enabling : L.enable}
           </button>
         )}
         {mode === 'ios' && (
-          <button onClick={dismiss} style={{
-            background: 'var(--brand-secondary)', color: '#fff', border: 'none',
-            borderRadius: '999px', padding: '8px 16px', fontWeight: 700,
+          <button className="sk-btn" onClick={dismiss} style={{
+            padding: '8px 16px',
             fontSize: '0.85rem', cursor: 'pointer',
           }}>
             {L.gotIt}

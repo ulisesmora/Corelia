@@ -13,7 +13,7 @@ import {
   Wrap,
   WrapItem,
 } from '@chakra-ui/react';
-import { FaChalkboardTeacher, FaClock, FaDoorOpen } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { useEffect, useRef, useState } from 'react';
 import Chakra from './ChakraProvider';
 import { useDominantColor } from './hooks/useColorExtractor';
@@ -45,7 +45,11 @@ export interface UrlItem {
   url: string;
 }
 
-const tagColors = ['color-mix(in srgb, var(--brand-primary) 75%, white)', 'var(--brand-secondary)', 'color-mix(in srgb, var(--brand-primary) 40%, white)'];
+// Etiquetas de nivel y categoría: relleno de marca con su texto legible
+const tagColors = [
+  { bg: 'var(--accent)', color: 'var(--on-primary)' },
+  { bg: 'var(--brand-secondary)', color: 'var(--on-secondary)' },
+] as const;
 
 // ✅ Cache global de colores por URL (persiste entre montajes)
 const colorCache = new Map<string, string>();
@@ -133,13 +137,13 @@ function GlassGridInner(props: GlassCarouselProps) {
   return (
     <Chakra>
       <Flex w="100%" justifyContent="center" pt="2rem">
-        <Text as="h3" fontSize="3xl" color="var(--brand-secondary)" fontWeight="semibold">
+        <Text as="h3" fontSize="3xl" color="var(--heading-color)" fontWeight="semibold">
           {title}
         </Text>
       </Flex>
 
       <Box textAlign="center" maxW="800px" mx="auto" px={4} pb={8}>
-        <Text fontSize="lg" color="var(--brand-secondary)">
+        <Text fontSize="lg" color="var(--text-muted)">
           {description}
         </Text>
       </Box>
@@ -161,14 +165,10 @@ function GlassGridInner(props: GlassCarouselProps) {
             minW={{ base: '90%', md: '90%' }}
             maxW={{ base: '90%', md: '90%' }}
             h={{ base: '480px', md: '480px' }}
-            borderRadius="2xl"
+            // Tarjeta con el acabado del estilo (fondo, borde, radio, sombra, blur)
+            className="sk-card"
             overflow="hidden"
             position="relative"
-            bg="rgba(255,255,255,0.1)"
-            backdropFilter="blur(14px)"
-            boxShadow={
-              dominantColors[realIdx] ? `0 10px 40px ${dominantColors[realIdx]}` : 'lg'
-            }
             cursor='pointer'
             onClick={() => {window.location.href = classUrl(item.slug, lang)}}
           >
@@ -253,7 +253,7 @@ function GlassGridInner(props: GlassCarouselProps) {
                     <Badge
                       px={3}
                       py={1}
-                      borderRadius="full"
+                      borderRadius="var(--radius-chip)"
                       bg="blackAlpha.400"
                       backdropFilter="blur(10px)"
                       color="whiteAlpha.900"
@@ -263,7 +263,7 @@ function GlassGridInner(props: GlassCarouselProps) {
                       fontSize="xs"
                       fontWeight="bolder"
                     >
-                      <FaClock /> {item.duration_minutes}
+                      <Icon name="clock" /> {item.duration_minutes}
                     </Badge>
                   </WrapItem>
 
@@ -271,7 +271,7 @@ function GlassGridInner(props: GlassCarouselProps) {
                     <Badge
                       px={3}
                       py={1}
-                      borderRadius="full"
+                      borderRadius="var(--radius-chip)"
 
                       bg="blackAlpha.400"
                       backdropFilter="blur(10px)"
@@ -283,7 +283,7 @@ function GlassGridInner(props: GlassCarouselProps) {
                       fontSize="xs"
                       fontWeight="bolder"
                     >
-                      <FaChalkboardTeacher />
+                      <Icon name="teacher" />
                       <Link
                       fontWeight={'bolder'}
                         color="#fff"
@@ -298,7 +298,7 @@ function GlassGridInner(props: GlassCarouselProps) {
                     <Badge
                       px={3}
                       py={1}
-                      borderRadius="full"
+                      borderRadius="var(--radius-chip)"
                       bg="blackAlpha.400"
                       backdropFilter="blur(10px)"
                       color="whiteAlpha.900"
@@ -308,7 +308,7 @@ function GlassGridInner(props: GlassCarouselProps) {
                       fontSize="xs"
                       fontWeight="bolder"
                     >
-                      <FaDoorOpen />
+                      <Icon name="door" />
 
                        <Link
                         color="#fff"
@@ -327,9 +327,9 @@ function GlassGridInner(props: GlassCarouselProps) {
                         px={3}
                         variant="subtle"
                         py={1}
-                        borderRadius="full"
-                        bg={tagColors[0] || 'color-mix(in srgb, var(--brand-primary) 75%, white)'}
-                        color="white"
+                        borderRadius="var(--radius-chip)"
+                        bg={tagColors[0].bg}
+                        color={tagColors[0].color}
                         fontSize="xs"
                         fontWeight="semibold"
                         textTransform="capitalize"
@@ -344,9 +344,9 @@ function GlassGridInner(props: GlassCarouselProps) {
                         px={3}
                         variant="subtle"
                         py={1}
-                        borderRadius="full"
-                        bg={tagColors[0] || 'color-mix(in srgb, var(--brand-primary) 75%, white)'}
-                        color="white"
+                        borderRadius="var(--radius-chip)"
+                        bg={tagColors[0].bg}
+                        color={tagColors[0].color}
                         fontSize="xs"
                         fontWeight="semibold"
                         textTransform="capitalize"
@@ -364,6 +364,7 @@ function GlassGridInner(props: GlassCarouselProps) {
                                       fontWeight={'bold'}
                                       
                                       fontSize='1.15rem'
+                            borderRadius="var(--radius-button)"
                             backdropFilter="blur(10px)"
                       color="white" 
                       _hover={{ bg: 'white', color: 'black' }} 

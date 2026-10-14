@@ -9,7 +9,7 @@ import JsonLd from './JsonLd.astro';
 import SiteHead from '../SiteHead.astro';
 import ClassCatalog from './ClassCatalog.astro';
 import { abs, breadcrumbJsonLd, business, businessJsonLd, classPath, niceTitle, type Lang } from '../../seo/site';
-import { getSiteConfig } from '../../lib/site';
+import { getSiteConfig, htmlThemeAttrs } from '../../lib/site';
 import { getClassTypes, getSchedules, offeredClasses, tr } from '../../seo/catalog';
 
 interface Props { lang: Lang }
@@ -49,7 +49,7 @@ const jsonLd = [
   },
 ];
 ---
-<html lang={lang}>
+<html lang={lang} {...htmlThemeAttrs(site)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />

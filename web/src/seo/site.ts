@@ -152,14 +152,14 @@ export function offerCatalogJsonLd(site: SiteConfig, plans: ApiPlan[], lang: Lan
   return {
     '@type': 'OfferCatalog',
     name: lang === 'en' ? `${site.studio_name} packs and memberships` : `Bonos y membresías de ${site.studio_name}`,
-    url: abs('/prices'),
+    url: abs(lang === 'en' ? '/en/prices' : '/prices'),
     itemListElement: plans.map((p) => ({
       '@type': 'Offer',
       name: (lang === 'en' && p.name_en) || p.name,
       price: Number(p.price_eur),
       priceCurrency: site.currency,
       ...(((lang === 'en' && p.description_en) || p.description) ? { description: (lang === 'en' && p.description_en) || p.description } : {}),
-      url: abs('/prices'),
+      url: abs(lang === 'en' ? '/en/prices' : '/prices'),
       seller: { '@id': b.id },
     })),
   };

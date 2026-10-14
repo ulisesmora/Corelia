@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaWhatsapp } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { useSite, whatsappUrl as buildWhatsappUrl } from '../lib/site';
 
 interface Props {
@@ -38,13 +38,12 @@ export default function WhatsAppButton({ message, label }: Props) {
         bottom: isMobile ? 'calc(74px + env(safe-area-inset-bottom, 0px))' : '25px',
         right: isMobile ? '16px' : '25px',
         zIndex: 1000,
+        // Verde de WhatsApp (color de la marca) en todos los estilos
         backgroundColor: '#25D366',
         color: 'white',
-        borderRadius: isMobile ? '50%' : '50px',
+        borderRadius: isMobile ? '50%' : 'var(--radius-button)',
         padding: isMobile ? '16px' : '12px 20px',
-        boxShadow: hovered
-          ? '0 6px 16px rgba(0,0,0,0.30)'
-          : '0 4px 12px rgba(0,0,0,0.20)',
+        boxShadow: hovered ? 'var(--shadow-hover)' : 'var(--shadow-float)',
         display: 'flex',
         alignItems: 'center',
         gap: '10px',
@@ -56,7 +55,7 @@ export default function WhatsAppButton({ message, label }: Props) {
         transform: hovered ? 'scale(1.05)' : 'scale(1)',
       }}
     >
-      <FaWhatsapp style={{ fontSize: isMobile ? '28px' : '24px', margin: 0 }} />
+      <Icon name="whatsapp" style={{ fontSize: isMobile ? '28px' : '24px', margin: 0 }} />
       {!isMobile && <span>{label}</span>}
     </a>
   );

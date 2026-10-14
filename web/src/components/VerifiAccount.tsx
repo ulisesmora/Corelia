@@ -12,7 +12,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Flex, Text, chakra } from '@chakra-ui/react';
-import { FaCheckCircle, FaExclamationTriangle } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import Chakra from './ChakraProvider';
 import EmailVerifyCard from './EmailVerifyCard';
 import { AUTH_C as C, PrimaryButton, StatusView, postJson, useAuthLang } from './AuthPage';
@@ -117,13 +117,13 @@ export default function VerifyAccountPage() {
       <Flex direction="column" align="center" textAlign="center" gap={3} py={6} role="status">
         <Box w="40px" h="40px" borderRadius="full" border={`4px solid ${C.line}`} borderTopColor={C.brandDark}
           animation="spin 0.8s linear infinite" aria-hidden />
-        <chakra.h1 fontFamily={C.font} fontWeight={700} fontSize="22px" color={C.brown}>{tx.loadingTitle}</chakra.h1>
+        <chakra.h1 fontFamily={C.font} fontWeight={700} fontSize="22px" color={C.heading}>{tx.loadingTitle}</chakra.h1>
         <Text fontSize="15px" color={C.muted} fontWeight={500}>{tx.loadingText}</Text>
       </Flex>
     );
   } else if (status === 'success' || status === 'already') {
     content = (
-      <StatusView title={status === 'success' ? tx.okTitle : tx.alreadyTitle} headingRef={headingRef} icon={<FaCheckCircle />}>
+      <StatusView title={status === 'success' ? tx.okTitle : tx.alreadyTitle} headingRef={headingRef} icon={<Icon name="check-circle" />}>
         <Text fontSize="15px" color={C.muted} fontWeight={500} lineHeight="1.5">
           {status === 'success' ? tx.okText : tx.alreadyText}
         </Text>
@@ -143,7 +143,7 @@ export default function VerifyAccountPage() {
     const canRetry = status === 'network' || status === 'server';
     content = (
       <Flex direction="column" gap={4} w="full">
-        <StatusView title={tx.errTitle} headingRef={headingRef} tone="warn" icon={<FaExclamationTriangle />}>
+        <StatusView title={tx.errTitle} headingRef={headingRef} tone="warn" icon={<Icon name="warning" />}>
           <Text fontSize="15px" color={C.brown} fontWeight={600} lineHeight="1.5">{reason}</Text>
           {!canRetry && (
             <Text fontSize="15px" color={C.muted} fontWeight={500} lineHeight="1.5">
@@ -167,8 +167,7 @@ export default function VerifyAccountPage() {
     <Chakra>
       <Flex translate="no" className="notranslate" w="full" minH="100dvh" pt="60px" bg={C.cream}
         fontFamily={C.font} justify="center" align={{ base: 'flex-start', md: 'center' }} px={4} pb={10}>
-        <Box w="full" maxW="480px" mt={{ base: 6, md: 10 }} bg="white" borderRadius="24px"
-          boxShadow="0 12px 40px color-mix(in srgb, var(--brand-dark) 10%, transparent)" border={`1px solid ${C.line}`}
+        <Box className="sk-card" w="full" maxW="480px" mt={{ base: 6, md: 10 }}
           px={{ base: 5, md: 8 }} py={{ base: 6, md: 8 }}>
           <Flex justify="center" mb={5}>
             <BrandLogo width={120} maxHeight={72} />

@@ -20,6 +20,20 @@ export default function BrandLogo({ variant = 'default', width = 140, maxHeight,
   const site = useSite();
   const src = variant === 'light' ? (site.logo_light_url || site.logo_url) : site.logo_url;
   const label = alt ?? site.studio_name;
+  // Versión normal con logo claro distinto: se pintan las dos y el estilo
+  // decide cuál se ve (tokens --logo-default-display / --logo-light-display:
+  // en los estilos oscuros, la clara). Así el logo nunca queda oscuro sobre oscuro.
+  if (src && variant === 'default' && site.logo_light_url && site.logo_light_url !== src) {
+    const imgStyle: React.CSSProperties = { width, height: 'auto', maxHeight, objectFit: 'contain', ...style };
+    return (
+      <>
+        <img src={src} alt={label} aria-hidden={label === '' ? true : undefined} width={width}
+          className={className} style={{ ...imgStyle, display: 'var(--logo-default-display)' as React.CSSProperties['display'] }} />
+        <img src={site.logo_light_url} alt={label} aria-hidden={label === '' ? true : undefined} width={width}
+          className={className} style={{ ...imgStyle, display: 'var(--logo-light-display)' as React.CSSProperties['display'] }} />
+      </>
+    );
+  }
   if (src) {
     return (
       <img
@@ -48,7 +62,8 @@ export default function BrandLogo({ variant = 'default', width = 140, maxHeight,
         lineHeight: 1.05,
         fontWeight: 600,
         letterSpacing: '0.02em',
-        color: variant === 'light' ? '#fff' : 'var(--brand-dark)',
+        // Claro sobre fotos/zonas profundas; si no, el color de los títulos del estilo
+        color: variant === 'light' ? '#fff' : 'var(--heading-color)',
         textTransform: 'none',
         whiteSpace: 'nowrap',
         maxWidth: '100%',

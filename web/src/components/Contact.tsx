@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 import Chakra from './ChakraProvider';
 import { Toaster, toaster } from './ui/toaster';
 import { useT } from '../i18n';
-import { FaWhatsapp, FaInstagram, FaMapMarkerAlt, FaEnvelope, FaPhone } from 'react-icons/fa';
+import { Icon, type IconName } from './ui/Icon';
 import { API_V1 } from '../config';
 import { addressLine, instagramHandle, instagramUrl, mapsUrl, phoneHref, useSite, whatsappUrl } from '../lib/site';
 import { withSsrLang } from './stores/lang.store';
@@ -16,11 +16,15 @@ const MotionFlex = motion(Flex as any);
 
 const API_BASE_URL = `${API_V1}/contact-user/`;
 
+// Bloque de contacto = zona profunda: tokens --deep-* del estilo visual (presets.css).
+// Los rellenos sutiles salen del propio --deep-text para que funcionen en cualquier estilo.
 const C = {
-  accent: 'color-mix(in srgb, var(--brand-primary) 70%, white)', accentDark: 'var(--brand-primary)', brown: 'color-mix(in srgb, var(--brand-dark) 45%, black)',
-  textMuted: 'rgba(255,255,255,0.55)', textLight: 'rgba(255,255,255,0.35)',
-  border: 'rgba(255,255,255,0.10)', borderHover: 'rgba(255,255,255,0.20)',
-  inputBg: 'rgba(255,255,255,0.06)',
+  accent: 'var(--brand-primary-on-dark)',
+  text: 'var(--deep-text)', textMuted: 'var(--deep-muted)', textLight: 'color-mix(in srgb, var(--deep-text) 40%, transparent)',
+  border: 'var(--deep-border)', borderHover: 'color-mix(in srgb, var(--deep-text) 20%, transparent)',
+  inputBg: 'color-mix(in srgb, var(--deep-text) 6%, transparent)',
+  fill: (pct: number) => `color-mix(in srgb, var(--deep-text) ${pct}%, transparent)`,
+  accentMix: (pct: number) => `color-mix(in srgb, var(--brand-primary-on-dark) ${pct}%, transparent)`,
 };
 
 // contactChannels is defined inside ContactInner to access t()
@@ -43,12 +47,12 @@ function ContactInner() {
   const tel = phoneHref(site);
   const address = addressLine(site);
   const contactChannels = [
-    wa && { icon: FaWhatsapp, label: 'WhatsApp', value: site.contact.phone || site.contact.whatsapp, href: wa, color: '#4ADE80' },
-    !wa && tel && { icon: FaPhone, label: t('home.contact.phoneLabel', undefined, 'Teléfono'), value: site.contact.phone, href: tel, color: '#4ADE80' },
-    site.contact.email && { icon: FaEnvelope, label: 'Email', value: site.contact.email, href: `mailto:${site.contact.email}`, color: C.accent },
-    ig && { icon: FaInstagram, label: 'Instagram', value: `@${instagramHandle(site)}`, href: ig, color: '#F472B6' },
-    address && { icon: FaMapMarkerAlt, label: t('home.contact.locationLabel'), value: address, href: mapsUrl(site) || '#', color: C.accent },
-  ].filter(Boolean) as { icon: typeof FaWhatsapp; label: string; value: string; href: string; color: string }[];
+    wa && { icon: 'whatsapp' as IconName, label: 'WhatsApp', value: site.contact.phone || site.contact.whatsapp, href: wa, color: '#4ADE80' },
+    !wa && tel && { icon: 'phone' as IconName, label: t('home.contact.phoneLabel', undefined, 'Teléfono'), value: site.contact.phone, href: tel, color: '#4ADE80' },
+    site.contact.email && { icon: 'mail' as IconName, label: 'Email', value: site.contact.email, href: `mailto:${site.contact.email}`, color: C.accent },
+    ig && { icon: 'instagram' as IconName, label: 'Instagram', value: `@${instagramHandle(site)}`, href: ig, color: '#F472B6' },
+    address && { icon: 'map-pin' as IconName, label: t('home.contact.locationLabel'), value: address, href: mapsUrl(site) || '#', color: C.accent },
+  ].filter(Boolean) as { icon: IconName; label: string; value: string; href: string; color: string }[];
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -83,7 +87,8 @@ function ContactInner() {
       w="full"
       position="relative"
       overflow="hidden"
-      bg="linear-gradient(160deg, color-mix(in srgb, var(--brand-dark) 40%, black) 0%, color-mix(in srgb, var(--brand-dark) 45%, black) 45%, color-mix(in srgb, var(--brand-dark) 40%, black) 100%)"
+      // Fondo y texto de la zona profunda (--deep-bg / --deep-text)
+      className="sk-deep"
       py={{ base: 16, md: 28 }}
     >
       <Toaster />
@@ -103,7 +108,7 @@ function ContactInner() {
       <Box position="absolute" top="-10%" left="-5%" w="500px" h="500px"
         borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 8%, transparent)" filter="blur(120px)" pointerEvents="none" zIndex={0} />
       <Box position="absolute" bottom="-10%" right="-5%" w="400px" h="400px"
-        borderRadius="full" bg="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 6%, transparent)" filter="blur(100px)" pointerEvents="none" zIndex={0} />
+        borderRadius="full" bg={C.accentMix(6)} filter="blur(100px)" pointerEvents="none" zIndex={0} />
 
       <Flex
         maxW="6xl" mx="auto" px={{ base: 6, md: 12 }}
@@ -118,8 +123,8 @@ function ContactInner() {
           {/* Section badge */}
           <MotionBox
             custom={0} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
-            display="inline-flex" px={3} py={1} borderRadius="full" mb={6}
-            bg="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 10%, transparent)" border="1px solid color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 22%, transparent)"
+            display="inline-flex" px={3} py={1} borderRadius="var(--radius-chip)" mb={6}
+            bg={C.accentMix(10)} border={`1px solid ${C.accentMix(22)}`}
           >
             <Text fontSize="10px" fontWeight={700} color={C.accent}
               fontFamily='var(--font-body)' letterSpacing="0.12em" textTransform="uppercase">
@@ -130,9 +135,10 @@ function ContactInner() {
           {/* Big editorial heading */}
           <MotionBox custom={1} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <Text
+              className="sk-section-title"
               fontFamily='var(--font-heading)'
               fontSize={{ base: '5xl', md: '7xl', lg: '8xl' }}
-              color="white"
+              color={C.text}
               letterSpacing="0.03em"
               lineHeight="0.95"
               mb={6}
@@ -164,17 +170,17 @@ function ContactInner() {
                   as="a" href={ch.href} target={ch.href !== '#' ? '_blank' : undefined}
                   rel="noopener noreferrer"
                   display="flex" alignItems="center" gap={4}
-                  px={4} py={3.5} borderRadius="16px"
-                  bg="rgba(255,255,255,0.04)" border={`1px solid ${C.border}`}
+                  px={4} py={3.5} borderRadius="var(--radius-card)"
+                  bg={C.fill(4)} border={`1px solid ${C.border}`}
                   cursor="pointer" transition="all 0.25s ease"
-                  _hover={{ bg: 'rgba(255,255,255,0.08)', borderColor: C.borderHover }}
+                  _hover={{ bg: C.fill(8), borderColor: C.borderHover }}
                 >
                   <Flex
-                    w="40px" h="40px" borderRadius="12px" flexShrink={0}
+                    w="40px" h="40px" borderRadius="var(--radius-chip)" flexShrink={0}
                     align="center" justify="center"
-                    bg="rgba(255,255,255,0.06)" border={`1px solid rgba(255,255,255,0.10)`}
+                    bg={C.fill(6)} border={`1px solid ${C.border}`}
                   >
-                    <ch.icon size={15} color={ch.color} />
+                    <Icon name={ch.icon} size={15} color={ch.color} />
                   </Flex>
                   <Box>
                     <Text fontFamily='var(--font-body)'
@@ -183,7 +189,7 @@ function ContactInner() {
                       {ch.label}
                     </Text>
                     <Text fontFamily='var(--font-body)'
-                      fontSize="sm" color="rgba(255,255,255,0.80)" fontWeight={600}>
+                      fontSize="sm" color={C.fill(80)} fontWeight={600}>
                       {ch.value}
                     </Text>
                   </Box>
@@ -195,13 +201,13 @@ function ContactInner() {
           {/* Architectural decoration */}
           <MotionBox custom={7} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <Flex align="center" gap={3} mt={12}>
-              <Box flex={1} h="1px" bg="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 15%, transparent)" />
+              <Box flex={1} h="1px" bg={C.accentMix(15)} />
               <Text fontFamily='var(--font-heading)'
-                fontSize="xs" color="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 30%, transparent)"
+                fontSize="xs" color={C.accentMix(30)}
                 letterSpacing="0.16em" textTransform="uppercase">
                 {site.studio_name}
               </Text>
-              <Box flex={1} h="1px" bg="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 15%, transparent)" />
+              <Box flex={1} h="1px" bg={C.accentMix(15)} />
             </Flex>
           </MotionBox>
         </Box>
@@ -213,18 +219,18 @@ function ContactInner() {
         >
           {sent ? (
             <Box
-              p={8} borderRadius="24px"
-              bg="rgba(255,255,255,0.06)" border={`1px solid ${C.border}`}
-              backdropFilter="blur(20px)" style={{ WebkitBackdropFilter: 'blur(20px)' }}
+              p={8} borderRadius="var(--radius-card)"
+              bg={C.fill(6)} border={`var(--border-width) solid ${C.border}`}
+              backdropFilter="var(--surface-blur)" style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
             >
               <VStack gap={3} textAlign="center" py={6}>
                 <Flex w="56px" h="56px" borderRadius="full"
-                  bg="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 12%, transparent)" align="center" justify="center"
-                  border="1px solid color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 20%, transparent)">
-                  <FaEnvelope size={20} color={C.accent} />
+                  bg={C.accentMix(12)} align="center" justify="center"
+                  border={`1px solid ${C.accentMix(20)}`}>
+                  <Icon name="mail" size={20} color={C.accent} />
                 </Flex>
                 <Text fontFamily='var(--font-heading)'
-                  fontSize="2xl" color="white" letterSpacing="0.04em">
+                  fontSize="2xl" color={C.text} letterSpacing="0.04em">
                   {t('home.contact.sentTitle')}
                 </Text>
                 <Text fontFamily='var(--font-body)'
@@ -235,15 +241,15 @@ function ContactInner() {
             </Box>
           ) : (
             <Box
-              p={{ base: 6, md: 8 }} borderRadius="24px"
-              bg="rgba(255,255,255,0.05)" border={`1px solid ${C.border}`}
-              backdropFilter="blur(20px)" style={{ WebkitBackdropFilter: 'blur(20px)' }}
-              boxShadow="0 24px 60px rgba(0,0,0,0.30)"
+              p={{ base: 6, md: 8 }} borderRadius="var(--radius-card)"
+              bg={C.fill(5)} border={`var(--border-width) solid ${C.border}`}
+              backdropFilter="var(--surface-blur)" style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
+              boxShadow="var(--shadow-card)"
             >
               {/* Form header */}
               <Box mb={6}>
                 <Text fontFamily='var(--font-heading)'
-                  fontSize="xl" color="white" letterSpacing="0.05em" mb={1}>
+                  fontSize="xl" color={C.text} letterSpacing="0.05em" mb={1}>
                   {t('home.contact.formTitle')}
                 </Text>
                 <Text fontFamily='var(--font-body)'
@@ -257,9 +263,9 @@ function ContactInner() {
                   placeholder={t('home.contact.namePh2')}
                   value={name} onChange={e => setName(e.target.value)}
                   bg={C.inputBg} border={`1px solid ${C.border}`}
-                  borderRadius="12px" color="white" fontSize="sm"
+                  borderRadius="var(--radius-input)" color={C.text} fontSize="sm"
                   fontFamily='var(--font-body)'
-                  _focus={{ borderColor: 'color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 50%, transparent)', bg: 'rgba(255,255,255,0.09)', boxShadow: 'none' }}
+                  _focus={{ borderColor: C.accentMix(50), bg: C.fill(9), boxShadow: 'none' }}
                   _placeholder={{ color: C.textLight }}
                   h="46px" px={4}
                 />
@@ -267,9 +273,9 @@ function ContactInner() {
                   placeholder={t('home.contact.emailPh2')}
                   type="email" value={email} onChange={e => setEmail(e.target.value)}
                   bg={C.inputBg} border={`1px solid ${C.border}`}
-                  borderRadius="12px" color="white" fontSize="sm"
+                  borderRadius="var(--radius-input)" color={C.text} fontSize="sm"
                   fontFamily='var(--font-body)'
-                  _focus={{ borderColor: 'color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 50%, transparent)', bg: 'rgba(255,255,255,0.09)', boxShadow: 'none' }}
+                  _focus={{ borderColor: C.accentMix(50), bg: C.fill(9), boxShadow: 'none' }}
                   _placeholder={{ color: C.textLight }}
                   h="46px" px={4}
                 />
@@ -277,26 +283,29 @@ function ContactInner() {
                   placeholder={t('home.contact.messagePh2')}
                   value={message} onChange={e => setMsg(e.target.value)}
                   bg={C.inputBg} border={`1px solid ${C.border}`}
-                  borderRadius="12px" color="white" fontSize="sm"
+                  borderRadius="var(--radius-input)" color={C.text} fontSize="sm"
                   fontFamily='var(--font-body)'
-                  _focus={{ borderColor: 'color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 50%, transparent)', bg: 'rgba(255,255,255,0.09)', boxShadow: 'none' }}
+                  _focus={{ borderColor: C.accentMix(50), bg: C.fill(9), boxShadow: 'none' }}
                   _placeholder={{ color: C.textLight }}
                   rows={4} px={4} pt={3} resize="none"
                 />
                 <Button
                   onClick={handleSubmit}
                   disabled={submitting || !name || !email}
-                  w="full" h="50px" borderRadius="14px"
-                  bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDark})`}
-                  color="white" fontWeight={700} fontSize="sm"
+                  // Sobre la zona profunda: relleno primario fijo (sk-btn sería un contorno
+                  // oscuro en editorial/neón); radio y mayúsculas del estilo
+                  w="full" h="50px" borderRadius="var(--radius-button)"
+                  bg="linear-gradient(135deg, var(--brand-primary), var(--brand-primary-2))"
+                  color="var(--on-primary)" fontWeight={700} fontSize="sm"
                   fontFamily='var(--font-body)'
+                  textTransform="var(--button-text-transform)" letterSpacing="var(--button-spacing)"
                   cursor="pointer"
-                  boxShadow="0 6px 24px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 25%, transparent)"
-                  _hover={{ boxShadow: '0 10px 32px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 35%, transparent)', opacity: 0.92 }}
+                  boxShadow="var(--button-shadow)"
+                  _hover={{ boxShadow: 'var(--button-hover-shadow)', opacity: 0.92 }}
                   _disabled={{ opacity: 0.4, cursor: 'not-allowed' }}
                   transition="all 0.22s ease"
                 >
-                  {submitting ? <Spinner size="sm" color="white" /> : t('home.contact.sendBtn')}
+                  {submitting ? <Spinner size="sm" color="var(--on-primary)" /> : t('home.contact.sendBtn')}
                 </Button>
               </VStack>
             </Box>
@@ -304,9 +313,9 @@ function ContactInner() {
 
           {/* Nota de ubicación (solo si el estudio tiene dirección) */}
           <Flex align="center" gap={2} mt={5} px={1} display={address ? 'flex' : 'none'}>
-            <FaMapMarkerAlt size={11} color="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 40%, transparent)" />
+            <Icon name="map-pin" size={11} color={C.accentMix(40)} />
             <Text fontFamily='var(--font-body)'
-              fontSize="12px" color="rgba(255,255,255,0.28)">
+              fontSize="12px" color={C.textLight}>
               {address}
             </Text>
           </Flex>

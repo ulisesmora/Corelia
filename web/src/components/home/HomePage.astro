@@ -24,7 +24,7 @@ import {
   getClassTypes, getFaqs, getInstructors, getPlans, getRooms, getSchedules, getSiteImages,
   getTestimonials, offeredClasses, tr,
 } from '../../seo/catalog';
-import { getSiteConfig, lt } from '../../lib/site';
+import { getSiteConfig, htmlThemeAttrs, lt } from '../../lib/site';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -75,7 +75,7 @@ const L = es
   : { book: 'Book now', explore: 'Explore classes', prices: 'View prices', classes: 'Classes', team: 'Our team', rooms: 'Our studios', contact: 'Contact and location', allClasses: 'All classes' };
 ---
 
-<html lang={lang}>
+<html lang={lang} {...htmlThemeAttrs(site)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -118,9 +118,11 @@ const L = es
       .hero-ssr-title { color: #fff; font-family: var(--font-heading); font-size: clamp(1.9rem, 6vw, 3.75rem); font-weight: 700; line-height: 1.1; letter-spacing: .02em; margin: 0; text-shadow: 0 2px 20px rgba(0,0,0,0.3); }
       .hero-ssr-sub { color: rgba(255,255,255,0.92); font-size: clamp(1rem, 2.4vw, 1.25rem); max-width: 600px; margin: 0; text-shadow: 0 1px 10px rgba(0,0,0,0.2); }
       .hero-ssr-h1 { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-      .hero-ssr-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 0 40px; height: 56px; border-radius: 999px; color: #fff; font-size: 1.125rem; font-weight: 700; text-decoration: none; background: linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))); border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 8px 30px color-mix(in srgb, var(--brand-primary) 45%, transparent); }
+      /* Botones del hero: van sobre la foto oscurecida en todos los estilos, así
+         que siempre son de relleno primario; del estilo toman forma y letra. */
+      .hero-ssr-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 0 40px; height: 56px; border-radius: var(--radius-button); color: var(--on-primary); font-size: 1.125rem; font-weight: 700; text-decoration: none; text-transform: var(--button-text-transform); letter-spacing: var(--button-spacing); background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-2)); border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 8px 30px color-mix(in srgb, var(--brand-primary) 45%, transparent); }
       .hero-ssr-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-      .hero-ssr-ghost { display: inline-flex; align-items: center; height: 40px; padding: 0 24px; border-radius: 999px; color: #fff; font-size: 0.875rem; font-weight: 600; text-decoration: none; background: rgba(255,255,255,0.10); border: 1.5px solid rgba(255,255,255,0.55); }
+      .hero-ssr-ghost { display: inline-flex; align-items: center; height: 40px; padding: 0 24px; border-radius: var(--radius-button); color: #fff; font-size: 0.875rem; font-weight: 600; text-decoration: none; background: rgba(255,255,255,0.10); border: 1.5px solid rgba(255,255,255,0.55); }
     </style>
     {jsonLd.map((d) => <JsonLd data={d} />)}
 
@@ -134,24 +136,24 @@ const L = es
           -webkit-backdrop-filter: none !important;
           will-change: auto !important;
         }
-        /* Fallback automático: cualquier elemento con bg rgba blanco translúcido
-           obtiene un gradiente más opaco para preservar el efecto "card flotante"
-           sin necesitar backdrop-filter. */
-        [style*="rgba(255,255,255,0.5"],
-        [style*="rgba(255,255,255,0.6"],
-        [style*="rgba(255,255,255,0.7"],
-        [style*="rgba(255, 255, 255, 0.5"],
-        [style*="rgba(255, 255, 255, 0.6"],
-        [style*="rgba(255, 255, 255, 0.7"] {
+        /* Solo estilo "glass": un bg rgba blanco translúcido escrito a mano
+           obtiene un gradiente más opaco para preservar el efecto "card
+           flotante" sin backdrop-filter. Los demás estilos usan tokens. */
+        :root[data-style="glass"] [style*="rgba(255,255,255,0.5"],
+        :root[data-style="glass"] [style*="rgba(255,255,255,0.6"],
+        :root[data-style="glass"] [style*="rgba(255,255,255,0.7"],
+        :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.5"],
+        :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.6"],
+        :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.7"] {
           background: linear-gradient(135deg, rgba(255,255,255,0.92) 0%, color-mix(in srgb, var(--brand-bg) 85%, transparent) 100%) !important;
         }
         /* Versión más sutil para overlays oscuros sobre video/imagen */
-        [style*="rgba(255,255,255,0.1"],
-        [style*="rgba(255,255,255,0.2"],
-        [style*="rgba(255,255,255,0.3"],
-        [style*="rgba(255, 255, 255, 0.1"],
-        [style*="rgba(255, 255, 255, 0.2"],
-        [style*="rgba(255, 255, 255, 0.3"] {
+        :root[data-style="glass"] [style*="rgba(255,255,255,0.1"],
+        :root[data-style="glass"] [style*="rgba(255,255,255,0.2"],
+        :root[data-style="glass"] [style*="rgba(255,255,255,0.3"],
+        :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.1"],
+        :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.2"],
+        :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.3"] {
           background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.18) 100%) !important;
         }
       }
@@ -202,7 +204,7 @@ const L = es
           <a class="hero-ssr-cta" href="/calendar">{L.book} <span aria-hidden="true">→</span></a>
           <div class="hero-ssr-row">
             <a class="hero-ssr-ghost" href={es ? '/classes' : '/en/classes'}>{L.explore}</a>
-            <a class="hero-ssr-ghost" href="/prices">{L.prices}</a>
+            <a class="hero-ssr-ghost" href={es ? '/prices' : '/en/prices'}>{L.prices}</a>
           </div>
         </div>
       </div>
@@ -260,8 +262,8 @@ const L = es
     <style>
       /* Todas las clases como enlaces (las fichas): el carrusel solo enseña unas pocas */
       .class-links { max-width: 1100px; margin: -1rem auto 3rem; padding: 0 1.25rem; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
-      .class-links a { font-family: var(--font-body); text-transform: none; font-size: .9rem; font-weight: 600; padding: .45rem .9rem; border-radius: 999px; text-decoration: none; color: var(--brand-dark); background: rgba(255,255,255,.75); border: 1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent); }
-      .class-links a:hover { border-color: var(--brand-primary); }
+      .class-links a { font-family: var(--font-body); text-transform: none; font-size: .9rem; font-weight: 600; padding: .45rem .9rem; border-radius: var(--radius-chip); text-decoration: none; color: var(--page-text); background: var(--surface); border: var(--border-width) solid var(--surface-border); }
+      .class-links a:hover { border-color: var(--accent); }
     </style>
   </body>
 </html>

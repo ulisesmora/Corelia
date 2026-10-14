@@ -5,7 +5,7 @@ import {
   Box, Text, VStack, Flex, Image, Portal, Drawer, CloseButton,
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTrash, FaLeaf, FaShoppingBag } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import Chakra from './ChakraProvider';
 import { useCartStore, type CartItem } from './stores/car.store';
 import UserBalanceDisplay from './GetWallet';
@@ -18,11 +18,12 @@ import { optimizedImage, withOriginalFallback } from '../utils/img';
 const MotionBox = motion(Box as any);
 const MotionFlex = motion(Flex as any);
 
+// Paleta del carrito: solo tokens del estilo (presets.css)
 const C = {
-  accent: 'var(--brand-primary)', accentDark: 'color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))', brown: 'var(--brand-dark)',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))', textLight: 'color-mix(in srgb, var(--brand-secondary) 65%, white)',
-  bg: 'var(--brand-bg)', cardBg: 'rgba(255,255,255,0.72)',
-  border: 'rgba(255,255,255,0.80)', borderMuted: 'color-mix(in srgb, var(--brand-primary) 18%, transparent)',
+  accent: 'var(--accent-text)', brown: 'var(--page-text)', heading: 'var(--heading-color)',
+  textMuted: 'var(--text-muted)', textLight: 'var(--text-subtle)',
+  bg: 'var(--page-bg)', cardBg: 'var(--surface)',
+  border: 'var(--surface-border)', borderMuted: 'var(--border-neutral)',
 };
 
 function useLocale() {
@@ -41,20 +42,15 @@ function CartItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void 
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 32, height: 0, marginBottom: 0, overflow: 'hidden' }}
       transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
-      borderRadius="18px"
-      bg={C.cardBg}
-      border={`1px solid ${C.border}`}
-      backdropFilter="blur(16px)"
-      style={{ WebkitBackdropFilter: 'blur(16px)' }}
-      boxShadow="0 2px 12px color-mix(in srgb, var(--brand-dark) 6%, transparent)"
+      className="sk-card"
       p={3}
       w="full"
     >
       <Flex gap={3} align="center">
         {/* Thumbnail */}
         <Box
-          w="68px" h="68px" borderRadius="12px" overflow="hidden"
-          flexShrink={0} bg="linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 50%, white), color-mix(in srgb, var(--brand-primary) 72%, white))"
+          w="68px" h="68px" borderRadius="var(--radius-input)" overflow="hidden"
+          flexShrink={0} bg="var(--accent-soft)"
         >
           {item.image ? (
             <Image
@@ -63,7 +59,7 @@ function CartItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void 
             />
           ) : (
             <Flex w="full" h="full" align="center" justify="center">
-              <FaLeaf size={18} color="rgba(255,255,255,0.45)" />
+              <Icon name="leaf" size={18} color="var(--accent)" />
             </Flex>
           )}
         </Box>
@@ -88,7 +84,7 @@ function CartItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void 
           <Flex gap={1.5} align="center" mt={0.5}>
             <Box
               px={2} py={0.5} borderRadius="full"
-              bg="color-mix(in srgb, var(--brand-primary) 12%, transparent)" border={`1px solid ${C.borderMuted}`}
+              bg="var(--accent-soft)" border="1px solid var(--accent-border)"
             >
               <Text fontSize="10px" fontWeight={700} color={C.accent}
                 fontFamily='var(--font-body)'>
@@ -111,11 +107,11 @@ function CartItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void 
           aria-label={t('checkout.deleteLabel')}
           w="32px" h="32px" borderRadius="full" flexShrink={0}
           display="flex" alignItems="center" justifyContent="center"
-          bg="rgba(255,255,255,0.55)" border="1px solid color-mix(in srgb, var(--brand-primary) 15%, transparent)"
+          bg="var(--surface-muted)" border="1px solid var(--border-neutral)"
           cursor="pointer" transition="all 0.2s"
-          _hover={{ bg: 'rgba(220,80,60,0.08)', borderColor: 'rgba(220,80,60,0.25)' }}
+          _hover={{ bg: 'var(--danger-soft)', borderColor: 'var(--danger)' }}
         >
-          <FaTrash size={11} color={C.textMuted} />
+          <Icon name="trash" size={11} color={C.textMuted} />
         </Box>
       </Flex>
     </MotionBox>
@@ -128,13 +124,13 @@ function EmptyState() {
     <Flex direction="column" align="center" justify="center" flex={1} py={16} gap={4}>
       <Flex
         w="72px" h="72px" borderRadius="full" align="center" justify="center"
-        bg="color-mix(in srgb, var(--brand-primary) 9%, transparent)" border={`1px solid ${C.borderMuted}`}
+        bg="var(--accent-soft)" border="1px solid var(--accent-border)"
       >
-        <FaShoppingBag size={24} color={C.textLight} />
+        <Icon name="bag" size={24} color={C.textLight} />
       </Flex>
       <VStack gap={1} textAlign="center">
         <Text fontFamily='var(--font-heading)'
-          fontSize="xl" color={C.brown} letterSpacing="0.04em">
+          fontSize="xl" color={C.heading} letterSpacing="0.04em">
           {t('cart.emptyTitle')}
         </Text>
         <Text fontFamily='var(--font-body)'
@@ -177,16 +173,17 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
     >
       <Portal>
         <Drawer.Backdrop
-          bg="color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 50%, black) 45%, transparent)"
-          backdropFilter="blur(6px)"
-          style={{ WebkitBackdropFilter: 'blur(6px)' }}
+          bg="var(--overlay)"
+          backdropFilter="var(--surface-blur)"
+          style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
         />
         <Drawer.Positioner>
           <Drawer.Content
             bg={C.bg}
+            color={C.brown}
             maxW="400px"
             w="full"
-            boxShadow="-12px 0 60px color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 50%, black) 14%, transparent)"
+            boxShadow="var(--shadow-float)"
             display="flex"
             flexDirection="column"
           >
@@ -194,14 +191,14 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
             <Drawer.Header
               px={6} pt={6} pb={4}
               borderBottom={`1px solid ${C.borderMuted}`}
-              bg="linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 100%)"
+              bg="var(--section-bg)"
               flexShrink={0}
             >
               <Flex align="center" justify="space-between">
                 <Flex align="center" gap={3}>
                   <Text
                     fontFamily='var(--font-heading)'
-                    fontSize="2xl" color={C.brown}
+                    fontSize="2xl" color={C.heading}
                     letterSpacing="0.05em" lineHeight="1"
                   >
                     {t('cart.title')}
@@ -209,7 +206,7 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
                   {items.length > 0 && (
                     <Box
                       px={2.5} py={0.5} borderRadius="full"
-                      bg="color-mix(in srgb, var(--brand-primary) 15%, transparent)" border={`1px solid ${C.borderMuted}`}
+                      bg="var(--accent-soft)" border="1px solid var(--accent-border)"
                     >
                       <Text fontSize="11px" fontWeight={700} color={C.accent}
                         fontFamily='var(--font-body)'>
@@ -221,18 +218,19 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
                 <Drawer.CloseTrigger asChild>
                   <CloseButton
                     onClick={onClose} size="sm" borderRadius="full"
-                    bg="rgba(255,255,255,0.55)" border="1px solid rgba(255,255,255,0.70)"
-                    _hover={{ bg: 'white' }} cursor="pointer"
+                    bg="var(--surface-muted)" border="1px solid var(--border-neutral)"
+                    color={C.brown}
+                    _hover={{ bg: 'var(--surface-strong)' }} cursor="pointer"
                   />
                 </Drawer.CloseTrigger>
               </Flex>
 
               {/* Balance display */}
               <Flex align="center" gap={2} mt={3}
-                px={3} py={2} borderRadius="12px"
-                bg="rgba(255,255,255,0.55)" border={`1px solid ${C.border}`}
-                backdropFilter="blur(12px)"
-                style={{ WebkitBackdropFilter: 'blur(12px)' }}
+                px={3} py={2} borderRadius="var(--radius-input)"
+                bg={C.cardBg} border={`1px solid ${C.border}`}
+                backdropFilter="var(--surface-blur)"
+                style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
               >
                 <Text fontFamily='var(--font-body)'
                   fontSize="12px" color={C.textMuted} fontWeight={600}>
@@ -248,8 +246,8 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
               overflowY="auto"
               css={{
                 '&::-webkit-scrollbar': { width: '4px' },
-                '&::-webkit-scrollbar-track': { background: 'color-mix(in srgb, var(--brand-primary) 6%, transparent)' },
-                '&::-webkit-scrollbar-thumb': { background: 'color-mix(in srgb, var(--brand-primary) 22%, transparent)', borderRadius: '4px' },
+                '&::-webkit-scrollbar-track': { background: 'var(--surface-muted)' },
+                '&::-webkit-scrollbar-thumb': { background: 'var(--accent-border)', borderRadius: '4px' },
                 scrollbarWidth: 'thin',
               }}
               display="flex"
@@ -277,16 +275,16 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
               <Drawer.Footer
                 px={5} pt={4} pb={6}
                 borderTop={`1px solid ${C.borderMuted}`}
-                bg="linear-gradient(180deg, color-mix(in srgb, var(--brand-primary) 17%, white) 0%, color-mix(in srgb, var(--brand-primary) 22%, white) 100%)"
+                bg="var(--page-bg-alt)"
                 flexShrink={0}
               >
                 <VStack w="full" gap={3}>
                   {/* Summary */}
                   <Box
-                    w="full" px={4} py={3} borderRadius="14px"
-                    bg="rgba(255,255,255,0.60)" border={`1px solid ${C.border}`}
-                    backdropFilter="blur(12px)"
-                    style={{ WebkitBackdropFilter: 'blur(12px)' }}
+                    w="full" px={4} py={3} borderRadius="var(--radius-input)"
+                    bg={C.cardBg} border={`1px solid ${C.border}`}
+                    backdropFilter="var(--surface-blur)"
+                    style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
                   >
                     <Flex justify="space-between" align="center" mb={2}>
                       <Text fontFamily='var(--font-body)'
@@ -305,7 +303,7 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
                         {t('cart.total')}
                       </Text>
                       <Text fontFamily='var(--font-heading)'
-                        fontSize="xl" color={C.brown} letterSpacing="0.04em">
+                        fontSize="xl" color={C.heading} letterSpacing="0.04em">
                         {formatPrice(totalPrice, lang)}
                       </Text>
                     </Flex>
@@ -314,17 +312,12 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
                   {/* Checkout CTA */}
                   <Box
                     as="a" href="/checkout" w="full"
+                    className="sk-btn"
                     display="flex" alignItems="center" justifyContent="center"
-                    h="50px" borderRadius="14px"
-                    bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDark})`}
-                    color="white"
+                    h="50px"
                     fontFamily='var(--font-body)'
-                    fontWeight={700} fontSize="sm"
-                    letterSpacing="0.03em"
+                    fontSize="sm"
                     cursor="pointer"
-                    boxShadow="0 6px 20px color-mix(in srgb, var(--brand-primary) 32%, transparent)"
-                    transition="all 0.22s ease"
-                    _hover={{ boxShadow: '0 10px 28px color-mix(in srgb, var(--brand-primary) 42%, transparent)', opacity: 0.93 }}
                   >
                     {t('cart.checkout')}
                   </Box>
@@ -332,14 +325,14 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
                   {/* Clear cart */}
                   <Box
                     as="button" onClick={clearCart} w="full"
-                    h="38px" borderRadius="12px"
+                    h="38px" borderRadius="var(--radius-button)"
                     bg="transparent"
-                    border={`1px solid color-mix(in srgb, var(--brand-primary) 28%, transparent)`}
+                    border="1px solid var(--accent-border)"
                     color={C.textMuted}
                     fontFamily='var(--font-body)'
                     fontWeight={600} fontSize="12px"
                     cursor="pointer" transition="all 0.2s"
-                    _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)', color: C.brown }}
+                    _hover={{ bg: 'var(--accent-soft)', color: C.brown }}
                     display="flex" alignItems="center" justifyContent="center"
                   >
                     {t('cart.clear')}

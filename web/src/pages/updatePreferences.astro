@@ -3,9 +3,11 @@ import Footer from '../components/Footer';
 import AppFixed from '../components/AppFixed';
 import UpdatePreferencesForm from '../components/UpdatePreferencesForm';
 import OptimizedHead from '../components/OptimizedHead.astro';
+import { getSiteConfig, htmlThemeAttrs } from '../lib/site';
+const site = await getSiteConfig();
 ---
 
-<html lang="es">
+<html lang="es" {...htmlThemeAttrs(site)}>
   <head>
     <OptimizedHead title="Actualizar preferencias" titleEn="Update preferences" noindex />
   </head>

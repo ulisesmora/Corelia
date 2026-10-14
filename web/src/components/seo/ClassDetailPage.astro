@@ -13,7 +13,7 @@ import {
   abs, breadcrumbJsonLd, business, businessJsonLd, classPath,
   metaDescription, niceTitle, type Lang,
 } from '../../seo/site';
-import { formatMoney, getSiteConfig } from '../../lib/site';
+import { formatMoney, getSiteConfig, htmlThemeAttrs } from '../../lib/site';
 import {
   LEVELS, SCHEMA_DAYS, WEEKDAYS, currentWeeklySlots, getClassTypes, getSchedules, hhmm,
   offeredClasses, tr, type ApiClassType,
@@ -147,7 +147,7 @@ const jsonLd = cls ? [
   },
 ] : [];
 ---
-<html lang={lang}>
+<html lang={lang} {...htmlThemeAttrs(site)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -182,25 +182,27 @@ const jsonLd = cls ? [
       </script>
     )}
     <style>
-      .ssr-class { max-width: 960px; margin: 0 auto; padding: 7rem 1.25rem 2rem; font-family: var(--font-body); color: var(--brand-dark); }
-      .ssr-class h1 { font-family: var(--font-heading); font-size: clamp(2.4rem, 6vw, 3.6rem); letter-spacing: .02em; margin: 0 0 .5rem; line-height: 1.05; }
-      .ssr-class .where { color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); font-weight: 600; margin: 0 0 1.25rem; }
+      /* Acabado con los tokens del estilo visual (styles/presets.css). Los
+         botones toman color, borde, radio y sombra de .sk-btn / .sk-btn-ghost. */
+      .ssr-class { max-width: 960px; margin: 0 auto; padding: 7rem 1.25rem 2rem; font-family: var(--font-body); color: var(--page-text); }
+      .ssr-class h1 { font-family: var(--font-heading); font-size: clamp(2.4rem, 6vw, 3.6rem); letter-spacing: .02em; margin: 0 0 .5rem; line-height: 1.05; color: var(--heading-color); }
+      .ssr-class .where { color: var(--accent-text); font-weight: 600; margin: 0 0 1.25rem; }
       .ssr-class .desc { font-size: 1.08rem; line-height: 1.7; margin: 0 0 1.5rem; max-width: 70ch; }
       .ssr-class dl { display: grid; grid-template-columns: max-content 1fr; gap: .5rem 1.25rem; margin: 0 0 1.75rem; }
-      .ssr-class dt { font-weight: 700; color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); }
+      .ssr-class dt { font-weight: 700; color: var(--accent-text); }
       .ssr-class dd { margin: 0; }
       .ssr-class ul.slots { margin: 0; padding-left: 1.1rem; }
       .ssr-class .cta { display: flex; flex-wrap: wrap; gap: .75rem; }
-      .ssr-class .cta a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 1.4rem; border-radius: 999px; font-weight: 700; text-decoration: none; }
-      .ssr-class .cta a.primary { background: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); color: #fff; }
-      .ssr-class .cta a.secondary { border: 1.5px solid var(--brand-primary); color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); }
-      .related { max-width: 960px; margin: 0 auto; padding: 1rem 1.25rem 3rem; font-family: var(--font-body); color: var(--brand-dark); }
-      .related h2 { font-family: var(--font-heading); font-size: 2rem; letter-spacing: .02em; margin: 0 0 .25rem; }
-      .related p { color: color-mix(in srgb, var(--brand-secondary) 47%, var(--brand-dark)); margin: 0 0 1rem; }
+      .ssr-class .cta a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 1.4rem; }
+      .ssr-class .cta a.primary { text-decoration: none; }
+      .ssr-class .cta a.secondary { font-weight: 700; } /* subrayado: lo decide .sk-btn-ghost */
+      .related { max-width: 960px; margin: 0 auto; padding: 1rem 1.25rem 3rem; font-family: var(--font-body); color: var(--page-text); }
+      .related h2 { font-family: var(--font-heading); font-size: 2rem; letter-spacing: .02em; margin: 0 0 .25rem; color: var(--heading-color); }
+      .related p { color: var(--text-muted); margin: 0 0 1rem; }
       .related ul { list-style: none; padding: 0; margin: 0; display: grid; gap: .6rem; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
-      .related a { display: block; padding: .8rem 1rem; border-radius: 14px; background: rgba(255,255,255,.75); border: 1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent); color: var(--brand-dark); text-decoration: none; }
-      .related a:hover { border-color: var(--brand-primary); }
-      .related a span { display: block; font-size: .85rem; color: color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)); margin-top: .15rem; }
+      .related a { display: block; padding: .8rem 1rem; border-radius: var(--radius-card); background: var(--surface); border: var(--border-width) solid var(--surface-border); box-shadow: var(--shadow-card); backdrop-filter: var(--surface-blur); -webkit-backdrop-filter: var(--surface-blur); color: var(--surface-text); text-decoration: none; }
+      .related a:hover { border-color: var(--accent); }
+      .related a span { display: block; font-size: .85rem; color: var(--accent-text); margin-top: .15rem; }
       @media (max-width: 520px) { .ssr-class dl { grid-template-columns: 1fr; } .ssr-class dt { margin-top: .4rem; } }
     </style>
   </head>
@@ -232,9 +234,9 @@ const jsonLd = cls ? [
                   {teacherNames.length > 0 && <><dt>{T.teacher}</dt><dd>{teacherNames.join(', ')}</dd></>}
                 </dl>
                 <div class="cta">
-                  <a class="primary" href={es ? '/calendar' : '/calendar'}>{T.book}</a>
-                  {BUSINESS.whatsapp && <a class="secondary" href={BUSINESS.whatsapp} rel="noopener">{T.whatsapp}</a>}
-                  <a class="secondary" href={es ? '/classes' : '/en/classes'}>{T.all}</a>
+                  <a class="primary sk-btn" href={es ? '/calendar' : '/calendar'}>{T.book}</a>
+                  {BUSINESS.whatsapp && <a class="secondary sk-btn-ghost" href={BUSINESS.whatsapp} rel="noopener">{T.whatsapp}</a>}
+                  <a class="secondary sk-btn-ghost" href={es ? '/classes' : '/en/classes'}>{T.all}</a>
                 </div>
               </>
             ) : (

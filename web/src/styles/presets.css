@@ -1,0 +1,779 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ESTILOS VISUALES (presets) — "acabado" de la web por estudio.
+
+   El panel elige el estilo (theme.style) y la web lo pone en <html data-style="…">
+   (lib/site.ts → htmlThemeAttrs, SiteHead.astro). Cada estilo es UN bloque
+   `:root[data-style="x"] { …tokens… }` más, si hace falta, unas reglas de
+   detalle justo debajo. Los componentes SOLO consumen tokens (`var(--surface)`,
+   `var(--radius-card)`…) o las clases utilitarias `.sk-*` del final del
+   archivo: nunca preguntan qué estilo hay.
+
+   Cómo añadir un estilo nuevo: docs/ESTILOS.md (lista de tokens incluida).
+
+   Colores de marca disponibles (los pone SiteHead desde la config del panel):
+     --brand-primary  --brand-secondary  --brand-dark  --brand-bg
+     --brand-primary-2           segundo tono del primario (degradados, hover)
+     --on-primary / --on-secondary   texto legible sobre ese relleno
+     --brand-bg-light / --brand-bg-dark   el fondo garantizado claro / oscuro
+     --brand-primary-on-light / --brand-primary-on-dark   primario como texto
+     --font-heading  --font-body
+
+   Regla de los estilos OSCUROS (energy, neon): --brand-bg es el fondo de la
+   página (el estudio lo pone oscuro), --brand-dark las zonas más profundas
+   (navbar, footer, bandas) y el texto es claro y fijo. --brand-dark NUNCA es
+   color de texto en un estilo oscuro.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+
+/* ── NATURAL (por defecto) ─ orgánico y cálido, pensado para pilates ──────────
+   Superficies sólidas crema, esquinas muy redondeadas, sombras suaves teñidas
+   de marca, bordes finos tintados y un halo orgánico detrás de los títulos.
+   También son los valores de :root: cualquier estilo sin bloque se ve así. */
+:root,
+:root[data-style="natural"] {
+  color-scheme: light;
+
+  /* Página */
+  --page-bg: color-mix(in srgb, var(--brand-bg-light) 60%, white);
+  --page-bg-alt: color-mix(in srgb, var(--brand-bg-light) 88%, white);
+  --page-pattern: none;
+  --section-bg: linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 12%, var(--brand-bg-light)) 0%, var(--brand-bg-light) 50%, color-mix(in srgb, var(--brand-secondary) 12%, var(--brand-bg-light)) 100%);
+  --deep-bg: var(--brand-dark);
+  --deep-text: #ffffff;
+  --deep-muted: rgba(255, 255, 255, 0.74);
+  --deep-border: rgba(255, 255, 255, 0.14);
+
+  /* Texto */
+  --page-text: var(--brand-dark);
+  --text-muted: color-mix(in srgb, var(--brand-secondary) 50%, var(--brand-dark));
+  --text-subtle: color-mix(in srgb, var(--brand-secondary) 78%, var(--brand-dark));
+  --heading-color: var(--brand-dark);
+  --accent: var(--brand-primary);
+  --accent-text: var(--brand-primary-on-light);
+  --accent-soft: color-mix(in srgb, var(--brand-primary) 12%, transparent);
+  --accent-border: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+  --border-neutral: color-mix(in srgb, var(--brand-dark) 12%, transparent);
+
+  /* Superficies */
+  --surface: color-mix(in srgb, var(--brand-bg-light) 32%, white);
+  --surface-strong: color-mix(in srgb, var(--brand-bg-light) 15%, white);
+  --surface-muted: color-mix(in srgb, var(--brand-bg-light) 72%, white);
+  --surface-text: var(--page-text);
+  --surface-border: color-mix(in srgb, var(--brand-primary) 22%, transparent);
+  --surface-blur: none;
+  --overlay: color-mix(in srgb, var(--brand-dark) 50%, transparent);
+  --input-bg: #ffffff;
+  --input-border: color-mix(in srgb, var(--brand-primary) 30%, transparent);
+
+  /* Forma */
+  --border-width: 1px;
+  --radius-card: 26px;
+  --radius-card-lg: 32px;
+  --radius-button: 999px;
+  --radius-input: 14px;
+  --radius-chip: 999px;
+
+  /* Sombras y movimiento */
+  --shadow-card: 0 12px 32px -14px color-mix(in srgb, var(--brand-dark) 24%, transparent), 0 2px 6px color-mix(in srgb, var(--brand-dark) 5%, transparent);
+  --shadow-hover: 0 24px 50px -18px color-mix(in srgb, var(--brand-dark) 32%, transparent), 0 4px 10px color-mix(in srgb, var(--brand-dark) 6%, transparent);
+  --shadow-float: 0 20px 50px -16px color-mix(in srgb, var(--brand-dark) 34%, transparent);
+  --hover-lift: translateY(-3px);
+
+  /* Botones */
+  --button-bg: var(--brand-primary);
+  --button-text: var(--on-primary);
+  --button-border: 1px solid transparent;
+  --button-shadow: 0 10px 24px -10px color-mix(in srgb, var(--brand-primary) 75%, transparent);
+  --button-hover-bg: var(--brand-primary-2);
+  --button-hover-text: var(--on-primary);
+  --button-hover-shadow: 0 14px 30px -10px color-mix(in srgb, var(--brand-primary) 80%, transparent);
+  --button-hover-transform: translateY(-2px);
+  --button-text-transform: none;
+  --button-spacing: 0.01em;
+  --button-weight: 600;
+  --button-ghost-bg: transparent;
+  --button-ghost-text: var(--accent-text);
+  --button-ghost-border: 1.5px solid var(--accent-border);
+  --button-ghost-hover-bg: var(--accent-soft);
+  --button-ghost-decoration: none;
+
+  /* Tipografía (la familia la elige el panel: --font-heading / --font-body) */
+  --heading-weight: 500;
+  --heading-transform: none;
+  --heading-spacing: 0.01em;
+  --heading-shadow: none;
+  --title-decor: radial-gradient(closest-side, color-mix(in srgb, var(--brand-primary) 20%, transparent), transparent);
+  --eyebrow-bg: var(--accent-soft);
+  --eyebrow-text: var(--accent-text);
+  --eyebrow-border: 1px solid var(--accent-border);
+  --eyebrow-font: var(--font-body);
+  --eyebrow-transform: uppercase;
+  --eyebrow-spacing: 0.12em;
+  --eyebrow-shadow: none;
+  --eyebrow-rotate: 0deg;
+  --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* Logo: qué versión se ve en superficies normales (la clara en estilos oscuros) */
+  --logo-default-display: inline;
+  --logo-light-display: none;
+
+  /* Secciones */
+  --section-divider: 0 solid transparent;
+  --section-band: none;
+
+  /* Estados */
+  --success: #2d7d46;
+  --success-soft: color-mix(in srgb, #2d7d46 12%, transparent);
+  --warning: #8a5a00;
+  --warning-soft: color-mix(in srgb, #b7791f 14%, transparent);
+  --danger: #b42318;
+  --danger-soft: color-mix(in srgb, #b42318 10%, transparent);
+}
+
+
+/* ── MINIMAL ─ limpio y aireado ───────────────────────────────────────────────
+   Blanco, radio pequeño, sin sombras, bordes finos neutros, títulos ligeros. */
+:root[data-style="minimal"] {
+  --page-bg: color-mix(in srgb, var(--brand-bg-light) 10%, white);
+  --page-bg-alt: color-mix(in srgb, var(--brand-bg-light) 38%, white);
+  --section-bg: var(--page-bg);
+
+  --text-muted: color-mix(in srgb, var(--brand-dark) 68%, white);
+  --text-subtle: color-mix(in srgb, var(--brand-dark) 58%, white);
+  --accent-soft: color-mix(in srgb, var(--brand-primary) 8%, transparent);
+  --accent-border: color-mix(in srgb, var(--brand-primary) 26%, transparent);
+  --border-neutral: color-mix(in srgb, var(--brand-dark) 10%, transparent);
+
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-muted: color-mix(in srgb, var(--brand-bg-light) 40%, white);
+  --surface-border: color-mix(in srgb, var(--brand-dark) 11%, transparent);
+  --overlay: color-mix(in srgb, var(--brand-dark) 35%, transparent);
+  --input-border: color-mix(in srgb, var(--brand-dark) 18%, transparent);
+
+  --radius-card: 10px;
+  --radius-card-lg: 12px;
+  --radius-button: 8px;
+  --radius-input: 8px;
+  --radius-chip: 6px;
+
+  --shadow-card: none;
+  --shadow-hover: 0 0 0 1px color-mix(in srgb, var(--brand-dark) 16%, transparent);
+  --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.05), 0 12px 32px -16px rgba(0, 0, 0, 0.2);
+  --hover-lift: none;
+
+  --button-shadow: none;
+  --button-hover-shadow: none;
+  --button-hover-transform: none;
+  --button-weight: 500;
+  --button-ghost-border: 1px solid var(--input-border);
+  --button-ghost-text: var(--page-text);
+  --button-ghost-hover-bg: var(--surface-muted);
+
+  --heading-weight: 400;
+  --heading-spacing: -0.01em;
+  --title-decor: none;
+  --eyebrow-bg: transparent;
+  --eyebrow-text: var(--text-muted);
+  --eyebrow-border: 0 solid transparent;
+  --eyebrow-spacing: 0.16em;
+}
+:root[data-style="minimal"] .sk-eyebrow { padding-inline: 0; }
+
+
+/* ── EDITORIAL ─ elegante, de revista ─────────────────────────────────────────
+   Papel, esquinas rectas, líneas finas entre secciones, etiquetas en
+   mayúsculas espaciadas, botones de contorno y títulos grandes. */
+:root[data-style="editorial"] {
+  --page-bg: color-mix(in srgb, var(--brand-bg-light) 45%, white);
+  --page-bg-alt: var(--page-bg);
+  --section-bg: var(--page-bg);
+
+  --text-muted: color-mix(in srgb, var(--brand-dark) 72%, white);
+  --text-subtle: color-mix(in srgb, var(--brand-dark) 60%, white);
+  --border-neutral: color-mix(in srgb, var(--brand-dark) 16%, transparent);
+
+  --surface: color-mix(in srgb, var(--brand-bg-light) 22%, white);
+  --surface-strong: color-mix(in srgb, var(--brand-bg-light) 10%, white);
+  --surface-muted: color-mix(in srgb, var(--brand-bg-light) 55%, white);
+  --surface-border: color-mix(in srgb, var(--brand-dark) 22%, transparent);
+  --input-bg: transparent;
+  --input-border: color-mix(in srgb, var(--brand-dark) 30%, transparent);
+
+  --radius-card: 2px;
+  --radius-card-lg: 0;
+  --radius-button: 0;
+  --radius-input: 0;
+  --radius-chip: 0;
+
+  --shadow-card: none;
+  --shadow-hover: none;
+  --shadow-float: 0 18px 40px -24px color-mix(in srgb, var(--brand-dark) 40%, transparent);
+  --hover-lift: none;
+
+  --button-bg: transparent;
+  --button-text: var(--page-text);
+  --button-border: 1px solid var(--page-text);
+  --button-shadow: none;
+  --button-hover-bg: var(--page-text);
+  --button-hover-text: var(--page-bg);
+  --button-hover-shadow: none;
+  --button-hover-transform: none;
+  --button-text-transform: uppercase;
+  --button-spacing: 0.16em;
+  --button-weight: 500;
+  --button-ghost-text: var(--page-text);
+  --button-ghost-border: 1px solid transparent;
+  --button-ghost-hover-bg: transparent;
+  --button-ghost-decoration: underline;
+
+  --heading-weight: 400;
+  --heading-spacing: -0.015em;
+  --title-decor: none;
+  --eyebrow-bg: transparent;
+  --eyebrow-text: var(--accent-text);
+  --eyebrow-border: 0 solid transparent;
+  --eyebrow-spacing: 0.26em;
+
+  --section-divider: 1px solid color-mix(in srgb, var(--brand-dark) 16%, transparent);
+}
+:root[data-style="editorial"] .sk-eyebrow { padding-inline: 0; }
+:root[data-style="editorial"] .sk-section-title {
+  font-size: clamp(2.6rem, 5.4vw, 4.4rem);
+  line-height: 1.04;
+}
+:root[data-style="editorial"] .sk-btn-ghost { text-underline-offset: 0.3em; }
+
+
+/* ── LIQUID GLASS ─ translúcido y luminoso (iOS 26) ───────────────────────────
+   Superficies de cristal con blur fuerte, brillo interior en el borde
+   superior, reflejos y profundidad. En móvil el blur se apaga (rendimiento:
+   ver global.scss) y las superficies pasan a ser casi opacas. */
+:root[data-style="glass"] {
+  --page-bg: color-mix(in srgb, var(--brand-bg-light) 55%, white);
+  --page-bg-alt: color-mix(in srgb, var(--brand-bg-light) 25%, #f1f2f3);
+  --section-bg: radial-gradient(ellipse at 10% 0%, color-mix(in srgb, var(--brand-primary) 26%, transparent), transparent 55%), radial-gradient(ellipse at 95% 100%, color-mix(in srgb, var(--brand-secondary) 22%, transparent), transparent 55%), linear-gradient(150deg, color-mix(in srgb, var(--brand-primary) 18%, white) 0%, var(--brand-bg-light) 50%, color-mix(in srgb, var(--brand-primary) 20%, white) 100%);
+
+  --surface: rgba(255, 255, 255, 0.52);
+  --surface-strong: rgba(255, 255, 255, 0.8);
+  --surface-muted: rgba(255, 255, 255, 0.38);
+  --surface-border: rgba(255, 255, 255, 0.72);
+  --surface-blur: blur(24px) saturate(180%);
+  --input-bg: rgba(255, 255, 255, 0.62);
+  --input-border: rgba(255, 255, 255, 0.85);
+  --overlay: color-mix(in srgb, var(--brand-dark) 35%, transparent);
+
+  --radius-card: 24px;
+  --radius-card-lg: 30px;
+  --radius-input: 14px;
+
+  --shadow-card: inset 0 1px 0 rgba(255, 255, 255, 0.6), inset 0 -1px 0 rgba(255, 255, 255, 0.16), 0 8px 32px color-mix(in srgb, var(--brand-dark) 10%, transparent);
+  --shadow-hover: inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 -1px 0 rgba(255, 255, 255, 0.2), 0 18px 48px color-mix(in srgb, var(--brand-dark) 17%, transparent);
+  --shadow-float: inset 0 1px 0 rgba(255, 255, 255, 0.6), 0 16px 48px color-mix(in srgb, var(--brand-dark) 20%, transparent);
+  --hover-lift: translateY(-4px);
+
+  --button-bg: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-2));
+  --button-border: 1px solid rgba(255, 255, 255, 0.35);
+  --button-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45), 0 8px 28px color-mix(in srgb, var(--brand-primary) 35%, transparent);
+  --button-hover-bg: linear-gradient(135deg, var(--brand-primary-2), var(--brand-primary));
+  --button-hover-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.5), 0 12px 36px color-mix(in srgb, var(--brand-primary) 45%, transparent);
+  --button-ghost-bg: rgba(255, 255, 255, 0.42);
+  --button-ghost-border: 1px solid rgba(255, 255, 255, 0.75);
+  --button-ghost-hover-bg: rgba(255, 255, 255, 0.65);
+
+  --heading-weight: 600;
+  --title-decor: none;
+  --eyebrow-bg: rgba(255, 255, 255, 0.5);
+  --eyebrow-border: 1px solid rgba(255, 255, 255, 0.75);
+  --eyebrow-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7), 0 2px 10px color-mix(in srgb, var(--brand-dark) 6%, transparent);
+}
+/* Sin blur (móvil): cristal casi opaco para que el texto se siga leyendo */
+@media (hover: none) and (pointer: coarse), (max-width: 900px) {
+  :root[data-style="glass"] {
+    --surface: rgba(255, 255, 255, 0.86);
+    --surface-strong: rgba(255, 255, 255, 0.95);
+    --surface-muted: rgba(255, 255, 255, 0.7);
+    --eyebrow-bg: rgba(255, 255, 255, 0.82);
+    --button-ghost-bg: rgba(255, 255, 255, 0.75);
+    --input-bg: rgba(255, 255, 255, 0.9);
+  }
+}
+
+
+/* ── BRUTALIST ─ neobrutalismo ────────────────────────────────────────────────
+   Bordes negros gruesos, sombras duras sin desenfoque, bloques de color,
+   etiquetas mono en mayúsculas y botones que "se hunden" al pasar el ratón. */
+:root[data-style="brutalist"] {
+  --page-bg: var(--brand-bg-light);
+  --page-bg-alt: color-mix(in srgb, var(--brand-primary) 22%, var(--brand-bg-light));
+  --section-bg: color-mix(in srgb, var(--brand-secondary) 12%, var(--brand-bg-light));
+
+  --text-muted: color-mix(in srgb, var(--brand-dark) 78%, white);
+  --text-subtle: color-mix(in srgb, var(--brand-dark) 66%, white);
+  --accent-soft: color-mix(in srgb, var(--brand-primary) 30%, white);
+  --accent-border: var(--brand-dark);
+  --border-neutral: color-mix(in srgb, var(--brand-dark) 30%, transparent);
+
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-muted: color-mix(in srgb, var(--brand-primary) 14%, white);
+  --surface-border: var(--brand-dark);
+  --input-bg: #ffffff;
+  --input-border: var(--brand-dark);
+  --overlay: color-mix(in srgb, var(--brand-dark) 55%, transparent);
+
+  --border-width: 2.5px;
+  --radius-card: 6px;
+  --radius-card-lg: 8px;
+  --radius-button: 6px;
+  --radius-input: 4px;
+  --radius-chip: 4px;
+
+  --shadow-card: 4px 4px 0 var(--brand-dark);
+  --shadow-hover: 7px 7px 0 var(--brand-dark);
+  --shadow-float: 6px 6px 0 var(--brand-dark);
+  --hover-lift: translate(-2px, -2px);
+
+  --button-border: 2.5px solid var(--brand-dark);
+  --button-shadow: 4px 4px 0 var(--brand-dark);
+  --button-hover-bg: var(--brand-primary);
+  --button-hover-shadow: 1px 1px 0 var(--brand-dark);
+  --button-hover-transform: translate(3px, 3px);
+  --button-text-transform: uppercase;
+  --button-spacing: 0.04em;
+  --button-weight: 800;
+  --button-ghost-bg: #ffffff;
+  --button-ghost-text: var(--page-text);
+  --button-ghost-border: 2.5px solid var(--brand-dark);
+  --button-ghost-hover-bg: var(--accent-soft);
+
+  --heading-weight: 700;
+  --heading-spacing: -0.02em;
+  --title-decor: none;
+  --eyebrow-bg: var(--brand-secondary);
+  --eyebrow-text: var(--on-secondary);
+  --eyebrow-border: 2px solid var(--brand-dark);
+  --eyebrow-font: var(--font-mono);
+  --eyebrow-spacing: 0.06em;
+  --eyebrow-shadow: 2px 2px 0 var(--brand-dark);
+
+  --section-divider: 2.5px solid var(--brand-dark);
+}
+:root[data-style="brutalist"] .sk-btn-ghost:hover:not(:disabled) {
+  box-shadow: 1px 1px 0 var(--brand-dark);
+  transform: translate(3px, 3px);
+}
+:root[data-style="brutalist"] .sk-btn-ghost { box-shadow: 4px 4px 0 var(--brand-dark); }
+
+
+/* ── ENERGY ─ deportivo/atlético 2026 (OSCURO) ────────────────────────────────
+   Fondo casi negro, texto claro, títulos en mayúsculas y compactos, bandas
+   diagonales entre secciones, acentos saturados y botones contundentes. */
+:root[data-style="energy"] {
+  color-scheme: dark;
+  --logo-default-display: none;
+  --logo-light-display: inline;
+
+  --page-bg: var(--brand-bg-dark);
+  --page-bg-alt: color-mix(in srgb, var(--brand-bg-dark) 94%, white);
+  --section-bg: linear-gradient(165deg, color-mix(in srgb, var(--brand-primary) 9%, var(--brand-bg-dark)) 0%, var(--brand-bg-dark) 45%, color-mix(in srgb, var(--brand-secondary) 9%, var(--brand-bg-dark)) 100%);
+  --deep-bg: var(--brand-dark);
+  --deep-text: #f3f3f3;
+  --deep-muted: rgba(243, 243, 243, 0.7);
+  --deep-border: rgba(255, 255, 255, 0.1);
+
+  --page-text: #f3f3f3;
+  --text-muted: rgba(243, 243, 243, 0.7);
+  --text-subtle: rgba(243, 243, 243, 0.56);
+  --heading-color: #ffffff;
+  --accent-text: var(--brand-primary-on-dark);
+  --accent-soft: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+  --accent-border: color-mix(in srgb, var(--brand-primary) 45%, transparent);
+  --border-neutral: rgba(255, 255, 255, 0.12);
+
+  --surface: color-mix(in srgb, var(--brand-bg-dark) 93%, white);
+  --surface-strong: color-mix(in srgb, var(--brand-bg-dark) 89%, white);
+  --surface-muted: rgba(255, 255, 255, 0.06);
+  --surface-border: rgba(255, 255, 255, 0.1);
+  --input-bg: rgba(255, 255, 255, 0.06);
+  --input-border: rgba(255, 255, 255, 0.2);
+  --overlay: rgba(0, 0, 0, 0.72);
+
+  --radius-card: 8px;
+  --radius-card-lg: 10px;
+  --radius-button: 4px;
+  --radius-input: 6px;
+  --radius-chip: 3px;
+
+  --shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 18px 40px -20px rgba(0, 0, 0, 0.8);
+  --shadow-hover: 0 0 0 1px color-mix(in srgb, var(--brand-primary) 60%, transparent), 0 22px 50px -20px color-mix(in srgb, var(--brand-primary) 40%, transparent);
+  --shadow-float: 0 24px 60px -20px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.06);
+  --hover-lift: translateY(-4px);
+
+  --button-bg: linear-gradient(105deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%);
+  --button-shadow: 0 12px 30px -12px color-mix(in srgb, var(--brand-primary) 75%, transparent);
+  --button-hover-bg: var(--brand-primary);
+  --button-hover-shadow: 0 16px 36px -10px color-mix(in srgb, var(--brand-primary) 85%, transparent);
+  --button-text-transform: uppercase;
+  --button-spacing: 0.08em;
+  --button-weight: 800;
+  --button-ghost-text: var(--page-text);
+  --button-ghost-border: 2px solid rgba(255, 255, 255, 0.35);
+  --button-ghost-hover-bg: rgba(255, 255, 255, 0.08);
+
+  --heading-weight: 700;
+  --heading-transform: uppercase;
+  --heading-spacing: -0.01em;
+  --title-decor: none;
+  --eyebrow-bg: var(--brand-primary);
+  --eyebrow-text: var(--on-primary);
+  --eyebrow-border: 0 solid transparent;
+  --eyebrow-spacing: 0.14em;
+
+  --section-band: linear-gradient(100deg, var(--brand-primary), var(--brand-secondary));
+
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.14);
+  --warning: #fbbf24;
+  --warning-soft: rgba(251, 191, 36, 0.14);
+  --danger: #f87171;
+  --danger-soft: rgba(248, 113, 113, 0.14);
+}
+/* Títulos compactos (si la fuente del panel tiene eje de anchura) */
+:root[data-style="energy"] :is(h1, h2) { font-stretch: condensed; line-height: 1; }
+/* Banda diagonal de color al empezar cada sección */
+:root[data-style="energy"] :is(.sk-section, #clases, #team, #salas, #precios, #contacto)::before {
+  content: '';
+  display: block;
+  height: 12px;
+  background: var(--section-band);
+  clip-path: polygon(0 0, 100% 0, 100% 15%, 0 100%);
+}
+:root[data-style="energy"] .sk-eyebrow { transform: skewX(-8deg); }
+
+
+/* ── POP ─ dopamina, rosa y pastel ("cute-alism") ─────────────────────────────
+   Formas muy redondeadas y blanditas, sombras de color, fondos pastel con
+   lunares y etiquetas tipo pegatina. Juguetón pero legible. */
+:root[data-style="pop"] {
+  --page-bg: color-mix(in srgb, var(--brand-bg-light) 85%, white);
+  --page-bg-alt: color-mix(in srgb, var(--brand-secondary) 10%, var(--brand-bg-light));
+  --page-pattern: radial-gradient(color-mix(in srgb, var(--brand-primary) 16%, transparent) 1.5px, transparent 1.7px) 0 0 / 22px 22px;
+  --section-bg: var(--page-pattern), linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 14%, white) 0%, var(--brand-bg-light) 50%, color-mix(in srgb, var(--brand-secondary) 14%, white) 100%);
+
+  --text-muted: color-mix(in srgb, var(--brand-dark) 76%, var(--brand-primary));
+  --text-subtle: color-mix(in srgb, var(--brand-dark) 64%, var(--brand-primary));
+  --accent-soft: color-mix(in srgb, var(--brand-primary) 14%, white);
+  --accent-border: color-mix(in srgb, var(--brand-primary) 45%, white);
+  --border-neutral: color-mix(in srgb, var(--brand-primary) 22%, transparent);
+
+  --surface: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-muted: color-mix(in srgb, var(--brand-primary) 8%, white);
+  --surface-border: color-mix(in srgb, var(--brand-primary) 30%, white);
+  --input-border: color-mix(in srgb, var(--brand-primary) 40%, white);
+  --overlay: color-mix(in srgb, var(--brand-dark) 40%, transparent);
+
+  --border-width: 2px;
+  --radius-card: 30px;
+  --radius-card-lg: 38px;
+  --radius-button: 999px;
+  --radius-input: 18px;
+  --radius-chip: 999px;
+
+  --shadow-card: 0 14px 30px -12px color-mix(in srgb, var(--brand-primary) 45%, transparent);
+  --shadow-hover: 0 22px 40px -14px color-mix(in srgb, var(--brand-secondary) 55%, transparent);
+  --shadow-float: 0 24px 50px -18px color-mix(in srgb, var(--brand-secondary) 50%, transparent);
+  --hover-lift: translateY(-5px) rotate(-0.4deg);
+
+  --button-border: 2px solid var(--brand-dark);
+  --button-shadow: 0 5px 0 var(--brand-dark);
+  --button-hover-bg: var(--brand-primary);
+  --button-hover-shadow: 0 2px 0 var(--brand-dark);
+  --button-hover-transform: translateY(3px);
+  --button-weight: 800;
+  --button-ghost-bg: #ffffff;
+  --button-ghost-text: var(--page-text);
+  --button-ghost-border: 2px solid var(--accent-border);
+  --button-ghost-hover-bg: var(--accent-soft);
+
+  --heading-weight: 700;
+  --heading-spacing: -0.02em;
+  --title-decor: radial-gradient(closest-side, color-mix(in srgb, var(--brand-secondary) 24%, transparent), transparent);
+  --eyebrow-bg: color-mix(in srgb, var(--brand-secondary) 18%, white);
+  --eyebrow-text: var(--brand-dark);
+  --eyebrow-border: 2px solid var(--brand-dark);
+  --eyebrow-shadow: 3px 3px 0 var(--brand-primary);
+  --eyebrow-spacing: 0.08em;
+  --eyebrow-rotate: -2deg;
+}
+
+
+/* ── NEON ─ cyberpunk (OSCURO) ────────────────────────────────────────────────
+   Azul-negro, texto claro, bordes y títulos con resplandor del primario,
+   rejilla y scanlines de fondo y detalles mono. Sin animaciones ni parpadeos
+   (prefers-reduced-motion se respeta por diseño). */
+:root[data-style="neon"] {
+  color-scheme: dark;
+  --logo-default-display: none;
+  --logo-light-display: inline;
+
+  --page-bg: var(--brand-bg-dark);
+  --page-bg-alt: color-mix(in srgb, var(--brand-bg-dark) 85%, var(--brand-dark));
+  --page-pattern: repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.022) 0 1px, transparent 1px 3px), linear-gradient(color-mix(in srgb, var(--brand-secondary) 8%, transparent) 1px, transparent 1px) 0 0 / 44px 44px, linear-gradient(90deg, color-mix(in srgb, var(--brand-secondary) 8%, transparent) 1px, transparent 1px) 0 0 / 44px 44px;
+  --section-bg: var(--page-pattern), radial-gradient(ellipse at 12% 0%, color-mix(in srgb, var(--brand-primary) 16%, transparent), transparent 55%), radial-gradient(ellipse at 92% 100%, color-mix(in srgb, var(--brand-secondary) 14%, transparent), transparent 55%), var(--brand-bg-dark);
+  --deep-bg: var(--brand-dark);
+  --deep-text: #f1f0ff;
+  --deep-muted: rgba(241, 240, 255, 0.7);
+  --deep-border: color-mix(in srgb, var(--brand-secondary) 24%, transparent);
+
+  --page-text: #f1f0ff;
+  --text-muted: rgba(241, 240, 255, 0.7);
+  --text-subtle: rgba(241, 240, 255, 0.55);
+  --heading-color: #ffffff;
+  --accent-text: var(--brand-primary-on-dark);
+  --accent-soft: color-mix(in srgb, var(--brand-primary) 14%, transparent);
+  --accent-border: color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  --border-neutral: color-mix(in srgb, var(--brand-secondary) 22%, transparent);
+
+  --surface: color-mix(in srgb, var(--brand-bg-dark) 92%, var(--brand-primary));
+  --surface-strong: color-mix(in srgb, var(--brand-bg-dark) 88%, var(--brand-primary));
+  --surface-muted: color-mix(in srgb, var(--brand-secondary) 7%, transparent);
+  --surface-border: color-mix(in srgb, var(--brand-primary) 45%, transparent);
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --input-border: color-mix(in srgb, var(--brand-secondary) 40%, transparent);
+  --overlay: rgba(3, 3, 12, 0.78);
+
+  --radius-card: 6px;
+  --radius-card-lg: 8px;
+  --radius-button: 4px;
+  --radius-input: 4px;
+  --radius-chip: 3px;
+
+  --shadow-card: 0 0 0 1px color-mix(in srgb, var(--brand-primary) 22%, transparent), 0 0 24px -8px color-mix(in srgb, var(--brand-primary) 50%, transparent);
+  --shadow-hover: 0 0 0 1px color-mix(in srgb, var(--brand-primary) 70%, transparent), 0 0 32px -4px color-mix(in srgb, var(--brand-primary) 65%, transparent), 0 0 60px -20px color-mix(in srgb, var(--brand-secondary) 60%, transparent);
+  --shadow-float: 0 0 0 1px color-mix(in srgb, var(--brand-secondary) 35%, transparent), 0 0 40px -10px color-mix(in srgb, var(--brand-secondary) 40%, transparent), 0 30px 60px -20px rgba(0, 0, 0, 0.85);
+  --hover-lift: translateY(-2px);
+
+  --button-bg: color-mix(in srgb, var(--brand-primary) 16%, transparent);
+  --button-text: color-mix(in srgb, var(--brand-primary-on-dark) 45%, white);
+  --button-border: 1px solid var(--brand-primary);
+  --button-shadow: 0 0 16px -2px color-mix(in srgb, var(--brand-primary) 60%, transparent), inset 0 0 12px -4px color-mix(in srgb, var(--brand-primary) 55%, transparent);
+  --button-hover-bg: var(--brand-primary);
+  --button-hover-text: var(--on-primary);
+  --button-hover-shadow: 0 0 28px 0 color-mix(in srgb, var(--brand-primary) 75%, transparent);
+  --button-hover-transform: none;
+  --button-text-transform: uppercase;
+  --button-spacing: 0.12em;
+  --button-weight: 700;
+  --button-ghost-text: color-mix(in srgb, var(--brand-secondary) 55%, white);
+  --button-ghost-border: 1px solid color-mix(in srgb, var(--brand-secondary) 60%, transparent);
+  --button-ghost-hover-bg: color-mix(in srgb, var(--brand-secondary) 12%, transparent);
+
+  --heading-weight: 700;
+  --heading-spacing: 0.02em;
+  --heading-shadow: 0 0 18px color-mix(in srgb, var(--brand-primary) 55%, transparent), 0 0 2px color-mix(in srgb, var(--brand-primary) 45%, transparent);
+  --title-decor: none;
+  --eyebrow-bg: transparent;
+  --eyebrow-text: color-mix(in srgb, var(--brand-secondary) 60%, white);
+  --eyebrow-border: 1px solid color-mix(in srgb, var(--brand-secondary) 60%, transparent);
+  --eyebrow-font: var(--font-mono);
+  --eyebrow-spacing: 0.2em;
+  --eyebrow-shadow: 0 0 12px -2px color-mix(in srgb, var(--brand-secondary) 60%, transparent);
+
+  --section-divider: 1px solid color-mix(in srgb, var(--brand-primary) 32%, transparent);
+
+  --success: #4ade80;
+  --success-soft: rgba(74, 222, 128, 0.14);
+  --warning: #fcd34d;
+  --warning-soft: rgba(252, 211, 77, 0.14);
+  --danger: #fb7185;
+  --danger-soft: rgba(251, 113, 133, 0.14);
+}
+
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONSUMO GLOBAL DE LOS TOKENS (común a todos los estilos: no tocar al añadir
+   un estilo). Las clases van con `:root` delante para ganar a las props de
+   Chakra (clases de emotion de una sola clase); Chakra pone sus recetas y
+   tokens en @layer, así que también ganan a esas.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+body {
+  background: var(--page-pattern), var(--page-bg);
+  color: var(--page-text);
+}
+
+/* Componentes de Chakra (diálogos, inputs, menús, toasts…) con los tokens */
+:root {
+  --chakra-colors-bg: var(--page-bg);
+  --chakra-colors-bg-panel: var(--surface-strong);
+  --chakra-colors-bg-subtle: var(--surface-muted);
+  --chakra-colors-bg-muted: var(--surface-muted);
+  --chakra-colors-bg-emphasized: var(--border-neutral);
+  --chakra-colors-fg: var(--page-text);
+  --chakra-colors-fg-muted: var(--text-muted);
+  --chakra-colors-fg-subtle: var(--text-subtle);
+  --chakra-colors-border: var(--border-neutral);
+  --chakra-colors-border-muted: var(--border-neutral);
+  --chakra-colors-border-subtle: var(--border-neutral);
+  --chakra-colors-border-emphasized: var(--input-border);
+  --chakra-colors-gray-fg: var(--page-text);
+  --chakra-colors-gray-subtle: var(--surface-muted);
+  --chakra-colors-gray-muted: var(--border-neutral);
+}
+:root :is([data-scope="dialog"], [data-scope="drawer"])[data-part="backdrop"] { background: var(--overlay); }
+
+/* Títulos de página y de sección: peso, mayúsculas y espaciado del estilo */
+:root :is(h1, h2) {
+  font-weight: var(--heading-weight);
+  text-transform: var(--heading-transform);
+  letter-spacing: var(--heading-spacing);
+}
+
+/* Título principal de una sección: halo/forma decorativa detrás (si el estilo
+   la tiene) y resplandor (neón). */
+:root .sk-section-title {
+  position: relative;
+  isolation: isolate;
+  text-shadow: var(--heading-shadow);
+}
+:root .sk-section-title::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  left: 50%;
+  top: 50%;
+  width: min(560px, 110%);
+  height: 240%;
+  transform: translate(-50%, -50%);
+  background: var(--title-decor);
+  border-radius: 42% 58% 63% 37% / 45% 40% 60% 55%;
+  pointer-events: none;
+}
+
+/* Etiqueta pequeña sobre un título ("EQUIPO", "ESPACIOS"…) */
+:root .sk-eyebrow {
+  background: var(--eyebrow-bg);
+  color: var(--eyebrow-text);
+  border: var(--eyebrow-border);
+  border-radius: var(--radius-chip);
+  box-shadow: var(--eyebrow-shadow);
+  font-family: var(--eyebrow-font);
+  text-transform: var(--eyebrow-transform);
+  letter-spacing: var(--eyebrow-spacing);
+  rotate: var(--eyebrow-rotate);
+}
+:root .sk-eyebrow :not(svg, svg *) {
+  color: inherit;
+  font-family: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+}
+:root .sk-eyebrow svg { color: currentColor; }
+
+/* Tarjeta sobre el fondo de la página */
+:root .sk-card {
+  background: var(--surface);
+  color: var(--surface-text);
+  border: var(--border-width) solid var(--surface-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: var(--surface-blur);
+  -webkit-backdrop-filter: var(--surface-blur);
+}
+
+/* Panel destacado: diálogos, menús desplegables, barras fijas, toasts */
+:root .sk-panel {
+  background: var(--surface-strong);
+  color: var(--surface-text);
+  border: var(--border-width) solid var(--surface-border);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-float);
+  backdrop-filter: var(--surface-blur);
+  -webkit-backdrop-filter: var(--surface-blur);
+}
+
+/* Píldora/etiqueta neutra (filtros, chips informativos) */
+:root .sk-chip {
+  background: var(--surface-muted);
+  color: var(--page-text);
+  border: 1px solid var(--border-neutral);
+  border-radius: var(--radius-chip);
+}
+
+/* Campos de formulario */
+:root .sk-input {
+  background: var(--input-bg);
+  color: var(--page-text);
+  border: 1px solid var(--input-border);
+  border-radius: var(--radius-input);
+}
+:root .sk-input::placeholder { color: var(--text-subtle); }
+:root .sk-input:focus,
+:root .sk-input:focus-within {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  outline: none;
+}
+
+/* Botón principal (llamada a la acción sobre la página o una tarjeta) */
+:root .sk-btn {
+  background: var(--button-bg);
+  color: var(--button-text);
+  border: var(--button-border);
+  box-shadow: var(--button-shadow);
+  border-radius: var(--radius-button);
+  text-transform: var(--button-text-transform);
+  letter-spacing: var(--button-spacing);
+  font-weight: var(--button-weight);
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+:root .sk-btn:hover:not(:disabled) {
+  background: var(--button-hover-bg);
+  color: var(--button-hover-text);
+  box-shadow: var(--button-hover-shadow);
+  transform: var(--button-hover-transform);
+}
+:root .sk-btn:disabled,
+:root .sk-btn[data-disabled] {
+  opacity: 0.55;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Textos largos en mayúsculas espaciadas (energy, neon…): en móvil pueden
+   partirse en dos líneas en vez de salirse del botón */
+:root :is(.sk-btn, .sk-btn-ghost) {
+  white-space: normal;
+  text-wrap: balance;
+  line-height: 1.15;
+  max-width: 100%;
+}
+@media (max-width: 480px) {
+  :root :is(.sk-btn, .sk-btn-ghost) { letter-spacing: min(var(--button-spacing), 0.03em); }
+}
+
+/* Botón secundario (contorno / enlace) */
+:root .sk-btn-ghost {
+  background: var(--button-ghost-bg);
+  color: var(--button-ghost-text);
+  border: var(--button-ghost-border);
+  border-radius: var(--radius-button);
+  text-transform: var(--button-text-transform);
+  letter-spacing: var(--button-spacing);
+  text-decoration: var(--button-ghost-decoration);
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+:root .sk-btn-ghost:hover:not(:disabled) { background: var(--button-ghost-hover-bg); }
+
+/* Zona profunda: navbar sólida, footer, bandas oscuras */
+:root .sk-deep {
+  background: var(--deep-bg);
+  color: var(--deep-text);
+}
+
+/* Separador entre secciones (editorial, brutalista, neón) */
+:root :is(.sk-section, #clases, #team, #salas, #precios, #contacto) {
+  border-top: var(--section-divider);
+}

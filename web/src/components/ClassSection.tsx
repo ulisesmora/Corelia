@@ -4,9 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { Box, Flex, Text, Tabs, Spinner } from '@chakra-ui/react';
 import Chakra from './ChakraProvider';
 import GlassGrid from './GlassGrid';
-import { GiMeditation } from 'react-icons/gi';
-import { MdOutlineSportsGymnastics } from 'react-icons/md';
-import { GrYoga } from 'react-icons/gr';
+import { Icon } from './ui/Icon';
 import { useLangStore } from './stores/lang.store';
 import { useT } from '../i18n';
 import type { ApiClassType } from './OurClasses';
@@ -40,31 +38,33 @@ export default function ClassesSection() {
     return () => { cancelled = true; };
   }, []);
 
-  const accent = 'var(--brand-secondary)';
   // controlamos la pestaña activa (clave de la categoría)
   const [tab, setTab] = useState<string>('');
   const otherLabel = t('home.classes.tabs.others', undefined, lang === 'en' ? 'Other classes' : 'Otras clases');
   const icon = (g: CategoryGroup) => {
     const k = categoryIconKind(g);
-    return k === 'yoga' ? <GrYoga /> : k === 'mind' ? <GiMeditation /> : <MdOutlineSportsGymnastics />;
+    return <Icon name={k === 'yoga' ? 'yoga' : k === 'mind' ? 'meditation' : 'pilates'} />;
   };
+  // Pestaña activa: relleno suave del acento con el acabado del estilo
   const selectedStyle = {
-    boxShadow: '0 8px 32px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 35%, white) 35%, transparent)',
-    bg: 'color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 35%, white) 62%, transparent)',
-    backdropFilter: 'blur(18px) saturate(180%)',
-    borderBottom: '1px solid rgba(255,255,255,0.2)',
+    boxShadow: 'var(--shadow-card)',
+    bg: 'var(--accent-soft)',
+    color: 'var(--accent-text)',
+    backdropFilter: 'var(--surface-blur)',
+    WebkitBackdropFilter: 'var(--surface-blur)',
+    borderBottom: '1px solid var(--accent-border)',
   };
 
   return (
     <Chakra>
       <Flex w="100%" id="classes" justifyContent="center" pt="4rem">
-        <Text as="h2" fontSize="5xl" color={accent} fontWeight="bold">
+        <Text as="h2" className="sk-section-title" fontSize="5xl" color="var(--heading-color)" fontWeight="bold">
            {t("home.classes.heading")}
         </Text>
       </Flex>
 
       <Box textAlign="center" maxW="800px" mx="auto" px={4} pb={8}>
-        <Text fontSize="lg" color={accent}>
+        <Text fontSize="lg" color="var(--text-muted)">
         {t("home.classes.intro")}
         </Text>
       </Box>
@@ -78,7 +78,7 @@ export default function ClassesSection() {
           <Flex w="100%" h="300px" justify="center" align="center"><Spinner size="xl" /></Flex>
         )}
         {error && !isLoading && (
-          <Text color="red.500" textAlign="center">{error}</Text>
+          <Text color="var(--danger)" textAlign="center">{error}</Text>
         )}
         {!isLoading && !error && groups.length > 0 && (
         <Tabs.Root

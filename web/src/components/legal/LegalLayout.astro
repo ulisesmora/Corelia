@@ -3,7 +3,7 @@
 // Los datos del titular salen de la config del estudio (panel → Ajustes). Si
 // faltan los datos legales se muestra un aviso visible, sin romper la página.
 import SiteHead from '../SiteHead.astro';
-import { getSiteConfig } from '../../lib/site';
+import { getSiteConfig, htmlThemeAttrs } from '../../lib/site';
 
 interface Props { title: string; lang: 'es' | 'en' }
 const { title, lang } = Astro.props;
@@ -12,7 +12,7 @@ const site = await getSiteConfig();
 const missingLegal = !site.legal.name || !site.legal.tax_id;
 ---
 <!DOCTYPE html>
-<html lang={lang}>
+<html lang={lang} {...htmlThemeAttrs(site)}>
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -20,14 +20,15 @@ const missingLegal = !site.legal.name || !site.legal.tax_id;
   <meta name="robots" content="noindex, nofollow" />
   <SiteHead noAnalytics />
   <style is:inline>
-    body { line-height: 1.6; color: #333; background: #fff; max-width: 800px; margin: 40px auto; padding: 0 20px; }
-    h1, h2, h3 { color: var(--brand-dark); font-family: var(--font-heading); }
-    h1 { border-bottom: 2px solid color-mix(in srgb, var(--brand-primary) 35%, white); padding-bottom: 10px; }
+    /* Acabado con los tokens del estilo visual (styles/presets.css) */
+    body { line-height: 1.6; color: var(--page-text); background: var(--page-pattern), var(--page-bg); max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    h1, h2, h3 { color: var(--heading-color); font-family: var(--font-heading); }
+    h1 { border-bottom: 2px solid var(--accent-border); padding-bottom: 10px; }
     ul, ol { margin-bottom: 20px; }
-    a { color: var(--brand-secondary); }
+    a { color: var(--accent-text); }
     .legal-back { display: inline-block; margin-bottom: 1.5rem; font-size: .95rem; }
-    .legal-warning { border: 2px solid #B7791F; background: #FFF4E5; color: #7C2D12; border-radius: 12px; padding: 14px 18px; margin: 0 0 2rem; font-weight: 600; }
-    .legal-missing { background: #FFF4E5; color: #7C2D12; padding: 0 4px; border-radius: 4px; }
+    .legal-warning { border: 2px solid var(--warning); background: var(--warning-soft); color: var(--warning); border-radius: var(--radius-input); padding: 14px 18px; margin: 0 0 2rem; font-weight: 600; }
+    .legal-missing { background: var(--warning-soft); color: var(--warning); padding: 0 4px; border-radius: 4px; }
   </style>
 </head>
 <body>

@@ -15,12 +15,12 @@ const PROMPT_EVENT = 'site:prompt-install';
 // Insiste, pero cada vez con más espacio (nunca desaparece para siempre).
 const COOLDOWN_DAYS = [1, 3, 7, 14];
 
+// Solo tokens del estilo visual (presets.css): se lee igual en estilos oscuros.
 const C = {
-  brand: 'var(--brand-secondary)',
-  brandDark: 'color-mix(in srgb, var(--brand-secondary) 67%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  muted: 'color-mix(in srgb, var(--brand-secondary) 67%, var(--brand-dark))',
-  bg: '#ffffff',
+  brand: 'var(--accent)',
+  brandDark: 'var(--accent-text)',
+  brown: 'var(--page-text)',
+  muted: 'var(--text-muted)',
 };
 
 type OS = 'ios' | 'android' | 'other';
@@ -298,8 +298,8 @@ export default function InstallAppBanner() {
 
   const pill = (content: React.ReactNode) => (
     <span style={{
-      display: 'inline-block', border: `1.5px solid ${C.brand}`, borderRadius: 6,
-      padding: '0 6px', fontWeight: 800, color: C.brand, lineHeight: 1.4,
+      display: 'inline-block', border: `1.5px solid ${C.brandDark}`, borderRadius: 'var(--radius-chip)',
+      padding: '0 6px', fontWeight: 800, color: C.brandDark, lineHeight: 1.4,
     }}>{content}</span>
   );
 
@@ -345,7 +345,7 @@ export default function InstallAppBanner() {
         <div
           onClick={dismiss}
           style={{
-            position: 'fixed', inset: 0, background: 'color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 60%, black) 35%, transparent)',
+            position: 'fixed', inset: 0, background: 'var(--overlay)',
             zIndex: 1349, animation: 'domFadeIn .25s ease',
           }}
         />
@@ -361,7 +361,7 @@ export default function InstallAppBanner() {
       `}</style>
 
       <div
-        className="site-install-card"
+        className="site-install-card sk-panel"
         role="dialog"
         aria-label={L.dialogLabel}
         style={{
@@ -370,10 +370,6 @@ export default function InstallAppBanner() {
           right: '12px',
           bottom: 'calc(74px + env(safe-area-inset-bottom, 0px))',
           zIndex: 1350,
-          background: C.bg,
-          borderRadius: '20px',
-          boxShadow: '0 16px 48px color-mix(in srgb, var(--brand-dark) 30%, transparent)',
-          border: '1px solid color-mix(in srgb, var(--brand-secondary) 18%, transparent)',
           padding: '16px',
           fontFamily: 'var(--font-body)',
           maxWidth: '420px',
@@ -391,7 +387,7 @@ export default function InstallAppBanner() {
             style={{ borderRadius: '14px', flexShrink: 0, boxShadow: '0 4px 12px color-mix(in srgb, var(--brand-dark) 28%, transparent)' }}
           />
           <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ fontWeight: 800, fontSize: '1.02rem', color: C.brown, lineHeight: 1.25 }}>
+            <div style={{ fontWeight: 800, fontSize: '1.02rem', color: 'var(--heading-color)', lineHeight: 1.25 }}>
               {head.title}
             </div>
             <div style={{ fontSize: '0.8rem', color: C.muted, lineHeight: 1.35, marginTop: 2 }}>
@@ -402,7 +398,7 @@ export default function InstallAppBanner() {
             onClick={dismiss}
             aria-label={L.close}
             style={{
-              background: 'none', border: 'none', color: 'color-mix(in srgb, var(--brand-secondary) 72%, white)',
+              background: 'none', border: 'none', color: 'var(--text-subtle)',
               fontSize: '1.4rem', cursor: 'pointer', padding: '8px', lineHeight: 1,
               minWidth: 44, minHeight: 44, alignSelf: 'flex-start', marginTop: -8, marginRight: -8,
             }}
@@ -429,7 +425,7 @@ export default function InstallAppBanner() {
               <button
                 onClick={dismiss}
                 style={{
-                  flex: '0 0 auto', background: 'none', border: 'none', color: 'color-mix(in srgb, var(--brand-secondary) 95%, white)',
+                  flex: '0 0 auto', background: 'none', border: 'none', color: 'var(--text-muted)',
                   fontSize: '0.85rem', cursor: 'pointer', padding: '12px', fontWeight: 600,
                   minHeight: 44, fontFamily: 'var(--font-body)',
                 }}
@@ -437,14 +433,12 @@ export default function InstallAppBanner() {
                 {L.notNow}
               </button>
               <button
+                className="sk-btn"
                 onClick={inApp || os === 'ios' ? () => setShowSteps(true) : handleInstallAndroid}
                 disabled={installing}
                 style={{
-                  flex: 1, background: `linear-gradient(135deg, ${C.brand}, ${C.brandDark})`,
-                  color: '#fff', border: 'none', borderRadius: '999px', padding: '13px 16px',
-                  fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', minHeight: 48,
-                  boxShadow: '0 6px 18px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 38%, transparent)',
-                  opacity: installing ? 0.7 : 1,
+                  flex: 1, padding: '13px 16px',
+                  fontSize: '0.95rem', cursor: 'pointer', minHeight: 48,
                   fontFamily: 'var(--font-body)',
                 }}
               >
@@ -460,7 +454,7 @@ export default function InstallAppBanner() {
                   <span
                     style={{
                       flexShrink: 0, width: '26px', height: '26px', borderRadius: '50%',
-                      background: C.brand, color: '#fff', fontWeight: 800, fontSize: '0.82rem',
+                      background: C.brand, color: 'var(--on-primary)', fontWeight: 800, fontSize: '0.82rem',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                   >
@@ -471,11 +465,11 @@ export default function InstallAppBanner() {
               ))}
             </div>
             <button
+              className="sk-btn"
               onClick={dismiss}
               style={{
-                width: '100%', background: `linear-gradient(135deg, ${C.brand}, ${C.brandDark})`,
-                color: '#fff', border: 'none', borderRadius: '999px', padding: '13px 16px',
-                fontWeight: 800, fontSize: '0.95rem', cursor: 'pointer', minHeight: 48,
+                width: '100%', padding: '13px 16px',
+                fontSize: '0.95rem', cursor: 'pointer', minHeight: 48,
                 fontFamily: 'var(--font-body)',
               }}
             >
@@ -498,13 +492,13 @@ export default function InstallAppBanner() {
           }}
         >
           <span style={{
-            background: C.brown, color: '#fff', fontSize: '0.72rem', fontWeight: 700,
-            padding: '4px 10px', borderRadius: 999, fontFamily: 'var(--font-body)',
+            background: 'var(--deep-bg)', color: 'var(--deep-text)', fontSize: '0.72rem', fontWeight: 700,
+            padding: '4px 10px', borderRadius: 'var(--radius-chip)', fontFamily: 'var(--font-body)',
             boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
           }}>
             {L.shareHere}
           </span>
-          <span style={{ fontSize: '1.6rem', lineHeight: 1, color: C.brown, textShadow: '0 2px 6px rgba(255,255,255,0.9)' }}>↓</span>
+          <span style={{ fontSize: '1.6rem', lineHeight: 1, color: C.brown, textShadow: '0 2px 6px var(--page-bg)' }}>↓</span>
         </div>
       )}
     </>
@@ -527,9 +521,9 @@ export function InstallAppCTA({ compact = false }: { compact?: boolean }) {
       onClick={() => requestInstallPrompt('manual')}
       style={{
         width: '100%', display: 'flex', alignItems: 'center', gap: 12, textAlign: 'left',
-        padding: compact ? '10px 12px' : '14px 16px', borderRadius: 16, cursor: 'pointer',
-        background: 'linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 14%, transparent), color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 8%, transparent))',
-        border: '1px solid color-mix(in srgb, var(--brand-primary) 35%, transparent)', fontFamily: 'var(--font-body)',
+        padding: compact ? '10px 12px' : '14px 16px', borderRadius: 'var(--radius-card)', cursor: 'pointer',
+        background: 'var(--accent-soft)',
+        border: '1px solid var(--accent-border)', fontFamily: 'var(--font-body)',
         minHeight: 56,
       }}
     >
@@ -543,9 +537,8 @@ export function InstallAppCTA({ compact = false }: { compact?: boolean }) {
           {L.ctaSub}
         </span>
       </span>
-      <span style={{
-        flexShrink: 0, background: `linear-gradient(135deg, ${C.brand}, ${C.brandDark})`, color: '#fff',
-        borderRadius: 999, padding: '8px 14px', fontWeight: 800, fontSize: '0.8rem',
+      <span className="sk-btn" style={{
+        flexShrink: 0, padding: '8px 14px', fontSize: '0.8rem',
       }}>
         {L.ctaBtn}
       </span>
@@ -567,8 +560,8 @@ export function InstallInlineHint() {
       onClick={() => window.dispatchEvent(new CustomEvent(PROMPT_EVENT, { detail: { reason: 'manual' } }))}
       style={{
         width: '100%', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'left',
-        padding: '10px 12px', borderRadius: 14, cursor: 'pointer', minHeight: 48,
-        background: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)', border: '1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)',
+        padding: '10px 12px', borderRadius: 'var(--radius-input)', cursor: 'pointer', minHeight: 48,
+        background: 'var(--accent-soft)', border: '1px solid var(--accent-border)',
         fontFamily: 'var(--font-body)',
       }}>
       <img src={ICON_URL.icon192} alt="" width={32} height={32} style={{ borderRadius: 8, flexShrink: 0 }} />

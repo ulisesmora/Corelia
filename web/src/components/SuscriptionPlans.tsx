@@ -7,7 +7,7 @@ import {
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Chakra from './ChakraProvider';
-import { FaArrowRight, FaInfinity, FaCheck, FaBolt, FaTag, FaChevronDown, FaWhatsapp } from 'react-icons/fa';
+import { Icon, type IconName } from './ui/Icon';
 import { useT, formatPrice, currencySymbol } from '../i18n';
 import { useLangStore, withSsrLang } from './stores/lang.store';
 import { planDisplayName } from '../utils/planUtils';
@@ -25,27 +25,26 @@ const MotionFlex = motion(Flex as any);
 
 const API_BASE_URL = `${API_ROOT}/`;
 
+// Paleta de la sección: todo tokens del estilo visual (styles/presets.css)
 const C = {
-  accent: 'var(--brand-primary)',
-  accentDark: 'color-mix(in srgb, var(--brand-primary) 78%, var(--brand-dark))',
-  accentDeep: 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  brownMid: 'color-mix(in srgb, var(--brand-primary) 28%, var(--brand-dark))',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))',
-  textLight: 'color-mix(in srgb, var(--brand-secondary) 65%, white)',
-  bgStart: 'color-mix(in srgb, var(--brand-primary) 22%, white)',
-  bgMid: 'var(--brand-bg)',
-  bgEnd: 'color-mix(in srgb, var(--brand-primary) 22%, white)',
-  cardBg: 'rgba(255,255,255,0.65)',
-  cardBorder: 'rgba(255,255,255,0.70)',
-  cardShadow: '0 4px 24px color-mix(in srgb, var(--brand-dark) 7%, transparent)',
-  cardShadowHover: '0 16px 48px color-mix(in srgb, var(--brand-dark) 14%, transparent)',
-  // olive palette
-  olive: '#6B7B3C',
-  oliveDark: '#536030',
-  oliveMid: '#7A8A45',
-  oliveTint: 'rgba(107,123,60,0.09)',
-  oliveBorder: 'rgba(107,123,60,0.22)',
+  accent: 'var(--accent)',            // iconos y decoración
+  accentText: 'var(--accent-text)',   // primario como texto
+  accentDeep: 'var(--accent-text)',
+  // Relleno primario de las píldoras "recomendado" (texto var(--on-primary))
+  accentFill: 'linear-gradient(135deg, var(--brand-primary), var(--brand-primary-2))',
+  heading: 'var(--heading-color)',
+  brown: 'var(--page-text)',
+  brownMid: 'var(--page-text)',
+  textMuted: 'var(--text-muted)',
+  textLight: 'var(--text-subtle)',
+  sectionBg: 'var(--section-bg)',     // solo en `bg` (puede ser un degradado)
+  cardBorder: 'var(--surface-border)',
+  cardShadowHover: 'var(--shadow-hover)',
+  // ahorro (antes paleta oliva)
+  olive: 'var(--success)',
+  oliveDark: 'var(--success)',
+  oliveTint: 'var(--success-soft)',
+  oliveBorder: 'color-mix(in srgb, var(--success) 22%, transparent)',
 };
 
 interface ApiPlan {
@@ -108,42 +107,36 @@ function PackCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; h
       {(plan.recommended || highlighted) && (
         <Flex
           position="absolute" top="-14px" left="50%" transform="translateX(-50%)"
-          zIndex={3} px={4} py={1} borderRadius="full"
-          bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDeep})`}
-          color="white" fontSize="11px" fontWeight={700}
+          zIndex={3} px={4} py={1} borderRadius="var(--radius-chip)"
+          bg={C.accentFill}
+          color="var(--on-primary)" fontSize="11px" fontWeight={700}
           letterSpacing="0.06em" textTransform="uppercase"
-          boxShadow="0 4px 14px color-mix(in srgb, var(--brand-primary) 40%, transparent)"
+          boxShadow="var(--shadow-card)"
           align="center" gap={1.5}
           fontFamily='var(--font-body)'
           whiteSpace="nowrap"
         >
-          <FaBolt size={9} />
+          <Icon name="bolt" size={9} />
           {highlighted ? (es ? 'Tu recomendación' : 'Recommended for you') : t('plans.popular')}
         </Flex>
       )}
 
+      {/* sk-card: superficie, borde, radio, sombra y blur del estilo. La
+          recomendada lleva el borde en primario (inline: gana a la clase). */}
       <Box
-        bg={C.cardBg}
-        backdropFilter="blur(20px) saturate(180%)"
-        style={{ WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}
-        borderRadius="24px"
+        className="sk-card"
         p={7}
         pt={plan.recommended || highlighted ? 10 : 7}
-        border={plan.recommended || highlighted
-          ? `1.5px solid color-mix(in srgb, var(--brand-primary) 40%, transparent)`
-          : `1px solid ${C.cardBorder}`}
-        boxShadow={plan.recommended
-          ? `0 8px 32px color-mix(in srgb, var(--brand-primary) 18%, transparent), inset 0 1px 0 rgba(255,255,255,0.8)`
-          : `${C.cardShadow}, inset 0 1px 0 rgba(255,255,255,0.8)`}
+        style={plan.recommended || highlighted ? { borderColor: 'var(--accent)' } : undefined}
         h="100%" display="flex" flexDirection="column"
         transition="box-shadow 0.3s ease, border-color 0.3s ease"
-        _hover={{ boxShadow: C.cardShadowHover, borderColor: 'color-mix(in srgb, var(--brand-primary) 35%, transparent)' }}
+        _hover={{ boxShadow: C.cardShadowHover, borderColor: 'var(--accent-border)' }}
       >
         {/* Credits badge + expiry */}
         <Flex align="center" justify="space-between" mb={4}>
-          <Box px={3} py={1} borderRadius="full"
-            bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent)">
-            <Text fontSize="12px" fontWeight={600} color={C.accent}
+          <Box px={3} py={1} borderRadius="var(--radius-chip)"
+            bg="var(--accent-soft)" border="1px solid var(--accent-border)">
+            <Text fontSize="12px" fontWeight={600} color={C.accentText}
               fontFamily='var(--font-body)' letterSpacing="0.04em">
               {t('plans.credits', { n: String(plan.credits) })}
             </Text>
@@ -158,9 +151,9 @@ function PackCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; h
         {/* Saving badge */}
         {plan.saving && (
           <Flex align="center" gap={1.5} mb={3}
-            px={3} py={1.5} borderRadius="full" w="fit-content"
+            px={3} py={1.5} borderRadius="var(--radius-chip)" w="fit-content"
             bg={C.oliveTint} border={`1px solid ${C.oliveBorder}`}>
-            <FaTag size={9} color={C.olive} />
+            <Icon name="tag" size={9} color={C.olive} />
             <Text fontSize="11px" fontWeight={700} color={C.oliveDark}
               fontFamily='var(--font-body)'>
               {t('plans.saving', { saving: plan.saving })}
@@ -196,23 +189,18 @@ function PackCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; h
             : `${plan.credits} ${plan.credits === 1 ? 'credit' : 'credits'} for your classes${plan.expireDays ? `, to use within ${plan.expireDays} days` : ''}. No auto-renewal.`)}
         </Text>
 
+        {/* Recomendada: botón principal; el resto, secundario de contorno */}
         <Button
+          className={plan.recommended || highlighted ? 'sk-btn' : 'sk-btn-ghost'}
           onClick={() => { window.location.href = `/checkout?tab=credits&plan_id=${plan.id}`; }}
-          w="full" size="md" borderRadius="12px" fontWeight={600}
+          w="full" size="md"
           fontFamily='var(--font-body)' fontSize="sm"
           minH="48px"
-          bg={plan.recommended || highlighted ? C.accent : 'transparent'}
-          color={plan.recommended || highlighted ? 'white' : C.accent}
-          border={plan.recommended || highlighted ? 'none' : `1.5px solid color-mix(in srgb, var(--brand-primary) 35%, transparent)`}
           cursor="pointer"
-          _hover={plan.recommended || highlighted
-            ? { bg: C.accentDark, boxShadow: '0 6px 20px color-mix(in srgb, var(--brand-primary) 35%, transparent)' }
-            : { bg: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)', borderColor: C.accent }}
-          transition="all 0.22s ease"
           gap={2}
         >
           {t('plans.buyBtn')}
-          <FaArrowRight size={11} />
+          <Icon name="arrow-right" size={11} />
         </Button>
       </Box>
     </MotionBox>
@@ -271,36 +259,31 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
       {highlighted && (
         <Flex
           position="absolute" top="-14px" left="50%" transform="translateX(-50%)"
-          zIndex={3} px={4} py={1} borderRadius="full"
-          bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDeep})`}
-          color="white" fontSize="11px" fontWeight={700}
+          zIndex={3} px={4} py={1} borderRadius="var(--radius-chip)"
+          bg={C.accentFill}
+          color="var(--on-primary)" fontSize="11px" fontWeight={700}
           letterSpacing="0.06em" textTransform="uppercase"
-          boxShadow="0 4px 14px color-mix(in srgb, var(--brand-primary) 40%, transparent)"
+          boxShadow="var(--shadow-card)"
           align="center" gap={1.5} whiteSpace="nowrap"
           fontFamily='var(--font-body)'
         >
-          <FaCheck size={9} />
+          <Icon name="check" size={9} />
           {es ? 'Tu recomendación' : 'Recommended for you'}
         </Flex>
       )}
+      {/* sk-card; la recomendada, con borde primario más grueso (inline) */}
       <Box
-        bg={C.cardBg}
-        backdropFilter="blur(20px) saturate(180%)"
-        style={{ WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}
-        borderRadius="24px"
+        className="sk-card"
         p={7}
         pt={highlighted ? 10 : 7}
-        border={highlighted ? `2px solid ${C.accent}` : `1px solid ${C.cardBorder}`}
-        boxShadow={highlighted
-          ? '0 12px 40px color-mix(in srgb, var(--brand-primary) 28%, transparent), inset 0 1px 0 rgba(255,255,255,0.8)'
-          : `${C.cardShadow}, inset 0 1px 0 rgba(255,255,255,0.8)`}
+        style={highlighted ? { borderColor: 'var(--accent)', borderWidth: '2px' } : undefined}
         h="100%" display="flex" flexDirection="column"
         transition="box-shadow 0.3s ease, border-color 0.3s ease"
-        _hover={{ boxShadow: C.cardShadowHover, borderColor: 'color-mix(in srgb, var(--brand-primary) 45%, transparent)' }}
+        _hover={{ boxShadow: C.cardShadowHover, borderColor: 'var(--accent-border)' }}
       >
         {/* Para quién es — lo primero que se entiende */}
-        <Box px={3} py={1} mb={4} borderRadius="full" w="fit-content"
-          bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent)">
+        <Box px={3} py={1} mb={4} borderRadius="var(--radius-chip)" w="fit-content"
+          bg="var(--accent-soft)" border="1px solid var(--accent-border)">
           <Text fontSize="12px" fontWeight={700} color={C.accentDeep}
             fontFamily='var(--font-body)'>
             {es ? 'Ideal si vienes ' : 'Ideal if you come '}{idealFrequency(perMonthCredits, lang)}
@@ -335,9 +318,9 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
 
         {savingPerMonth > 0 && (
           <Flex align="center" gap={1.5} mb={4}
-            px={3} py={1.5} borderRadius="full" w="fit-content"
+            px={3} py={1.5} borderRadius="var(--radius-chip)" w="fit-content"
             bg={C.oliveTint} border={`1px solid ${C.oliveBorder}`}>
-            <FaTag size={9} color={C.olive} />
+            <Icon name="tag" size={9} color={C.olive} />
             <Text fontSize="12px" fontWeight={800} color={C.oliveDark}
               fontFamily='var(--font-body)'>
               {es ? `Ahorras ${formatPrice(Math.round(savingPerMonth), lang, 0)} al mes` : `You save ${formatPrice(Math.round(savingPerMonth), lang, 0)} a month`}
@@ -349,7 +332,7 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
         <Box as="ul" listStyleType="none" m={0} p={0} flex={1} mb={5}>
           {perks.map((perk) => (
             <Flex as="li" key={perk} align="flex-start" gap={2} mb={2}>
-              <Box mt="3px" flexShrink={0}><FaCheck size={11} color="#2D7D46" /></Box>
+              <Box mt="3px" flexShrink={0}><Icon name="check" size={11} color="var(--success)" /></Box>
               <Text fontSize="sm" color={C.brownMid} fontFamily='var(--font-body)' lineHeight="1.5">
                 {perk}
               </Text>
@@ -358,17 +341,15 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
         </Box>
 
         <Button
+          className="sk-btn"
           onClick={() => { window.location.href = `/checkout?tab=subscription&plan_id=${plan.id}`; }}
-          w="full" minH="50px" borderRadius="14px" fontWeight={800}
+          w="full" minH="50px"
           fontFamily='var(--font-body)' fontSize="md"
-          bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDeep})`} color="white" cursor="pointer"
-          boxShadow="0 6px 18px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 28%, transparent)"
-          _hover={{ opacity: 0.92, boxShadow: '0 8px 24px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 35%, transparent)' }}
-          transition="all 0.22s ease"
+          cursor="pointer"
           gap={2}
         >
           {es ? `Elegir ${planDisplayName(plan, lang)}` : `Choose ${planDisplayName(plan, lang)}`}
-          <FaArrowRight size={12} />
+          <Icon name="arrow-right" size={12} />
         </Button>
       </Box>
     </MotionBox>
@@ -394,11 +375,10 @@ function CreditsExplainer({ dropIn }: { dropIn: number }) {
   return (
     <SimpleGrid columns={{ base: 1, md: 3 }} gap={3} maxW="900px" mx="auto" mb={10}>
       {items.map((it) => (
-        <Flex key={it.text} align="center" gap={3} p={4} borderRadius="18px"
-          bg="rgba(255,255,255,0.55)" border="1px solid rgba(255,255,255,0.70)">
+        <Flex key={it.text} className="sk-card" align="center" gap={3} p={4}>
           <Box textAlign="center" minW="64px">
             <Text fontFamily='var(--font-heading)' fontSize="3xl" color={C.accentDeep} lineHeight="1">{it.big}</Text>
-            {it.unit && <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700} color={C.accent} textTransform="uppercase">{it.unit}</Text>}
+            {it.unit && <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700} color={C.accentText} textTransform="uppercase">{it.unit}</Text>}
           </Box>
           <Text fontFamily='var(--font-body)' fontSize="sm" color={C.brownMid} lineHeight="1.5">{it.text}</Text>
         </Flex>
@@ -425,10 +405,10 @@ function PlansHelp() {
       <Button as="a"
         href={whatsappUrl(site, es ? 'Hola, ¿qué plan me recomendáis?' : 'Hi, which plan would you recommend?')}
         target="_blank" rel="noopener"
-        minH="48px" px={6} borderRadius="full" bg="#25D366" color="white"
+        minH="48px" px={6} borderRadius="var(--radius-button)" bg="#25D366" color="white"
         fontFamily='var(--font-body)' fontWeight={800}
         _hover={{ opacity: 0.9 }} gap={2}>
-        <FaWhatsapp size={16} />
+        <Icon name="whatsapp" size={16} />
         {es ? 'Pregúntanos por WhatsApp' : 'Ask us on WhatsApp'}
       </Button>
     </Flex>
@@ -467,7 +447,7 @@ function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
 
   return (
     <Box py={{ base: 14, md: 24 }} px={{ base: 4, md: 6 }}
-      bg={`linear-gradient(160deg, ${C.bgStart} 0%, ${C.bgMid} 50%, ${C.bgEnd} 100%)`}
+      bg={C.sectionBg}
       position="relative"
       // clip (no hidden): las manchas decorativas sobresalen y con 'hidden' el
       // contenedor sigue siendo desplazable — al enfocar un botón el navegador
@@ -478,7 +458,7 @@ function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
       <Box position="absolute" top="-80px" right="-80px" w="400px" h="400px"
         borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 7%, transparent)" filter="blur(60px)" pointerEvents="none" />
       <Box position="absolute" bottom="-60px" left="-60px" w="350px" h="350px"
-        borderRadius="full" bg="rgba(107,123,60,0.05)" filter="blur(50px)" pointerEvents="none" />
+        borderRadius="full" bg="color-mix(in srgb, var(--brand-secondary) 6%, transparent)" filter="blur(50px)" pointerEvents="none" />
 
       <Box maxW="6xl" mx="auto" position="relative" zIndex={1}>
 
@@ -489,16 +469,16 @@ function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <Box px={4} py={1.5} borderRadius="full" mb={4}
-            bg="color-mix(in srgb, var(--brand-primary) 12%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)">
-            <Text fontSize="11px" fontWeight={700} color={C.accent}
+          <Box className="sk-eyebrow" px={4} py={1.5} mb={4}>
+            <Text fontSize="11px" fontWeight={700}
               fontFamily='var(--font-body)' letterSpacing="0.10em" textTransform="uppercase">
               {t('plans.badge')}
             </Text>
           </Box>
           <Text
+            className="sk-section-title"
             fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
-            fontWeight="bold" color={C.brown} textAlign="center"
+            fontWeight="bold" color={C.heading} textAlign="center"
             fontFamily='var(--font-heading)' letterSpacing="wide" lineHeight="1.1"
           >
             {t('plans.title')}
@@ -511,8 +491,8 @@ function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
 
         {/* Sin pagos online: los precios se ven, pero la compra es en el estudio */}
         {!paymentsEnabled() && (
-          <Box maxW="640px" mx="auto" mb={10} p={{ base: 5, md: 6 }} borderRadius="22px"
-            bg="rgba(255,255,255,0.75)" border="1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)">
+          <Box className="sk-card" maxW="640px" mx="auto" mb={10} p={{ base: 5, md: 6 }}
+            style={{ borderColor: 'var(--accent-border)' }}>
             <PaymentsDisabledNotice />
           </Box>
         )}
@@ -535,39 +515,39 @@ function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
             transition={{ duration: 0.4, delay: 0.15 }}
           >
             <Flex
-              bg="rgba(255,255,255,0.55)"
-              backdropFilter="blur(16px)"
-              style={{ WebkitBackdropFilter: 'blur(16px)' }}
-              borderRadius="full" p={1.5}
-              border="1px solid rgba(255,255,255,0.70)"
-              boxShadow="0 4px 20px color-mix(in srgb, var(--brand-dark) 8%, transparent)"
+              bg="var(--surface)"
+              backdropFilter="var(--surface-blur)"
+              style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
+              borderRadius="var(--radius-button)" p={1.5}
+              border="var(--border-width) solid var(--surface-border)"
+              boxShadow="var(--shadow-card)"
               gap={1}
             >
               {([
-                { key: 'subs' as const, labelKey: 'plans.tabSubs', icon: FaInfinity },
-                { key: 'packs' as const, labelKey: 'plans.tabPacks', icon: FaBolt },
-              ]).map(({ key, labelKey, icon: Icon }) => (
+                { key: 'subs' as const, labelKey: 'plans.tabSubs', icon: 'infinity' as IconName },
+                { key: 'packs' as const, labelKey: 'plans.tabPacks', icon: 'bolt' as IconName },
+              ]).map(({ key, labelKey, icon }) => (
+                // Pestaña activa = botón principal del estilo (sk-btn)
                 <Button
                   key={key}
+                  className={activeTab === key ? 'sk-btn' : undefined}
                   onClick={() => setActiveTab(key)}
-                  borderRadius="full"
+                  borderRadius="var(--radius-button)"
                   px={{ base: 4, md: 6 }} py={2}
                   fontSize={{ base: 'xs', md: 'sm' }}
                   fontWeight={600}
                   fontFamily='var(--font-body)'
                   cursor="pointer"
-                  bg={activeTab === key
-                    ? `linear-gradient(135deg, ${C.accent}, ${C.accentDeep})`
-                    : 'transparent'}
-                  color={activeTab === key ? 'white' : C.textMuted}
-                  boxShadow={activeTab === key ? '0 4px 14px color-mix(in srgb, var(--brand-primary) 30%, transparent)' : 'none'}
-                  _hover={activeTab !== key ? { color: C.brown, bg: 'color-mix(in srgb, var(--brand-primary) 6%, transparent)' } : {}}
+                  bg="transparent"
+                  color={C.textMuted}
+                  boxShadow="none"
+                  _hover={activeTab !== key ? { color: C.brown, bg: 'var(--accent-soft)' } : {}}
                   transition="all 0.25s ease"
                   gap={1.5}
                   border="none"
                   minH="40px"
                 >
-                  <Icon size={12} />
+                  <Icon name={icon} size={12} />
                   {t(labelKey)}
                 </Button>
               ))}
@@ -592,9 +572,7 @@ function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
               <MotionFlex justify="center" mt={10}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.4 }}>
-                <Box px={5} py={3} borderRadius="2xl"
-                  bg="rgba(255,255,255,0.50)" border="1px solid rgba(255,255,255,0.65)"
-                  backdropFilter="blur(12px)" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
+                <Box className="sk-card" px={5} py={3}>
                   <Text fontSize="sm" color={C.textMuted}
                     fontFamily='var(--font-body)' textAlign="center">
                     {t('plans.packFooter')}
@@ -623,9 +601,7 @@ function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
               <MotionFlex justify="center" mt={10}
                 initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                 transition={{ delay: 0.5, duration: 0.4 }}>
-                <Box px={5} py={3} borderRadius="2xl"
-                  bg="rgba(255,255,255,0.50)" border="1px solid rgba(255,255,255,0.65)"
-                  backdropFilter="blur(12px)" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
+                <Box className="sk-card" px={5} py={3}>
                   <Text fontSize="sm" color={C.textMuted}
                     fontFamily='var(--font-body)' textAlign="center">
                     {t('plans.subFooter')}{paymentsEnabled() ? ` ${t('plans.subFooterPay')}` : ''}
@@ -717,7 +693,7 @@ function SuscriptionPlans({ initialPlans }: { initialPlans?: ApiPlan[] | null })
     <Chakra>
       {loading ? (
         <Center minH="400px"
-          bg={`linear-gradient(160deg, ${C.bgStart}, ${C.bgMid}, ${C.bgEnd})`}>
+          bg={C.sectionBg}>
           <Spinner size="xl" color={C.accent} borderWidth="3px" />
         </Center>
       ) : (

@@ -3,9 +3,11 @@ import Footer from '../../components/Footer';
 import AppFixed from '../../components/AppFixed';
 import CheckoutSuccessPage from '../../components/PaymentFinish';
 import OptimizedHead from '../../components/OptimizedHead.astro';
+import { getSiteConfig, htmlThemeAttrs } from '../../lib/site';
+const site = await getSiteConfig();
 ---
 
-<html lang="es">
+<html lang="es" {...htmlThemeAttrs(site)}>
   <head>
     <!-- noAnalytics: la URL lleva el id de la sesión de pago -->
     <OptimizedHead title="Pago" titleEn="Payment" noindex noAnalytics />

@@ -17,10 +17,7 @@
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { Box, Flex, Text, chakra } from "@chakra-ui/react";
-import {
-  FaEnvelope, FaLock, FaUser, FaEye, FaEyeSlash, FaCheckCircle,
-  FaExclamationCircle, FaArrowLeft, FaRegCircle,
-} from "react-icons/fa";
+import { Icon } from "./ui/Icon";
 import Chakra from "./ChakraProvider";
 import GoogleAuthButton, { useGoogleLoginEnabled } from "./GoogleSignIn";
 import { Toaster } from "./ui/toaster";
@@ -40,20 +37,23 @@ export const AUTH_API = `${API_ROOT}/`;
 /** Mínimo que exige el backend (SignUpClientView / ResetPasswordView). */
 export const MIN_PASSWORD = 6;
 
+/** Paleta del acceso: solo tokens del estilo visual (presets.css), así se lee
+ *  igual en estilos claros y oscuros (energy, neon). */
 export const AUTH_C = {
-  brand: "var(--brand-primary)",      // solo decorativo (3.3:1 sobre blanco)
-  brandDark: "color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))",  // texto/botones (6.5:1 sobre blanco)
-  brandDarker: "color-mix(in srgb, var(--brand-primary) 31%, var(--brand-dark))",
-  brown: "var(--brand-dark)",      // texto principal (12:1)
-  muted: "color-mix(in srgb, var(--brand-secondary) 64%, var(--brand-dark))",      // texto secundario (5.9:1 sobre crema)
-  cream: "color-mix(in srgb, var(--brand-bg) 55%, white)",
-  sand: "color-mix(in srgb, var(--brand-primary) 18%, white)",
-  line: "color-mix(in srgb, var(--brand-primary) 30%, white)",
-  inputBorder: "var(--brand-primary)",
-  err: "#B42318",
-  errBg: "#FDF1EF",
-  ok: "#2D7D46",
-  okBg: "#EEF6F0",
+  brand: "var(--accent)",             // solo decorativo (iconos)
+  brandDark: "var(--accent-text)",    // texto/enlaces de acento (contraste garantizado)
+  brown: "var(--page-text)",          // texto principal
+  heading: "var(--heading-color)",    // títulos
+  muted: "var(--text-muted)",         // texto secundario
+  subtle: "var(--text-subtle)",       // placeholder
+  cream: "var(--page-bg)",            // fondo de página
+  sand: "var(--accent-soft)",         // relleno suave de acento
+  line: "var(--border-neutral)",      // separadores y bordes
+  inputBorder: "var(--input-border)",
+  err: "var(--danger)",
+  errBg: "var(--danger-soft)",
+  ok: "var(--success)",
+  okBg: "var(--success-soft)",
   font: 'var(--font-body)',
 };
 const C = AUTH_C;
@@ -294,7 +294,7 @@ function safeNext(): string {
 // Piezas de formulario (exportadas)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const focusRing = { outline: "none", borderColor: C.brandDark, boxShadow: "0 0 0 3px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 22%, transparent)" };
+const focusRing = { outline: "none", borderColor: "var(--accent)", boxShadow: "0 0 0 3px var(--accent-soft)" };
 
 interface TextFieldProps {
   id: string;
@@ -376,19 +376,19 @@ export function TextField({
           h="52px"
           pl={icon ? "44px" : "16px"}
           pr={isPassword ? "56px" : "16px"}
-          bg="white"
+          bg="var(--input-bg)"
           color={C.brown}
           fontFamily={C.font}
           fontWeight={600}
           fontSize="16px" /* 16px evita el zoom automático de iOS */
-          borderRadius="14px"
+          borderRadius="var(--radius-input)"
           borderWidth="1.5px"
           borderStyle="solid"
           borderColor={error ? C.err : C.inputBorder}
           transition="border-color .15s, box-shadow .15s"
-          _placeholder={{ color: "color-mix(in srgb, var(--brand-secondary) 94%, white)", fontWeight: 500 }}
-          _hover={{ borderColor: error ? C.err : C.brandDark }}
-          _focusVisible={error ? { ...focusRing, borderColor: C.err, boxShadow: "0 0 0 3px rgba(180,35,24,0.18)" } : focusRing}
+          _placeholder={{ color: C.subtle, fontWeight: 500 }}
+          _hover={{ borderColor: error ? C.err : "var(--accent)" }}
+          _focusVisible={error ? { ...focusRing, borderColor: C.err, boxShadow: "0 0 0 3px var(--danger-soft)" } : focusRing}
         />
         {isPassword && (
           <chakra.button
@@ -400,24 +400,24 @@ export function TextField({
             title={shown ? t.hide : t.show}
             position="absolute" right="4px" top="4px" w="44px" h="44px"
             display="flex" alignItems="center" justifyContent="center"
-            borderRadius="10px" color={C.brandDark} bg="transparent" cursor="pointer" fontSize="18px"
+            borderRadius="var(--radius-button)" color={C.brandDark} bg="transparent" cursor="pointer" fontSize="18px"
             _hover={{ bg: C.sand }}
             _focusVisible={{ outline: `2px solid ${C.brandDark}`, outlineOffset: "1px" }}
           >
-            {shown ? <FaEyeSlash aria-hidden /> : <FaEye aria-hidden />}
+            {shown ? <Icon name="eye-off" aria-hidden /> : <Icon name="eye" aria-hidden />}
           </chakra.button>
         )}
       </Box>
       {isPassword && caps && (
-        <Flex id={capsId} align="center" gap={1.5} mt={1.5} fontSize="13px" fontWeight={600} color="#8A5A00" fontFamily={C.font}>
-          <FaExclamationCircle aria-hidden /> {t.capsLock}
+        <Flex id={capsId} align="center" gap={1.5} mt={1.5} fontSize="13px" fontWeight={600} color="var(--warning)" fontFamily={C.font}>
+          <Icon name="alert-circle" aria-hidden /> {t.capsLock}
         </Flex>
       )}
       {children}
       <Box aria-live="polite">
         {error && (
           <Flex id={errId} align="flex-start" gap={1.5} mt={1.5} fontSize="13px" fontWeight={600} color={C.err} fontFamily={C.font} lineHeight="1.4">
-            <Box as="span" mt="2px" flexShrink={0}><FaExclamationCircle aria-hidden /></Box>
+            <Box as="span" mt="2px" flexShrink={0}><Icon name="alert-circle" aria-hidden /></Box>
             <span>{error}</span>
           </Flex>
         )}
@@ -431,7 +431,7 @@ export function Requirement({ id, met, children }: { id?: string; met: boolean; 
   return (
     <Flex id={id} align="center" gap={1.5} mt={1.5} fontSize="13px" fontWeight={600} fontFamily={C.font}
       color={met ? C.ok : C.muted}>
-      {met ? <FaCheckCircle aria-hidden /> : <FaRegCircle aria-hidden />}
+      {met ? <Icon name="check-circle" aria-hidden /> : <Icon name="circle" aria-hidden />}
       <span>{children}</span>
     </Flex>
   );
@@ -444,21 +444,19 @@ export function PrimaryButton({
   onClick?: () => void; disabled?: boolean;
 }) {
   return (
+    // Acabado (fondo, texto, borde, radio, sombra, peso) de la clase sk-btn
     <chakra.button
+      className="sk-btn"
       type={type}
       onClick={onClick}
       disabled={loading || disabled}
       aria-busy={loading || undefined}
       w="full" minH="52px" px={5}
       display="flex" alignItems="center" justifyContent="center" gap={2}
-      borderRadius="14px" bg={C.brandDark} color="white"
-      fontFamily={C.font} fontWeight={700} fontSize="16px" letterSpacing="0.01em"
+      fontFamily={C.font} fontSize="16px"
       cursor={loading ? "progress" : "pointer"}
-      boxShadow="0 6px 18px color-mix(in srgb, var(--brand-dark) 18%, transparent)"
-      transition="background .15s, transform .1s"
-      _hover={{ bg: C.brandDarker }}
       _active={{ transform: "scale(0.99)" }}
-      _disabled={{ opacity: 0.7, cursor: loading ? "progress" : "not-allowed" }}
+      _disabled={{ cursor: loading ? "progress" : "not-allowed" }}
       _focusVisible={{ outline: `3px solid ${C.brand}`, outlineOffset: "2px" }}
     >
       {loading && <ButtonSpinner />}
@@ -469,8 +467,8 @@ export function PrimaryButton({
 
 function ButtonSpinner() {
   return (
-    <Box as="span" aria-hidden w="18px" h="18px" borderRadius="full" border="2.5px solid rgba(255,255,255,0.35)"
-      borderTopColor="white" animation="spin 0.8s linear infinite" display="inline-block" />
+    <Box as="span" aria-hidden w="18px" h="18px" borderRadius="full" border="2.5px solid color-mix(in srgb, currentColor 35%, transparent)"
+      borderTopColor="currentColor" animation="spin 0.8s linear infinite" display="inline-block" />
   );
 }
 
@@ -482,7 +480,7 @@ export function LinkButton({ children, onClick, align = "center" }: {
       type="button" onClick={onClick}
       minH="44px" px={1} bg="transparent" color={C.brandDark}
       fontFamily={C.font} fontWeight={700} fontSize="14px" textAlign={align}
-      textDecoration="underline" textUnderlineOffset="3px" textDecorationColor="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 40%, transparent)"
+      textDecoration="underline" textUnderlineOffset="3px" textDecorationColor="var(--accent-border)"
       cursor="pointer" _hover={{ color: C.brown, textDecorationColor: C.brown }}
       _focusVisible={{ outline: `2px solid ${C.brandDark}`, outlineOffset: "2px", borderRadius: "6px" }}
     >
@@ -494,10 +492,10 @@ export function LinkButton({ children, onClick, align = "center" }: {
 export function FormAlert({ tone = "error", children, id }: { tone?: "error" | "ok"; children: React.ReactNode; id?: string }) {
   const isErr = tone === "error";
   return (
-    <Flex id={id} role={isErr ? "alert" : "status"} w="full" gap={2.5} align="flex-start" p="12px 14px" borderRadius="14px"
-      bg={isErr ? C.errBg : C.okBg} border="1px solid" borderColor={isErr ? "rgba(180,35,24,0.25)" : "rgba(45,125,70,0.25)"}
+    <Flex id={id} role={isErr ? "alert" : "status"} w="full" gap={2.5} align="flex-start" p="12px 14px" borderRadius="var(--radius-input)"
+      bg={isErr ? C.errBg : C.okBg} border="1px solid" borderColor={isErr ? "color-mix(in srgb, var(--danger) 30%, transparent)" : "color-mix(in srgb, var(--success) 30%, transparent)"}
       color={isErr ? C.err : C.ok} fontFamily={C.font} fontSize="14px" fontWeight={600} lineHeight="1.45">
-      <Box as="span" mt="2px" flexShrink={0}>{isErr ? <FaExclamationCircle aria-hidden /> : <FaCheckCircle aria-hidden />}</Box>
+      <Box as="span" mt="2px" flexShrink={0}>{isErr ? <Icon name="alert-circle" aria-hidden /> : <Icon name="check-circle" aria-hidden />}</Box>
       <Box flex="1">{children}</Box>
     </Flex>
   );
@@ -514,9 +512,9 @@ export function StatusView({
     <Flex direction="column" align="center" textAlign="center" gap={3} w="full" py={4}>
       <Flex w="64px" h="64px" borderRadius="full" align="center" justify="center" fontSize="28px"
         bg={tone === "ok" ? C.sand : C.errBg} color={tone === "ok" ? C.brandDark : C.err} aria-hidden>
-        {icon ?? <FaCheckCircle />}
+        {icon ?? <Icon name="check-circle" />}
       </Flex>
-      <chakra.h2 ref={headingRef} tabIndex={-1} fontFamily={C.font} fontWeight={700} fontSize="24px" color={C.brown}
+      <chakra.h2 ref={headingRef} tabIndex={-1} fontFamily={C.font} fontWeight={700} fontSize="24px" color={C.heading}
         lineHeight="1.2" outline="none">
         {title}
       </chakra.h2>
@@ -763,11 +761,11 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
         tabIndex={selected ? 0 : -1}
         onClick={() => { if (!selected) switchMode(value); }}
         onKeyDown={onTabKey}
-        flex="1" minH="44px" borderRadius="12px"
+        flex="1" minH="44px" borderRadius="var(--radius-input)"
         fontFamily={C.font} fontWeight={700} fontSize="15px"
-        bg={selected ? "white" : "transparent"}
+        bg={selected ? "var(--surface-strong)" : "transparent"}
         color={selected ? C.brown : C.muted}
-        boxShadow={selected ? "0 2px 8px color-mix(in srgb, var(--brand-dark) 12%, transparent)" : "none"}
+        boxShadow={selected ? "var(--shadow-card)" : "none"}
         cursor={selected ? "default" : "pointer"}
         transition="background .15s, color .15s"
         _hover={selected ? undefined : { color: C.brown }}
@@ -812,7 +810,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
     );
   } else if (mode === "resetSent") {
     content = (
-      <StatusView title={t.resetSentTitle} headingRef={headingRef} icon={<FaEnvelope />}>
+      <StatusView title={t.resetSentTitle} headingRef={headingRef} icon={<Icon name="mail" />}>
         <Text role="status" fontSize="15px" color={C.brown} fontFamily={C.font} fontWeight={500} lineHeight="1.5">
           {t.resetSentText(sentTo)}
         </Text>
@@ -830,7 +828,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
     content = (
       <Flex direction="column" gap={4} w="full">
         {mode !== "reset" ? (
-          <Flex role="tablist" aria-label={t.tabsLabel} bg={C.sand} p="4px" borderRadius="14px" gap={1}>
+          <Flex role="tablist" aria-label={t.tabsLabel} bg={C.sand} p="4px" borderRadius="var(--radius-input)" gap={1}>
             {renderTab("login", t.tabLogin, tabLoginRef)}
             {renderTab("register", t.tabRegister, tabRegisterRef)}
           </Flex>
@@ -840,7 +838,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
               display="inline-flex" alignItems="center" gap={2} minH="44px" px={1} ml={-1}
               bg="transparent" color={C.brandDark} fontFamily={C.font} fontWeight={700} fontSize="14px" cursor="pointer"
               _hover={{ color: C.brown }} _focusVisible={{ outline: `2px solid ${C.brandDark}`, borderRadius: "6px" }}>
-              <FaArrowLeft aria-hidden /> {t.backToLogin}
+              <Icon name="arrow-left" aria-hidden /> {t.backToLogin}
             </chakra.button>
           </Box>
         )}
@@ -852,7 +850,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
         >
           <Box mb={4}>
             <chakra.h2 ref={headingRef} tabIndex={-1} outline="none" fontFamily={C.font} fontWeight={700}
-              fontSize={{ base: "24px", md: "26px" }} color={C.brown} lineHeight="1.2">
+              fontSize={{ base: "24px", md: "26px" }} color={C.heading} lineHeight="1.2">
               {heading}
             </chakra.h2>
             <Text mt={1.5} fontSize="15px" color={C.muted} fontFamily={C.font} fontWeight={500} lineHeight="1.5">{sub}</Text>
@@ -874,7 +872,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
               <TextField
                 id="auth-name" label={t.nameLabel} value={name} placeholder={t.namePh}
                 onChange={(v) => { setName(v); clearServer("name"); }} onBlur={touch("name")}
-                autoComplete="name" autoCapitalize="words" icon={<FaUser />} error={errorFor("name")}
+                autoComplete="name" autoCapitalize="words" icon={<Icon name="user" />} error={errorFor("name")}
                 inputRef={refs.name} maxLength={80}
               />
             )}
@@ -882,7 +880,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
             <TextField
               id="auth-email" label={t.emailLabel} type="email" value={email} placeholder={t.emailPh}
               onChange={(v) => { setEmail(v); clearServer("email"); }} onBlur={touch("email")}
-              autoComplete="email" inputMode="email" icon={<FaEnvelope />}
+              autoComplete="email" inputMode="email" icon={<Icon name="mail" />}
               error={errorFor("email")} inputRef={refs.email} name="email" maxLength={254}
               describedBy={emailFix ? "auth-email-fix" : undefined}
             >
@@ -900,13 +898,13 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
               <TextField
                 id="auth-password" label={t.passwordLabel} type="password" value={password}
                 onChange={(v) => { setPassword(v); clearServer("password"); }} onBlur={touch("password")}
-                autoComplete="current-password" icon={<FaLock />} error={errorFor("password")} inputRef={refs.password}
+                autoComplete="current-password" icon={<Icon name="lock" />} error={errorFor("password")} inputRef={refs.password}
                 name="password"
                 labelAside={
                   <chakra.button type="button" onClick={() => switchMode("reset")}
                     bg="transparent" color={C.brandDark} fontFamily={C.font} fontWeight={700} fontSize="13px"
                     minH="32px" px={1} cursor="pointer" textDecoration="underline" textUnderlineOffset="3px"
-                    textDecorationColor="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 40%, transparent)" _hover={{ color: C.brown }}
+                    textDecorationColor="var(--accent-border)" _hover={{ color: C.brown }}
                     _focusVisible={{ outline: `2px solid ${C.brandDark}`, borderRadius: "6px" }}>
                     {t.forgot}
                   </chakra.button>
@@ -920,7 +918,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
                   id="auth-new-password" label={t.newPasswordLabel} type="password" value={password}
                   placeholder={t.newPasswordPh}
                   onChange={(v) => { setPassword(v); clearServer("password"); }} onBlur={touch("password")}
-                  autoComplete="new-password" icon={<FaLock />} error={errorFor("password")} inputRef={refs.password}
+                  autoComplete="new-password" icon={<Icon name="lock" />} error={errorFor("password")} inputRef={refs.password}
                   name="new-password" describedBy="auth-req-length"
                 >
                   <Requirement id="auth-req-length" met={password.length >= MIN_PASSWORD}>{t.reqLength}</Requirement>
@@ -930,7 +928,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
                   id="auth-confirm-password" label={t.confirmLabel} type="password" value={confirmPassword}
                   placeholder={t.confirmPh}
                   onChange={(v) => { setConfirmPassword(v); clearServer("confirm"); }} onBlur={touch("confirm")}
-                  autoComplete="new-password" icon={<FaLock />} error={confirmError} inputRef={refs.confirm}
+                  autoComplete="new-password" icon={<Icon name="lock" />} error={confirmError} inputRef={refs.confirm}
                   name="confirm-password" describedBy={confirmOk ? "auth-confirm-ok" : undefined}
                 >
                   {confirmOk && !confirmError && <Requirement id="auth-confirm-ok" met>{t.matchOk}</Requirement>}
@@ -946,7 +944,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => { setAcceptTerms(e.target.checked); setTouched((s) => ({ ...s, terms: true })); }}
                       aria-invalid={errorFor("terms") ? true : undefined}
                       aria-describedby={errorFor("terms") ? "auth-terms-error" : undefined}
-                      w="22px" h="22px" mt="1px" flexShrink={0} cursor="pointer" accentColor={C.brandDark}
+                      w="22px" h="22px" mt="1px" flexShrink={0} cursor="pointer" accentColor="var(--accent)"
                       _focusVisible={{ outline: `2px solid ${C.brandDark}`, outlineOffset: "2px" }}
                     />
                     <span>
@@ -962,7 +960,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
                   <Box aria-live="polite">
                     {errorFor("terms") && (
                       <Flex id="auth-terms-error" align="center" gap={1.5} mt={1} fontSize="13px" fontWeight={600} color={C.err} fontFamily={C.font}>
-                        <FaExclamationCircle aria-hidden /> <span>{errorFor("terms")}</span>
+                        <Icon name="alert-circle" aria-hidden /> <span>{errorFor("terms")}</span>
                       </Flex>
                     )}
                   </Box>
@@ -1049,8 +1047,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
         {/* Formulario */}
         <Flex w={{ base: "full", md: "50%" }} justify="center" align={{ base: "flex-start", md: "center" }}
           px={{ base: 4, md: 10 }} py={{ base: 6, md: 12 }}>
-          <Box w="full" maxW="480px" bg="white" borderRadius="24px" boxShadow="0 12px 40px color-mix(in srgb, var(--brand-dark) 10%, transparent)"
-            border={`1px solid ${C.line}`} px={{ base: 5, md: 8 }} py={{ base: 6, md: 8 }}>
+          <Box className="sk-card" w="full" maxW="480px" px={{ base: 5, md: 8 }} py={{ base: 6, md: 8 }}>
             <chakra.h1 srOnly>{`${site.studio_name} · ${t.tabsLabel}`}</chakra.h1>
             {body}
           </Box>

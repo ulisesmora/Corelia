@@ -62,15 +62,20 @@ Sin ellos funciona todo: vendes los bonos en el estudio y añades los créditos 
 
 ## En tu ordenador
 
-Con [Docker](https://www.docker.com/):
+Con [Docker Desktop](https://www.docker.com/products/docker-desktop/) abierto:
 
 ```bash
-cp .env.example .env    # opcional
-docker compose up --build
+./start-local.sh
 ```
 
-- Panel: http://localhost:8000 (entra con `admin@example.com` / `cambia-esta-clave`)
+Te pide los mismos tres datos que Railway (nombre del estudio, tu email y una contraseña),
+lo arranca todo y te abre el panel:
+
+- Panel: http://localhost:8000
 - Web: http://localhost:4321
+- Emails: http://localhost:8025 (buzón de pruebas: ves cada email que recibirían tus clientas, sin enviar nada de verdad)
+
+En local no se puede conectar Stripe (necesita https); todo lo demás funciona igual que publicado.
 
 Para programar, cada parte por separado:
 

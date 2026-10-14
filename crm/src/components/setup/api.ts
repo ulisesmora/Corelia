@@ -46,6 +46,8 @@ export interface StudioSettings {
   color_background: string;
   font_heading: string;
   font_body: string;
+  style_preset: string;
+  icon_style: string;
   currency: string;
   drop_in_price: string;
   email_enabled: boolean;
@@ -69,12 +71,14 @@ export interface StudioSettings {
   default_web_url: string;
   default_api_url: string;
   email_ready: boolean;
+  push_devices: number;
+  push_clients: number;
 }
 
 /** Campos que se pueden escribir (más la contraseña SMTP, que nunca se lee). */
 export type StudioSettingsPatch = Partial<Omit<StudioSettings,
   'has_smtp_password' | 'has_stripe' | 'stripe_mode' | 'webhook_url' | 'api_url' | 'web_url' | 'email_ready'
-  | 'default_web_url' | 'default_api_url'
+  | 'default_web_url' | 'default_api_url' | 'push_devices' | 'push_clients'
   | 'payments_enabled' | 'stripe_publishable_key'>> & { smtp_password?: string };
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {

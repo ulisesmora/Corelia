@@ -212,7 +212,7 @@ export default function PhoneUpdateDialog() {
         <Portal>
             <Dialog.Backdrop />
             <Dialog.Positioner>
-            <Dialog.Content>
+            <Dialog.Content className="sk-panel">
                 
                 {/* Botón de cierre (X) arriba a la derecha */}
                 <Dialog.CloseTrigger asChild>
@@ -234,22 +234,36 @@ export default function PhoneUpdateDialog() {
                 <Dialog.Body>
                     <style>
                         {`
+                            /* Colores del campo con los tokens del estilo (variables de react-international-phone) */
+                            .phone-input-chakra-override {
+                                --react-international-phone-background-color: var(--input-bg);
+                                --react-international-phone-text-color: var(--page-text);
+                                --react-international-phone-border-color: var(--input-border);
+                                --react-international-phone-border-radius: var(--radius-input);
+                                --react-international-phone-country-selector-background-color-hover: var(--surface-muted);
+                                --react-international-phone-dropdown-item-background-color: var(--surface-strong);
+                                --react-international-phone-dropdown-item-text-color: var(--page-text);
+                                --react-international-phone-dropdown-item-dial-code-color: var(--text-muted);
+                                --react-international-phone-selected-dropdown-item-background-color: var(--surface-muted);
+                                --react-international-phone-selected-dropdown-item-text-color: var(--page-text);
+                                --react-international-phone-dropdown-shadow: var(--shadow-float);
+                            }
                             .phone-input-chakra-override .react-international-phone-input-container { width: 100%; }
                             .phone-input-chakra-override .react-international-phone__input {
                                 width: 100% !important;
                                 height: 40px !important; 
-                                border-radius: 0 4px 4px 0 !important;
-                                border-color: #E2E8F0 !important;
+                                border-radius: 0 var(--radius-input) var(--radius-input) 0 !important;
+                                border-color: var(--input-border) !important;
                             }
                             .phone-input-chakra-override .react-international-phone__input:focus {
-                                border-color: var(--brand-secondary) !important;
-                                box-shadow: 0 0 0 1px var(--brand-secondary) !important;
+                                border-color: var(--accent) !important;
+                                box-shadow: 0 0 0 1px var(--accent) !important;
                             }
                         `}
                     </style>
                 
                     {/* ✅ Texto actualizado: Tono amable y explicativo */}
-                    <Text fontSize="sm" color="gray.600" mb={4}>
+                    <Text fontSize="sm" color="var(--text-muted)" mb={4}>
                         {L.body}
                     </Text>
                 
@@ -269,11 +283,13 @@ export default function PhoneUpdateDialog() {
                 </Dialog.Body>
 
                 <Dialog.Footer>
-                    <Flex justify="space-between" w="100%" gap={3}>
+                    {/* wrap: con botones en mayúsculas espaciadas (algunos estilos) no se salen en móvil */}
+                    <Flex justify="space-between" w="100%" gap={3} wrap="wrap">
                         {/* ✅ Botón Secundario: Cerrar sin guardar */}
                         <Button 
                             variant="ghost" 
                             colorScheme="gray" 
+                            className="sk-btn-ghost"
                             onClick={handleClose}
                             disabled={isLoading}
                         >
@@ -282,9 +298,7 @@ export default function PhoneUpdateDialog() {
 
                         {/* Botón Primario: Guardar */}
                         <Button
-                            bg="var(--brand-secondary)"
-                            color="white"
-                            _hover={{ bg: 'color-mix(in srgb, var(--brand-secondary) 76%, white)' }}
+                            className="sk-btn"
                             loading={isLoading}
                             onClick={handleUpdatePhone}
                             // BUG FIX: contar dígitos, no longitud bruta — antes la

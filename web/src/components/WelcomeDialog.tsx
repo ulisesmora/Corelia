@@ -6,7 +6,7 @@ import {
   DialogBody, DialogFooter, Button, Text, SimpleGrid,
   Box, Flex,
 } from "@chakra-ui/react";
-import { FaCheckCircle } from "react-icons/fa";
+import { Icon } from "./ui/Icon";
 import { useT } from "../i18n";
 import { useLangStore } from "./stores/lang.store";
 
@@ -16,15 +16,14 @@ const LANGUAGES = [
   { value: "en", label: "English", flag: "🇬🇧" },
 ];
 
+// Paleta del diálogo: solo tokens del estilo (presets.css)
 const C = {
-  accent: "var(--brand-primary)",
-  accentDark: "color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))",
-  brown: "var(--brand-dark)",
-  textMuted: "color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))",
-  border: "color-mix(in srgb, var(--brand-primary) 20%, transparent)",
-  borderStrong: "color-mix(in srgb, var(--brand-primary) 35%, transparent)",
-  btnGrad: "linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 100%)",
-  bg: "linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 100%)",
+  accent: "var(--accent)",
+  brown: "var(--page-text)",
+  heading: "var(--heading-color)",
+  textMuted: "var(--text-muted)",
+  border: "var(--border-neutral)",
+  borderStrong: "var(--accent-border)",
 };
 
 export const LanguageModal = () => {
@@ -72,19 +71,16 @@ export const LanguageModal = () => {
 
         <DialogContent
           maxH="85vh" overflow="hidden" my="auto"
-          borderRadius="24px"
-          bg={C.bg}
-          border={`1px solid ${C.border}`}
-          boxShadow="0 24px 72px color-mix(in srgb, var(--brand-dark) 18%, transparent)"
+          className="sk-panel"
         >
           <DialogHeader
             borderBottom={`1px solid ${C.border}`} pb={4}
-            bg="rgba(255,255,255,0.60)" backdropFilter="blur(8px)"
-            borderTopRadius="24px"
+            bg="var(--surface-muted)" backdropFilter="var(--surface-blur)"
+            borderTopRadius="var(--radius-card)"
           >
             <DialogTitle
               fontFamily='var(--font-heading)'
-              fontSize="2xl" color={C.brown} letterSpacing="0.04em"
+              fontSize="2xl" color={C.heading} letterSpacing="0.04em"
             >
               {t("langModal.title")}
             </DialogTitle>
@@ -101,20 +97,20 @@ export const LanguageModal = () => {
                 return (
                   <Box key={l.value} as="button"
                     onClick={() => setSelected(l.value)}
-                    p={4} borderRadius="16px" textAlign="left"
-                    bg={active ? "color-mix(in srgb, var(--brand-primary) 12%, transparent)" : "rgba(255,255,255,0.70)"}
+                    p={4} borderRadius="var(--radius-card)" textAlign="left"
+                    bg={active ? "var(--accent-soft)" : "var(--surface)"}
                     border={`1px solid ${active ? C.borderStrong : C.border}`}
-                    boxShadow={active ? "0 2px 12px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 18%, transparent)" : "none"}
+                    boxShadow={active ? "var(--shadow-card)" : "none"}
                     cursor="pointer"
                     transition="all 0.18s ease"
-                    _hover={{ bg: "color-mix(in srgb, var(--brand-primary) 8%, transparent)", borderColor: C.borderStrong }}>
+                    _hover={{ bg: "var(--accent-soft)", borderColor: C.borderStrong }}>
                     <Flex align="center" justify="space-between">
                       <Flex align="center" gap={3}>
                         <Text fontSize="2xl" lineHeight="1">{l.flag}</Text>
                         <Text fontFamily='var(--font-body)' fontWeight={700}
                           fontSize="md" color={C.brown}>{l.label}</Text>
                       </Flex>
-                      {active && <FaCheckCircle size={16} color={C.accentDark} />}
+                      {active && <Icon name="check-circle" size={16} color={C.accent} />}
                     </Flex>
                   </Box>
                 );
@@ -124,20 +120,18 @@ export const LanguageModal = () => {
 
           <DialogFooter
             borderTop={`1px solid ${C.border}`} pt={4}
-            bg="rgba(255,255,255,0.60)" backdropFilter="blur(8px)"
-            borderBottomRadius="24px"
+            bg="var(--surface-muted)" backdropFilter="var(--surface-blur)"
+            borderBottomRadius="var(--radius-card)"
           >
             <Button variant="ghost" onClick={handleClose}
               fontFamily='var(--font-body)' fontWeight={700}
-              color={C.textMuted} _hover={{ bg: "color-mix(in srgb, var(--brand-primary) 8%, transparent)" }}>
+              color={C.textMuted} _hover={{ bg: "var(--accent-soft)" }}>
               {t("langModal.cancelBtn")}
             </Button>
             <Button onClick={handleSave}
-              h="40px" borderRadius="full" px={6}
-              bg={C.btnGrad} color="white"
-              fontFamily='var(--font-body)' fontWeight={700}
-              boxShadow="0 4px 14px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 22%, transparent)"
-              _hover={{ opacity: 0.90 }}>
+              h="40px" px={6}
+              className="sk-btn"
+              fontFamily='var(--font-body)'>
               {t("langModal.applyBtn")}
             </Button>
           </DialogFooter>

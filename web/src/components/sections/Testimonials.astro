@@ -12,8 +12,8 @@ const text = (t: ApiTestimonial) => (lang === 'en' && t.text_en?.trim()) || t.te
 const stars = (n: number) => Math.max(0, Math.min(5, Math.round(n)));
 ---
 {items.length > 0 && (
-  <section class="tst" id="opiniones" aria-labelledby="tst-title">
-    <h2 id="tst-title">{es ? 'Lo que dicen nuestras alumnas y alumnos' : 'What our members say'}</h2>
+  <section class="tst sk-section" id="opiniones" aria-labelledby="tst-title">
+    <h2 id="tst-title" class="sk-section-title">{es ? 'Lo que dicen nuestras alumnas y alumnos' : 'What our members say'}</h2>
     <ul>
       {items.map((t) => (
         <li>
@@ -36,14 +36,15 @@ const stars = (n: number) => Math.max(0, Math.min(5, Math.round(n)));
 )}
 
 <style>
-  .tst { max-width: 1100px; margin: 0 auto; padding: 4rem 1.25rem; font-family: var(--font-body); color: var(--brand-dark); }
-  .tst h2 { font-family: var(--font-heading); font-size: clamp(2rem, 5vw, 2.75rem); text-align: center; letter-spacing: .02em; margin: 0 0 2rem; }
+  /* Acabado con los tokens del estilo visual (styles/presets.css) */
+  .tst { max-width: 1100px; margin: 0 auto; padding: 4rem 1.25rem; font-family: var(--font-body); color: var(--page-text); }
+  .tst h2 { font-family: var(--font-heading); font-size: clamp(2rem, 5vw, 2.75rem); text-align: center; letter-spacing: .02em; margin: 0 0 2rem; color: var(--heading-color); }
   .tst ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr)); }
-  .tst figure { margin: 0; height: 100%; display: flex; flex-direction: column; gap: .75rem; padding: 1.5rem; border-radius: 20px; background: rgba(255,255,255,.8); border: 1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent); box-shadow: 0 4px 18px color-mix(in srgb, var(--brand-dark) 6%, transparent); }
-  .tst-stars { margin: 0; color: var(--brand-primary); letter-spacing: .1em; }
+  .tst figure { margin: 0; height: 100%; display: flex; flex-direction: column; gap: .75rem; padding: 1.5rem; border-radius: var(--radius-card); background: var(--surface); color: var(--surface-text); border: var(--border-width) solid var(--surface-border); box-shadow: var(--shadow-card); backdrop-filter: var(--surface-blur); -webkit-backdrop-filter: var(--surface-blur); }
+  .tst-stars { margin: 0; color: var(--accent); letter-spacing: .1em; }
   .tst blockquote { margin: 0; flex: 1; line-height: 1.7; white-space: pre-line; }
   .tst figcaption { display: flex; align-items: center; gap: .75rem; }
   .tst figcaption img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
   .tst figcaption span { display: flex; flex-direction: column; }
-  .tst small { color: color-mix(in srgb, var(--brand-secondary) 70%, var(--brand-dark)); }
+  .tst small { color: var(--text-muted); }
 </style>

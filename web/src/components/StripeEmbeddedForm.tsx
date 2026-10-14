@@ -103,7 +103,7 @@ const StripeEmbeddedForm = ({ items, currency = 'eur', email, name, phone, coupo
   if (loading) {
     return (
       <Center py={10}>
-        <Spinner size="xl" color="var(--brand-secondary)" />
+        <Spinner size="xl" color="var(--accent)" />
       </Center>
     );
   }
@@ -121,11 +121,13 @@ const StripeEmbeddedForm = ({ items, currency = 'eur', email, name, phone, coupo
 
   if (!clientSecret) {
     // This state should ideally not be reached if error handling is correct
-    return <Text color="red.500">{t('checkout.payFormError')}</Text>;
+    return <Text color="var(--danger)">{t('checkout.payFormError')}</Text>;
   }
 
   return (
-    <Box id="checkout" w="full">
+    // El iframe de Stripe no se puede oscurecer: va SIEMPRE sobre una
+    // superficie clara fija (también en energy/neon) para que se lea.
+    <Box id="checkout" w="full" bg="#fff" color="#1a1a1a" borderRadius="var(--radius-input)" overflow="hidden">
       {/* key: EmbeddedCheckoutProvider no admite cambiar el clientSecret una
           vez montado — al regenerar la sesión (p. ej. cupón aplicado) hay que
           remontar el provider entero. */}

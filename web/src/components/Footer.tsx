@@ -3,16 +3,18 @@
 import { Box, Flex, Text, SimpleGrid } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
 import Chakra from './ChakraProvider';
-import { FaInstagram, FaWhatsapp, FaMapMarkerAlt, FaEnvelope, FaPhone } from 'react-icons/fa';
+import { Icon as SiteIcon, type IconName } from './ui/Icon';
 import { useMemo } from 'react';
 import { useT } from '../i18n';
 import BrandLogo from './BrandLogo';
 import { useLangStore, withSsrLang } from './stores/lang.store';
 import { addressLine, instagramHandle, instagramUrl, mapsUrl, phoneHref, useSite, whatsappUrl } from '../lib/site';
 
+// Zona profunda: tokens --deep-* del estilo visual (presets.css)
 const C = {
-  accent: 'color-mix(in srgb, var(--brand-primary) 70%, white)', border: 'rgba(255,255,255,0.09)',
-  textMuted: 'rgba(255,255,255,0.50)', textLight: 'rgba(255,255,255,0.28)',
+  accent: 'var(--brand-primary-on-dark)', border: 'var(--deep-border)',
+  textMuted: 'var(--deep-muted)', textLight: 'color-mix(in srgb, var(--deep-text) 40%, transparent)',
+  text: 'var(--deep-text)',
 };
 
 function FooterInner() {
@@ -29,26 +31,26 @@ function FooterInner() {
   const tel = phoneHref(site);
   const address = addressLine(site);
   const socialLinks = [
-    ig && { icon: FaInstagram, href: ig, label: 'Instagram', color: '#F472B6' },
-    wa && { icon: FaWhatsapp, href: wa, label: 'WhatsApp', color: '#4ADE80' },
-  ].filter(Boolean) as { icon: typeof FaInstagram; href: string; label: string; color: string }[];
+    ig && { icon: 'instagram' as IconName, href: ig, label: 'Instagram', color: '#F472B6' },
+    wa && { icon: 'whatsapp' as IconName, href: wa, label: 'WhatsApp', color: '#4ADE80' },
+  ].filter(Boolean) as { icon: IconName; href: string; label: string; color: string }[];
   const contactItems = [
-    site.contact.email && { icon: FaEnvelope, text: site.contact.email, href: `mailto:${site.contact.email}` },
-    wa && { icon: FaWhatsapp, text: site.contact.phone || 'WhatsApp', href: wa },
-    !wa && tel && { icon: FaPhone, text: site.contact.phone, href: tel },
-    ig && !wa && { icon: FaInstagram, text: `@${instagramHandle(site)}`, href: ig },
-    address && { icon: FaMapMarkerAlt, text: address, href: mapsUrl(site) || '#' },
-  ].filter(Boolean) as { icon: typeof FaEnvelope; text: string; href: string }[];
+    site.contact.email && { icon: 'mail' as IconName, text: site.contact.email, href: `mailto:${site.contact.email}` },
+    wa && { icon: 'whatsapp' as IconName, text: site.contact.phone || 'WhatsApp', href: wa },
+    !wa && tel && { icon: 'phone' as IconName, text: site.contact.phone, href: tel },
+    ig && !wa && { icon: 'instagram' as IconName, text: `@${instagramHandle(site)}`, href: ig },
+    address && { icon: 'map-pin' as IconName, text: address, href: mapsUrl(site) || '#' },
+  ].filter(Boolean) as { icon: IconName; text: string; href: string }[];
   const tagline = site.tagline || site.contact.city;
 
   return (
     <Box
       as="footer"
+      // Fondo y texto de la zona profunda (--deep-bg / --deep-text)
+      className="sk-deep"
       position="relative"
       w="100%"
-      bg="linear-gradient(160deg, color-mix(in srgb, var(--brand-dark) 30%, black) 0%, color-mix(in srgb, var(--brand-dark) 45%, black) 60%, color-mix(in srgb, var(--brand-dark) 30%, black) 100%)"
-      borderTop="1px solid color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 12%, transparent)"
-      color="white"
+      borderTop={`1px solid ${C.border}`}
       overflow="hidden"
     >
       {/* Grain texture */}
@@ -60,7 +62,7 @@ function FooterInner() {
 
       {/* Warm ambient glow */}
       <Box position="absolute" top="-30%" left="20%" w="400px" h="300px"
-        borderRadius="full" bg="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 5%, transparent)" filter="blur(100px)" pointerEvents="none" />
+        borderRadius="full" bg="color-mix(in srgb, var(--brand-primary-on-dark) 5%, transparent)" filter="blur(100px)" pointerEvents="none" />
 
       {/* ── Main content ── */}
       <Box maxW="6xl" mx="auto" px={{ base: 6, md: 12 }} pt={{ base: 14, md: 20 }} pb={{ base: 10, md: 14 }}
@@ -78,7 +80,7 @@ function FooterInner() {
               <Text
                 fontFamily='var(--font-heading)'
                 fontSize={{ base: '3xl', md: '5xl' }}
-                color="white" letterSpacing="0.04em" lineHeight="1"
+                color={C.text} letterSpacing="0.04em" lineHeight="1"
               >
                 {site.studio_name}
               </Text>
@@ -90,18 +92,18 @@ function FooterInner() {
 
             {/* Redes (solo las que tenga el estudio) */}
             <Flex gap={3} display={socialLinks.length ? 'flex' : 'none'}>
-              {socialLinks.map(({ icon: Icon, href, label, color }) => (
+              {socialLinks.map(({ icon, href, label, color }) => (
                 <Box
                   key={label}
                   as="a" href={href} target="_blank" rel="noopener noreferrer"
-                  w="48px" h="48px" borderRadius="14px"
+                  w="48px" h="48px" borderRadius="var(--radius-button)"
                   display="flex" alignItems="center" justifyContent="center"
-                  bg="rgba(255,255,255,0.05)" border={`1px solid ${C.border}`}
+                  bg="color-mix(in srgb, var(--deep-text) 5%, transparent)" border={`1px solid ${C.border}`}
                   cursor="pointer" transition="all 0.22s"
-                  _hover={{ bg: 'rgba(255,255,255,0.10)', borderColor: 'rgba(255,255,255,0.18)' }}
+                  _hover={{ bg: 'color-mix(in srgb, var(--deep-text) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--deep-text) 18%, transparent)' }}
                   title={label}
                 >
-                  <Icon size={18} color={color} />
+                  <SiteIcon name={icon} size={18} color={color} />
                 </Box>
               ))}
             </Flex>
@@ -121,7 +123,7 @@ function FooterInner() {
               {[
                 { label: t('home.footer.nav.home') || 'Inicio', href: homeHref },
                 { label: t('nav.items.calendar.label') || 'Horario', href: '/calendar' },
-                { label: t('nav.items.prices.label') || 'Precios', href: '/prices' },
+                { label: t('nav.items.prices.label') || 'Precios', href: lang === 'en' ? '/en/prices' : '/prices' },
                 { label: t('home.footer.nav.contact') || 'Contacto', href: `${homeHref}#contacto` },
                 { label: lang === 'en' ? 'Terms & conditions' : 'Términos y condiciones', href: t('links.terms') || '/terminos-condiciones' },
               ].map(({ label, href }) => (
@@ -129,7 +131,7 @@ function FooterInner() {
                   fontFamily='var(--font-body)'
                   fontSize="md" color={C.textMuted} fontWeight={500}
                   transition="color 0.18s"
-                  _hover={{ color: 'white' }}
+                  _hover={{ color: C.text }}
                   display="block"
                 >
                   {label}
@@ -150,7 +152,7 @@ function FooterInner() {
                   fontFamily='var(--font-body)'
                   fontSize="md" color={C.textMuted} fontWeight={500}
                   transition="color 0.18s"
-                  _hover={{ color: 'white' }}
+                  _hover={{ color: C.text }}
                   display="block"
                 >
                   {c}
@@ -166,17 +168,17 @@ function FooterInner() {
               {t('home.footer.contactTitle') || 'Contacto'}
             </Text>
             <Flex direction="column" gap={3}>
-              {contactItems.map(({ icon: Icon, text, href }) => (
+              {contactItems.map(({ icon, text, href }) => (
                 <Box as="a" key={text} href={href}
                   target={href.startsWith('http') ? '_blank' : undefined}
                   rel="noopener noreferrer"
                   display="flex" alignItems="center" gap={2.5}
                   fontFamily='var(--font-body)'
                   fontSize="md" color={C.textMuted}
-                  transition="color 0.18s" _hover={{ color: 'white' }}
+                  transition="color 0.18s" _hover={{ color: C.text }}
                   cursor="pointer"
                 >
-                  <Icon size={13} color={C.accent} />
+                  <SiteIcon name={icon} size={13} color={C.accent} />
                   {text}
                 </Box>
               ))}
@@ -199,7 +201,7 @@ function FooterInner() {
               <Box w="6px" h="6px" borderRadius="full" bg={C.accent}
                 boxShadow={`0 0 8px ${C.accent}`} />
               <Text fontFamily='var(--font-heading)' textTransform="uppercase"
-                fontSize="sm" color="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 35%, transparent)" letterSpacing="0.12em">
+                fontSize="sm" color="color-mix(in srgb, var(--brand-primary-on-dark) 35%, transparent)" letterSpacing="0.12em">
                 {[site.studio_name, tagline].join(' · ')}
               </Text>
             </Flex>

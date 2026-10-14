@@ -19,9 +19,11 @@ export const Toaster = () => {
     <Portal>
       <ChakraToaster toaster={toaster} insetInline={{ mdDown: "4" }}>
         {(toast) => (
-          <Toast.Root width={{ md: "sm" }}>
+          // Radio y sombra flotante del estilo visual; el fondo neutro ya sale de
+          // los tokens (bg.panel → --surface-strong) y los de éxito/error de Chakra
+          <Toast.Root width={{ md: "sm" }} borderRadius="var(--radius-card)" boxShadow="var(--shadow-float)">
             {toast.type === "loading" ? (
-              <Spinner size="sm" color="var(--brand-primary)" />
+              <Spinner size="sm" color="var(--accent)" />
             ) : (
               <Toast.Indicator />
             )}

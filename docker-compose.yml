@@ -1,6 +1,7 @@
-# Todo Studio Kit en tu ordenador:  docker compose up --build
+# Todo Studio Kit en tu ordenador:  ./start-local.sh   (o: docker compose up --build)
 #   Panel del estudio → http://localhost:8000   (entra con ADMIN_EMAIL / ADMIN_PASSWORD)
 #   Web de reservas   → http://localhost:4321
+#   Emails enviados   → http://localhost:8025   (Mailpit: buzón de pruebas, no sale nada a internet)
 services:
   db:
     image: postgres:16-alpine
@@ -18,6 +19,13 @@ services:
   redis:
     image: redis:7-alpine
 
+  # Buzón de pruebas: captura TODOS los emails que envía el estudio para verlos
+  # en http://localhost:8025 sin mandar nada de verdad.
+  mailpit:
+    image: axllent/mailpit:latest
+    ports:
+      - "8025:8025"
+
   api:
     build: .
     env_file:
@@ -33,12 +41,19 @@ services:
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-cambia-esta-clave}
       STUDIO_NAME: ${STUDIO_NAME:-Mi Estudio}
       SEED_DEMO: ${SEED_DEMO:-1}
+      # Emails al buzón de pruebas (en producción se configura Gmail u otro desde el panel)
+      EMAIL_HOST: mailpit
+      EMAIL_PORT: "1025"
+      EMAIL_USE_TLS: "0"
+      DEFAULT_FROM_EMAIL: hola@mi-estudio.local
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
       redis:
+        condition: service_started
+      mailpit:
         condition: service_started
 
   web:

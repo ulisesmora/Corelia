@@ -28,7 +28,7 @@ const osm = hasCoords
       {site.contact.area_served.length > 0 && (
         <p class="loc-areas">{es ? 'También atendemos: ' : 'We also serve: '}{site.contact.area_served.join(', ')}</p>
       )}
-      {map && <a class="loc-btn" href={map} target="_blank" rel="noopener">{es ? 'Abrir en el mapa' : 'Open in maps'}</a>}
+      {map && <a class="loc-btn sk-btn" href={map} target="_blank" rel="noopener">{es ? 'Abrir en el mapa' : 'Open in maps'}</a>}
     </div>
     {osm && (
       <iframe class="loc-map" src={osm} title={es ? `Mapa de ${site.studio_name}` : `Map of ${site.studio_name}`}
@@ -38,11 +38,13 @@ const osm = hasCoords
 )}
 
 <style>
-  .loc { max-width: 1100px; margin: 0 auto; padding: 3rem 1.25rem 4rem; display: grid; gap: 1.5rem; grid-template-columns: 1fr; align-items: center; font-family: var(--font-body); color: var(--brand-dark); }
+  /* Acabado con los tokens del estilo visual (styles/presets.css). El botón
+     toma color, borde, radio y sombra de .sk-btn; aquí solo su tamaño. */
+  .loc { max-width: 1100px; margin: 0 auto; padding: 3rem 1.25rem 4rem; display: grid; gap: 1.5rem; grid-template-columns: 1fr; align-items: center; font-family: var(--font-body); color: var(--page-text); }
   @media (min-width: 820px) { .loc { grid-template-columns: 1fr 1.4fr; } }
-  .loc h2 { font-family: var(--font-heading); font-size: clamp(1.8rem, 4vw, 2.4rem); margin: 0 0 1rem; letter-spacing: .02em; }
+  .loc h2 { font-family: var(--font-heading); font-size: clamp(1.8rem, 4vw, 2.4rem); margin: 0 0 1rem; letter-spacing: .02em; color: var(--heading-color); }
   .loc address { font-style: normal; line-height: 1.7; margin-bottom: 1rem; }
-  .loc-areas { color: color-mix(in srgb, var(--brand-secondary) 70%, var(--brand-dark)); margin: 0 0 1rem; }
-  .loc-btn { display: inline-flex; align-items: center; min-height: 46px; padding: 0 1.4rem; border-radius: 999px; background: var(--brand-primary); color: #fff; font-weight: 700; text-decoration: none; text-transform: none; font-family: var(--font-body); }
-  .loc-map { width: 100%; height: 320px; border: 0; border-radius: 20px; box-shadow: 0 6px 24px color-mix(in srgb, var(--brand-dark) 10%, transparent); }
+  .loc-areas { color: var(--text-muted); margin: 0 0 1rem; }
+  .loc-btn { display: inline-flex; align-items: center; min-height: 46px; padding: 0 1.4rem; text-decoration: none; font-family: var(--font-body); }
+  .loc-map { width: 100%; height: 320px; border: 0; border-radius: var(--radius-card-lg); box-shadow: var(--shadow-card); }
 </style>

@@ -8,7 +8,7 @@ import Chakra from './ChakraProvider';
 import { useT } from '../i18n';
 import { useLangStore, withSsrLang } from './stores/lang.store';
 import { tr } from '../utils/localized';
-import { FaUserFriends, FaMapMarkerAlt, FaLeaf } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 
 import { optimizedImage, withOriginalFallback } from '../utils/img';
 import { API_V1 } from '../config';
@@ -25,10 +25,11 @@ interface Room {
 
 const API_BASE_URL = API_V1;
 
+// Paleta de la sección: tokens del estilo visual (presets.css)
 const C = {
-  accent: 'var(--brand-primary)', accentDark: 'color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))', brown: 'var(--brand-dark)',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))', textLight: 'color-mix(in srgb, var(--brand-secondary) 65%, white)',
-  borderMuted: 'color-mix(in srgb, var(--brand-primary) 18%, transparent)',
+  accent: 'var(--accent)', accentDark: 'var(--accent-text)', brown: 'var(--heading-color)',
+  textMuted: 'var(--text-muted)', textLight: 'var(--text-subtle)',
+  borderMuted: 'var(--accent-border)',
 };
 
 function RoomCard({ room, index, lang }: { room: Room; index: number; lang: string }) {
@@ -47,12 +48,11 @@ function RoomCard({ room, index, lang }: { room: Room; index: number; lang: stri
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       position="relative"
-      borderRadius="24px"
+      borderRadius="var(--radius-card)"
       overflow="hidden"
       h={{ base: '400px', md: '460px' }}
-      boxShadow={hovered
-        ? '0 20px 56px color-mix(in srgb, var(--brand-dark) 16%, transparent), 0 0 0 1px color-mix(in srgb, var(--brand-primary) 28%, transparent)'
-        : '0 4px 24px color-mix(in srgb, var(--brand-dark) 8%, transparent), 0 0 0 1px color-mix(in srgb, var(--brand-primary) 14%, transparent)'}
+      border="var(--border-width) solid var(--surface-border)"
+      boxShadow={hovered ? 'var(--shadow-hover)' : 'var(--shadow-card)'}
       transition="box-shadow 0.38s ease"
       cursor="default"
     >
@@ -69,9 +69,9 @@ function RoomCard({ room, index, lang }: { room: Room; index: number; lang: stri
         />
       ) : (
         <Box position="absolute" inset={0}
-          bg="linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 50%, white), color-mix(in srgb, var(--brand-primary) 72%, white))"
+          bg="var(--accent-soft)"
           display="flex" alignItems="center" justifyContent="center">
-          <FaLeaf size={40} color="rgba(255,255,255,0.25)" />
+          <Icon name="leaf" size={40} color="rgba(255,255,255,0.25)" />
         </Box>
       )}
 
@@ -97,7 +97,7 @@ function RoomCard({ room, index, lang }: { room: Room; index: number; lang: stri
         p={{ base: 4, md: 5 }}
       >
         <Box
-          borderRadius="18px"
+          borderRadius="var(--radius-card)"
           bg="color-mix(in srgb, var(--brand-bg) 14%, transparent)"
           border="1px solid rgba(255,255,255,0.22)"
           backdropFilter="blur(24px) saturate(160%)"
@@ -111,8 +111,10 @@ function RoomCard({ room, index, lang }: { room: Room; index: number; lang: stri
         >
           {/* Number pill + divider */}
           <Flex align="center" gap={3} mb={3}>
-            <Box px={2} py={0.5} borderRadius="full"
-              bg="color-mix(in srgb, var(--brand-primary) 22%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent)">
+            {/* Va sobre la foto: píldora translúcida clara (no tokens de página, que
+                en algunos estilos son opacos y dejarían el texto blanco ilegible) */}
+            <Box px={2} py={0.5} borderRadius="var(--radius-chip)"
+              bg="rgba(255,255,255,0.14)" border="1px solid rgba(255,255,255,0.3)">
               <Text fontFamily='var(--font-body)' fontSize="10px"
                 fontWeight={700} color="rgba(255,255,255,0.85)" letterSpacing="0.10em"
                 textTransform="uppercase">
@@ -132,9 +134,9 @@ function RoomCard({ room, index, lang }: { room: Room; index: number; lang: stri
           <Flex gap={2} flexWrap="wrap" mb={0}>
             {room.capacity > 0 && (
               <Flex align="center" gap={1.5}
-                px={2.5} py={1} borderRadius="full"
+                px={2.5} py={1} borderRadius="var(--radius-chip)"
                 bg="rgba(255,255,255,0.10)" border="1px solid rgba(255,255,255,0.18)">
-                <FaUserFriends size={10} color="rgba(255,255,255,0.75)" />
+                <Icon name="users" size={10} color="rgba(255,255,255,0.75)" />
                 <Text fontSize="11px" fontWeight={600} color="rgba(255,255,255,0.75)"
                   fontFamily='var(--font-body)'>
                   {t('home.rooms.people', { n: room.capacity })}
@@ -143,9 +145,9 @@ function RoomCard({ room, index, lang }: { room: Room; index: number; lang: stri
             )}
             {room.location && (
               <Flex align="center" gap={1.5}
-                px={2.5} py={1} borderRadius="full"
+                px={2.5} py={1} borderRadius="var(--radius-chip)"
                 bg="rgba(255,255,255,0.10)" border="1px solid rgba(255,255,255,0.18)">
-                <FaMapMarkerAlt size={10} color="rgba(255,255,255,0.75)" />
+                <Icon name="map-pin" size={10} color="rgba(255,255,255,0.75)" />
                 <Text fontSize="11px" fontWeight={600} color="rgba(255,255,255,0.75)"
                   fontFamily='var(--font-body)'>
                   {room.location}
@@ -197,7 +199,7 @@ function RoomsSectionInner({ initialRooms }: { initialRooms?: Room[] | null }) {
 
   return (
     <Box as="section" w="full"
-      bg="linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 50%, color-mix(in srgb, var(--brand-primary) 22%, white) 100%)"
+      bg="var(--section-bg)"
       py={{ base: 14, md: 24 }}
     >
       <Container maxW="6xl">
@@ -212,14 +214,12 @@ function RoomsSectionInner({ initialRooms }: { initialRooms?: Room[] | null }) {
         >
           <Flex align="flex-end" justify="space-between" wrap="wrap" gap={4}>
             <Box>
-              <Box display="inline-flex" px={3} py={1} borderRadius="full" mb={3}
-                bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 22%, transparent)">
-                <Text fontSize="10px" fontWeight={700} color={C.accent}
-                  fontFamily='var(--font-body)' letterSpacing="0.10em" textTransform="uppercase">
+              <Box className="sk-eyebrow" display="inline-flex" px={3} py={1} mb={3}>
+                <Text fontSize="10px" fontWeight={700}>
                   {t('home.rooms.badge')}
                 </Text>
               </Box>
-              <Text fontFamily='var(--font-heading)'
+              <Text as="h2" className="sk-section-title" fontFamily='var(--font-heading)'
                 fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
                 color={C.brown} letterSpacing="wide" lineHeight="1">
                 {t('home.rooms.heading') || 'Nuestras Salas'}
@@ -234,7 +234,7 @@ function RoomsSectionInner({ initialRooms }: { initialRooms?: Room[] | null }) {
           </Flex>
 
           <Box mt={6} h="1px"
-            bg="linear-gradient(90deg, color-mix(in srgb, var(--brand-primary) 25%, transparent), color-mix(in srgb, var(--brand-primary) 8%, transparent) 60%, transparent)" />
+            bg="linear-gradient(90deg, var(--accent-border), var(--accent-soft) 60%, transparent)" />
         </MotionBox>
 
         {/* Grid */}
@@ -259,12 +259,12 @@ function RoomsSectionInner({ initialRooms }: { initialRooms?: Room[] | null }) {
           mt={12}
         >
           <Flex align="center" gap={3}>
-            <Box flex={1} h="1px" bg="color-mix(in srgb, var(--brand-primary) 15%, transparent)" />
+            <Box flex={1} h="1px" bg="var(--border-neutral)" />
             <Text fontFamily='var(--font-heading)'
-              fontSize="xs" color="color-mix(in srgb, var(--brand-primary) 35%, transparent)" letterSpacing="0.15em" textTransform="uppercase">
+              fontSize="xs" color="var(--text-subtle)" letterSpacing="0.15em" textTransform="uppercase">
               {getSiteClient().studio_name}
             </Text>
-            <Box flex={1} h="1px" bg="color-mix(in srgb, var(--brand-primary) 15%, transparent)" />
+            <Box flex={1} h="1px" bg="var(--border-neutral)" />
           </Flex>
         </MotionBox>
       </Container>

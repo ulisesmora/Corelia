@@ -10,9 +10,7 @@ import {
 } from '@chakra-ui/react';
 import Chakra from './ChakraProvider';
 import GlassCarousel from './GlassCaroussel';
-import { GiMeditation } from 'react-icons/gi';
-import { MdOutlineSportsGymnastics } from 'react-icons/md';
-import { GrYoga } from 'react-icons/gr';
+import { Icon } from './ui/Icon';
 import { useState, useEffect } from 'react';
 import { useT } from '../i18n/index'; // Aún lo usamos para el fallback y títulos principales
 import { useLangStore, withSsrLang } from './stores/lang.store';
@@ -79,7 +77,7 @@ function OurClasses({ initialClasses }: { initialClasses?: ApiClassType[] | null
   const otherLabel = t('home.classes.tabs.others', undefined, lang === 'en' ? 'Other classes' : 'Otras clases');
   const icon = (g: CategoryGroup) => {
     const k = categoryIconKind(g);
-    return k === 'yoga' ? <GrYoga /> : k === 'mind' ? <GiMeditation /> : <MdOutlineSportsGymnastics />;
+    return <Icon name={k === 'yoga' ? 'yoga' : k === 'mind' ? 'meditation' : 'pilates'} />;
   };
 
   const renderContent = () => {
@@ -93,8 +91,8 @@ function OurClasses({ initialClasses }: { initialClasses?: ApiClassType[] | null
     if (error) {
       return (
         <Flex w="100%" h="400px" justify="center" align="center" direction="column">
-          <Text fontSize="2xl" color="red.500">{t('common.errorTitle')}</Text>
-          <Text color="var(--brand-secondary)" mt={2}>{error}</Text>
+          <Text fontSize="2xl" color="var(--danger)">{t('common.errorTitle')}</Text>
+          <Text color="var(--text-muted)" mt={2}>{error}</Text>
         </Flex>
       );
     }
@@ -131,12 +129,12 @@ function OurClasses({ initialClasses }: { initialClasses?: ApiClassType[] | null
     <Chakra>
       {/* El encabezado principal no cambia */}
       <Flex w="100%" id="classes" justifyContent="center" pt="5rem" pb={2}>
-        <Text as="h2" fontSize={{ base: '3xl', md: '5xl' }} color="var(--brand-dark)" fontWeight="bold" fontFamily='var(--font-heading)' letterSpacing="wide">
+        <Text as="h2" className="sk-section-title" fontSize={{ base: '3xl', md: '5xl' }} color="var(--heading-color)" fontWeight="bold" fontFamily='var(--font-heading)' letterSpacing="wide">
           {t("home.classes.heading")}
         </Text>
       </Flex>
       <Box textAlign="center" maxW="800px" mx="auto" px={4} pb={10}>
-        <Text fontSize="lg" color="color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))" fontFamily='var(--font-body)'>
+        <Text fontSize="lg" color="var(--text-muted)" fontFamily='var(--font-body)'>
           {t("home.classes.intro")}
         </Text>
       </Box>

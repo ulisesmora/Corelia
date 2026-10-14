@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { Text, Spinner, Icon, Tooltip, TooltipContent } from '@chakra-ui/react';
-import { FaExclamationTriangle } from 'react-icons/fa'; // Para el ícono de error
 import { useT } from '../i18n';
 import { API_ROOT } from '../config';
 
@@ -17,7 +16,7 @@ interface UserBalanceProps {
   fontSize?: string;
   /**
    * Color del texto (ej: 'red.500', 'var(--brand-secondary)', 'white').
-   * @default 'gray.800'
+   * @default 'var(--page-text)'
    */
   color?: string;
   /**
@@ -33,7 +32,7 @@ interface UserBalanceProps {
  */
 export default function UserBalanceDisplay({ 
   fontSize = 'md', 
-  color = 'gray.800', 
+  color = 'var(--page-text)',
   showUnit = true 
 }: UserBalanceProps) {
   const t = useT();

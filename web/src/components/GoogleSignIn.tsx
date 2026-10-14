@@ -212,16 +212,16 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({ onSuccess, onError 
 
   return (
     <Box w="full" position="relative" aria-busy={isLoading || undefined}>
-      {/* Aquí GIS pinta su botón (iframe de Google) */}
+      {/* Aquí GIS pinta su botón (iframe de Google: su aspecto lo pone Google, no los tokens) */}
       <Box ref={boxRef} w="full" minH="44px" display="flex" justifyContent="center"
         opacity={isLoading ? 0.4 : 1} pointerEvents={isLoading ? 'none' : 'auto'} />
       {isLoading && (
-        <Text mt={2} textAlign="center" fontSize="sm" color="var(--brand-secondary)" fontFamily="var(--font-body)" fontWeight={600}>
+        <Text mt={2} textAlign="center" fontSize="sm" color="var(--text-muted)" fontFamily="var(--font-body)" fontWeight={600}>
           {tx.loading}
         </Text>
       )}
       {loadError && (
-        <Text mt={2} textAlign="center" fontSize="sm" color="#8A5A00" fontFamily="var(--font-body)">
+        <Text mt={2} textAlign="center" fontSize="sm" color="var(--warning)" fontFamily="var(--font-body)">
           {tx.errLoad}
         </Text>
       )}

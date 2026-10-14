@@ -15,7 +15,7 @@ import { useSite } from '../site/SiteProvider';
 
 const STEPS = [
   { label: 'Tu estudio', title: 'Empecemos por tu estudio', subtitle: 'El nombre y cómo te pueden contactar.' },
-  { label: 'Tu estilo', title: 'Elige el aspecto de tu web', subtitle: 'Colores y letra. Lo verás aplicado al momento.' },
+  { label: 'Tu estilo', title: 'Elige el aspecto de tu web', subtitle: 'Estilo, iconos, colores y letra. Lo verás aplicado al momento.' },
   { label: 'Emails', title: 'Emails a tus clientas', subtitle: 'Opcional: puedes hacerlo ahora o más tarde desde Ajustes.' },
   { label: 'Pagos', title: 'Cobrar online', subtitle: 'Opcional: puedes empezar sin pagos online.' },
   { label: '¡Listo!', title: '¡Tu estudio está listo!', subtitle: '' },
@@ -78,8 +78,8 @@ export default function Setup() {
       if (!(await persist({ studio_name: studio_name.trim(), tagline, logo_url, icon_url, phone, whatsapp, contact_email, instagram, address, city, postal_code, area_served, maps_url }))) return;
     }
     if (step === 1) {
-      const { color_primary, color_secondary, color_dark, color_background, font_heading, font_body } = settings;
-      if (!(await persist({ color_primary, color_secondary, color_dark, color_background, font_heading, font_body }))) return;
+      const { style_preset, icon_style, color_primary, color_secondary, color_dark, color_background, font_heading, font_body } = settings;
+      if (!(await persist({ style_preset, icon_style, color_primary, color_secondary, color_dark, color_background, font_heading, font_body }))) return;
     }
     if (step === STEPS.length - 2) {
       await persist({ setup_completed: true });
@@ -150,6 +150,7 @@ function Done({ settings }: { settings: StudioSettings }) {
     { done: true, text: 'Tu estudio y tu estilo están guardados.' },
     { done: settings.email_ready, text: settings.email_ready ? 'Los emails están activados.' : 'Emails: sin activar (Ajustes → Emails, cuando quieras).' },
     { done: settings.has_stripe, text: settings.has_stripe ? 'Pagos online con Stripe activados.' : 'Pagos: vendes los bonos en el estudio (Ajustes → Pagos para activar Stripe).' },
+    { done: true, text: 'Avisos al móvil: ya funcionan. Imprime el cartel con QR en Ajustes → Avisos al móvil para que tus clientas instalen la app.' },
     { done: Boolean(settings.web_domain), text: settings.web_domain ? `Tu web está en ${settings.web_domain}.` : 'Dominio propio (www.tuestudio.com): cuando quieras, en Ajustes → Tu dominio.' },
   ];
   return (

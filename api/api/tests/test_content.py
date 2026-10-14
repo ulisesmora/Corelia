@@ -31,6 +31,13 @@ class IconTests(StudioTestCase):
                 self.assertEqual(r['Content-Type'], 'image/png')
             self.assertEqual(self.client.get('/api/v1/site-config/icon/512.png?maskable=1').status_code, 200)
             self.assertEqual(self.client.get('/api/v1/site-config/og.png').status_code, 200)
+            badge = self.client.get('/api/v1/site-config/badge.png')
+            self.assertEqual(badge.status_code, 200)
+            from PIL import Image
+            import io
+            img = Image.open(io.BytesIO(badge.content))
+            self.assertEqual(img.mode, 'RGBA')
+            self.assertEqual(img.getpixel((0, 0))[3], 0)  # fondo transparente
         self.assertEqual(self.client.get('/api/v1/site-config/icon/13.png').status_code, 404)
 
     def test_public_config_points_to_icons(self):

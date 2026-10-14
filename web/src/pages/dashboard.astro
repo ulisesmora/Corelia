@@ -5,9 +5,11 @@ import Footer from '../components/Footer';
 import OptimizedHead from '../components/OptimizedHead.astro';
 import PageLoader from '../components/PageLoader.astro';
 import PushNotifications from '../components/PushNotifications';
+import { getSiteConfig, htmlThemeAttrs } from '../lib/site';
+const site = await getSiteConfig();
 ---
 
-<html lang="es">
+<html lang="es" {...htmlThemeAttrs(site)}>
   <head>
     <OptimizedHead title="Mi cuenta" titleEn="My account" noindex />
   </head>

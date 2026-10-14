@@ -12,7 +12,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { Box, Flex, Text, chakra } from '@chakra-ui/react';
-import { FaLock, FaExclamationTriangle, FaCheckCircle } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import Chakra from './ChakraProvider';
 import BrandLogo from './BrandLogo';
 import AuthPage, {
@@ -147,7 +147,7 @@ export default function ResetPasswordPage(_props: ResetPasswordPageProps) {
     return <AuthPage initialMode="login" initialEmail={email} />;
   } else if (view === 'invalid') {
     content = (
-      <StatusView title={tx.invalidTitle} headingRef={headingRef} tone="warn" icon={<FaExclamationTriangle />}>
+      <StatusView title={tx.invalidTitle} headingRef={headingRef} tone="warn" icon={<Icon name="warning" />}>
         <Text fontSize="15px" color={C.muted} fontWeight={500} lineHeight="1.5">{tx.invalidText}</Text>
         <Box w="full" mt={3}>
           <PrimaryButton type="button" onClick={() => setView('requestNew')}>{tx.requestNew}</PrimaryButton>
@@ -160,7 +160,7 @@ export default function ResetPasswordPage(_props: ResetPasswordPageProps) {
     );
   } else if (view === 'success') {
     content = (
-      <StatusView title={tx.okTitle} headingRef={headingRef} icon={<FaCheckCircle />}>
+      <StatusView title={tx.okTitle} headingRef={headingRef} icon={<Icon name="check-circle" />}>
         <Text role="status" fontSize="15px" color={C.muted} fontWeight={500} lineHeight="1.5">
           {autoLogin ? tx.okLoggingIn : tx.okLogin}
         </Text>
@@ -178,7 +178,7 @@ export default function ResetPasswordPage(_props: ResetPasswordPageProps) {
     content = (
       <chakra.form noValidate onSubmit={handleSubmit} display="flex" flexDirection="column" gap={4} w="full">
         <Box>
-          <chakra.h1 fontFamily={C.font} fontWeight={700} fontSize={{ base: '24px', md: '26px' }} color={C.brown} lineHeight="1.2">
+          <chakra.h1 fontFamily={C.font} fontWeight={700} fontSize={{ base: '24px', md: '26px' }} color={C.heading} lineHeight="1.2">
             {tx.title}
           </chakra.h1>
           <Text mt={1.5} fontSize="15px" color={C.muted} fontWeight={500}>
@@ -192,7 +192,7 @@ export default function ResetPasswordPage(_props: ResetPasswordPageProps) {
         <TextField
           id="reset-new-password" label={tx.newLabel} type="password" value={password} placeholder={tx.newPh}
           onChange={(v) => { setPassword(v); setFormError(null); }} onBlur={() => setTouched((s) => ({ ...s, password: true }))}
-          autoComplete="new-password" icon={<FaLock />} error={showPassErr} inputRef={passRef}
+          autoComplete="new-password" icon={<Icon name="lock" />} error={showPassErr} inputRef={passRef}
           name="new-password" describedBy="reset-req-length"
         >
           <Requirement id="reset-req-length" met={password.length >= MIN_PASSWORD}>{t.reqLength}</Requirement>
@@ -201,7 +201,7 @@ export default function ResetPasswordPage(_props: ResetPasswordPageProps) {
         <TextField
           id="reset-confirm-password" label={tx.confirmLabel} type="password" value={confirmPassword}
           onChange={(v) => { setConfirmPassword(v); setFormError(null); }} onBlur={() => setTouched((s) => ({ ...s, confirm: true }))}
-          autoComplete="new-password" icon={<FaLock />} error={showConfErr} inputRef={confirmRef}
+          autoComplete="new-password" icon={<Icon name="lock" />} error={showConfErr} inputRef={confirmRef}
           name="confirm-password" describedBy={confirmOk ? 'reset-confirm-ok' : undefined}
         >
           {confirmOk && !showConfErr && <Requirement id="reset-confirm-ok" met>{t.matchOk}</Requirement>}
@@ -220,8 +220,7 @@ export default function ResetPasswordPage(_props: ResetPasswordPageProps) {
     <Chakra>
       <Flex translate="no" className="notranslate" w="full" minH="100dvh" pt="60px" bg={C.cream}
         fontFamily={C.font} justify="center" align={{ base: 'flex-start', md: 'center' }} px={4} pb={10}>
-        <Box w="full" maxW="480px" mt={{ base: 6, md: 10 }} bg="white" borderRadius="24px"
-          boxShadow="0 12px 40px color-mix(in srgb, var(--brand-dark) 10%, transparent)" border={`1px solid ${C.line}`}
+        <Box className="sk-card" w="full" maxW="480px" mt={{ base: 6, md: 10 }}
           px={{ base: 5, md: 8 }} py={{ base: 6, md: 8 }}>
           <Flex justify="center" mb={5}>
             <BrandLogo width={120} maxHeight={72} />

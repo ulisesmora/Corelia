@@ -6,7 +6,7 @@ import {
   Portal, Spinner, Center, Dialog,
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaUserFriends, FaMapMarkerAlt, FaChevronLeft, FaChevronRight, FaDoorOpen } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { tr } from '../utils/localized';
 
 import { optimizedImage, withOriginalFallback } from '../utils/img';
@@ -16,10 +16,11 @@ const MotionBox = motion(Box as any);
 
 const API_BASE_URL = API_V1;
 
+// Paleta del diálogo: tokens del estilo visual (presets.css)
 const C = {
-  accent: 'var(--brand-primary)', brown: 'var(--brand-dark)', brownMid: 'color-mix(in srgb, var(--brand-primary) 28%, var(--brand-dark))',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))', textLight: 'color-mix(in srgb, var(--brand-secondary) 65%, white)',
-  bg: 'var(--brand-bg)', cardBg: 'rgba(255,255,255,0.75)',
+  accent: 'var(--accent)', accentText: 'var(--accent-text)', brown: 'var(--heading-color)', brownMid: 'var(--text-muted)',
+  textMuted: 'var(--text-muted)', textLight: 'var(--text-subtle)',
+  bg: 'var(--page-bg)', cardBg: 'var(--surface-strong)',
 };
 
 interface Room {
@@ -84,9 +85,9 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
     <Dialog.Root open={open} onOpenChange={({ open: o }) => !o && onClose()} size="xl">
       <Portal>
         <Dialog.Backdrop
-          bg="color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 50%, black) 55%, transparent)"
-          backdropFilter="blur(8px)"
-          style={{ WebkitBackdropFilter: 'blur(8px)' }}
+          bg="var(--overlay)"
+          backdropFilter="var(--surface-blur)"
+          style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
         />
         <Dialog.Positioner>
           <Dialog.Content
@@ -100,20 +101,17 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: 16 }}
                   transition={{ duration: 0.30, ease: [0.25, 0.46, 0.45, 0.94] }}
-                  borderRadius="28px" overflow="hidden"
-                  bg={C.cardBg}
-                  backdropFilter="blur(24px) saturate(180%)"
-                  style={{ WebkitBackdropFilter: 'blur(24px) saturate(180%)' }}
-                  border="1px solid rgba(255,255,255,0.75)"
-                  boxShadow="0 24px 80px color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 50%, black) 22%, transparent)"
+                  // Panel del estilo: superficie, borde, radio, sombra flotante y blur
+                  className="sk-panel"
+                  overflow="hidden"
                   position="relative"
                 >
                   {/* Close */}
                   <Box position="absolute" top={4} right={4} zIndex={20}>
                     <CloseButton
                       onClick={onClose} size="sm" borderRadius="full"
-                      bg="rgba(255,255,255,0.55)" border="1px solid rgba(255,255,255,0.70)"
-                      _hover={{ bg: 'white' }} cursor="pointer"
+                      bg="var(--surface-strong)" border="1px solid var(--surface-border)"
+                      _hover={{ bg: 'var(--surface)' }} cursor="pointer"
                     />
                   </Box>
 
@@ -131,7 +129,7 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                         w={{ base: 'full', md: '55%' }}
                         h={{ base: '280px', md: 'auto' }}
                         flexShrink={0} position="relative" overflow="hidden"
-                        bg="linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 50%, white), color-mix(in srgb, var(--brand-primary) 72%, white))"
+                        bg="var(--accent-soft)"
                       >
                         <AnimatePresence mode="wait">
                           <MotionBox
@@ -150,7 +148,7 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                               />
                             ) : (
                               <Flex w="full" h="full" align="center" justify="center">
-                                <FaDoorOpen size={48} color="rgba(255,255,255,0.25)" />
+                                <Icon name="door" size={48} color="rgba(255,255,255,0.25)" />
                               </Flex>
                             )}
                           </MotionBox>
@@ -189,7 +187,7 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                               transition="all 0.2s"
                               _hover={{ bg: 'rgba(255,255,255,0.30)' }}
                             >
-                              <FaChevronLeft size={11} color="white" />
+                              <Icon name="chevron-left" size={11} color="white" />
                             </Box>
                             {/* Dot indicators */}
                             {rooms.map((_, idx) => (
@@ -212,7 +210,7 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                               transition="all 0.2s"
                               _hover={{ bg: 'rgba(255,255,255,0.30)' }}
                             >
-                              <FaChevronRight size={11} color="white" />
+                              <Icon name="chevron-right" size={11} color="white" />
                             </Box>
                           </Flex>
                         )}
@@ -233,17 +231,15 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                       <Flex
                         flex={1} direction="column" p={{ base: 6, md: 8 }}
                         gap={5} overflow="auto" maxH={{ md: '560px' }}
-                        css={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { background: 'color-mix(in srgb, var(--brand-primary) 30%, transparent)', borderRadius: '4px' } }}
+                        css={{ '&::-webkit-scrollbar': { width: '4px' }, '&::-webkit-scrollbar-thumb': { background: 'var(--accent-border)', borderRadius: '4px' } }}
                       >
                         {/* Header */}
                         <Box>
                           <Box
-                            display="inline-flex" px={2.5} py={0.5} borderRadius="full" mb={3}
-                            bg="color-mix(in srgb, var(--brand-primary) 9%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent)"
+                            className="sk-eyebrow"
+                            display="inline-flex" px={2.5} py={0.5} mb={3}
                           >
-                            <Text fontSize="10px" fontWeight={700} color={C.accent}
-                              fontFamily='var(--font-body)' letterSpacing="0.09em"
-                              textTransform="uppercase">
+                            <Text fontSize="10px" fontWeight={700}>
                               {L.room} {roomNum}
                             </Text>
                           </Box>
@@ -261,9 +257,9 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                         <Flex gap={2} flexWrap="wrap">
                           {room.capacity > 0 && (
                             <Flex align="center" gap={1.5}
-                              px={3} py={1.5} borderRadius="full"
-                              bg="color-mix(in srgb, var(--brand-primary) 9%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent)">
-                              <FaUserFriends size={11} color={C.accent} />
+                              px={3} py={1.5} borderRadius="var(--radius-chip)"
+                              bg="var(--accent-soft)" border="1px solid var(--accent-border)">
+                              <Icon name="users" size={11} color={C.accent} />
                               <Text fontSize="12px" fontWeight={600} color={C.textMuted}
                                 fontFamily='var(--font-body)'>
                                 {room.capacity} {L.people}
@@ -272,9 +268,9 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                           )}
                           {room.location && (
                             <Flex align="center" gap={1.5}
-                              px={3} py={1.5} borderRadius="full"
-                              bg="color-mix(in srgb, var(--brand-primary) 9%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent)">
-                              <FaMapMarkerAlt size={11} color={C.accent} />
+                              px={3} py={1.5} borderRadius="var(--radius-chip)"
+                              bg="var(--accent-soft)" border="1px solid var(--accent-border)">
+                              <Icon name="map-pin" size={11} color={C.accent} />
                               <Text fontSize="12px" fontWeight={600} color={C.textMuted}
                                 fontFamily='var(--font-body)'>
                                 {room.location}
@@ -287,7 +283,7 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                         {desc && (
                           <Box>
                             <Text
-                              fontSize="11px" fontWeight={700} color={C.accent}
+                              fontSize="11px" fontWeight={700} color={C.accentText}
                               fontFamily='var(--font-body)'
                               letterSpacing="0.09em" textTransform="uppercase" mb={2}
                             >
@@ -306,10 +302,10 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
                         {/* Bottom divider */}
                         <Box mt="auto" pt={4}>
                           <Flex align="center" gap={3}>
-                            <Box flex={1} h="1px" bg="color-mix(in srgb, var(--brand-primary) 15%, transparent)" />
+                            <Box flex={1} h="1px" bg="var(--border-neutral)" />
                             <Text
                               fontFamily='var(--font-heading)'
-                              fontSize="xs" color="color-mix(in srgb, var(--brand-primary) 35%, transparent)"
+                              fontSize="xs" color="var(--text-subtle)"
                               letterSpacing="0.12em"
                             >
                               {getSiteClient().studio_name} · {roomNum}
@@ -322,7 +318,7 @@ export default function RoomDialog({ open, onClose, lang = 'es', initialRoomId }
 
                   {!loading && rooms.length === 0 && (
                     <Center minH="280px" flexDirection="column" gap={3}>
-                      <FaDoorOpen size={32} color={C.textLight} />
+                      <Icon name="door" size={32} color={C.textLight} />
                       <Text fontFamily='var(--font-body)'
                         fontSize="sm" color={C.textMuted}>
                         {L.none}

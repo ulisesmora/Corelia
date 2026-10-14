@@ -32,6 +32,15 @@ export interface SiteTheme {
   background: string;
   font_heading: string;
   font_body: string;
+  /**
+   * Estilo visual (acabado) de la web: 'natural' | 'minimal' | 'editorial' |
+   * 'glass' | 'brutalist' | 'energy' | 'pop' | 'neon'. Cada uno es un bloque
+   * `[data-style="…"]` en styles/presets.css (ver docs/ESTILOS.md). Un valor
+   * sin bloque CSS se ve como 'natural'.
+   */
+  style: string;
+  /** Familia de iconos: 'line' (Lucide) | 'soft' (Phosphor) | 'solid' (FontAwesome). */
+  icons: 'line' | 'soft' | 'solid';
 }
 
 /** Textos editables de la portada (panel → Ajustes → Contenido de la web). */
@@ -121,6 +130,8 @@ export const DEFAULT_SITE: SiteConfig = {
     background: '#F5F0EA',
     font_heading: 'Playfair Display',
     font_body: 'Jost',
+    style: 'natural',
+    icons: 'line',
   },
   currency: 'EUR',
   drop_in_price: '12',
@@ -142,6 +153,11 @@ const FONT = /^[A-Za-z0-9][A-Za-z0-9 \-]{0,60}$/;
 const str = (v: unknown, fallback = ''): string => (typeof v === 'string' ? v.trim() : fallback);
 const color = (v: unknown, fallback: string) => (typeof v === 'string' && HEX.test(v.trim()) ? v.trim() : fallback);
 const font = (v: unknown, fallback: string) => (typeof v === 'string' && FONT.test(v.trim()) ? v.trim() : fallback);
+// Slug de estilo: solo minúsculas, números y guiones (va a un atributo HTML y a
+// selectores CSS). No hay lista cerrada: añadir un estilo nuevo = backend + su
+// bloque en presets.css; si el bloque no existe se ve como 'natural'.
+const STYLE = /^[a-z][a-z0-9-]{0,23}$/;
+const ICON_FAMILIES = ['line', 'soft', 'solid'] as const;
 
 /** Origen (https://dominio) de una URL absoluta http(s), o '' si no es válida. */
 export function originOf(url: string): string {
@@ -224,6 +240,10 @@ export function normalizeSite(raw: unknown): SiteConfig {
       background: color(t.background, d.theme.background),
       font_heading: font(t.font_heading, d.theme.font_heading),
       font_body: font(t.font_body, d.theme.font_body),
+      style: typeof t.style === 'string' && STYLE.test(t.style.trim()) ? t.style.trim() : d.theme.style,
+      icons: (ICON_FAMILIES as readonly string[]).includes(t.icons as string)
+        ? (t.icons as SiteTheme['icons'])
+        : d.theme.icons,
     },
     currency: /^[A-Z]{3}$/.test(str(r.currency).toUpperCase()) ? str(r.currency).toUpperCase() : d.currency,
     drop_in_price: str(r.drop_in_price != null ? String(r.drop_in_price) : '') || d.drop_in_price,
@@ -311,10 +331,83 @@ export function siteJsonForScript(cfg: SiteConfig): string {
     .replace(/\u2029/g, '\\u2029');
 }
 
-/** Variables CSS de marca que usan todos los estilos (`var(--brand-primary)`…). */
+// ── Colores derivados (contraste) ──────────────────────────────────────────
+// Se calculan aquí, una vez y en el servidor, para que presets.css pueda dar
+// siempre texto legible sea cual sea la paleta del panel.
+
+function rgbOf(hex: string): [number, number, number] {
+  let h = hex.replace('#', '');
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('');
+  const n = parseInt(h.slice(0, 6), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+}
+const hexOf = (rgb: number[]) => `#${rgb.map((v) => Math.round(v).toString(16).padStart(2, '0')).join('')}`;
+/** Luminancia relativa (WCAG). */
+function luminance(hex: string): number {
+  const [r, g, b] = rgbOf(hex).map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+/** Contraste WCAG entre dos colores (1…21). */
+export function contrast(a: string, b: string): number {
+  const [x, y] = [luminance(a), luminance(b)].sort((m, n) => n - m);
+  return (x + 0.05) / (y + 0.05);
+}
+/** Mezcla `a` con `b` (t = 0 → a, t = 1 → b). */
+function mix(a: string, b: string, t: number): string {
+  const [x, y] = [rgbOf(a), rgbOf(b)];
+  return hexOf(x.map((v, i) => v + (y[i] - v) * t));
+}
+/** Acerca `color` a `towards` hasta tener `min` de contraste contra `against`. */
+function ensureContrast(color: string, against: string, min: number, towards: string): string {
+  for (let t = 0; t <= 1.0001; t += 0.05) {
+    const c = mix(color, towards, t);
+    if (contrast(c, against) >= min) return c;
+  }
+  return towards;
+}
+
+/**
+ * Variables CSS de marca que usan todos los estilos (`var(--brand-primary)`…)
+ * más unas derivadas para garantizar contraste:
+ *  - --on-primary: texto sobre un relleno del color primario (blanco u oscuro).
+ *  - --on-secondary: lo mismo sobre el secundario.
+ *  - --brand-primary-2: segundo tono del primario (degradados, hover) con el
+ *    que --on-primary sigue siendo legible.
+ *  - --brand-bg-light / --brand-bg-dark: el fondo de la marca si ya es claro /
+ *    oscuro; si no, una versión que lo sea (los estilos claros usan el primero
+ *    y los oscuros el segundo, así una paleta "equivocada" sigue siendo legible).
+ *  - --brand-primary-on-light / --brand-primary-on-dark: el primario como TEXTO
+ *    legible sobre fondo claro / oscuro (≥ 4.5:1).
+ */
 export function themeCss(cfg: SiteConfig): string {
   const t = cfg.theme;
-  return `:root{--brand-primary:${t.primary};--brand-secondary:${t.secondary};--brand-dark:${t.dark};--brand-bg:${t.background};--font-heading:"${t.font_heading}",Georgia,serif;--font-body:"${t.font_body}",system-ui,-apple-system,"Segoe UI",sans-serif;}`;
+  const NEAR_BLACK = '#0b0b10';
+  const onFill = (fill: string) => (contrast(fill, '#ffffff') >= 3 ? '#ffffff' : (contrast(t.dark, fill) >= 4.5 ? t.dark : NEAR_BLACK));
+  const bgLight = luminance(t.background) >= 0.6 ? t.background : mix(t.background, '#ffffff', 0.88);
+  const bgDark = luminance(t.background) <= 0.06 ? t.background : mix(t.background, NEAR_BLACK, 0.9);
+  const primaryOnLight = ensureContrast(t.primary, '#ffffff', 4.5, t.dark);
+  const primaryOnDark = ensureContrast(t.primary, bgDark, 4.5, '#ffffff');
+  const onPrimary = onFill(t.primary);
+  // Segundo tono del primario para degradados y hover: más oscuro si el texto
+  // encima es blanco, más claro si es oscuro (el texto sigue leyéndose).
+  const primary2 = onPrimary === '#ffffff' ? mix(t.primary, t.dark, 0.35) : mix(t.primary, '#ffffff', 0.3);
+  return `:root{--brand-primary:${t.primary};--brand-secondary:${t.secondary};--brand-dark:${t.dark};--brand-bg:${t.background};`
+    + `--on-primary:${onPrimary};--on-secondary:${onFill(t.secondary)};--brand-primary-2:${primary2};`
+    + `--brand-bg-light:${bgLight};--brand-bg-dark:${bgDark};`
+    + `--brand-primary-on-light:${primaryOnLight};--brand-primary-on-dark:${primaryOnDark};`
+    + `--font-heading:"${t.font_heading}",Georgia,serif;--font-body:"${t.font_body}",system-ui,-apple-system,"Segoe UI",sans-serif;}`;
+}
+
+/**
+ * Atributos de <html> con el estilo y la familia de iconos: `data-style` y
+ * `data-icons`. Ponlos en el <html> de cada página (`<html {...htmlThemeAttrs(site)}>`)
+ * para que presets.css aplique desde el primer pintado, sin parpadeo.
+ */
+export function htmlThemeAttrs(cfg: SiteConfig): { 'data-style': string; 'data-icons': string } {
+  return { 'data-style': cfg.theme.style, 'data-icons': cfg.theme.icons };
 }
 
 /** URL de Google Fonts con las dos familias de la config. */

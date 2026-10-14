@@ -1,4 +1,7 @@
 @charset "UTF-8";
+/* react-big-calendar: base de la librería + ajustes propios. Todos los colores,
+   bordes, radios y sombras salen de los tokens del estilo visual (presets.css),
+   así el calendario se lee igual en estilos claros y oscuros (energy, neon). */
 .rbc-btn {
   color: inherit;
   font: inherit;
@@ -75,11 +78,11 @@ button.rbc-input::-moz-focus-inner {
 }
 
 .rbc-off-range {
-  color: #594747;
+  color: var(--text-subtle);
 }
 
 .rbc-off-range-bg {
-  background: #e6e6e6;
+  background: var(--surface-muted);
 }
 
 .rbc-header {
@@ -95,14 +98,14 @@ button.rbc-input::-moz-focus-inner {
   font-weight: bold;
   font-size: 90%;
   min-height: 0;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-neutral);
 }
 .rbc-header + .rbc-header {
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--border-neutral);
 }
 .rbc-rtl .rbc-header + .rbc-header {
   border-left-width: 0;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--border-neutral);
 }
 .rbc-header > a, .rbc-header > a:active, .rbc-header > a:visited {
   color: inherit;
@@ -155,7 +158,7 @@ button.rbc-input::-moz-focus-inner {
 }
 
 .rbc-today {
-  background-color: #eaf6ff;
+  background-color: var(--accent-soft);
 }
 
 .rbc-toolbar {
@@ -181,16 +184,16 @@ button.rbc-input::-moz-focus-inner {
   text-align: center;
 }
 .rbc-toolbar button {
-  color: #373a3c;
+  color: var(--page-text);
   display: inline-block;
   margin: 0;
   text-align: center;
   vertical-align: middle;
   background: none;
   background-image: none;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-neutral);
   padding: 0.375rem 1rem;
-  border-radius: 4px;
+  border-radius: var(--radius-button);
   line-height: normal;
   white-space: nowrap;
 }
@@ -198,24 +201,24 @@ button.rbc-input::-moz-focus-inner {
   background-image: none;
   -webkit-box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
           box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
-  background-color: #e6e6e6;
-  border-color: #adadad;
+  background-color: var(--surface-muted);
+  border-color: var(--input-border);
 }
 .rbc-toolbar button:active:hover, .rbc-toolbar button:active:focus, .rbc-toolbar button.rbc-active:hover, .rbc-toolbar button.rbc-active:focus {
-  color: #373a3c;
-  background-color: #d4d4d4;
-  border-color: #8c8c8c;
+  color: var(--page-text);
+  background-color: var(--accent-soft);
+  border-color: var(--accent-border);
 }
 .rbc-toolbar button:focus {
-  color: #373a3c;
-  background-color: #e6e6e6;
-  border-color: #adadad;
+  color: var(--page-text);
+  background-color: var(--surface-muted);
+  border-color: var(--input-border);
 }
 .rbc-toolbar button:hover {
-  color: #373a3c;
+  color: var(--page-text);
   cursor: pointer;
-  background-color: #e6e6e6;
-  border-color: #adadad;
+  background-color: var(--surface-muted);
+  border-color: var(--input-border);
 }
 
 .rbc-btn-group {
@@ -270,9 +273,9 @@ button.rbc-input::-moz-focus-inner {
           box-shadow: none;
   margin: 0;
   padding: 2px 5px;
-  background-color: #3174ad;
-  border-radius: 5px;
-  color: #fff;
+  background-color: var(--accent);
+  border-radius: var(--radius-chip);
+  color: var(--on-primary);
   cursor: pointer;
   width: 100%;
   text-align: left;
@@ -282,10 +285,10 @@ button.rbc-input::-moz-focus-inner {
   pointer-events: none;
 }
 .rbc-event.rbc-selected, .rbc-day-slot .rbc-selected.rbc-background-event {
-  background-color: #265985;
+  background-color: var(--brand-primary-2);
 }
 .rbc-event:focus, .rbc-day-slot .rbc-background-event:focus {
-  outline: 5px auto #3b99fc;
+  outline: 5px auto var(--accent);
 }
 
 .rbc-event-label {
@@ -293,8 +296,8 @@ button.rbc-input::-moz-focus-inner {
 }
 
 .rbc-event-overlaps {
-  -webkit-box-shadow: -1px 1px 5px 0px rgba(51, 51, 51, 0.5);
-          box-shadow: -1px 1px 5px 0px rgba(51, 51, 51, 0.5);
+  -webkit-box-shadow: var(--shadow-card);
+          box-shadow: var(--shadow-card);
 }
 
 .rbc-event-continues-prior {
@@ -331,25 +334,25 @@ button.rbc-input::-moz-focus-inner {
   padding: 0 1px 1px 1px;
 }
 .rbc-selected-cell {
-  background-color: rgba(0, 0, 0, 0.1);
+  background-color: var(--accent-soft);
 }
 
 .rbc-show-more {
-  background-color: rgba(255, 255, 255, 0.3);
+  background-color: var(--surface-muted);
   z-index: 4;
   font-weight: bold;
   font-size: 85%;
   height: auto;
   line-height: normal;
-  color: #3174ad;
+  color: var(--accent-text);
 }
 .rbc-show-more:hover, .rbc-show-more:focus {
-  color: #265985;
+  color: var(--accent-text);
 }
 
 .rbc-month-view {
   position: relative;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-neutral);
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -396,7 +399,7 @@ button.rbc-input::-moz-focus-inner {
   height: 100%;
 }
 .rbc-month-row + .rbc-month-row {
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--border-neutral);
 }
 
 .rbc-date-cell {
@@ -436,20 +439,21 @@ button.rbc-input::-moz-focus-inner {
           flex: 1 0 0%;
 }
 .rbc-day-bg + .rbc-day-bg {
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--border-neutral);
 }
 .rbc-rtl .rbc-day-bg + .rbc-day-bg {
   border-left-width: 0;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--border-neutral);
 }
 
 .rbc-overlay {
   position: absolute;
   z-index: 5;
-  border: 1px solid #e5e5e5;
-  background-color: #fff;
-  -webkit-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
-          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--surface-border);
+  background-color: var(--surface-strong);
+  color: var(--surface-text);
+  -webkit-box-shadow: var(--shadow-float);
+          box-shadow: var(--shadow-float);
   padding: 10px;
 }
 .rbc-overlay > * + * {
@@ -457,7 +461,7 @@ button.rbc-input::-moz-focus-inner {
 }
 
 .rbc-overlay-header {
-  border-bottom: 1px solid #e5e5e5;
+  border-bottom: 1px solid var(--border-neutral);
   margin: -10px -10px 5px -10px;
   padding: 2px 10px;
 }
@@ -477,7 +481,7 @@ button.rbc-input::-moz-focus-inner {
 }
 .rbc-agenda-view table.rbc-agenda-table {
   width: 100%;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-neutral);
   border-spacing: 0;
   border-collapse: collapse;
 }
@@ -491,19 +495,19 @@ button.rbc-input::-moz-focus-inner {
   text-transform: lowercase;
 }
 .rbc-agenda-view table.rbc-agenda-table tbody > tr > td + td {
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--border-neutral);
 }
 .rbc-rtl .rbc-agenda-view table.rbc-agenda-table tbody > tr > td + td {
   border-left-width: 0;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--border-neutral);
 }
 .rbc-agenda-view table.rbc-agenda-table tbody > tr + tr {
-  border-top: 1px solid #ddd;
+  border-top: 1px solid var(--border-neutral);
 }
 .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
   padding: 3px 5px;
   text-align: left;
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-neutral);
 }
 .rbc-rtl .rbc-agenda-view table.rbc-agenda-table thead > tr > th {
   text-align: right;
@@ -545,7 +549,7 @@ button.rbc-input::-moz-focus-inner {
 }
 
 .rbc-timeslot-group {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-neutral);
   min-height: 40px;
   display: -webkit-box;
   display: -ms-flexbox;
@@ -583,7 +587,7 @@ button.rbc-input::-moz-focus-inner {
   right: 0;
 }
 .rbc-day-slot .rbc-event, .rbc-day-slot .rbc-background-event {
-  border: 1px solid #265985;
+  border: 1px solid var(--accent);
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -620,15 +624,15 @@ button.rbc-input::-moz-focus-inner {
   min-height: 1em;
 }
 .rbc-day-slot .rbc-time-slot {
-  border-top: 1px solid #f7f7f7;
+  border-top: 1px solid var(--border-neutral);
 }
 
 .rbc-time-view-resources .rbc-time-gutter,
 .rbc-time-view-resources .rbc-time-header-gutter {
   position: sticky;
   left: 0;
-  background-color: white;
-  border-right: 1px solid #ddd;
+  background-color: var(--surface);
+  border-right: 1px solid var(--border-neutral);
   z-index: 10;
   margin-right: -1px;
 }
@@ -702,7 +706,7 @@ button.rbc-input::-moz-focus-inner {
       -ms-flex: 1;
           flex: 1;
   width: 100%;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-neutral);
   min-height: 0;
 }
 .rbc-time-view .rbc-time-gutter {
@@ -717,7 +721,7 @@ button.rbc-input::-moz-focus-inner {
   position: relative;
 }
 .rbc-time-view .rbc-allday-cell + .rbc-allday-cell {
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--border-neutral);
 }
 .rbc-time-view .rbc-allday-events {
   position: relative;
@@ -742,17 +746,17 @@ button.rbc-input::-moz-focus-inner {
           flex-direction: row;
 }
 .rbc-time-header.rbc-overflowing {
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--border-neutral);
 }
 .rbc-rtl .rbc-time-header.rbc-overflowing {
   border-right-width: 0;
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--border-neutral);
 }
 .rbc-time-header > .rbc-row:first-child {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-neutral);
 }
 .rbc-time-header > .rbc-row.rbc-row-resource {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-neutral);
 }
 
 .rbc-time-header-cell-single-day {
@@ -771,14 +775,14 @@ button.rbc-input::-moz-focus-inner {
   -webkit-box-direction: normal;
       -ms-flex-direction: column;
           flex-direction: column;
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--border-neutral);
 }
 .rbc-rtl .rbc-time-header-content {
   border-left-width: 0;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--border-neutral);
 }
 .rbc-time-header-content > .rbc-row.rbc-row-resource {
-  border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid var(--border-neutral);
   -ms-flex-negative: 0;
       flex-shrink: 0;
 }
@@ -794,7 +798,7 @@ button.rbc-input::-moz-focus-inner {
       -ms-flex-align: start;
           align-items: flex-start;
   width: 100%;
-  border-top: 2px solid #ddd;
+  border-top: 2px solid var(--border-neutral);
   overflow-y: auto;
   position: relative;
 }
@@ -804,11 +808,11 @@ button.rbc-input::-moz-focus-inner {
           flex: none;
 }
 .rbc-time-content > * + * > * {
-  border-left: 1px solid #ddd;
+  border-left: 1px solid var(--border-neutral);
 }
 .rbc-rtl .rbc-time-content > * + * > * {
   border-left-width: 0;
-  border-right: 1px solid #ddd;
+  border-right: 1px solid var(--border-neutral);
 }
 .rbc-time-content > .rbc-day-slot {
   width: 100%;
@@ -824,7 +828,7 @@ button.rbc-input::-moz-focus-inner {
   left: 0;
   right: 0;
   height: 1px;
-  background-color: #74ad31;
+  background-color: var(--success);
   pointer-events: none;
 }
 
@@ -853,43 +857,54 @@ button.rbc-input::-moz-focus-inner {
     /* FUENTE PRINCIPAL */
   --gc-font: var(--font-heading);
   
-  /* COLORES DE GOOGLE CALENDAR */
-  --gc-text: #202124;
-  --gc-muted: #5f6368;
-  --gc-border: #dadce0; 
-  --gc-bg: #ffffff;
-  --gc-primary: #1a73e8; 
-  --gc-today: #e8f0fe;
-  --gc-grid-border: #f1f3f4;
-  --gc-event-brown: #f1f3f4;
-  --gc-shadow: 0 4px 6px rgba(0, 0, 0, 0.25);
-  --gc-text-primary: hsl(222.2 84% 4.9%); 
-    
-    /* 2. Azul "llamativo" para botones */
-    --gc-button-primary-bg: hsl(221.2 83.2% 53.3%);
-    --gc-button-primary-hover-bg: hsl(221.2 83.2% 47.3%);
+  /* COLORES DEL CALENDARIO: alias de los tokens del estilo (presets.css) */
+  --gc-text: var(--page-text);
+  --gc-muted: var(--text-muted);
+  --gc-border: var(--border-neutral);
+  --gc-bg: var(--surface);
+  --gc-bg-subtle: var(--surface-muted);
+  --gc-primary: var(--accent);
+  --gc-primary-600: var(--accent-text);   /* acento como TEXTO */
+  --gc-on-primary: var(--on-primary);     /* texto sobre relleno de acento */
+  --gc-today: var(--accent-soft);
+  --gc-hover: var(--accent-soft);
+  --gc-selected: var(--accent-soft);
+  --gc-grid-border: var(--border-neutral);
+  --gc-event: var(--surface-strong);
+  --gc-event-text: var(--surface-text);
+  --gc-event-brown: var(--surface-muted);
+  --gc-shadow: var(--shadow-card);
+  --gc-text-primary: var(--page-text);
 
-     --card-bg: hsl(0 0% 100%);
-    --card-foreground: hsl(222.2 84% 4.9%);
-    --card-border: hsl(214.3 31.8% 91.4%);
-    
+    /* 2. Botones */
+    --gc-button-primary-bg: var(--accent);
+    --gc-button-primary-hover-bg: var(--brand-primary-2);
+    --chakra-btn-border: var(--input-border);
+    --chakra-btn-bg: var(--surface);
+    --chakra-btn-text: var(--page-text);
+    --chakra-btn-hover-bg: var(--accent-soft);
+
+     --card-bg: var(--surface);
+    --card-foreground: var(--surface-text);
+    --card-border: var(--surface-border);
+
     /* Colores de estado */
-    --status-available: hsl(142.1 76.2% 46.3%); /* Verde */
-    --status-limited: hsl(47.9 95.8% 53.1%); /* Amarillo */
-    --status-full: hsl(0 84.2% 60.2%); /* Rojo */
-    
+    --status-available: var(--success); /* Verde */
+    --status-limited: var(--warning); /* Ámbar */
+    --status-full: var(--danger); /* Rojo */
+
     /* Colores para estados deshabilitados */
-    --card-disabled-foreground: hsl(215 20.2% 65.1%);
-    --card-disabled-border: hsl(215 30.2% 92.1%);
-    --card-past-strip: hsl(215 20.2% 65.1%); /* Gris para la franja */
+    --card-disabled-foreground: var(--text-subtle);
+    --card-disabled-border: var(--border-neutral);
+    --card-past-strip: var(--text-subtle); /* Gris para la franja */
 
 
 /* Optional dark mode (toggle a data-theme or use media) */
 
 
 /* Base */
-.rbc-calendar { font-family: var(--gc-font); color: black; background: white; }
-.rbc-month-view, .rbc-time-view, .rbc-agenda-view { border: 1px solid var(--gc-border); border-radius: 10px; overflow: hidden; }
+.rbc-calendar { font-family: var(--gc-font); color: var(--gc-text); background: var(--gc-bg); }
+.rbc-month-view, .rbc-time-view, .rbc-agenda-view { border: 1px solid var(--gc-border); border-radius: var(--radius-card); overflow: hidden; }
 
 /* Toolbar (mes/semana/día/hoy, flechas) */
 .rbc-toolbar { gap: 8px; margin: 12px 0 14px; padding: 0 4px; }
@@ -897,16 +912,16 @@ button.rbc-input::-moz-focus-inner {
   font-weight: 600; font-size: 18px; color: var(--gc-text);
 }
 .rbc-toolbar .rbc-btn-group > button {
-  border: 1px solid black;
-  background: white;
+  border: 1px solid var(--gc-border);
+  background: var(--gc-bg);
   color: var(--gc-text);
-  padding: 6px 12px; border-radius: 8px; line-height: 1.2;
+  padding: 6px 12px; border-radius: var(--radius-button); line-height: 1.2;
   transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 .rbc-toolbar .rbc-btn-group > button:hover { background: var(--gc-bg-subtle); }
 .rbc-toolbar .rbc-btn-group > button.rbc-active {
-  background: white; color: #202124; border-color: var(--gc-primary);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.06), inset 0 -1px 0 rgba(255,255,255,0.15);
+  background: var(--gc-bg); color: var(--gc-text); border-color: var(--gc-primary);
+  box-shadow: var(--shadow-card);
 }
 .rbc-btn-group > button:not(:first-child) { margin-left: 6px; }
 .rbc-btn-group + .rbc-btn-group { margin-left: 10px; }
@@ -921,8 +936,8 @@ button.rbc-input::-moz-focus-inner {
 /* Month cells */
 .rbc-month-row + .rbc-month-row { border-top: 1px solid var(--gc-border); }
 .rbc-date-cell { padding: 8px 8px 4px; color: var(--gc-muted); }
-.rbc-date-cell.rbc-now { color: var(--gc-primary); font-weight: 700; }
-.rbc-off-range { color: #9aa0a6; }
+.rbc-date-cell.rbc-now { color: var(--gc-primary-600); font-weight: 700; }
+.rbc-off-range { color: var(--text-subtle); }
 .rbc-off-range-bg { background: var(--gc-bg-subtle); }
 
 .rbc-row-bg .rbc-day-bg + .rbc-day-bg { border-left: 1px solid var(--gc-border); }
@@ -938,13 +953,13 @@ button.rbc-input::-moz-focus-inner {
 /* Events (month + time grid) */
 .rbc-event, .rbc-day-slot .rbc-background-event {
   background: var(--gc-event); color: var(--gc-event-text);
-  border: none; border-radius: 8px; padding: 3px 8px;
-  font-weight: 600; box-shadow: 0 1px 0 rgba(0,0,0,.04);
-  border: 1px solid var(--card-border) !important;
+  border: none; border-radius: var(--radius-input); padding: 3px 8px;
+  font-weight: 600; box-shadow: var(--shadow-card);
+  border: var(--border-width) solid var(--card-border) !important;
     /* -------------------------- */
     
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05) !important;
-    border-radius: 0.5rem !important; 
+    box-shadow: var(--shadow-card) !important;
+    border-radius: var(--radius-input) !important; 
     
     transition: box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -952,12 +967,12 @@ button.rbc-input::-moz-focus-inner {
 .rbc-row-segment .rbc-event-content { font-size: 12px; }
 
 /* Overlap subtle elevation */
-.rbc-event-overlaps { box-shadow: 0 2px 6px rgba(0,0,0,0.18); }
+.rbc-event-overlaps { box-shadow: var(--shadow-hover); }
 
 /* “Show more” link */
 .rbc-show-more {
-  background: transparent; color: var(--gc-primary); font-weight: 600; font-size: 12px;
-  padding: 2px 4px; border-radius: 6px;
+  background: transparent; color: var(--gc-primary-600); font-weight: 600; font-size: 12px;
+  padding: 2px 4px; border-radius: var(--radius-chip);
 }
 .rbc-show-more:hover { background: var(--gc-hover); color: var(--gc-primary-600); }
 
@@ -966,7 +981,7 @@ button.rbc-input::-moz-focus-inner {
 .rbc-time-gutter, .rbc-header-gutter { background: var(--gc-bg); }
 .rbc-time-content { border-top: 1px solid var(--gc-border); }
 .rbc-time-slot, .rbc-time-content > * + * > * { border-left: 1px solid var(--gc-border); }
-.rbc-day-slot .rbc-time-slot { border-top: 1px solid #eef1f4; }
+.rbc-day-slot .rbc-time-slot { border-top: 1px solid var(--gc-grid-border); }
 
 /* Now indicator (red line + dot) */
 .rbc-current-time-indicator {
@@ -986,23 +1001,23 @@ button.rbc-input::-moz-focus-inner {
 
 /* Overlay (popover) */
 .rbc-overlay {
-  border: 1px solid var(--gc-border); background: var(--gc-bg);
-  box-shadow: 0 8px 28px rgba(0,0,0,0.18); border-radius: 10px;
+  border: var(--border-width) solid var(--surface-border); background: var(--surface-strong);
+  box-shadow: var(--shadow-float); border-radius: var(--radius-card);
 }
 .rbc-overlay-header { border-bottom: 1px solid var(--gc-border); }
 
 /* Buttons reset and focus states */
 .rbc-toolbar button { outline: none; }
 .rbc-toolbar button:focus-visible {
-  box-shadow: 0 0 0 3px rgba(26,115,232,0.35);
+  box-shadow: 0 0 0 3px var(--accent-border);
 }
 
 /* Scroll tweaks */
 .rbc-time-content, .rbc-row-content-scrollable .rbc-row-content-scroll-container {
-  scrollbar-width: thin; scrollbar-color: rgba(95,99,104,.45) transparent;
+  scrollbar-width: thin; scrollbar-color: var(--text-subtle) transparent;
 }
 .rbc-time-content::-webkit-scrollbar { height: 8px; width: 8px; }
-.rbc-time-content::-webkit-scrollbar-thumb { background: rgba(95,99,104,.45); border-radius: 999px; }
+.rbc-time-content::-webkit-scrollbar-thumb { background: var(--text-subtle); border-radius: 999px; }
 
 /* Optional: event color classes (usa eventPropGetter para asignarlas) */
 .rbc-event.teal   { background:#10b981; }
@@ -1014,8 +1029,8 @@ button.rbc-input::-moz-focus-inner {
 
 
 /* Base */
-.rbc-calendar { font-family: var(--gc-font); color: black; background: white; }
-.rbc-month-view, .rbc-time-view, .rbc-agenda-view { border: 1px solid var(--gc-border); border-radius: 10px; overflow: hidden; }
+.rbc-calendar { font-family: var(--gc-font); color: var(--gc-text); background: var(--gc-bg); }
+.rbc-month-view, .rbc-time-view, .rbc-agenda-view { border: 1px solid var(--gc-border); border-radius: var(--radius-card); overflow: hidden; }
 
 /* Toolbar (Para botones) */
 /* ... (Se mantiene igual, solo se actualiza el color de fondo activo) ... */
@@ -1025,14 +1040,14 @@ button.rbc-input::-moz-focus-inner {
 }
 .rbc-toolbar .rbc-btn-group > button {
   border: 1px solid var(--gc-border); /* Asegura borde del botón con el color de borde */
-  background: white;
+  background: var(--gc-bg);
   color: var(--gc-text);
-  padding: 6px 12px; border-radius: 8px; line-height: 1.2;
+  padding: 6px 12px; border-radius: var(--radius-button); line-height: 1.2;
   transition: background .15s ease, color .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
-.rbc-toolbar .rbc-btn-group > button:hover { background: var(--gc-hover); } /* Sutil hover azul */
+.rbc-toolbar .rbc-btn-group > button:hover { background: var(--gc-hover); } /* Hover sutil de acento */
 .rbc-toolbar .rbc-btn-group > button.rbc-active {
-  background: var(--gc-primary); color: #fff; border-color: var(--gc-primary);
+  background: var(--gc-primary); color: var(--gc-on-primary); border-color: var(--gc-primary);
   box-shadow: none; /* Simplificamos el box-shadow para un look más limpio */
 }
 .rbc-btn-group > button:not(:first-child) { margin-left: 6px; }
@@ -1048,8 +1063,8 @@ button.rbc-input::-moz-focus-inner {
 /* Month cells */
 .rbc-month-row + .rbc-month-row { border-top: 1px solid var(--gc-border); }
 .rbc-date-cell { padding: 8px 8px 4px; color: var(--gc-muted); }
-.rbc-date-cell.rbc-now { color: var(--gc-primary); font-weight: 700; }
-.rbc-off-range { color: #9aa0a6; }
+.rbc-date-cell.rbc-now { color: var(--gc-primary-600); font-weight: 700; }
+.rbc-off-range { color: var(--text-subtle); }
 .rbc-off-range-bg { background: var(--gc-bg-subtle); } /* Usa blanco puro */
 
 .rbc-row-bg .rbc-day-bg + .rbc-day-bg { border-left: 1px solid var(--gc-border); }
@@ -1060,8 +1075,8 @@ button.rbc-input::-moz-focus-inner {
 /* Events (month + time grid) */
 .rbc-event, .rbc-day-slot .rbc-background-event {
   background: var(--gc-event); color: var(--gc-event-text);
-  border: none; border-radius: 8px; padding: 3px 8px;
-  font-weight: 600; box-shadow: 0 1px 0 rgba(0,0,0,.04);
+  border: none; border-radius: var(--radius-input); padding: 3px 8px;
+  font-weight: 600; box-shadow: var(--shadow-card);
 }
 /* ... (Se mantienen otros estilos de eventos y popover) ... */
 
@@ -1070,7 +1085,7 @@ button.rbc-input::-moz-focus-inner {
 .rbc-time-gutter, .rbc-header-gutter { background: var(--gc-bg); } /* Fondo de la columna de horas: Blanco */
 .rbc-time-content { border-top: 1px solid var(--gc-border); }
 .rbc-time-slot, .rbc-time-content > * + * > * { border-left: 1px solid var(--gc-border); }
-.rbc-day-slot .rbc-time-slot { border-top: 1px solid #eef1f4; } /* Ligeras líneas de división */
+.rbc-day-slot .rbc-time-slot { border-top: 1px solid var(--gc-grid-border); } /* Ligeras líneas de división */
 
 /* Ahora, asegúrate de que **el fondo de las celdas de día/semana también es blanco puro** */
 .rbc-day-bg {
@@ -1088,7 +1103,7 @@ button.rbc-input::-moz-focus-inner {
   border: 1px solid var(--gc-button-gold);
   color: var(--gc-button-gold-text);
   font-weight: 600; /* Estilo Material/Chakra */
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* Sutil sombra para dar profundidad */
+  box-shadow: var(--shadow-card); /* Sutil sombra para dar profundidad */
   transition: all 0.2s ease;
 }
 
@@ -1096,12 +1111,12 @@ button.rbc-input::-moz-focus-inner {
 .rbc-toolbar .rbc-btn-group > button.rbc-btn-gold:focus {
   background: var(--gc-button-gold-hover);
   border-color: var(--gc-button-gold-hover);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3); /* Sombra más pronunciada al hacer hover */
+  box-shadow: var(--shadow-hover); /* Sombra más pronunciada al hacer hover */
 }
 
 /* Opcional: Estilo más redondeado para un look más "Chakra" */
 .rbc-toolbar .rbc-btn-group > button {
-  border-radius: 8px; /* Si aún no lo tienes */
+  border-radius: var(--radius-button);
 }
 
 
@@ -1160,7 +1175,7 @@ button.rbc-input::-moz-focus-inner {
   background: var(--chakra-btn-bg);
   color: var(--chakra-btn-text);
   padding: 8px 16px; /* Aumentamos el padding para un botón más grande */
-  border-radius: 8px; 
+  border-radius: var(--radius-button); 
   font-weight: 600; 
   font-size: 14px;
 }
@@ -1174,20 +1189,20 @@ button.rbc-input::-moz-focus-inner {
 .rbc-toolbar .rbc-btn-group > button.rbc-active {
   /* Botón activo (la vista seleccionada: Mes, Semana, Día) */
   background: var(--gc-primary); 
-  color: #fff; 
+  color: var(--gc-on-primary); 
   border-color: var(--gc-primary);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1); /* Sombra para darle "elevación" */
+  box-shadow: var(--shadow-card); /* Sombra para darle "elevación" */
 }
 
 /* Botón "Hoy" - Lo destacamos con un color primario como lo haría Chakra UI */
 .rbc-toolbar .rbc-btn-group > button:first-child { /* Asumiendo que "Hoy" es el primer botón */
     background: var(--gc-primary);
     border-color: var(--gc-primary);
-    color: #fff;
+    color: var(--gc-on-primary);
 }
 .rbc-toolbar .rbc-btn-group > button:first-child:hover {
-    background: var(--gc-primary-600);
-    border-color: var(--gc-primary-600);
+    background: var(--gc-button-primary-hover-bg);
+    border-color: var(--gc-button-primary-hover-bg);
 }
 
 
@@ -1358,8 +1373,8 @@ button.rbc-input::-moz-focus-inner {
 /* 9. Hover para eventos clickeables (solo los disponibles) */
 .rbc-event-status-available:hover,
 .rbc-event-status-limited:hover {
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.07) !important;
-    border-color: hsl(215.4 16.3% 46.9%) !important; /* Borde más oscuro */
+    box-shadow: var(--shadow-hover) !important;
+    border-color: var(--accent-border) !important; /* Borde de acento */
 }
 
 

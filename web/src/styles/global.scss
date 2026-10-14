@@ -45,77 +45,40 @@ html {
 }
 
 /* ─────────────────────────────────────────────────────────────
-   GLASS UTILITY CLASSES — reemplazo eficiente de backdrop-filter.
-
-   USO desde React/Chakra:
+   GLASS UTILITY CLASSES (heredadas) — ahora siguen el estilo visual del
+   panel con los tokens de styles/presets.css. Para código nuevo usa
+   .sk-card / .sk-panel / .sk-deep (mismo archivo).
      <Box className="glass-card">...</Box>          // card sobre fondo claro
-     <Box className="glass-card-strong">...</Box>   // card sobre imágenes/video
-     <Box className="glass-card-dark">...</Box>     // card sobre hero oscuro
-
-   Desktop: aplica backdrop-filter real (blur) — Mac/PC procesa esto barato.
-   Mobile: cae automáticamente a gradiente con opacidad mayor — sin blur,
-           sin carga GPU continua. Visual ~95% equivalente.
+     <Box className="glass-card-strong">...</Box>   // card destacada
+     <Box className="glass-card-dark">...</Box>     // card en zona profunda
    ────────────────────────────────────────────────────────────── */
 
-.glass-card {
-  background: linear-gradient(135deg,
-    rgba(255, 255, 255, 0.78) 0%,
-    color-mix(in srgb, var(--brand-bg) 72%, transparent) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.70);
-  box-shadow: 0 4px 24px color-mix(in srgb, var(--brand-dark) 6%, transparent);
-  border-radius: 16px;
-}
-
+.glass-card,
 .glass-card-strong {
-  background: linear-gradient(135deg,
-    rgba(255, 255, 255, 0.92) 0%,
-    color-mix(in srgb, var(--brand-bg) 86%, transparent) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.85);
-  box-shadow: 0 8px 32px color-mix(in srgb, var(--brand-dark) 12%, transparent);
-  border-radius: 16px;
+  background: var(--surface);
+  color: var(--surface-text);
+  border: var(--border-width) solid var(--surface-border);
+  box-shadow: var(--shadow-card);
+  border-radius: var(--radius-card);
+  backdrop-filter: var(--surface-blur);
+  -webkit-backdrop-filter: var(--surface-blur);
 }
-
+.glass-card-strong {
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-float);
+}
 .glass-card-dark {
-  background: linear-gradient(135deg,
-    color-mix(in srgb, var(--brand-dark) 75%, transparent) 0%,
-    color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 60%, transparent) 100%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
-  border-radius: 16px;
-  color: #fff;
+  background: var(--deep-bg);
+  color: var(--deep-text);
+  border: 1px solid var(--deep-border);
+  box-shadow: var(--shadow-float);
+  border-radius: var(--radius-card);
 }
 
-/* Solo en DESKTOP volvemos a permitir backdrop-filter para que se vea elegante.
-   Mobile ya está bloqueado arriba por el @media de "pointer: coarse". */
-@media (hover: hover) and (pointer: fine) and (min-width: 901px) {
-  .glass-card,
-  .glass-card-strong,
-  .glass-card-dark {
-    /* Reducimos opacidad ahora que el blur sí funciona */
-    background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.55) 0%,
-      rgba(255, 255, 255, 0.40) 100%);
-    backdrop-filter: blur(14px) saturate(160%);
-    -webkit-backdrop-filter: blur(14px) saturate(160%);
-  }
-  .glass-card-strong {
-    background: linear-gradient(135deg,
-      rgba(255, 255, 255, 0.72) 0%,
-      rgba(255, 255, 255, 0.58) 100%);
-    backdrop-filter: blur(18px) saturate(160%);
-    -webkit-backdrop-filter: blur(18px) saturate(160%);
-  }
-  .glass-card-dark {
-    background: linear-gradient(135deg,
-      color-mix(in srgb, var(--brand-dark) 45%, transparent) 0%,
-      color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 35%, transparent) 100%);
-    backdrop-filter: blur(12px) saturate(140%);
-    -webkit-backdrop-filter: blur(12px) saturate(140%);
-  }
-}
-
+/* Fondo y texto de la página: tokens del estilo (styles/presets.css) */
 body {
-  background: color-mix(in srgb, var(--brand-bg) 55%, white);
+  background: var(--page-pattern), var(--page-bg);
+  color: var(--page-text);
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -144,18 +107,18 @@ p, li {
 }
 
 .white-gradient {
-  background-image: linear-gradient(120deg, #fdfbfb 0%, #ebedee 100%);
+  background: var(--page-bg-alt);
   margin:0 !important;
   padding: 0 !important;
 }
 
 .zen-section {
-  background: linear-gradient(180deg, color-mix(in srgb, var(--brand-bg) 55%, white) 0%, color-mix(in srgb, var(--brand-primary) 17%, white) 50%, color-mix(in srgb, var(--brand-bg) 55%, white) 100%);
+  background: var(--section-bg);
   padding: 5rem 0;
 }
 
 .blue-color{
-  color: #0f2d5a;
+  color: var(--accent-text);
 }
 
 .bg-1{

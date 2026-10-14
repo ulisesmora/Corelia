@@ -5,7 +5,7 @@ import {
   IconButton,
   Badge,
 } from '@chakra-ui/react';
-import { FaShoppingCart } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { useCartStore } from './stores/car.store';
 import { CartDrawer } from './CartDrawer'; // El drawer v3 que ya creamos
 import { useT } from '../i18n';
@@ -62,16 +62,18 @@ export const GlobalCart = () => {
         // nav (con badge). Antes este FAB quedaba tapado por el de WhatsApp.
         display={{ base: 'none', md: 'flex' }}
         zIndex="tooltip"
-        boxShadow="lg"
+        boxShadow="var(--shadow-float)"
       >
-        <FaShoppingCart/>
+        <Icon name="cart" />
         {itemsCount > 0 && (
           <Badge
             pos="absolute"
             top="-1px"
             right="-1px"
-            bg="red.500"
-            color="white"
+            bg="var(--danger)"
+            // Texto del color de la página: claro sobre el rojo oscuro de los
+            // estilos claros y oscuro sobre el rojo claro de energy/neon.
+            color="var(--page-bg)"
             borderRadius="full"
             px={itemsCount > 9 ? "1.5" : "2"}
             fontSize="0.7em"

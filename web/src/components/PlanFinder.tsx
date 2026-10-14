@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Flex, Text, Button, SimpleGrid } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaArrowLeft, FaArrowRight, FaCheck, FaRedo, FaCrown, FaBolt } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { useLangStore } from './stores/lang.store';
 import { cachedFetch } from '../utils/fetchCache';
 import { prettyTitle } from '../utils/classTitles';
@@ -52,15 +52,18 @@ function useClassesByCredits(lang: string) {
 
 const MotionBox = motion.create(Box as any);
 
+// Paleta del asistente: tokens del estilo visual (styles/presets.css)
 const C = {
-  accent: 'var(--brand-primary)',
-  accentDeep: 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))',
-  border: 'color-mix(in srgb, var(--brand-primary) 25%, transparent)',
-  olive: '#536030',
-  oliveTint: 'rgba(107,123,60,0.09)',
-  grad: 'linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 100%)',
+  accent: 'var(--accent)',            // rellenos, bordes e iconos
+  accentDeep: 'var(--accent-text)',   // primario como texto
+  heading: 'var(--heading-color)',
+  brown: 'var(--page-text)',
+  textMuted: 'var(--text-muted)',
+  border: 'var(--accent-border)',
+  olive: 'var(--success)',
+  oliveTint: 'var(--success-soft)',
+  // Franja de precio del resultado: relleno primario (texto var(--on-primary))
+  grad: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%)',
 };
 
 export interface FinderPlan {
@@ -232,10 +235,10 @@ function OptionButton({ selected, label, hint, onClick, classes, classesTitle, n
       textAlign="left"
       p={4}
       minH="72px"
-      borderRadius="16px"
+      borderRadius="var(--radius-card)"
       border="2px solid"
       borderColor={selected ? C.accent : C.border}
-      bg={selected ? 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' : 'rgba(255,255,255,0.75)'}
+      bg={selected ? 'var(--accent-soft)' : 'var(--surface-strong)'}
       cursor="pointer"
       transition="all .15s ease"
       _hover={{ borderColor: C.accent, transform: 'translateY(-2px)' }}
@@ -248,26 +251,26 @@ function OptionButton({ selected, label, hint, onClick, classes, classesTitle, n
         </Box>
         <Flex
           w="22px" h="22px" borderRadius="full" flexShrink={0}
-          border="2px solid" borderColor={selected ? C.accentDeep : C.border}
-          bg={selected ? C.accentDeep : 'transparent'}
+          border="2px solid" borderColor={selected ? C.accent : C.border}
+          bg={selected ? C.accent : 'transparent'}
           align="center" justify="center"
         >
-          {selected && <FaCheck size={10} color="white" />}
+          {selected && <Icon name="check" size={10} color="var(--on-primary)" />}
         </Flex>
       </Flex>
 
       {/* Clases reales de este tipo, sacadas del horario */}
       {classes && classes.length > 0 && (
-        <Box mt={3} pt={3} borderTop="1px dashed color-mix(in srgb, var(--brand-primary) 30%, transparent)">
+        <Box mt={3} pt={3} borderTop="1px dashed var(--accent-border)">
           <Text fontFamily='var(--font-body)' fontSize="11px" fontWeight={700}
             color={C.textMuted} mb={1.5}>
             {classesTitle}
           </Text>
           <Flex gap={1.5} wrap="wrap">
             {shown.map((name) => (
-              <Box key={name} px={2.5} py={1} borderRadius="full"
-                bg={selected ? 'rgba(255,255,255,0.85)' : 'color-mix(in srgb, var(--brand-primary) 9%, transparent)'}
-                border="1px solid color-mix(in srgb, var(--brand-primary) 18%, transparent)">
+              <Box key={name} px={2.5} py={1} borderRadius="var(--radius-chip)"
+                bg={selected ? 'var(--surface-strong)' : 'var(--accent-soft)'}
+                border="1px solid var(--accent-border)">
                 <Text fontFamily='var(--font-body)' fontSize="12px" fontWeight={600} color={C.brown}>
                   {name}
                 </Text>
@@ -344,12 +347,8 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
 
   return (
     <Box
-      bg="rgba(255,255,255,0.62)"
-      backdropFilter="blur(20px) saturate(180%)"
-      style={{ WebkitBackdropFilter: 'blur(20px) saturate(180%)' }}
-      borderRadius="28px"
-      border="1px solid rgba(255,255,255,0.75)"
-      boxShadow="0 10px 40px color-mix(in srgb, var(--brand-dark) 10%, transparent)"
+      className="sk-card"
+      style={{ borderRadius: 'var(--radius-card-lg)' }}
       p={{ base: 5, md: 8 }}
       maxW="760px"
       mx="auto"
@@ -359,11 +358,11 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
       <Flex justify="space-between" align="flex-start" mb={5} gap={3} wrap="wrap">
         <Box>
           <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={700}
-            color={C.accent} textTransform="uppercase" letterSpacing="0.10em">
+            color={C.accentDeep} textTransform="uppercase" letterSpacing="0.10em">
             {tx.kicker}
           </Text>
           <Text fontFamily='var(--font-heading)' fontSize={{ base: '3xl', md: '4xl' }}
-            color={C.brown} letterSpacing="0.03em" lineHeight="1.05">
+            color={C.heading} letterSpacing="0.03em" lineHeight="1.05">
             {step <= 3 ? tx.title : tx.resultKicker}
           </Text>
         </Box>
@@ -376,7 +375,7 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
             <Flex gap={1.5}>
               {[1, 2, 3].map((n) => (
                 <Box key={n} flex={1} h="6px" borderRadius="full"
-                  bg={n <= step ? C.accentDeep : 'color-mix(in srgb, var(--brand-primary) 20%, transparent)'}
+                  bg={n <= step ? C.accent : 'var(--accent-soft)'}
                   transition="background .25s ease" />
               ))}
             </Flex>
@@ -426,12 +425,12 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
 
         {step === 4 && result && (
           <MotionBox key="res" initial={{ opacity: 0, y: 14 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} transition={{ duration: 0.3 }}>
-            <Box borderRadius="22px" overflow="hidden" border={`1.5px solid color-mix(in srgb, var(--brand-primary) 40%, transparent)`}
-              boxShadow="0 10px 30px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 18%, transparent)">
+            <Box borderRadius="var(--radius-card)" overflow="hidden" border="var(--border-width) solid var(--accent-border)"
+              boxShadow="var(--shadow-card)">
               {/* Franja superior con precio */}
-              <Box bg={C.grad} color="white" p={{ base: 5, md: 6 }}>
+              <Box bg={C.grad} color="var(--on-primary)" p={{ base: 5, md: 6 }}>
                 <Flex align="center" gap={2} mb={1}>
-                  {result.isSub ? <FaCrown size={13} /> : <FaBolt size={13} />}
+                  {result.isSub ? <Icon name="crown" size={13} /> : <Icon name="bolt" size={13} />}
                   <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={700}
                     textTransform="uppercase" letterSpacing="0.10em" opacity={0.9}>
                     {result.isSub ? (lang === 'en' ? 'Monthly membership' : 'Membresía mensual') : (lang === 'en' ? 'Class pack' : 'Bono de clases')}
@@ -458,21 +457,21 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
                 )}
               </Box>
 
-              <Box bg="white" p={{ base: 5, md: 6 }}>
+              <Box bg="var(--surface-strong)" p={{ base: 5, md: 6 }}>
                 {/* Datos clave */}
                 <Flex gap={2} wrap="wrap" mb={4}>
-                  <Box px={3} py={1.5} borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)">
+                  <Box px={3} py={1.5} borderRadius="var(--radius-chip)" bg="var(--accent-soft)">
                     <Text fontFamily='var(--font-body)' fontSize="sm" fontWeight={700} color={C.accentDeep}>
                       {tx.classesMonth(result.classesPerMonth)}
                     </Text>
                   </Box>
-                  <Box px={3} py={1.5} borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)">
+                  <Box px={3} py={1.5} borderRadius="var(--radius-chip)" bg="var(--accent-soft)">
                     <Text fontFamily='var(--font-body)' fontSize="sm" fontWeight={700} color={C.accentDeep}>
                       {tx.perClass(formatPrice(result.perClass, lang, 'auto'), formatPrice(dropIn, lang, 'auto'))}
                     </Text>
                   </Box>
                   {result.saving > 0 && (
-                    <Box px={3} py={1.5} borderRadius="full" bg={C.oliveTint}>
+                    <Box px={3} py={1.5} borderRadius="var(--radius-chip)" bg={C.oliveTint}>
                       <Text fontFamily='var(--font-body)' fontSize="sm" fontWeight={800} color={C.olive}>
                         {tx.saving(formatPrice(Math.round(result.saving), lang, 0))}
                       </Text>
@@ -485,7 +484,7 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
                 </Text>
                 {result.extraClasses > 0 && (
                   <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} lineHeight="1.65" mb={4}
-                    p={3} borderRadius="12px" bg="color-mix(in srgb, var(--brand-primary) 7%, transparent)">
+                    p={3} borderRadius="var(--radius-input)" bg="var(--accent-soft)">
                     {tx.extra(result.extraClasses, formatPrice(result.topUpRate, lang, 'auto'))}
                   </Text>
                 )}
@@ -493,8 +492,8 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
                 <Box as="ul" listStyleType="none" m={0} p={0} mb={5}>
                   {(result.isSub ? tx.subPerks : tx.packPerks).map((perk, i) => (
                     <Flex as="li" key={i} align="center" gap={2.5} mb={2}>
-                      <Flex w="20px" h="20px" borderRadius="full" bg="rgba(45,125,70,0.12)" align="center" justify="center" flexShrink={0}>
-                        <FaCheck size={9} color="#2D7D46" />
+                      <Flex w="20px" h="20px" borderRadius="full" bg="var(--success-soft)" align="center" justify="center" flexShrink={0}>
+                        <Icon name="check" size={9} color="var(--success)" />
                       </Flex>
                       <Text fontFamily='var(--font-body)' fontSize="sm" color={C.brown}>
                         {typeof perk === 'function' ? perk(result.plan.validDays) : perk}
@@ -504,23 +503,21 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
                 </Box>
 
                 <Button
-                  w="full" h="54px" borderRadius="full" color="white" bg={C.grad}
-                  fontFamily='var(--font-body)' fontWeight={800} fontSize="md"
-                  boxShadow="0 8px 22px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 35%, transparent)"
-                  _hover={{ opacity: 0.92, transform: 'translateY(-1px)' }}
-                  transition="all .18s ease"
+                  className="sk-btn"
+                  w="full" h="54px"
+                  fontFamily='var(--font-body)' fontSize="md"
                   onClick={() => {
                     const tab = result.isSub ? 'subscription' : 'credits';
                     window.location.href = `/checkout?tab=${tab}&plan_id=${result.plan.id}`;
                   }}
                 >
-                  <Flex align="center" gap={2}>{tx.cta(result.plan.name)} <FaArrowRight size={13} /></Flex>
+                  <Flex align="center" gap={2}>{tx.cta(result.plan.name)} <Icon name="arrow-right" size={13} /></Flex>
                 </Button>
 
                 <Flex justify="space-between" mt={3} gap={2} wrap="wrap">
                   <Button variant="ghost" size="sm" color={C.textMuted} fontFamily='var(--font-body)'
                     minH="44px" onClick={restart}>
-                    <Flex align="center" gap={1.5}><FaRedo size={10} />{tx.restart}</Flex>
+                    <Flex align="center" gap={1.5}><Icon name="refresh" size={10} />{tx.restart}</Flex>
                   </Button>
                   <Button variant="ghost" size="sm" color={C.accentDeep} fontFamily='var(--font-body)'
                     fontWeight={700} minH="44px"
@@ -537,7 +534,7 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
       {step > 1 && step <= 3 && (
         <Button variant="ghost" size="sm" mt={4} color={C.textMuted} fontFamily='var(--font-body)'
           minH="44px" onClick={() => setStep(step - 1)}>
-          <Flex align="center" gap={1.5}><FaArrowLeft size={10} />{tx.back}</Flex>
+          <Flex align="center" gap={1.5}><Icon name="arrow-left" size={10} />{tx.back}</Flex>
         </Button>
       )}
     </Box>

@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { FaChalkboardTeacher, FaChevronLeft, FaChevronRight, FaClock, FaDoorOpen } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import Chakra from './ChakraProvider';
 import { useT } from '../i18n/index';
 import { useLangStore } from './stores/lang.store';
@@ -40,7 +40,11 @@ export interface ItemGlass {
 }
 export interface UrlItem { name: string, url: string }
 
-const tagColors = ['color-mix(in srgb, var(--brand-primary) 75%, white)', 'var(--brand-secondary)', 'color-mix(in srgb, var(--brand-primary) 40%, white)'] as const;
+// Etiquetas de nivel y categoría: relleno de marca con su texto legible
+const tagColors = [
+  { bg: 'var(--accent)', color: 'var(--on-primary)' },
+  { bg: 'var(--brand-secondary)', color: 'var(--on-secondary)' },
+] as const;
 const MotionBox = motion(Box);
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 const PLACEHOLDER = 'data:image/gif;base64,R0lGODlhAQABAAAAACw='; // 1x1 transparente
@@ -188,13 +192,13 @@ export default function GlassCarousel(props: GlassCarouselProps) {
   return (
     <Chakra>
       <Flex w="100%" justifyContent="center" pt="2rem">
-        <Text as="h3" fontSize="3xl" color="var(--brand-secondary)" fontWeight="semibold">
+        <Text as="h3" fontSize="3xl" color="var(--heading-color)" fontWeight="semibold">
           {title}
         </Text>
       </Flex>
 
       <Box textAlign="center" maxW="800px" mx="auto" px={4} pb={8}>
-        <Text fontSize="lg" color="var(--brand-secondary)">
+        <Text fontSize="lg" color="var(--text-muted)">
           {description}
         </Text>
       </Box>
@@ -221,7 +225,7 @@ export default function GlassCarousel(props: GlassCarouselProps) {
           left={{ base: 4, md: 8 }}
           zIndex={10}
         >
-          <FaChevronLeft />
+          <Icon name="chevron-left" />
         </IconButton>
 
         <Flex
@@ -251,12 +255,10 @@ export default function GlassCarousel(props: GlassCarouselProps) {
                   minW={{ base: '90%', md: total >= 3 ? '30%' : (total === 2 ? '45%' : '30%') }}
                   maxW={{ base: '90%', md: total >= 3 ? '30%' : (total === 2 ? '45%' : '30%') }}
                   h={{ base: '480px', md: '480px' }}
-                  borderRadius="2xl"
+                  // Tarjeta con el acabado del estilo (fondo, borde, radio, sombra, blur)
+                  className="sk-card"
                   overflow="hidden"
                   position="relative"
-                  bg="rgba(255,255,255,0.1)"
-                  backdropFilter="blur(14px)"
-                  boxShadow={dominantColors[realIdx] ? `0 10px 40px ${dominantColors[realIdx]}` : 'lg'}
                   flex="0 0 auto"
                   cursor='pointer'
                       onClick={() => {window.location.href = classUrl(memoItems[realIdx].slug, lang)}}
@@ -347,7 +349,7 @@ export default function GlassCarousel(props: GlassCarouselProps) {
                           <Badge
                             px={3}
                             py={1}
-                            borderRadius="full"
+                            borderRadius="var(--radius-chip)"
                             bg="blackAlpha.400"
                             backdropFilter="blur(10px)"
                             color="whiteAlpha.900"
@@ -357,7 +359,7 @@ export default function GlassCarousel(props: GlassCarouselProps) {
                             fontSize="xs"
                             fontWeight="bolder"
                           >
-                               <FaClock /> {memoItems[realIdx].duration_minutes}
+                               <Icon name="clock" /> {memoItems[realIdx].duration_minutes}
                           </Badge>
                         </WrapItem>
 
@@ -367,7 +369,7 @@ export default function GlassCarousel(props: GlassCarouselProps) {
                           <Badge
                             px={3}
                             py={1}
-                            borderRadius="full"
+                            borderRadius="var(--radius-chip)"
 
                             bg="blackAlpha.400"
                             backdropFilter="blur(10px)"
@@ -378,7 +380,7 @@ export default function GlassCarousel(props: GlassCarouselProps) {
                             fontSize="xs"
                             fontWeight="bolder"
                           >
-                            <FaChalkboardTeacher />
+                            <Icon name="teacher" />
                             <Text as="span" color="white" fontWeight={'bolder'}>
                               {memoItems[realIdx].all_instructors[0]}
                             </Text>
@@ -400,7 +402,7 @@ export default function GlassCarousel(props: GlassCarouselProps) {
                             fontSize="xs"
                             fontWeight="medium"
                           >
-                            <FaDoorOpen />
+                            <Icon name="door" />
                             <Link
                               href={memoItems[realIdx].room.url}
                               color="color-mix(in srgb, var(--brand-primary) 75%, white)"
@@ -418,9 +420,9 @@ export default function GlassCarousel(props: GlassCarouselProps) {
                               px={3}
                               variant="subtle"
                               py={1}
-                              borderRadius="full"
-                              bg={tagColors[0] || 'color-mix(in srgb, var(--brand-primary) 75%, white)'}
-                              color="white"
+                              borderRadius="var(--radius-chip)"
+                              bg={tagColors[0].bg}
+                              color={tagColors[0].color}
                               fontSize="xs"
                               fontWeight="semibold"
                               textTransform="capitalize"
@@ -437,9 +439,9 @@ export default function GlassCarousel(props: GlassCarouselProps) {
                               px={3}
                               variant="subtle"
                               py={1}
-                              borderRadius="full"
-                              bg={tagColors[1] || 'color-mix(in srgb, var(--brand-primary) 75%, white)'}
-                              color="white"
+                              borderRadius="var(--radius-chip)"
+                              bg={tagColors[1].bg}
+                              color={tagColors[1].color}
                               fontSize="xs"
                               fontWeight="semibold"
                               textTransform="capitalize"
@@ -457,6 +459,7 @@ export default function GlassCarousel(props: GlassCarouselProps) {
                              bg="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 78%, white) 50%, transparent)"
 
                                       fontSize='1.15rem'
+                            borderRadius="var(--radius-button)"
                             backdropFilter="blur(10px)"
                       color="white" 
                       _hover={{ bg: 'white', color: 'black' }} 
@@ -485,20 +488,17 @@ export default function GlassCarousel(props: GlassCarouselProps) {
           right={{ base: 4, md: 8 }}
           zIndex={10}
         >
-          <FaChevronRight />
+          <Icon name="chevron-right" />
         </IconButton>
       </Flex>
 
       <Flex justify="center" mt={2}>
         <Button
-          bg='var(--brand-secondary)'
-          
+          className="sk-btn"
           size="lg" 
-          color='white'
           variant="surface"
           position="relative"
           zIndex={1}
-          _hover={{ bg: 'white', color: 'black' }}
         >
           <a href={t('nav.items.classes.href') || '/classes'}>{ctaText}</a> 
         </Button>

@@ -19,7 +19,7 @@ export default function CalendarViewPage() {
     <Chakra>
       <Box
         w="full" minH="100vh"
-        bg="linear-gradient(150deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 60%, color-mix(in srgb, var(--brand-primary) 25%, white) 100%)"
+        bg="var(--section-bg)"
         pt={{ base: 8, md: 14 }}
         pb={{ base: 10, md: 16 }}
         px={{ base: 4, md: 6 }}
@@ -28,23 +28,20 @@ export default function CalendarViewPage() {
           {/* Header */}
           <Center mb={10}>
             <VStack gap={2} textAlign="center">
-              <Box
-                px={4} py={1.5} borderRadius="full"
-                bg="color-mix(in srgb, var(--brand-primary) 12%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)"
-              >
-                <Text fontSize="11px" fontWeight={700} color="var(--brand-primary)"
-                  fontFamily='var(--font-body)' letterSpacing="0.10em" textTransform="uppercase">
+              <Box className="sk-eyebrow" px={4} py={1.5}>
+                <Text fontSize="11px" fontWeight={700}>
                   {site.studio_name}
                 </Text>
               </Box>
               <Heading
+                className="sk-section-title"
                 fontFamily='var(--font-heading)'
                 fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
-                color="var(--brand-dark)" letterSpacing="wide" lineHeight="1"
+                color="var(--heading-color)" letterSpacing="wide" lineHeight="1"
               >
                 {t('calendarPage.heading')}
               </Heading>
-              <Text fontSize="md" color="color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))" fontFamily='var(--font-body)'
+              <Text fontSize="md" color="var(--text-muted)" fontFamily='var(--font-body)'
                 maxW="480px" lineHeight="1.7">
                 {t('calendarPage.subtitle')}
               </Text>

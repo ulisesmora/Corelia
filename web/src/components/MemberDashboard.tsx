@@ -6,14 +6,6 @@ import {
   Stack, Separator, IconButton, SimpleGrid,
   Dialog, Portal, CloseButton,
 } from '@chakra-ui/react';
-import {
-  FaCalendarCheck, FaStar, FaCrown, FaUser,
-  FaTrash, FaClock, FaMapMarkerAlt, FaCheckCircle,
-  FaPlus, FaHistory, FaTimes, FaLeaf, FaExclamationTriangle,
-  FaBolt, FaListUl, FaCalendarAlt, FaArrowRight, FaEdit,
-  FaCalendarWeek, FaCalendarPlus, FaGooglePlusG, FaApple, FaDownload,
-  FaLock, FaCalendarDay,
-} from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 import Chakra from './ChakraProvider';
 import { toaster } from './ui/toaster';
@@ -29,24 +21,30 @@ import { planDisplayName } from '../utils/planUtils';
 import { cancelMinHours, canCancelBooking } from '../utils/cancelPolicy';
 import { API_ROOT } from '../config';
 import { addressLine, contactUrl, getSiteClient } from '../lib/site';
+import { Icon } from './ui/Icon';
 
 const MotionBox = motion(Box as any);
 
-// ── Brand tokens ──────────────────────────────────────────────────────────────
+// ── Tokens del estilo visual (presets.css) ───────────────────────────────────
 const C = {
-  bg: 'linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 50%, color-mix(in srgb, var(--brand-primary) 22%, white) 100%)',
-  card: 'rgba(255,255,255,0.88)',
-  cardGlass: 'rgba(255,255,255,0.55)',
-  accent: 'var(--brand-primary)',
-  accentDark: 'color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))',
-  border: 'color-mix(in srgb, var(--brand-primary) 20%, transparent)',
-  borderStrong: 'color-mix(in srgb, var(--brand-primary) 35%, transparent)',
-  btnGrad: 'linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 100%)',
-  success: '#2D7D46',
-  warning: '#B7791F',
-  danger: '#C0392B',
+  bg: 'var(--section-bg)',            // solo en `bg` (puede ser un degradado)
+  card: 'var(--surface)',
+  cardGlass: 'var(--surface-muted)',
+  accent: 'var(--accent)',
+  accentDark: 'var(--accent-text)',
+  brown: 'var(--page-text)',
+  textMuted: 'var(--text-muted)',
+  border: 'var(--border-neutral)',
+  borderStrong: 'var(--accent-border)',
+  // Relleno primario para estados seleccionados y cabeceras (texto: --on-primary)
+  fill: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%)',
+  onFill: 'var(--on-primary)',
+  success: 'var(--success)',
+  warning: 'var(--warning)',
+  danger: 'var(--danger)',
+  // Texto sobre un botón relleno de aviso/peligro: el fondo de la página
+  // (contrasta tanto en estilos claros como oscuros)
+  onStatus: 'var(--page-bg)',
 };
 
 const API = `${API_ROOT}/`;
@@ -223,8 +221,8 @@ const fmtTime = (iso: string, locale = 'es-ES') =>
 const tint = (color: string, pct: number) => `color-mix(in srgb, ${color} ${pct}%, transparent)`;
 
 const statusColor: Record<string, string> = {
-  reserved: '#2D7D46', attended: 'color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))', canceled: '#C0392B',
-  no_show: '#B7791F', pending: 'var(--brand-primary)',
+  reserved: 'var(--success)', attended: 'var(--accent-text)', canceled: 'var(--danger)',
+  no_show: 'var(--warning)', pending: 'var(--accent)',
 };
 
 function useStatusLabel() {
@@ -246,19 +244,17 @@ type Tab = 'agenda' | 'clases' | 'suscripcion' | 'perfil';
 function useTabs() {
   const t = useT();
   return [
-    { key: 'agenda'      as Tab, label: t('dashboard.tabs.agenda'),      icon: <FaCalendarCheck size={14} /> },
-    { key: 'clases'      as Tab, label: t('dashboard.tabs.clases'),      icon: <FaStar size={14} /> },
-    { key: 'suscripcion' as Tab, label: t('dashboard.tabs.suscripcion'), icon: <FaCrown size={14} /> },
-    { key: 'perfil'      as Tab, label: t('dashboard.tabs.perfil'),      icon: <FaUser size={14} /> },
+    { key: 'agenda'      as Tab, label: t('dashboard.tabs.agenda'),      icon: <Icon name="calendar-check" size={14} /> },
+    { key: 'clases'      as Tab, label: t('dashboard.tabs.clases'),      icon: <Icon name="star" size={14} /> },
+    { key: 'suscripcion' as Tab, label: t('dashboard.tabs.suscripcion'), icon: <Icon name="crown" size={14} /> },
+    { key: 'perfil'      as Tab, label: t('dashboard.tabs.perfil'),      icon: <Icon name="user" size={14} /> },
   ];
 }
 
 // ── Shared card ───────────────────────────────────────────────────────────────
 function Card({ children, p = 5 }: { children: React.ReactNode; p?: number }) {
   return (
-    <Box bg={C.card} borderRadius="20px" p={p}
-      border={`1px solid ${C.border}`}
-      boxShadow="0 4px 24px color-mix(in srgb, var(--brand-dark) 6%, transparent)">
+    <Box className="sk-card" p={p}>
       {children}
     </Box>
   );
@@ -309,12 +305,12 @@ function WeekCalendar({ bookings, onSelect }: {
             <Flex w={{ base: '28px', md: '38px' }} h={{ base: '28px', md: '38px' }}
               borderRadius="full" mx="auto" mb={1.5}
               alignItems="center" justifyContent="center"
-              bg={isToday ? C.btnGrad : dayBookings.length > 0 ? 'color-mix(in srgb, var(--brand-primary) 12%, transparent)' : 'transparent'}
+              bg={isToday ? C.fill : dayBookings.length > 0 ? 'var(--accent-soft)' : 'transparent'}
               border={isToday ? 'none' : `1px solid ${dayBookings.length > 0 ? C.borderStrong : C.border}`}
-              boxShadow={isToday ? '0 3px 10px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 30%, transparent)' : 'none'}>
+              boxShadow={isToday ? '0 3px 10px color-mix(in srgb, var(--brand-primary) 30%, transparent)' : 'none'}>
               <Text fontFamily='var(--font-body)' fontSize={{ base: '10px', md: 'xs' }}
                 fontWeight={700}
-                color={isToday ? 'white' : dayBookings.length > 0 ? C.accentDark : C.textMuted}>
+                color={isToday ? C.onFill : dayBookings.length > 0 ? C.accentDark : C.textMuted}>
                 {day.getDate()}
               </Text>
             </Flex>
@@ -388,7 +384,7 @@ function MonthCalendar({ upcoming, past, month, onMonthChange, selectedDay, onSe
       {/* Cabecera de mes con navegación */}
       <Flex justify="space-between" align="center" mb={3}>
         <IconButton aria-label={lang === 'en' ? 'Previous month' : 'Mes anterior'} size="sm" variant="ghost" borderRadius="full"
-          color={C.textMuted} _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' }}
+          color={C.textMuted} _hover={{ bg: 'var(--accent-soft)' }}
           onClick={() => { onSelectDay(null); onMonthChange(new Date(y, m - 1, 1)); }}>
           ‹
         </IconButton>
@@ -397,7 +393,7 @@ function MonthCalendar({ upcoming, past, month, onMonthChange, selectedDay, onSe
           {month.toLocaleDateString(locale, { month: 'long', year: 'numeric' })}
         </Text>
         <IconButton aria-label={lang === 'en' ? 'Next month' : 'Mes siguiente'} size="sm" variant="ghost" borderRadius="full"
-          color={C.textMuted} _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' }}
+          color={C.textMuted} _hover={{ bg: 'var(--accent-soft)' }}
           onClick={() => { onSelectDay(null); onMonthChange(new Date(y, m + 1, 1)); }}>
           ›
         </IconButton>
@@ -422,24 +418,24 @@ function MonthCalendar({ upcoming, past, month, onMonthChange, selectedDay, onSe
           return (
             <Box key={key} as="button"
               onClick={() => onSelectDay(isSelected ? null : key)}
-              minH={{ base: '44px', md: '52px' }} borderRadius="12px"
+              minH={{ base: '44px', md: '52px' }} borderRadius="var(--radius-input)"
               display="flex" flexDirection="column" alignItems="center" justifyContent="center"
               gap="3px" cursor="pointer"
-              bg={isSelected ? C.btnGrad : info ? 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' : 'transparent'}
+              bg={isSelected ? C.fill : info ? 'var(--accent-soft)' : 'transparent'}
               border={isToday && !isSelected ? `1.5px solid ${C.accentDark}` : `1px solid ${info ? C.borderStrong : 'transparent'}`}
-              boxShadow={isSelected ? '0 3px 10px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 30%, transparent)' : 'none'}
+              boxShadow={isSelected ? '0 3px 10px color-mix(in srgb, var(--brand-primary) 30%, transparent)' : 'none'}
               transition="all 0.15s ease"
-              _hover={{ bg: isSelected ? C.btnGrad : 'color-mix(in srgb, var(--brand-primary) 14%, transparent)' }}>
+              _hover={{ bg: isSelected ? C.fill : 'color-mix(in srgb, var(--accent) 18%, transparent)' }}>
               <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={700}
-                color={isSelected ? 'white' : isToday ? C.accentDark : info ? C.brown : C.textMuted}>
+                color={isSelected ? C.onFill : isToday ? C.accentDark : info ? C.brown : C.textMuted}>
                 {day}
               </Text>
               {info && (
                 <Flex gap="3px">
                   {info.up > 0 && <Box w="5px" h="5px" borderRadius="full"
-                    bg={isSelected ? 'white' : C.success} />}
+                    bg={isSelected ? C.onFill : C.success} />}
                   {info.past > 0 && <Box w="5px" h="5px" borderRadius="full"
-                    bg={isSelected ? 'rgba(255,255,255,0.65)' : C.accent} />}
+                    bg={isSelected ? 'color-mix(in srgb, var(--on-primary) 65%, transparent)' : C.accent} />}
                 </Flex>
               )}
             </Box>
@@ -491,17 +487,17 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
 
   const calOptions = [
     {
-      icon: <FaGooglePlusG size={12} />,
+      icon: <Icon name="google" size={12} />,
       label: t('calendarView.exportGoogle'),
       action: () => { window.open(buildGoogleCalendarUrl(calData), '_blank', 'noopener'); setShowCalMenu(false); },
     },
     {
-      icon: <FaApple size={12} />,
+      icon: <Icon name="apple" size={12} />,
       label: t('calendarView.exportApple'),
       action: () => { window.open(buildAppleCalendarUrl(calData), '_blank'); setShowCalMenu(false); },
     },
     {
-      icon: <FaDownload size={11} />,
+      icon: <Icon name="download" size={11} />,
       label: t('calendarView.exportOutlook'),
       action: () => { downloadIcs(calData, `${calText().slug}-${what.replace(/\s+/g, '-').toLowerCase()}.ics`); setShowCalMenu(false); },
     },
@@ -513,14 +509,15 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, x: -20 }}
       transition={{ duration: 0.26 } as any}
-      bg={isPast ? 'color-mix(in srgb, var(--brand-bg) 50%, transparent)' : C.card}
-      borderRadius="16px"
-      border={`1px solid ${C.border}`}
-      boxShadow={isPast ? 'none' : '0 4px 18px color-mix(in srgb, var(--brand-dark) 7%, transparent)'}
+      bg={isPast ? 'var(--surface-muted)' : C.card}
+      borderRadius="var(--radius-card)"
+      border="var(--border-width) solid var(--surface-border)"
+      boxShadow={isPast ? 'none' : 'var(--shadow-card)'}
+      backdropFilter="var(--surface-blur)"
       position="relative"
     >
       {/* Top colour bar — clips its own top corners to match card radius */}
-      <Box h="3px" bg={sc} borderRadius="16px 16px 0 0" />
+      <Box h="3px" bg={sc} borderRadius="var(--radius-card) var(--radius-card) 0 0" />
       <Flex gap={4} p={4} align="center">
         {/* Date block */}
         <Box minW="48px" textAlign="center" flexShrink={0}>
@@ -544,14 +541,14 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
           </Text>
           <Flex gap={3} mt={0.5} flexWrap="wrap">
             <Flex align="center" gap={1}>
-              <FaClock size={9} color={C.textMuted} />
+              <Icon name="clock" size={9} color={C.textMuted} />
               <Text fontFamily='var(--font-body)' fontSize="11px" color={C.textMuted}>
                 {fmtTime(booking.start_datetime, locale)} – {fmtTime(booking.end_datetime, locale)}
               </Text>
             </Flex>
             {bookingRoom && (
               <Flex align="center" gap={1}>
-                <FaMapMarkerAlt size={9} color={C.textMuted} />
+                <Icon name="map-pin" size={9} color={C.textMuted} />
                 <Text fontFamily='var(--font-body)' fontSize="11px" color={C.textMuted}>
                   {bookingRoom}
                 </Text>
@@ -560,14 +557,14 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
           </Flex>
           {booking.teacher && (
             <Text fontFamily='var(--font-body)' fontSize="11px"
-              color={C.accent} fontWeight={600} mt={0.5}>
+              color={C.accentDark} fontWeight={600} mt={0.5}>
               {booking.teacher}
             </Text>
           )}
         </Box>
 
         <Flex direction="column" align="flex-end" gap={2} flexShrink={0}>
-          <Box px={2} py={0.5} borderRadius="full"
+          <Box px={2} py={0.5} borderRadius="var(--radius-chip)"
             bg={tint(sc, 9)} border={`1px solid ${tint(sc, 21)}`}>
             <Text fontFamily='var(--font-body)' fontSize="9px"
               fontWeight={700} color={sc} letterSpacing="0.08em">
@@ -583,16 +580,16 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
                 as="button"
                 align="center" gap={1.5}
                 px={2.5} py={1}
-                borderRadius="full"
+                borderRadius="var(--radius-button)"
                 border={`1px solid ${showCalMenu ? C.borderStrong : C.border}`}
-                bg={showCalMenu ? 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' : 'transparent'}
+                bg={showCalMenu ? 'var(--accent-soft)' : 'transparent'}
                 color={showCalMenu ? C.accentDark : C.textMuted}
                 cursor="pointer"
                 transition="all 0.18s ease"
-                _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 10%, transparent)', borderColor: C.borderStrong, color: C.accentDark }}
+                _hover={{ bg: 'var(--accent-soft)', borderColor: C.borderStrong, color: C.accentDark }}
                 onClick={() => setShowCalMenu(v => !v)}
               >
-                <FaCalendarPlus size={10} />
+                <Icon name="calendar-plus" size={10} />
                 <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700}
                   letterSpacing="0.04em" style={{ whiteSpace: 'nowrap' }}>
                   {t('dashboard.agenda.addToCalendar')}
@@ -604,12 +601,8 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
                 <Box
                   position="absolute" right={0} top="calc(100% + 6px)"
                   zIndex={200}
-                  bg="rgba(255,255,255,0.98)"
-                  border={`1px solid ${C.borderStrong}`}
-                  borderRadius="12px"
-                  boxShadow="0 12px 40px color-mix(in srgb, var(--brand-dark) 18%, transparent)"
+                  className="sk-panel"
                   minW="170px"
-                  style={{ backdropFilter: 'blur(16px)' }}
                 >
                   {calOptions.map((opt, i) => (
                     <Flex
@@ -620,11 +613,11 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
                       w="full"
                       cursor="pointer"
                       bg="transparent"
-                      _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' }}
+                      _hover={{ bg: 'var(--accent-soft)' }}
                       transition="background 0.15s ease"
                       onClick={opt.action}
                       borderBottom={i < calOptions.length - 1 ? `1px solid ${C.border}` : 'none'}
-                      borderRadius={i === 0 ? '12px 12px 0 0' : i === calOptions.length - 1 ? '0 0 12px 12px' : '0'}
+                      borderRadius={i === 0 ? 'var(--radius-card) var(--radius-card) 0 0' : i === calOptions.length - 1 ? '0 0 var(--radius-card) var(--radius-card)' : '0'}
                     >
                       <Box color={C.accent} flexShrink={0}>{opt.icon}</Box>
                       <Text fontFamily='var(--font-body)' fontSize="12px"
@@ -642,13 +635,13 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
             <IconButton aria-label={cancelLabel} size="xs" variant="ghost"
               color={C.danger} onClick={() => onCancel(booking.id)}
               disabled={isCanceling}>
-              {isCanceling ? <Spinner size="xs" /> : <FaTimes size={11} />}
+              {isCanceling ? <Spinner size="xs" /> : <Icon name="close" size={11} />}
             </IconButton>
           )}
           {/* Aviso de plazo — la clase es próxima pero ya no se puede cancelar */}
           {!isPast && !canCancelBooking(booking.start_datetime) && booking.status === 'reserved' && (
             <Flex align="center" gap={1} mt={0.5}>
-              <FaLock size={8} color={C.textMuted} />
+              <Icon name="lock" size={8} color={C.textMuted} />
               <Text fontFamily='var(--font-body)' fontSize="9px" color={C.textMuted} fontWeight={600}>
                 {t('dashboard.agenda.cancelLocked', { hours: cancelMinHours() })}
               </Text>
@@ -672,11 +665,11 @@ function PrefCard({ pref, onRemove }: { pref: ClassPreference; onRemove: (id: nu
       exit={{ opacity: 0, scale: 0.94 }}
       transition={{ duration: 0.20 } as any}
     >
-      <Flex align="center" gap={3} p={3} borderRadius="14px"
-        bg={pref.is_active ? 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' : 'color-mix(in srgb, var(--brand-bg) 50%, transparent)'}
+      <Flex align="center" gap={3} p={3} borderRadius="var(--radius-input)"
+        bg={pref.is_active ? 'var(--accent-soft)' : 'var(--surface-muted)'}
         border={`1px solid ${pref.is_active ? C.borderStrong : C.border}`}>
         <Box w="8px" h="8px" borderRadius="full" flexShrink={0}
-          bg={pref.is_active ? C.accentDark : 'color-mix(in srgb, var(--brand-primary) 30%, transparent)'} />
+          bg={pref.is_active ? C.accentDark : 'var(--accent-border)'} />
         <Box flex={1}>
           <Text fontFamily='var(--font-body)' fontWeight={700}
             fontSize="sm" color={C.brown}>{tr(pref, 'schedule_title', lang)}</Text>
@@ -689,7 +682,7 @@ function PrefCard({ pref, onRemove }: { pref: ClassPreference; onRemove: (id: nu
         <IconButton aria-label={t('dashboard.clases.removePref')} size="xs" variant="ghost"
           color={C.textMuted} _hover={{ color: C.danger }}
           onClick={() => onRemove(pref.id)}>
-          <FaTrash size={10} />
+          <Icon name="trash" size={10} />
         </IconButton>
       </Flex>
     </MotionBox>
@@ -1132,8 +1125,8 @@ function MemberDashboardInner() {
       <Card>
         <Box textAlign="center" py={4} px={2}>
           <Box w="52px" h="52px" borderRadius="full" mx="auto" mb={4}
-            bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" display="flex" alignItems="center" justifyContent="center">
-            <FaUser size={22} color={C.accent} />
+            bg="var(--accent-soft)" display="flex" alignItems="center" justifyContent="center">
+            <Icon name="user" size={22} color={C.accent} />
           </Box>
           <Text fontFamily='var(--font-heading)' fontSize="2xl" color={C.brown} mb={2}>
             {t('dashboard.loginRequired')}
@@ -1141,7 +1134,7 @@ function MemberDashboardInner() {
           <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={5}>
             {t('dashboard.loginDesc')}
           </Text>
-          <Button h="44px" borderRadius="full" color="white" bg={C.btnGrad}
+          <Button className="sk-btn" h="44px"
             fontFamily='var(--font-body)' fontWeight={700} px={8}
             onClick={() => { window.location.href = t('nav.items.home.href') || '/'; }}>
             {t('dashboard.loginCta')}
@@ -1168,8 +1161,8 @@ function MemberDashboardInner() {
       <Card>
         <Box textAlign="center" py={4} px={2}>
           <Box w="52px" h="52px" borderRadius="full" mx="auto" mb={4}
-            bg="rgba(183,121,31,0.10)" display="flex" alignItems="center" justifyContent="center">
-            <FaExclamationTriangle size={22} color={C.warning} />
+            bg="var(--warning-soft)" display="flex" alignItems="center" justifyContent="center">
+            <Icon name="warning" size={22} color={C.warning} />
           </Box>
           <Text fontFamily='var(--font-heading)' fontSize="2xl" color={C.brown} mb={2}>
             {lang === 'en' ? 'Could not load your account' : 'No pudimos cargar tu cuenta'}
@@ -1179,7 +1172,7 @@ function MemberDashboardInner() {
               ? 'There was a connection problem. Your bookings and credits are safe — please try again.'
               : 'Hubo un problema de conexión. Tus reservas y créditos están a salvo — inténtalo de nuevo.'}
           </Text>
-          <Button h="44px" borderRadius="full" color="white" bg={C.btnGrad}
+          <Button className="sk-btn" h="44px"
             fontFamily='var(--font-body)' fontWeight={700} px={8}
             onClick={() => { setLoadError(false); setLoading(true); fetchAll(); }}>
             {lang === 'en' ? 'Retry' : 'Reintentar'}
@@ -1198,10 +1191,10 @@ function MemberDashboardInner() {
       {replacement?.needs_replacement && (
         <MotionBox initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 } as any}
-          p={4} borderRadius="16px"
-          bg="rgba(183,121,31,0.08)" border="1px solid rgba(183,121,31,0.25)">
+          p={4} borderRadius="var(--radius-card)"
+          bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)">
           <Flex align="flex-start" gap={3}>
-            <Box pt={0.5} flexShrink={0}><FaExclamationTriangle size={15} color={C.warning} /></Box>
+            <Box pt={0.5} flexShrink={0}><Icon name="warning" size={15} color={C.warning} /></Box>
             <Box flex={1}>
               <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.warning}>
                 {t('dashboard.agenda.replacement.title')}
@@ -1214,8 +1207,8 @@ function MemberDashboardInner() {
                 })}
               </Text>
             </Box>
-            <Button size="xs" h="28px" borderRadius="full" color="white"
-              bg="rgba(183,121,31,0.80)"
+            <Button size="xs" h="28px" borderRadius="var(--radius-button)" color={C.onStatus}
+              bg={C.warning} _hover={{ opacity: 0.9 }}
               fontFamily='var(--font-body)' fontWeight={700} fontSize="10px"
               flexShrink={0}
               onClick={() => setTab('clases')}>
@@ -1237,15 +1230,15 @@ function MemberDashboardInner() {
       {/* Stats strip */}
       <SimpleGrid columns={3} gap={3}>
         {[
-          { label: t('dashboard.agenda.stats.upcoming'), value: upcomingBookings.length, icon: <FaCalendarCheck size={13} />, clr: C.success },
-          { label: t('dashboard.agenda.stats.credits'),  value: balance !== null ? balance.toFixed(1) : '—', icon: <FaBolt size={13} />, clr: C.accentDark },
-          { label: t('dashboard.agenda.stats.favorites'), value: preferences.filter(p => p.is_active).length, icon: <FaStar size={13} />, clr: C.warning },
+          { label: t('dashboard.agenda.stats.upcoming'), value: upcomingBookings.length, icon: <Icon name="calendar-check" size={13} />, clr: C.success },
+          { label: t('dashboard.agenda.stats.credits'),  value: balance !== null ? balance.toFixed(1) : '—', icon: <Icon name="bolt" size={13} />, clr: C.accentDark },
+          { label: t('dashboard.agenda.stats.favorites'), value: preferences.filter(p => p.is_active).length, icon: <Icon name="star" size={13} />, clr: C.warning },
         ].map(({ label, value, icon, clr }) => (
-          <Box key={label} bg={C.card} borderRadius="16px" p={{ base: 3, md: 4 }}
-            border={`1px solid ${C.border}`}
-            boxShadow="0 2px 10px color-mix(in srgb, var(--brand-dark) 5%, transparent)" textAlign="center"
+          <Box key={label} bg={C.card} borderRadius="var(--radius-card)" p={{ base: 3, md: 4 }}
+            border="var(--border-width) solid var(--surface-border)"
+            boxShadow="var(--shadow-card)" backdropFilter="var(--surface-blur)" textAlign="center"
             transition="transform 0.18s ease, box-shadow 0.18s ease"
-            _hover={{ transform: 'translateY(-2px)', boxShadow: '0 6px 20px color-mix(in srgb, var(--brand-dark) 10%, transparent)' }}>
+            _hover={{ transform: 'translateY(-2px)', boxShadow: 'var(--shadow-hover)' }}>
             <Flex justify="center" mb={1.5} color={clr}>{icon}</Flex>
             <Text fontFamily='var(--font-heading)' fontSize={{ base: 'xl', md: '2xl' }}
               color={C.brown} lineHeight="1">{value}</Text>
@@ -1263,19 +1256,19 @@ function MemberDashboardInner() {
           color={C.brown} letterSpacing="0.04em">
           {t('dashboard.agenda.sectionTitle')}
         </Text>
-        <Flex gap={1} p={1} bg="rgba(255,255,255,0.55)" borderRadius="full"
+        <Flex gap={1} p={1} bg="var(--surface-muted)" borderRadius="var(--radius-button)"
           border={`1px solid ${C.border}`}>
           {([
-            { key: 'list', icon: <FaListUl size={11} /> },
-            { key: 'week', icon: <FaCalendarWeek size={11} /> },
-            { key: 'month', icon: <FaCalendarAlt size={11} /> },
+            { key: 'list', icon: <Icon name="list" size={11} /> },
+            { key: 'week', icon: <Icon name="calendar-week" size={11} /> },
+            { key: 'month', icon: <Icon name="calendar" size={11} /> },
           ] as const).map(v => (
             <Box key={v.key} as="button"
-              w="32px" h="32px" borderRadius="full"
+              w="32px" h="32px" borderRadius="var(--radius-button)"
               display="flex" alignItems="center" justifyContent="center"
-              bg={agendaView === v.key ? C.btnGrad : 'transparent'}
-              color={agendaView === v.key ? 'white' : C.textMuted}
-              boxShadow={agendaView === v.key ? '0 2px 8px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 25%, transparent)' : 'none'}
+              bg={agendaView === v.key ? C.fill : 'transparent'}
+              color={agendaView === v.key ? C.onFill : C.textMuted}
+              boxShadow={agendaView === v.key ? '0 2px 8px color-mix(in srgb, var(--brand-primary) 25%, transparent)' : 'none'}
               transition="all 0.18s ease"
               onClick={() => setAgendaView(v.key)}>
               {v.icon}
@@ -1296,7 +1289,7 @@ function MemberDashboardInner() {
               </Text>
               {upcomingBookings.length === 0 ? (
                 <Box textAlign="center" py={6}>
-                  <FaLeaf size={24} color={C.accent} style={{ margin: '0 auto 8px' }} />
+                  <Icon name="leaf" size={24} color={C.accent} style={{ margin: '0 auto 8px' }} />
                   <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
                     {t('dashboard.agenda.weekEmpty')}
                   </Text>
@@ -1353,7 +1346,7 @@ function MemberDashboardInner() {
                   <Button size="xs" variant="ghost" color={C.textMuted}
                     fontFamily='var(--font-body)' fontSize="11px"
                     onClick={() => setSelectedDay(null)}>
-                    <Flex align="center" gap={1}><FaTimes size={9} />{t('dashboard.agenda.clearDay')}</Flex>
+                    <Flex align="center" gap={1}><Icon name="close" size={9} />{t('dashboard.agenda.clearDay')}</Flex>
                   </Button>
                 </Flex>
                 {[...upcomingBookings, ...pastBookings]
@@ -1385,17 +1378,15 @@ function MemberDashboardInner() {
             {upcomingBookings.length === 0 ? (
               <Card>
                 <Box textAlign="center" py={7}>
-                  <FaLeaf size={28} color={C.accent} style={{ margin: '0 auto 12px' }} />
+                  <Icon name="leaf" size={28} color={C.accent} style={{ margin: '0 auto 12px' }} />
                   <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={4}>
                     {t('dashboard.agenda.noClasses')}
                   </Text>
-                  <Button h="40px" borderRadius="full" color="white" bg={C.btnGrad}
+                  <Button className="sk-btn" h="40px"
                     fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" px={6}
-                    boxShadow="0 4px 14px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 22%, transparent)"
-                    _hover={{ opacity: 0.90 }}
                     onClick={() => { window.location.href = '/calendar'; }}>
                     <Flex align="center" gap={2}>
-                      <FaCalendarAlt size={11} />
+                      <Icon name="calendar" size={11} />
                       {t('dashboard.agenda.exploreCta')}
                     </Flex>
                   </Button>
@@ -1423,7 +1414,7 @@ function MemberDashboardInner() {
             fontFamily='var(--font-body)' fontSize="xs"
             onClick={() => setShowHistory(v => !v)}>
             <Flex align="center" gap={2}>
-              <FaHistory size={10} />
+              <Icon name="history" size={10} />
               {showHistory ? t('dashboard.agenda.historyHide') : t('dashboard.agenda.historyShow')}
               {pastTotalCount !== null && pastTotalCount > pastBookings.length && (
                 <Text as="span" fontSize="10px" color={C.textMuted} fontWeight={600}>
@@ -1445,17 +1436,13 @@ function MemberDashboardInner() {
                   ))}
                   {/* Botón "Ver más" — solo si hay siguiente página */}
                   {pastHasMore && (
-                    <Button
+                    <Button className="sk-btn-ghost"
                       mt={2}
                       h="38px"
-                      borderRadius="full"
                       variant="outline"
-                      borderColor={C.borderStrong}
-                      color={C.textMuted}
                       fontFamily='var(--font-body)'
                       fontWeight={600}
                       fontSize="xs"
-                      _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' }}
                       disabled={pastLoadingMore}
                       onClick={loadMoreHistory}
                     >
@@ -1476,29 +1463,24 @@ function MemberDashboardInner() {
       {/* CTA strip */}
       <Flex gap={3} justify="center" pt={1} flexWrap="wrap">
         {upcomingBookings.length > 0 && (
-          <Button h="42px" borderRadius="full" variant="outline"
-            borderColor={C.borderStrong} color={C.accentDark}
+          <Button className="sk-btn-ghost" h="42px" variant="outline"
             fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" px={5}
-            _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' }}
             onClick={() => {
               downloadAllIcs(upcomingBookings.map(b => ({ ...b, what: tr(b, 'what', lang), room_name: tr(b, 'room_name', lang) })));
               toaster.create({ title: t('dashboard.agenda.saveAllDone'), type: 'success', duration: 3500 });
             }}>
-            <Flex align="center" gap={2}><FaCalendarPlus size={11} />{t('dashboard.agenda.saveAll')}</Flex>
+            <Flex align="center" gap={2}><Icon name="calendar-plus" size={11} />{t('dashboard.agenda.saveAll')}</Flex>
           </Button>
         )}
-        <Button h="42px" borderRadius="full" variant="outline"
-          borderColor={C.borderStrong} color={C.textMuted}
+        <Button className="sk-btn-ghost" h="42px" variant="outline"
           fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" px={5}
-          _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' }}
           onClick={() => { window.location.href = '/calendar'; }}>
-          <Flex align="center" gap={2}><FaCalendarAlt size={11} />{t('dashboard.agenda.bookCta')}</Flex>
+          <Flex align="center" gap={2}><Icon name="calendar" size={11} />{t('dashboard.agenda.bookCta')}</Flex>
         </Button>
-        <Button h="42px" borderRadius="full" color="white" bg={C.btnGrad}
+        <Button className="sk-btn" h="42px"
           fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" px={5}
-          boxShadow="0 4px 14px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 22%, transparent)" _hover={{ opacity: 0.90 }}
           onClick={() => { window.location.href = '/checkout'; }}>
-          <Flex align="center" gap={2}><FaBolt size={11} />{t('dashboard.agenda.buyCta')}</Flex>
+          <Flex align="center" gap={2}><Icon name="bolt" size={11} />{t('dashboard.agenda.buyCta')}</Flex>
         </Button>
       </Flex>
     </VStack>
@@ -1511,10 +1493,10 @@ function MemberDashboardInner() {
           las opciones tienen que estar AQUÍ (antes no se mostraban en ningún
           sitio y elegir era imposible). */}
       {replacement?.needs_replacement && (
-        <Box p={4} borderRadius="16px"
-          bg="rgba(183,121,31,0.08)" border="1px solid rgba(183,121,31,0.25)">
+        <Box p={4} borderRadius="var(--radius-card)"
+          bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)">
           <Flex align="center" gap={2} mb={1}>
-            <FaExclamationTriangle size={13} color={C.warning} />
+            <Icon name="warning" size={13} color={C.warning} />
             <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.warning}>
               {t('dashboard.clases.replacement.title')}
             </Text>
@@ -1530,7 +1512,7 @@ function MemberDashboardInner() {
             <VStack gap={2} align="stretch" mb={2}>
               {(replacement.replacement_class_options || []).map((opt: any) => (
                 <Flex key={opt.id} align="center" justify="space-between" p={3}
-                  borderRadius="12px" bg="rgba(255,255,255,0.70)"
+                  borderRadius="var(--radius-input)" bg="var(--surface-muted)"
                   border={`1px solid ${C.border}`}>
                   <Box>
                     <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.brown}>
@@ -1541,12 +1523,11 @@ function MemberDashboardInner() {
                       {opt.start_time}{opt.room ? ` · ${tr(opt, 'room', lang)}` : ''}
                     </Text>
                   </Box>
-                  <Button size="xs" h="30px" px={4} borderRadius="full" color="white"
-                    bg={C.btnGrad} fontFamily='var(--font-body)' fontWeight={700} fontSize="11px"
+                  <Button className="sk-btn" size="xs" h="30px" px={4} fontFamily='var(--font-body)' fontWeight={700} fontSize="11px"
                     disabled={choosingReplacementId !== null}
                     onClick={() => handleChooseReplacement(opt)}>
                     {choosingReplacementId === opt.id
-                      ? <Spinner size="xs" color="white" />
+                      ? <Spinner size="xs" color="currentColor" />
                       : t('dashboard.clases.replacement.choose')}
                   </Button>
                 </Flex>
@@ -1557,8 +1538,7 @@ function MemberDashboardInner() {
             <Text fontFamily='var(--font-body)' fontSize="11px" color={C.textMuted}>
               {t('dashboard.clases.replacement.none')}
             </Text>
-            <Button size="xs" h="26px" borderRadius="full" variant="outline"
-              borderColor={C.borderStrong} color={C.accentDark}
+            <Button className="sk-btn-ghost" size="xs" h="26px" variant="outline"
               fontFamily='var(--font-body)' fontWeight={700} fontSize="10px"
               onClick={() => { window.location.href = '/calendar'; }}>
               {t('dashboard.clases.replacement.calendarCta')}
@@ -1570,26 +1550,26 @@ function MemberDashboardInner() {
       {/* Sin suscripción activa las favoritas NO se reservan solas: decirlo
           claro con su vía de solución, en vez de dejar que lo descubra sola. */}
       {!subscription && preferences.length > 0 && (
-        <Box p={4} borderRadius="16px"
-          bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" border={`1px solid ${C.borderStrong}`}>
+        <Box p={4} borderRadius="var(--radius-card)"
+          bg="var(--accent-soft)" border={`1px solid ${C.borderStrong}`}>
           <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.brown} mb={1}>
             {t('dashboard.clases.needSubTitle')}
           </Text>
           <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted} mb={3}>
             {t('dashboard.clases.needSubDesc')}
           </Text>
-          <Button size="sm" h="34px" borderRadius="full" color="white" bg={C.btnGrad}
+          <Button className="sk-btn" size="sm" h="34px"
             fontFamily='var(--font-body)' fontWeight={700} fontSize="xs" px={5}
             onClick={() => { window.location.href = '/prices'; }}>
-            <Flex align="center" gap={1.5}><FaCrown size={11} />{t('dashboard.clases.needSubCta')}</Flex>
+            <Flex align="center" gap={1.5}><Icon name="crown" size={11} />{t('dashboard.clases.needSubCta')}</Flex>
           </Button>
         </Box>
       )}
       {subscription?.status === 'past_due' && (
-        <Box p={4} borderRadius="16px"
-          bg="rgba(183,121,31,0.08)" border="1px solid rgba(183,121,31,0.25)">
+        <Box p={4} borderRadius="var(--radius-card)"
+          bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)">
           <Flex align="center" gap={2} mb={1}>
-            <FaExclamationTriangle size={13} color={C.warning} />
+            <Icon name="warning" size={13} color={C.warning} />
             <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.warning}>
               {t('dashboard.clases.pastDueTitle')}
             </Text>
@@ -1597,8 +1577,8 @@ function MemberDashboardInner() {
           <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted} mb={3}>
             {t('dashboard.clases.pastDueDesc')}
           </Text>
-          <Button size="sm" h="34px" borderRadius="full" color="white"
-            bg="rgba(183,121,31,0.85)" _hover={{ bg: C.warning }}
+          <Button size="sm" h="34px" borderRadius="var(--radius-button)" color={C.onStatus}
+            bg={C.warning} _hover={{ opacity: 0.9 }}
             fontFamily='var(--font-body)' fontWeight={700} fontSize="xs" px={5}
             onClick={() => setTab('suscripcion')}>
             {t('dashboard.clases.pastDueCta')}
@@ -1606,7 +1586,7 @@ function MemberDashboardInner() {
         </Box>
       )}
 
-      <Box bg="color-mix(in srgb, var(--brand-primary) 8%, transparent)" borderRadius="16px" p={4}
+      <Box bg="var(--accent-soft)" borderRadius="var(--radius-card)" p={4}
         border={`1px solid ${C.borderStrong}`}>
         <Text fontFamily='var(--font-heading)' fontSize="lg"
           color={C.brown} letterSpacing="0.04em" mb={1}>
@@ -1621,12 +1601,11 @@ function MemberDashboardInner() {
         <Text fontFamily='var(--font-heading)' fontSize="xl" color={C.brown} letterSpacing="0.04em">
           {t('dashboard.clases.prefTitle', { count: preferences.filter(p => p.is_active).length })}
         </Text>
-        <Button size="sm" h="34px" borderRadius="full" color="white" bg={C.btnGrad}
+        <Button className="sk-btn" size="sm" h="34px"
           fontFamily='var(--font-body)' fontWeight={700} fontSize="xs"
-          boxShadow="0 3px 10px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 20%, transparent)" _hover={{ opacity: 0.90 }}
           onClick={() => { setShowAddPref(v => !v); if (!showAddPref) loadSchedules(); }}>
           <Flex align="center" gap={1.5}>
-            {showAddPref ? <FaTimes size={10} /> : <FaPlus size={10} />}
+            {showAddPref ? <Icon name="close" size={10} /> : <Icon name="plus" size={10} />}
             {showAddPref ? t('dashboard.clases.closeBtn') : t('dashboard.clases.addBtn')}
           </Flex>
         </Button>
@@ -1636,16 +1615,16 @@ function MemberDashboardInner() {
         <Card>
           <Box textAlign="center" py={6}>
             <Box w="44px" h="44px" borderRadius="full" mx="auto" mb={3}
-              bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" display="flex" alignItems="center" justifyContent="center">
-              <FaStar size={18} color={C.accent} />
+              bg="var(--accent-soft)" display="flex" alignItems="center" justifyContent="center">
+              <Icon name="star" size={18} color={C.accent} />
             </Box>
             <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={3}>
               {t('dashboard.clases.emptyText')}
             </Text>
-            <Button size="sm" h="34px" borderRadius="full" color="white" bg={C.btnGrad}
+            <Button className="sk-btn" size="sm" h="34px"
               fontFamily='var(--font-body)' fontWeight={700} fontSize="xs"
               onClick={() => { setShowAddPref(true); loadSchedules(); }}>
-              <Flex align="center" gap={1.5}><FaPlus size={10} />{t('dashboard.clases.emptyAddBtn')}</Flex>
+              <Flex align="center" gap={1.5}><Icon name="plus" size={10} />{t('dashboard.clases.emptyAddBtn')}</Flex>
             </Button>
           </Box>
         </Card>
@@ -1690,8 +1669,8 @@ function MemberDashboardInner() {
                           const isAdding = addingScheduleId === s.id;
                           return (
                             <Flex key={s.id} align="center" justify="space-between"
-                              p={3} borderRadius="12px"
-                              bg={added ? 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' : 'rgba(255,255,255,0.60)'}
+                              p={3} borderRadius="var(--radius-input)"
+                              bg={added ? 'var(--accent-soft)' : 'var(--surface-muted)'}
                               border={`1px solid ${added ? C.borderStrong : C.border}`}
                               transition="all 0.15s ease">
                               <Box>
@@ -1705,14 +1684,13 @@ function MemberDashboardInner() {
                                 </Text>
                               </Box>
                               {added ? (
-                                <FaCheckCircle size={14} color={C.accentDark} />
+                                <Icon name="check-circle" size={14} color={C.accentDark} />
                               ) : (
-                                <Button size="xs" h="28px" borderRadius="full"
-                                  color="white" bg={C.btnGrad}
+                                <Button className="sk-btn" size="xs" h="28px"
                                   fontFamily='var(--font-body)' fontWeight={700} fontSize="11px"
-                                  disabled={isAdding} _hover={{ opacity: 0.90 }}
+                                  disabled={isAdding}
                                   onClick={() => handleAddPreference(s.id)}>
-                                  {isAdding ? <Spinner size="xs" color="white" /> : t('dashboard.clases.addItemBtn')}
+                                  {isAdding ? <Spinner size="xs" color="currentColor" /> : t('dashboard.clases.addItemBtn')}
                                 </Button>
                               )}
                             </Flex>
@@ -1733,35 +1711,35 @@ function MemberDashboardInner() {
   const renderSuscripcion = () => (
     <VStack gap={4} align="stretch">
       {/* Credits hero */}
-      <Box bg={C.btnGrad} borderRadius="24px" p={6} position="relative" overflow="hidden">
+      <Box bg={C.fill} borderRadius="var(--radius-card-lg)" p={6} position="relative" overflow="hidden">
         <Box position="absolute" top="-30px" right="-20px" w="130px" h="130px"
-          borderRadius="full" bg="rgba(255,255,255,0.07)" />
+          borderRadius="full" bg="color-mix(in srgb, var(--on-primary) 7%, transparent)" />
         <Box position="absolute" bottom="-25px" left="35%" w="90px" h="90px"
-          borderRadius="full" bg="rgba(255,255,255,0.05)" />
+          borderRadius="full" bg="color-mix(in srgb, var(--on-primary) 5%, transparent)" />
         <Box position="absolute" top="30%" right="12%" w="55px" h="55px"
-          borderRadius="full" bg="rgba(255,255,255,0.04)" />
+          borderRadius="full" bg="color-mix(in srgb, var(--on-primary) 4%, transparent)" />
 
         <Flex justify="space-between" align="flex-start" position="relative">
           <Box>
             <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={700}
-              color="rgba(255,255,255,0.70)" letterSpacing="0.14em" textTransform="uppercase" mb={1}>
+              color="color-mix(in srgb, var(--on-primary) 70%, transparent)" letterSpacing="0.14em" textTransform="uppercase" mb={1}>
               {t('dashboard.subscription.balanceLabel')}
             </Text>
-            <Text fontFamily='var(--font-heading)' fontSize="6xl" color="white"
+            <Text fontFamily='var(--font-heading)' fontSize="6xl" color={C.onFill}
               lineHeight="1" letterSpacing="0.02em">
               {balance !== null ? balance.toFixed(1) : '—'}
             </Text>
-            <Text fontFamily='var(--font-body)' fontSize="sm" color="rgba(255,255,255,0.70)">
+            <Text fontFamily='var(--font-body)' fontSize="sm" color="color-mix(in srgb, var(--on-primary) 70%, transparent)">
               {t('dashboard.credits')}
             </Text>
           </Box>
-          <Button size="sm" h="34px" borderRadius="full"
-            bg="rgba(255,255,255,0.18)" color="white"
+          <Button size="sm" h="34px" borderRadius="var(--radius-button)"
+            bg="color-mix(in srgb, var(--on-primary) 18%, transparent)" color={C.onFill}
             fontFamily='var(--font-body)' fontWeight={700} fontSize="xs"
-            border="1px solid rgba(255,255,255,0.25)"
-            _hover={{ bg: 'rgba(255,255,255,0.28)' }}
+            border="1px solid color-mix(in srgb, var(--on-primary) 25%, transparent)"
+            _hover={{ bg: 'color-mix(in srgb, var(--on-primary) 28%, transparent)' }}
             onClick={() => { window.location.href = '/checkout'; }}>
-            <Flex align="center" gap={1.5}><FaPlus size={10} />{t('dashboard.subscription.rechargeBtn')}</Flex>
+            <Flex align="center" gap={1.5}><Icon name="plus" size={10} />{t('dashboard.subscription.rechargeBtn')}</Flex>
           </Button>
         </Flex>
       </Box>
@@ -1772,7 +1750,7 @@ function MemberDashboardInner() {
           <Flex justify="space-between" align="flex-start" mb={3}>
             <Box>
               <Flex align="center" gap={2} mb={0.5}>
-                <FaCrown size={13} color={C.accentDark} />
+                <Icon name="crown" size={13} color={C.accentDark} />
                 <Text fontFamily='var(--font-heading)' fontSize="xl"
                   color={C.brown} letterSpacing="0.04em">
                   {planDisplayName(subscription.plan, lang)}
@@ -1783,16 +1761,16 @@ function MemberDashboardInner() {
               </Text>
             </Box>
             {subscription.status === 'past_due' ? (
-              <Box px={2.5} py={1} borderRadius="full"
-                bg="rgba(183,121,31,0.10)" border="1px solid rgba(183,121,31,0.30)">
+              <Box px={2.5} py={1} borderRadius="var(--radius-chip)"
+                bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)">
                 <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700}
                   color={C.warning} letterSpacing="0.08em">
                   {t('dashboard.subscription.pastDueBadge')}
                 </Text>
               </Box>
             ) : (
-              <Box px={2.5} py={1} borderRadius="full"
-                bg="rgba(45,125,70,0.10)" border="1px solid rgba(45,125,70,0.25)">
+              <Box px={2.5} py={1} borderRadius="var(--radius-chip)"
+                bg="var(--success-soft)" border="1px solid color-mix(in srgb, var(--success) 30%, transparent)">
                 <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700}
                   color={C.success} letterSpacing="0.08em">
                   {t('dashboard.subscription.activeBadge')}
@@ -1802,10 +1780,10 @@ function MemberDashboardInner() {
           </Flex>
 
           {subscription.status === 'past_due' && (
-            <Box mb={3} p={3} borderRadius="12px"
-              bg="rgba(183,121,31,0.08)" border="1px solid rgba(183,121,31,0.25)">
+            <Box mb={3} p={3} borderRadius="var(--radius-input)"
+              bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)">
               <Flex align="center" gap={2} mb={1}>
-                <FaExclamationTriangle size={12} color={C.warning} />
+                <Icon name="warning" size={12} color={C.warning} />
                 <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.warning}>
                   {t('dashboard.subscription.pastDueTitle')}
                 </Text>
@@ -1814,8 +1792,8 @@ function MemberDashboardInner() {
                 lineHeight="1.55" mb={2.5}>
                 {t('dashboard.subscription.pastDueDesc')}
               </Text>
-              <Button size="xs" h="30px" borderRadius="full" color="white"
-                bg="rgba(183,121,31,0.85)" _hover={{ bg: C.warning }}
+              <Button size="xs" h="30px" borderRadius="var(--radius-button)" color={C.onStatus}
+                bg={C.warning} _hover={{ opacity: 0.9 }}
                 fontFamily='var(--font-body)' fontWeight={700} fontSize="11px" px={4}
                 onClick={() => {
                   const url = contactUrl(getSiteClient(), lang === 'en'
@@ -1843,9 +1821,9 @@ function MemberDashboardInner() {
           </SimpleGrid>
 
           {subscription.cancel_at_period_end && (
-            <Flex align="center" gap={2} mt={3} p={3} borderRadius="10px"
-              bg="rgba(183,121,31,0.08)" border="1px solid rgba(183,121,31,0.25)">
-              <FaExclamationTriangle size={12} color={C.warning} />
+            <Flex align="center" gap={2} mt={3} p={3} borderRadius="var(--radius-input)"
+              bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)">
+              <Icon name="warning" size={12} color={C.warning} />
               <Text fontFamily='var(--font-body)' fontSize="xs" color={C.warning}>
                 {t('dashboard.subscription.cancelWarning')}
               </Text>
@@ -1864,34 +1842,31 @@ function MemberDashboardInner() {
 
             {/* Cancel / Reactivate button */}
             {subscription.cancel_at_period_end ? (
-              <Button
-                size="sm" h="34px" borderRadius="full"
-                bg={C.btnGrad} color="white"
+              <Button className="sk-btn"
+                size="sm" h="34px"
                 fontFamily='var(--font-body)' fontWeight={700} fontSize="xs"
-                boxShadow="0 3px 10px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 20%, transparent)"
-                _hover={{ opacity: 0.90 }}
                 disabled={subCancelLoading}
                 onClick={handleReactivateSubscription}
               >
                 {subCancelLoading
-                  ? <Spinner size="xs" color="white" />
-                  : <Flex align="center" gap={1.5}><FaCheckCircle size={10} />{t('dashboard.subscription.reactivateBtn')}</Flex>
+                  ? <Spinner size="xs" color="currentColor" />
+                  : <Flex align="center" gap={1.5}><Icon name="check-circle" size={10} />{t('dashboard.subscription.reactivateBtn')}</Flex>
                 }
               </Button>
             ) : (
               <Button
-                size="sm" h="34px" borderRadius="full"
+                size="sm" h="34px" borderRadius="var(--radius-button)"
                 variant="outline"
-                borderColor="rgba(192,57,43,0.35)"
+                borderColor="color-mix(in srgb, var(--danger) 35%, transparent)"
                 color={C.danger}
                 fontFamily='var(--font-body)' fontWeight={700} fontSize="xs"
-                _hover={{ bg: 'rgba(192,57,43,0.06)' }}
+                _hover={{ bg: 'var(--danger-soft)' }}
                 disabled={subCancelLoading}
                 onClick={() => setShowSubCancelConfirm(true)}
               >
                 {subCancelLoading
                   ? <Spinner size="xs" />
-                  : <Flex align="center" gap={1.5}><FaTimes size={10} />{t('dashboard.subscription.cancelBtn')}</Flex>
+                  : <Flex align="center" gap={1.5}><Icon name="close" size={10} />{t('dashboard.subscription.cancelBtn')}</Flex>
                 }
               </Button>
             )}
@@ -1899,8 +1874,8 @@ function MemberDashboardInner() {
 
           {/* Cancel confirmation inline box */}
           {showSubCancelConfirm && (
-            <Box mt={3} p={3} borderRadius="12px"
-              bg="rgba(192,57,43,0.05)" border="1px solid rgba(192,57,43,0.20)">
+            <Box mt={3} p={3} borderRadius="var(--radius-input)"
+              bg="var(--danger-soft)" border="1px solid color-mix(in srgb, var(--danger) 25%, transparent)">
               <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm"
                 color={C.danger} mb={1}>
                 {t('dashboard.subscription.cancelConfirmTitle')}
@@ -1912,15 +1887,15 @@ function MemberDashboardInner() {
                 })}
               </Text>
               <Flex gap={2}>
-                <Button size="xs" h="30px" borderRadius="full"
-                  bg={C.danger} color="white"
+                <Button size="xs" h="30px" borderRadius="var(--radius-button)"
+                  bg={C.danger} color={C.onStatus}
                   fontFamily='var(--font-body)' fontWeight={700} fontSize="11px"
                   _hover={{ opacity: 0.85 }}
                   disabled={subCancelLoading}
                   onClick={handleCancelSubscription}>
-                  {subCancelLoading ? <Spinner size="xs" color="white" /> : t('dashboard.subscription.cancelConfirmBtn')}
+                  {subCancelLoading ? <Spinner size="xs" color="currentColor" /> : t('dashboard.subscription.cancelConfirmBtn')}
                 </Button>
-                <Button size="xs" h="30px" borderRadius="full"
+                <Button size="xs" h="30px" borderRadius="var(--radius-button)"
                   variant="ghost" color={C.textMuted}
                   fontFamily='var(--font-body)' fontWeight={700} fontSize="11px"
                   onClick={() => setShowSubCancelConfirm(false)}>
@@ -1937,9 +1912,9 @@ function MemberDashboardInner() {
         <Card>
           <Box textAlign="center" py={5}>
             <Box w="52px" h="52px" borderRadius="full" mx="auto" mb={4}
-              bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" border={`1px solid ${C.border}`}
+              bg="var(--accent-soft)" border={`1px solid ${C.border}`}
               display="flex" alignItems="center" justifyContent="center">
-              <FaCrown size={22} color={C.accent} />
+              <Icon name="crown" size={22} color={C.accent} />
             </Box>
             <Text fontFamily='var(--font-heading)' fontSize="xl"
               color={C.brown} letterSpacing="0.04em" mb={2}>
@@ -1949,11 +1924,10 @@ function MemberDashboardInner() {
               maxW="260px" mx="auto">
               {t('dashboard.subscription.noSubDesc')}
             </Text>
-            <Button h="42px" borderRadius="full" color="white" bg={C.btnGrad}
+            <Button className="sk-btn" h="42px"
               fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" px={6}
-              boxShadow="0 4px 14px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 22%, transparent)" _hover={{ opacity: 0.90 }}
               onClick={() => { window.location.href = '/checkout?tab=subscription'; }}>
-              <Flex align="center" gap={2}><FaArrowRight size={11} />{t('dashboard.subscription.noSubCta')}</Flex>
+              <Flex align="center" gap={2}><Icon name="arrow-right" size={11} />{t('dashboard.subscription.noSubCta')}</Flex>
             </Button>
           </Box>
         </Card>
@@ -2003,14 +1977,14 @@ function MemberDashboardInner() {
               borderBottom={`1px solid ${C.border}`}>
               <Flex justify="space-between" align="center">
                 <Flex align="center" gap={2}>
-                  <FaCalendarWeek size={13} color={C.accentDark} />
+                  <Icon name="calendar-week" size={13} color={C.accentDark} />
                   <Text fontFamily='var(--font-heading)' fontSize="lg"
                     color={C.brown} letterSpacing="0.04em">
                     {t('dashboard.subscription.nextWeekTitle')}
                   </Text>
                 </Flex>
-                <Box px={2} py={0.5} borderRadius="full"
-                  bg="rgba(45,125,70,0.10)" border="1px solid rgba(45,125,70,0.25)">
+                <Box px={2} py={0.5} borderRadius="var(--radius-chip)"
+                  bg="var(--success-soft)" border="1px solid color-mix(in srgb, var(--success) 30%, transparent)">
                   <Text fontFamily='var(--font-body)' fontSize="9px" fontWeight={700}
                     color={C.success} letterSpacing="0.10em">
                     {t('dashboard.subscription.autoBookBadge')}
@@ -2047,8 +2021,8 @@ function MemberDashboardInner() {
                     </Text>
                     <Flex align="center" gap={1}>
                       {sufficient
-                        ? <FaCheckCircle size={9} color={C.success} />
-                        : <FaExclamationTriangle size={9} color={C.warning} />}
+                        ? <Icon name="check-circle" size={9} color={C.success} />
+                        : <Icon name="warning" size={9} color={C.warning} />}
                       <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={700}
                         color={sufficient ? C.success : C.warning}>
                         {totalCreditsPerClass} / {planCredits}
@@ -2060,9 +2034,9 @@ function MemberDashboardInner() {
 
               {/* Deadline urgent banner */}
               {autoBookDates.deadlineIsToday && (
-                <Flex align="center" gap={1.5} mt={2} p={2} borderRadius="8px"
-                  bg="rgba(183,121,31,0.08)" border="1px solid rgba(183,121,31,0.20)">
-                  <FaExclamationTriangle size={10} color={C.warning} />
+                <Flex align="center" gap={1.5} mt={2} p={2} borderRadius="var(--radius-input)"
+                  bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)">
+                  <Icon name="warning" size={10} color={C.warning} />
                   <Text fontFamily='var(--font-body)' fontSize="xs" color={C.warning} fontWeight={600}>
                     {t('checkout.subActivatedDeadlineUrgent')}
                   </Text>
@@ -2089,7 +2063,7 @@ function MemberDashboardInner() {
                             {label}
                           </Text>
                           <Text fontFamily='var(--font-heading)' fontSize="xl"
-                            color={hasClass ? C.brown : 'color-mix(in srgb, var(--brand-primary) 35%, transparent)'}
+                            color={hasClass ? C.brown : 'var(--text-subtle)'}
                             lineHeight="1.1">
                             {dayNum}
                           </Text>
@@ -2100,17 +2074,17 @@ function MemberDashboardInner() {
 
                         {/* Timeline line + classes */}
                         <Flex flex={1} gap={0} align="stretch" pl={3}
-                          borderLeft={`2px solid ${hasClass ? C.borderStrong : 'color-mix(in srgb, var(--brand-primary) 12%, transparent)'}`}
+                          borderLeft={`2px solid ${hasClass ? C.borderStrong : 'var(--border-neutral)'}`}
                           pt={2} pb={wIdx < 6 ? 2 : 0} ml={2}>
                           {hasClass ? (
                             <VStack gap={1.5} align="stretch" w="full">
                               {dayPrefs.map(pref => (
                                 <Flex key={pref.id} align="center" gap={2}
-                                  p={2.5} borderRadius="10px"
-                                  bg="color-mix(in srgb, var(--brand-primary) 7%, transparent)"
+                                  p={2.5} borderRadius="var(--radius-input)"
+                                  bg="var(--accent-soft)"
                                   border={`1px solid ${C.borderStrong}`}
                                   transition="all 0.15s ease"
-                                  _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 13%, transparent)', transform: 'translateX(2px)' }}
+                                  _hover={{ bg: 'color-mix(in srgb, var(--accent) 18%, transparent)', transform: 'translateX(2px)' }}
                                   cursor="default">
                                   <Box w="6px" h="6px" borderRadius="full" flexShrink={0}
                                     bg={C.accentDark} />
@@ -2121,14 +2095,14 @@ function MemberDashboardInner() {
                                       {tr(pref, 'schedule_title', lang)}
                                     </Text>
                                     <Flex align="center" gap={1.5} mt={0.5}>
-                                      <FaClock size={8} color={C.textMuted} />
+                                      <Icon name="clock" size={8} color={C.textMuted} />
                                       <Text fontFamily='var(--font-body)' fontSize="10px" color={C.textMuted}>
                                         {pref.start_time?.slice(0, 5)}
                                       </Text>
                                       {pref.room_name && (
                                         <>
                                           <Text fontFamily='var(--font-body)' fontSize="10px"
-                                            color="color-mix(in srgb, var(--brand-primary) 50%, transparent)">·</Text>
+                                            color="var(--text-subtle)">·</Text>
                                           <Text fontFamily='var(--font-body)' fontSize="10px" color={C.textMuted}>
                                             {tr(pref, 'room_name', lang)}
                                           </Text>
@@ -2144,10 +2118,10 @@ function MemberDashboardInner() {
                                     aria-label={t('dashboard.clases.removePref')}
                                     size="xs" variant="ghost"
                                     color={C.textMuted}
-                                    _hover={{ color: C.danger, bg: 'rgba(192,57,43,0.08)' }}
+                                    _hover={{ color: C.danger, bg: 'var(--danger-soft)' }}
                                     cursor="pointer"
                                     onClick={() => handleRemovePreference(pref.id)}>
-                                    <FaTimes size={9} />
+                                    <Icon name="close" size={9} />
                                   </IconButton>
                                 </Flex>
                               ))}
@@ -2155,7 +2129,7 @@ function MemberDashboardInner() {
                           ) : (
                             <Flex align="center" h="40px">
                               <Text fontFamily='var(--font-body)' fontSize="11px"
-                                color="color-mix(in srgb, var(--brand-primary) 40%, transparent)"
+                                color="var(--text-subtle)"
                                 fontStyle="italic">
                                 {isWeekend
                                   ? (lang === 'en' ? 'Rest day' : 'Descanso')
@@ -2172,21 +2146,18 @@ function MemberDashboardInner() {
             ) : (
               <Box px={4} py={5} textAlign="center">
                 <Box w="40px" h="40px" borderRadius="full" mx="auto" mb={3}
-                  bg="color-mix(in srgb, var(--brand-primary) 8%, transparent)" display="flex" alignItems="center" justifyContent="center">
-                  <FaCalendarDay size={16} color={C.accent} />
+                  bg="var(--accent-soft)" display="flex" alignItems="center" justifyContent="center">
+                  <Icon name="calendar-day" size={16} color={C.accent} />
                 </Box>
                 <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}
                   lineHeight="1.65" mb={3}>
                   {t('dashboard.subscription.autoBookNoneDesc')}
                 </Text>
-                <Button size="sm" h="34px" borderRadius="full"
-                  bg={C.btnGrad} color="white"
+                <Button className="sk-btn" size="sm" h="34px"
                   fontFamily='var(--font-body)' fontWeight={700} fontSize="xs"
-                  boxShadow="0 3px 10px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 20%, transparent)"
-                  _hover={{ opacity: 0.90 }}
                   onClick={() => setTab('clases')}>
                   <Flex align="center" gap={1.5}>
-                    <FaPlus size={10} />
+                    <Icon name="plus" size={10} />
                     {t('dashboard.subscription.autoBookCta')}
                   </Flex>
                 </Button>
@@ -2196,16 +2167,16 @@ function MemberDashboardInner() {
             {/* Footer: add class toggle + credits summary */}
             <Flex px={4} py={3} borderTop={`1px solid ${C.border}`}
               justify="space-between" align="center" flexWrap="wrap" gap={2}>
-              <Button size="xs" h="30px" borderRadius="full"
-                bg={showAddPrefSub ? C.btnGrad : 'transparent'}
-                color={showAddPrefSub ? 'white' : C.accentDark}
+              <Button size="xs" h="30px" borderRadius="var(--radius-button)"
+                bg={showAddPrefSub ? C.fill : 'transparent'}
+                color={showAddPrefSub ? C.onFill : C.accentDark}
                 border={`1px solid ${showAddPrefSub ? 'transparent' : C.borderStrong}`}
                 fontFamily='var(--font-body)' fontWeight={700} fontSize="11px"
                 _hover={{ opacity: 0.85 }}
                 cursor="pointer"
                 onClick={() => { setShowAddPrefSub(v => !v); if (!showAddPrefSub) loadSchedules(); }}>
                 <Flex align="center" gap={1.5}>
-                  {showAddPrefSub ? <FaTimes size={9} /> : <FaPlus size={9} />}
+                  {showAddPrefSub ? <Icon name="close" size={9} /> : <Icon name="plus" size={9} />}
                   {showAddPrefSub
                     ? (lang === 'en' ? 'Close' : 'Cerrar')
                     : (lang === 'en' ? 'Add class' : 'Añadir clase')}
@@ -2215,7 +2186,7 @@ function MemberDashboardInner() {
                 <Flex align="center" gap={1.5}>
                   {sufficient ? (
                     <Flex align="center" gap={1}>
-                      <FaCheckCircle size={10} color={C.success} />
+                      <Icon name="check-circle" size={10} color={C.success} />
                       <Text fontFamily='var(--font-body)' fontSize="10px"
                         fontWeight={700} color={C.success}>
                         {t('dashboard.subscription.creditsSufficient')}
@@ -2223,7 +2194,7 @@ function MemberDashboardInner() {
                     </Flex>
                   ) : (
                     <Flex align="center" gap={1}>
-                      <FaExclamationTriangle size={10} color={C.warning} />
+                      <Icon name="warning" size={10} color={C.warning} />
                       <Text fontFamily='var(--font-body)' fontSize="10px"
                         fontWeight={700} color={C.warning}>
                         {t('dashboard.subscription.creditsInsufficient', { missing })}
@@ -2244,7 +2215,7 @@ function MemberDashboardInner() {
                   transition={{ duration: 0.22 } as any}
                   style={{ overflow: 'hidden' }}>
                   <Box px={4} pb={4} pt={1} borderTop={`1px solid ${C.border}`}
-                    bg="color-mix(in srgb, var(--brand-bg) 55%, transparent)">
+                    bg="var(--surface-muted)">
                     <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={700}
                       color={C.textMuted} textTransform="uppercase" letterSpacing="0.10em"
                       mt={3} mb={2}>
@@ -2272,8 +2243,8 @@ function MemberDashboardInner() {
                                 const isAdding = addingScheduleId === s.id;
                                 return (
                                   <Flex key={s.id} align="center" justify="space-between"
-                                    p={2.5} borderRadius="10px"
-                                    bg={added ? 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' : 'rgba(255,255,255,0.70)'}
+                                    p={2.5} borderRadius="var(--radius-input)"
+                                    bg={added ? 'var(--accent-soft)' : 'var(--surface-muted)'}
                                     border={`1px solid ${added ? C.borderStrong : C.border}`}
                                     transition="all 0.15s ease">
                                     <Box>
@@ -2288,7 +2259,7 @@ function MemberDashboardInner() {
                                     </Box>
                                     {added ? (
                                       <Flex align="center" gap={1}>
-                                        <FaCheckCircle size={12} color={C.accentDark} />
+                                        <Icon name="check-circle" size={12} color={C.accentDark} />
                                         <IconButton
                                           aria-label={t('dashboard.clases.removePref')}
                                           size="xs" variant="ghost"
@@ -2297,16 +2268,15 @@ function MemberDashboardInner() {
                                           onClick={() => handleRemovePreference(
                                             preferences.find(p => p.schedule === s.id)?.id ?? 0
                                           )}>
-                                          <FaTimes size={9} />
+                                          <Icon name="close" size={9} />
                                         </IconButton>
                                       </Flex>
                                     ) : (
-                                      <Button size="xs" h="26px" borderRadius="full"
-                                        color="white" bg={C.btnGrad}
+                                      <Button className="sk-btn" size="xs" h="26px"
                                         fontFamily='var(--font-body)' fontWeight={700} fontSize="10px"
-                                        disabled={isAdding} _hover={{ opacity: 0.90 }}
+                                        disabled={isAdding}
                                         onClick={() => handleAddPreference(s.id)}>
-                                        {isAdding ? <Spinner size="xs" color="white" /> : t('dashboard.clases.addItemBtn')}
+                                        {isAdding ? <Spinner size="xs" color="currentColor" /> : t('dashboard.clases.addItemBtn')}
                                       </Button>
                                     )}
                                   </Flex>
@@ -2326,10 +2296,10 @@ function MemberDashboardInner() {
 
       {/* Auto-booking paused notice (when cancel_at_period_end) */}
       {subscription && subscription.cancel_at_period_end && (
-        <Box p={4} borderRadius="16px"
-          bg="rgba(183,121,31,0.06)" border="1px solid rgba(183,121,31,0.22)">
+        <Box p={4} borderRadius="var(--radius-card)"
+          bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)">
           <Flex align="center" gap={2} mb={1}>
-            <FaExclamationTriangle size={12} color={C.warning} />
+            <Icon name="warning" size={12} color={C.warning} />
             <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.warning}>
               {lang === 'en' ? 'Auto-booking paused' : 'Reserva automática pausada'}
             </Text>
@@ -2355,9 +2325,9 @@ function MemberDashboardInner() {
         ].map(({ step, title, desc }, idx) => (
           <Flex key={step} gap={3} mb={idx < 2 ? 3 : 0} align="flex-start">
             <Box flexShrink={0} w="30px" h="30px" borderRadius="full"
-              bg={C.btnGrad} display="flex" alignItems="center" justifyContent="center"
-              boxShadow="0 3px 8px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 20%, transparent)">
-              <Text fontFamily='var(--font-heading)' fontSize="sm" color="white">{step}</Text>
+              bg={C.fill} display="flex" alignItems="center" justifyContent="center"
+              boxShadow="0 3px 8px color-mix(in srgb, var(--brand-primary) 20%, transparent)">
+              <Text fontFamily='var(--font-heading)' fontSize="sm" color={C.onFill}>{step}</Text>
             </Box>
             <Box>
               <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.brown}>{title}</Text>
@@ -2374,21 +2344,21 @@ function MemberDashboardInner() {
     <VStack gap={4} align="stretch">
       <InstallAppCTA />
       {/* Profile hero */}
-      <Box bg={C.btnGrad} borderRadius="20px" p={5} position="relative" overflow="hidden">
+      <Box bg={C.fill} borderRadius="var(--radius-card)" p={5} position="relative" overflow="hidden">
         <Box position="absolute" top="-20px" right="-15px" w="90px" h="90px"
-          borderRadius="full" bg="rgba(255,255,255,0.07)" />
+          borderRadius="full" bg="color-mix(in srgb, var(--on-primary) 7%, transparent)" />
         <Flex align="center" gap={3} position="relative">
           <Box w="46px" h="46px" borderRadius="full"
-            bg="rgba(255,255,255,0.18)" border="2px solid rgba(255,255,255,0.30)"
+            bg="color-mix(in srgb, var(--on-primary) 18%, transparent)" border="2px solid color-mix(in srgb, var(--on-primary) 30%, transparent)"
             display="flex" alignItems="center" justifyContent="center">
-            <FaUser size={18} color="white" />
+            <Icon name="user" size={18} color={C.onFill} />
           </Box>
           <Box>
-            <Text fontFamily='var(--font-heading)' fontSize="xl" color="white"
+            <Text fontFamily='var(--font-heading)' fontSize="xl" color={C.onFill}
               letterSpacing="0.04em" lineHeight="1.1">
               {t('dashboard.tabs.perfil')}
             </Text>
-            <Text fontFamily='var(--font-body)' fontSize="xs" color="rgba(255,255,255,0.75)">
+            <Text fontFamily='var(--font-body)' fontSize="xs" color="color-mix(in srgb, var(--on-primary) 75%, transparent)">
               {t('dashboard.perfil.heroSub')}
             </Text>
           </Box>
@@ -2417,16 +2387,16 @@ function MemberDashboardInner() {
         </Text>
         <VStack gap={2} align="stretch">
           {[
-            { label: t('dashboard.perfil.actionClasses'), href: t('nav.items.classes.href') || '/classes', icon: <FaCalendarAlt size={12} /> },
-            { label: t('dashboard.perfil.actionCalendar'), href: '/calendar',          icon: <FaCalendarCheck size={12} /> },
-            { label: t('dashboard.perfil.actionBuy'),     href: '/checkout',           icon: <FaBolt size={12} /> },
-            { label: t('dashboard.perfil.actionPrefs'),   href: '/updatePreferences',  icon: <FaEdit size={12} /> },
+            { label: t('dashboard.perfil.actionClasses'), href: t('nav.items.classes.href') || '/classes', icon: <Icon name="calendar" size={12} /> },
+            { label: t('dashboard.perfil.actionCalendar'), href: '/calendar',          icon: <Icon name="calendar-check" size={12} /> },
+            { label: t('dashboard.perfil.actionBuy'),     href: '/checkout',           icon: <Icon name="bolt" size={12} /> },
+            { label: t('dashboard.perfil.actionPrefs'),   href: '/updatePreferences',  icon: <Icon name="edit" size={12} /> },
           ].map(({ label, href, icon }) => (
             <Box key={label} as="a" href={href}
-              display="flex" alignItems="center" gap={3} p={3} borderRadius="12px"
-              bg="rgba(255,255,255,0.60)" border={`1px solid ${C.border}`}
+              display="flex" alignItems="center" gap={3} p={3} borderRadius="var(--radius-input)"
+              bg="var(--surface-muted)" border={`1px solid ${C.border}`}
               transition="all 0.18s ease" cursor="pointer"
-              _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)', borderColor: C.borderStrong, paddingLeft: '14px' }}>
+              _hover={{ bg: 'var(--accent-soft)', borderColor: C.borderStrong, paddingLeft: '14px' }}>
               <Box color={C.accent} flexShrink={0}>{icon}</Box>
               <Text fontFamily='var(--font-body)' fontSize="sm" fontWeight={600} color={C.brown} flex={1}>
                 {label}
@@ -2439,11 +2409,11 @@ function MemberDashboardInner() {
 
       {/* Active subscription mini card */}
       {subscription && (
-        <Box bg="color-mix(in srgb, var(--brand-primary) 7%, transparent)" borderRadius="16px" p={4}
+        <Box bg="var(--accent-soft)" borderRadius="var(--radius-card)" p={4}
           border={`1px solid ${C.borderStrong}`}>
           <Flex justify="space-between" align="center">
             <Flex align="center" gap={2}>
-              <FaCrown size={12} color={C.accentDark} />
+              <Icon name="crown" size={12} color={C.accentDark} />
               <Box>
                 <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.brown}>
                   {planDisplayName(subscription.plan, lang)}
@@ -2453,10 +2423,8 @@ function MemberDashboardInner() {
                 </Text>
               </Box>
             </Flex>
-            <Button size="xs" h="30px" borderRadius="full" variant="outline"
-              borderColor={C.borderStrong} color={C.textMuted}
+            <Button className="sk-btn-ghost" size="xs" h="30px" variant="outline"
               fontFamily='var(--font-body)' fontWeight={700} fontSize="10px"
-              _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' }}
               onClick={() => setTab('suscripcion')}>
               {t('dashboard.perfil.subDetails')}
             </Button>
@@ -2472,24 +2440,21 @@ function MemberDashboardInner() {
       onOpenChange={d => { if (!d.open) setSelectedBooking(null); }}
       placement="center" motionPreset="slide-in-bottom">
       <Portal>
-        <Dialog.Backdrop bg="color-mix(in srgb, var(--brand-dark) 55%, transparent)" backdropFilter="blur(6px)" />
+        <Dialog.Backdrop bg="var(--overlay)" backdropFilter="var(--surface-blur)" />
         <Dialog.Positioner>
-          <Dialog.Content borderRadius="24px" overflow="hidden"
-            bg="linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 100%)"
-            border={`1px solid ${C.border}`}
-            boxShadow="0 24px 72px color-mix(in srgb, var(--brand-dark) 20%, transparent)"
+          <Dialog.Content className="sk-panel" overflow="hidden"
             maxW="360px" w="full" mx={4}>
             {selectedBooking && (
               <>
-                <Box bg={C.btnGrad} p={5}>
+                <Box bg={C.fill} p={5}>
                   <Text fontFamily='var(--font-heading)' fontSize="2xl"
-                    color="white" letterSpacing="0.04em" lineHeight="1.1">
+                    color={C.onFill} letterSpacing="0.04em" lineHeight="1.1">
                     {tr(selectedBooking, 'what', lang)}
                   </Text>
-                  <Box px={2} py={0.5} borderRadius="full" display="inline-block"
-                    bg="rgba(255,255,255,0.18)" mt={1}>
+                  <Box px={2} py={0.5} borderRadius="var(--radius-chip)" display="inline-block"
+                    bg="color-mix(in srgb, var(--on-primary) 18%, transparent)" mt={1}>
                     <Text fontFamily='var(--font-body)' fontSize="10px"
-                      fontWeight={700} color="rgba(255,255,255,0.90)" letterSpacing="0.08em">
+                      fontWeight={700} color="color-mix(in srgb, var(--on-primary) 90%, transparent)" letterSpacing="0.08em">
                       {getStatusLabel(selectedBooking.status)}
                     </Text>
                   </Box>
@@ -2499,24 +2464,24 @@ function MemberDashboardInner() {
                   <VStack align="stretch" gap={3}>
                     {[
                       {
-                        icon: <FaCalendarAlt size={12} color={C.accent} />,
+                        icon: <Icon name="calendar" size={12} color={C.accent} />,
                         text: new Date(selectedBooking.start_datetime).toLocaleDateString(locale, {
                           weekday: 'long', day: 'numeric', month: 'long',
                         }),
                       },
                       {
-                        icon: <FaClock size={12} color={C.accent} />,
+                        icon: <Icon name="clock" size={12} color={C.accent} />,
                         text: `${fmtTime(selectedBooking.start_datetime, locale)} – ${fmtTime(selectedBooking.end_datetime, locale)}`,
                       },
                       ...(selectedBooking.room_name
-                        ? [{ icon: <FaMapMarkerAlt size={12} color={C.accent} />, text: tr(selectedBooking, 'room_name', lang) }]
+                        ? [{ icon: <Icon name="map-pin" size={12} color={C.accent} />, text: tr(selectedBooking, 'room_name', lang) }]
                         : []),
                       ...(selectedBooking.teacher
-                        ? [{ icon: <FaUser size={12} color={C.accent} />, text: selectedBooking.teacher }]
+                        ? [{ icon: <Icon name="user" size={12} color={C.accent} />, text: selectedBooking.teacher }]
                         : []),
                     ].map(({ icon, text }, i) => (
                       <Flex key={i} align="center" gap={2.5}
-                        p={3} borderRadius="10px" bg="rgba(255,255,255,0.55)"
+                        p={3} borderRadius="var(--radius-input)" bg="var(--surface-muted)"
                         border={`1px solid ${C.border}`}>
                         {icon}
                         <Text fontFamily='var(--font-body)' fontSize="sm" color={C.brown} fontWeight={600}>
@@ -2527,24 +2492,24 @@ function MemberDashboardInner() {
                   </VStack>
 
                   {canCancelBooking(selectedBooking.start_datetime) && selectedBooking.status === 'reserved' && (
-                    <Button w="full" h="42px" mt={4} borderRadius="full"
-                      variant="outline" borderColor="rgba(192,57,43,0.30)"
+                    <Button w="full" h="42px" mt={4} borderRadius="var(--radius-button)"
+                      variant="outline" borderColor="color-mix(in srgb, var(--danger) 35%, transparent)"
                       color={C.danger}
                       fontFamily='var(--font-body)' fontWeight={700} fontSize="sm"
-                      _hover={{ bg: 'rgba(192,57,43,0.06)' }}
+                      _hover={{ bg: 'var(--danger-soft)' }}
                       onClick={async () => {
                         const id = selectedBooking.id;
                         setSelectedBooking(null);
                         await handleCancelBooking(id);
                       }}>
-                      <Flex align="center" gap={2}><FaTimes size={11} />{t('dashboard.dialog.cancel')}</Flex>
+                      <Flex align="center" gap={2}><Icon name="close" size={11} />{t('dashboard.dialog.cancel')}</Flex>
                     </Button>
                   )}
                 </Dialog.Body>
 
                 <Dialog.CloseTrigger asChild position="absolute" top={3} right={3}>
-                  <CloseButton size="sm" color="white"
-                    _hover={{ bg: 'rgba(255,255,255,0.18)' }} />
+                  <CloseButton size="sm" color={C.onFill}
+                    _hover={{ bg: 'color-mix(in srgb, var(--on-primary) 18%, transparent)' }} />
                 </Dialog.CloseTrigger>
               </>
             )}
@@ -2574,7 +2539,7 @@ function MemberDashboardInner() {
               </Text>
               <Text fontFamily='var(--font-heading)'
                 fontSize={{ base: '3xl', md: '5xl' }}
-                color={C.brown} letterSpacing="wide" lineHeight="1">
+                color="var(--heading-color)" letterSpacing="wide" lineHeight="1">
                 {t('dashboard.title')}
               </Text>
               <Box mt={2} h="2px" w="70px" borderRadius="full"
@@ -2583,9 +2548,9 @@ function MemberDashboardInner() {
 
             {/* Balance pill */}
             {balance !== null && (
-              <Box px={4} py={2} borderRadius="full"
-                bg={C.card} border={`1px solid ${C.border}`}
-                boxShadow="0 2px 12px color-mix(in srgb, var(--brand-dark) 6%, transparent)">
+              <Box px={4} py={2} borderRadius="var(--radius-chip)"
+                bg={C.card} border="var(--border-width) solid var(--surface-border)"
+                boxShadow="var(--shadow-card)" backdropFilter="var(--surface-blur)">
                 <Flex align="baseline" gap={1.5}>
                   <Text fontFamily='var(--font-heading)' fontSize="xl"
                     color={C.accentDark} lineHeight="1">
@@ -2608,10 +2573,10 @@ function MemberDashboardInner() {
         {subscription?.status === 'past_due' && tab !== 'suscripcion' && (
           <MotionBox initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 } as any} mb={5}>
-            <Flex align="center" gap={3} p={3.5} borderRadius="14px"
-              bg="rgba(183,121,31,0.10)" border="1px solid rgba(183,121,31,0.30)"
+            <Flex align="center" gap={3} p={3.5} borderRadius="var(--radius-input)"
+              bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)"
               role="status">
-              <Box flexShrink={0}><FaExclamationTriangle size={15} color={C.warning} /></Box>
+              <Box flexShrink={0}><Icon name="warning" size={15} color={C.warning} /></Box>
               <Box flex={1} minW={0}>
                 <Text fontFamily='var(--font-body)' fontWeight={700}
                   fontSize="sm" color={C.warning} lineHeight="1.3">
@@ -2621,8 +2586,8 @@ function MemberDashboardInner() {
                   {t('dashboard.clases.pastDueDesc')}
                 </Text>
               </Box>
-              <Button size="xs" h="32px" px={4} borderRadius="full" color="white" flexShrink={0}
-                bg="rgba(183,121,31,0.85)" _hover={{ bg: C.warning }}
+              <Button size="xs" h="32px" px={4} borderRadius="var(--radius-button)" color={C.onStatus} flexShrink={0}
+                bg={C.warning} _hover={{ opacity: 0.9 }}
                 fontFamily='var(--font-body)' fontWeight={700} fontSize="11px"
                 onClick={() => setTab('suscripcion')}>
                 {t('dashboard.clases.pastDueCta')}
@@ -2636,21 +2601,21 @@ function MemberDashboardInner() {
             en el BottomNav del sitio, así nunca hay dos barras inferiores. */}
         <Box mb={{ base: 4, md: 7 }}>
           <Flex gap={1.5} p={1.5}
-            bg="rgba(255,255,255,0.55)" borderRadius="full"
-            border={`1px solid ${C.border}`} w={{ base: 'full', md: 'fit-content' }}
-            boxShadow="0 2px 14px color-mix(in srgb, var(--brand-dark) 7%, transparent)"
+            bg="var(--surface)" borderRadius="var(--radius-button)"
+            border="var(--border-width) solid var(--surface-border)" w={{ base: 'full', md: 'fit-content' }}
+            boxShadow="var(--shadow-card)" backdropFilter="var(--surface-blur)"
             overflowX="auto"
             css={{ scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
             {TABS.map(t => (
-              <Button key={t.key} size="sm" borderRadius="full"
+              <Button key={t.key} size="sm" borderRadius="var(--radius-button)"
                 px={{ base: 3, md: 4 }} flexShrink={0} flex={{ base: 1, md: '0 0 auto' }}
                 minH="42px"
-                bg={tab === t.key ? C.btnGrad : 'transparent'}
-                color={tab === t.key ? 'white' : C.textMuted}
+                bg={tab === t.key ? C.fill : 'transparent'}
+                color={tab === t.key ? C.onFill : C.textMuted}
                 fontFamily='var(--font-body)' fontWeight={700}
                 fontSize={{ base: 'xs', md: 'sm' }}
-                boxShadow={tab === t.key ? '0 3px 12px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 25%, transparent)' : 'none'}
-                _hover={{ bg: tab === t.key ? C.btnGrad : 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' }}
+                boxShadow={tab === t.key ? '0 3px 12px color-mix(in srgb, var(--brand-primary) 25%, transparent)' : 'none'}
+                _hover={{ bg: tab === t.key ? C.fill : 'var(--accent-soft)' }}
                 onClick={() => setTab(t.key)}
                 aria-current={tab === t.key ? 'page' : undefined}>
                 <Flex align="center" gap={1.5}>{t.icon}

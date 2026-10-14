@@ -24,12 +24,13 @@ export interface MembershipSuggestion {
   saving_per_month?: number;
 }
 
+// Paleta con los tokens del estilo visual (presets.css)
 const C = {
-  brand: 'var(--brand-primary)',
-  brandDark: 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  muted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))',
-  olive: '#536030',
+  brand: 'var(--accent)',
+  brandDark: 'var(--accent-text)',
+  brown: 'var(--page-text)',
+  muted: 'var(--text-muted)',
+  olive: 'var(--success)',
 };
 
 function authToken(): string | null {
@@ -173,12 +174,12 @@ export default function MembershipSuggestionCard({
         cheaper ? ` and each class costs ${money(plan.price_per_class, es)} (now ${money(s.current_price_per_class!, es)})` : ''}.`;
 
   return (
-    <div style={{
-      borderRadius: 20, overflow: 'hidden', fontFamily: 'var(--font-body)',
-      border: '1.5px solid color-mix(in srgb, var(--brand-primary) 40%, transparent)', background: '#fff',
-      boxShadow: '0 8px 26px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 14%, transparent)',
+    <div className="sk-card" style={{
+      overflow: 'hidden', fontFamily: 'var(--font-body)',
+      // Tarjeta destacada: borde del primario sobre la tarjeta del estilo
+      borderColor: 'var(--accent-border)',
     }}>
-      <div style={{ padding: '14px 16px', background: 'linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 100%)', color: '#fff' }}>
+      <div style={{ padding: '14px 16px', background: 'linear-gradient(135deg, var(--brand-primary) 0%, var(--brand-primary-2) 100%)', color: 'var(--on-primary)' }}>
         <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.85 }}>
           {es ? 'Para ti' : 'For you'}
         </div>
@@ -189,28 +190,27 @@ export default function MembershipSuggestionCard({
           {habit} {pitch}
         </div>
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 14 }}>
-          <span style={{ padding: '5px 10px', borderRadius: 999, background: 'color-mix(in srgb, var(--brand-primary) 10%, transparent)', color: C.brandDark, fontWeight: 800, fontSize: 13 }}>
+          <span style={{ padding: '5px 10px', borderRadius: 'var(--radius-chip)', background: 'var(--accent-soft)', color: C.brandDark, fontWeight: 800, fontSize: 13 }}>
             {planName} · {money(plan.price, es)} {cycle}
           </span>
           {plan.months > 1 && (
-            <span style={{ padding: '5px 10px', borderRadius: 999, background: 'color-mix(in srgb, var(--brand-primary) 10%, transparent)', color: C.brandDark, fontWeight: 700, fontSize: 13 }}>
+            <span style={{ padding: '5px 10px', borderRadius: 'var(--radius-chip)', background: 'var(--accent-soft)', color: C.brandDark, fontWeight: 700, fontSize: 13 }}>
               = {money(Math.round(plan.monthly_price), es)} {es ? 'al mes' : 'a month'}
             </span>
           )}
           {cheaper && (s.saving_per_month ?? 0) >= 5 && (
-            <span style={{ padding: '5px 10px', borderRadius: 999, background: 'rgba(107,123,60,0.10)', color: C.olive, fontWeight: 800, fontSize: 13 }}>
+            <span style={{ padding: '5px 10px', borderRadius: 'var(--radius-chip)', background: 'var(--success-soft)', color: C.olive, fontWeight: 800, fontSize: 13 }}>
               {es ? `≈ ${money(Math.round(s.saving_per_month!), es)} menos al mes` : `≈ ${money(Math.round(s.saving_per_month!), es)} less a month`}
             </span>
           )}
-          <span style={{ padding: '5px 10px', borderRadius: 999, background: 'rgba(45,125,70,0.08)', color: '#2D7D46', fontWeight: 700, fontSize: 13 }}>
+          <span style={{ padding: '5px 10px', borderRadius: 'var(--radius-chip)', background: 'var(--success-soft)', color: 'var(--success)', fontWeight: 700, fontSize: 13 }}>
             {es ? 'Sin permanencia' : 'No commitment'}
           </span>
         </div>
         <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-          <button type="button" onClick={go} style={{
-            flex: 1, minWidth: 180, minHeight: 46, borderRadius: 999, border: 'none', cursor: 'pointer',
-            background: 'linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)))', color: '#fff', fontWeight: 800, fontSize: '0.92rem',
-            fontFamily: 'var(--font-body)', boxShadow: '0 5px 16px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 28%, transparent)',
+          <button type="button" className="sk-btn" onClick={go} style={{
+            flex: 1, minWidth: 180, minHeight: 46, cursor: 'pointer', fontSize: '0.92rem',
+            fontFamily: 'var(--font-body)',
           }}>
             {variant === 'checkout'
               ? (es ? `Cambiar a ${planName}` : `Switch to ${planName}`)
@@ -218,7 +218,7 @@ export default function MembershipSuggestionCard({
           </button>
           {variant === 'dashboard' && (
             <button type="button" onClick={dismiss} style={{
-              background: 'none', border: 'none', color: 'color-mix(in srgb, var(--brand-secondary) 95%, white)', fontWeight: 600, cursor: 'pointer',
+              background: 'none', border: 'none', color: 'var(--text-muted)', fontWeight: 600, cursor: 'pointer',
               minHeight: 44, padding: '0 10px', fontSize: '0.85rem', fontFamily: 'var(--font-body)',
             }}>
               {es ? 'No, gracias' : 'No, thanks'}
@@ -226,7 +226,7 @@ export default function MembershipSuggestionCard({
           )}
         </div>
         {(s.segment === 'fixed' || variant !== 'checkout') && (
-          <div style={{ fontSize: '0.75rem', color: 'color-mix(in srgb, var(--brand-secondary) 72%, white)', marginTop: 10 }}>
+          <div style={{ fontSize: '0.75rem', color: 'var(--text-subtle)', marginTop: 10 }}>
             {es ? 'Los créditos que ya tienes se conservan.' : 'You keep the credits you already have.'}
           </div>
         )}

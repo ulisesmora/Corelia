@@ -6,10 +6,7 @@ import {
   Alert, IconButton, Spinner, Stack, Separator,
   Dialog, Portal, CloseButton, SimpleGrid,
 } from '@chakra-ui/react';
-import {
-  FaTrash, FaCheckCircle, FaExclamationTriangle,
-  FaCreditCard, FaCalendarAlt, FaCrown, FaShoppingCart,
-} from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { motion } from 'framer-motion';
 import Chakra from './ChakraProvider';
 import { requestInstallPrompt, InstallInlineHint } from './InstallAppBanner';
@@ -37,23 +34,25 @@ import { paymentsEnabled } from '../utils/payments';
 import { getSiteClient } from '../lib/site';
 const MotionBox = motion(Box as any);
 
+// Paleta del checkout: solo tokens del estilo (presets.css). Los botones
+// principales usan la clase .sk-btn; los campos, .sk-input.
 const C = {
-  bg: 'linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 50%, color-mix(in srgb, var(--brand-primary) 22%, white) 100%)',
-  card: 'rgba(255,255,255,0.85)',
-  accent: 'var(--brand-primary)',
-  accentDark: 'color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))',
-  border: 'color-mix(in srgb, var(--brand-primary) 20%, transparent)',
-  btnGrad: 'linear-gradient(135deg, var(--brand-primary) 0%, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 100%)',
-  // olive — subscription accent
-  olive: '#6B7B3C',
-  oliveDark: '#536030',
-  oliveMid: '#7A8A45',
-  oliveTint: 'rgba(107,123,60,0.08)',
-  oliveBorder: 'rgba(107,123,60,0.22)',
-  oliveBtnGrad: 'linear-gradient(135deg, #7A8A45 0%, #536030 100%)',
+  bg: 'var(--section-bg)',
+  card: 'var(--surface)',
+  accent: 'var(--accent-text)',     // primario como TEXTO
+  accentDark: 'var(--accent)',      // primario como icono / borde / relleno
+  brown: 'var(--page-text)',
+  heading: 'var(--heading-color)',
+  textMuted: 'var(--text-muted)',
+  border: 'var(--border-neutral)',
+  // "olive" — acento de suscripción/ahorro → color de éxito del estilo
+  olive: 'var(--success)',
+  oliveTint: 'var(--success-soft)',
+  oliveBorder: 'color-mix(in srgb, var(--success) 22%, transparent)',
 };
+
+/** Tinte del color de éxito del estilo (sustituye a los rgba verdes/oliva fijos). */
+const successMix = (pct: number) => `color-mix(in srgb, var(--success) ${pct}%, transparent)`;
 
 interface ApiPlan {
   id: number; name: string; credits: number;
@@ -86,7 +85,7 @@ function CartItemRow({ item }: { item: CartItem }) {
     <Flex align="center" gap={3} py={2.5}
       borderBottom="1px solid" borderColor={C.border}>
       <Box as="img" src={optimizedImage(item.image, 256) || '/placeholder-class.svg'} onError={withOriginalFallback(item.image)} alt={tr(item, 'title', lang)}
-        w="50px" h="50px" borderRadius="10px" flexShrink={0}
+        w="50px" h="50px" borderRadius="var(--radius-input)" flexShrink={0}
         style={{ objectFit: 'cover' }} />
       <Box flex={1} minW={0}>
         <Text fontFamily='var(--font-body)' fontWeight={700}
@@ -106,7 +105,7 @@ function CartItemRow({ item }: { item: CartItem }) {
       </Box>
       <IconButton aria-label={t('checkout.deleteLabel')} variant="ghost" size="sm"
         color={C.textMuted} onClick={() => removeItem(item.id)}>
-        <FaTrash size={11} />
+        <Icon name="trash" size={11} />
       </IconButton>
     </Flex>
   );
@@ -126,24 +125,24 @@ function PlanCard({ plan, selected, onSelect }: {
 
   return (
     <Box as="button" type="button" onClick={onSelect} w="full" textAlign="left"
-      borderRadius="16px" p={4} cursor="pointer" h="88px"
+      borderRadius="var(--radius-card)" p={4} cursor="pointer" h="88px"
       border={`2px solid ${selected ? C.accentDark : C.border}`}
-      bg={selected ? 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' : C.card}
-      boxShadow={selected ? '0 0 0 3px color-mix(in srgb, var(--brand-primary) 14%, transparent)' : '0 2px 10px color-mix(in srgb, var(--brand-dark) 5%, transparent)'}
+      bg={selected ? 'var(--accent-soft)' : C.card}
+      boxShadow={selected ? '0 0 0 3px var(--accent-soft)' : 'var(--shadow-card)'}
       transition="all 0.22s ease"
     >
       <Flex justify="space-between" align="center" h="full">
         <VStack align="start" gap={0.5} flex={1} minW={0}>
           <Flex align="center" gap={2}>
-            {selected && <FaCrown size={11} color={C.accentDark} />}
+            {selected && <Icon name="crown" size={11} color={C.accentDark} />}
             <Text fontFamily='var(--font-heading)' fontSize="xl"
-              color={C.brown} letterSpacing="0.04em">
+              color={C.heading} letterSpacing="0.04em">
               {planDisplayName(plan as any, lang)}
             </Text>
             {/* Saving badge — olive, inline next to name */}
             {isSub && plan.saving && (
-              <Box px={1.5} py={0.5} borderRadius="full"
-                bg="rgba(107,123,60,0.11)" border="1px solid rgba(107,123,60,0.26)">
+              <Box px={1.5} py={0.5} borderRadius="var(--radius-chip)"
+                bg={successMix(11)} border={`1px solid ${successMix(26)}`}>
                 <Text fontFamily='var(--font-body)' fontSize="9px"
                   fontWeight={700} color={C.olive} letterSpacing="0.06em">
                   {t('plans.saving', { saving: plan.saving })}
@@ -158,7 +157,7 @@ function PlanCard({ plan, selected, onSelect }: {
         </VStack>
         <Box textAlign="right" flexShrink={0}>
           <Text fontFamily='var(--font-heading)' fontSize="2xl"
-            color={selected ? C.accentDark : C.accent}>
+            color={C.accent}>
             {formatPrice(parseFloat(plan.price_eur), lang, 0)}
           </Text>
           {isSub && priceSuffix && (
@@ -273,9 +272,9 @@ function ClassEnrollmentPicker({ authToken, onComplete, cartScheduleIds }: {
 
       {/* Cart suggestion banner */}
       {hasSuggested && (
-        <Flex align="flex-start" gap={2.5} p={3} borderRadius="12px"
-          bg="color-mix(in srgb, var(--brand-primary) 8%, transparent)" border={`1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent)`}>
-          <FaCalendarAlt size={13} color={C.accentDark} style={{ flexShrink: 0, marginTop: 2 }} />
+        <Flex align="flex-start" gap={2.5} p={3} borderRadius="var(--radius-input)"
+          bg="var(--accent-soft)" border="1px solid var(--accent-border)">
+          <Icon name="calendar" size={13} color={C.accentDark} style={{ flexShrink: 0, marginTop: 2 }} />
           <Text fontFamily='var(--font-body)' fontSize="xs" color={C.brown} lineHeight="1.55">
             <strong>{t('checkout.enrollCartBanner')}</strong>{' '}
             {t('checkout.enrollCartBannerSub')}
@@ -285,7 +284,7 @@ function ClassEnrollmentPicker({ authToken, onComplete, cartScheduleIds }: {
 
       {schedules.length === 0 ? (
         <Box textAlign="center" py={6}>
-          <FaCalendarAlt size={28} color={C.accent} style={{ margin: '0 auto 8px' }} />
+          <Icon name="calendar" size={28} color={C.accent} style={{ margin: '0 auto 8px' }} />
           <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
             {t('checkout.enrollNone')}
           </Text>
@@ -294,7 +293,7 @@ function ClassEnrollmentPicker({ authToken, onComplete, cartScheduleIds }: {
         Object.entries(byDay).sort(([a], [b]) => parseInt(a) - parseInt(b)).map(([dayIdx, daySchedules]) => (
           <Box key={dayIdx}>
             <Text fontFamily='var(--font-heading)' fontSize="md"
-              color={C.brown} letterSpacing="0.06em" mb={1.5}>
+              color={C.heading} letterSpacing="0.06em" mb={1.5}>
               {t(`days.${dayIdx}`)}
             </Text>
             <Stack gap={1.5}>
@@ -306,26 +305,26 @@ function ClassEnrollmentPicker({ authToken, onComplete, cartScheduleIds }: {
                 const time = `${(s.start_time || '').slice(0, 5)} – ${(s.end_time || '').slice(0, 5)}`;
                 return (
                   <Flex key={s.id} as="button" type="button" onClick={() => toggle(s.id)}
-                    align="center" gap={3} p={3} borderRadius="12px" cursor="pointer" w="full"
-                    bg={isSel ? 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' : 'rgba(255,255,255,0.55)'}
+                    align="center" gap={3} p={3} borderRadius="var(--radius-input)" cursor="pointer" w="full"
+                    bg={isSel ? 'var(--accent-soft)' : 'var(--surface-muted)'}
                     border={`1px solid ${isSel ? C.accentDark : C.border}`}
                     transition="all 0.18s ease"
                   >
                     <Box w="18px" h="18px" borderRadius="5px" flexShrink={0}
                       bg={isSel ? C.accentDark : 'transparent'}
-                      border={`2px solid ${isSel ? C.accentDark : 'color-mix(in srgb, var(--brand-primary) 35%, transparent)'}`}
+                      border={`2px solid ${isSel ? C.accentDark : 'var(--accent-border)'}`}
                       display="flex" alignItems="center" justifyContent="center">
-                      {isSel && <FaCheckCircle size={9} color="white" />}
+                      {isSel && <Icon name="check-circle" size={9} color="var(--on-primary)" />}
                     </Box>
                     <Box textAlign="left" flex={1}>
                       <Flex align="center" gap={1.5}>
                         <Text fontFamily='var(--font-body)' fontWeight={700}
                           fontSize="sm" color={C.brown}>{name}</Text>
                         {isFromCart && (
-                          <Box px={1.5} py={0.5} borderRadius="full"
-                            bg="color-mix(in srgb, var(--brand-primary) 15%, transparent)" border={`1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent)`}>
+                          <Box px={1.5} py={0.5} borderRadius="var(--radius-chip)"
+                            bg="var(--accent-soft)" border="1px solid var(--accent-border)">
                             <Text fontFamily='var(--font-body)' fontSize="8px"
-                              fontWeight={700} color={C.accentDark} letterSpacing="0.06em">
+                              fontWeight={700} color={C.accent} letterSpacing="0.06em">
                               {t('checkout.enrollInCart')}
                             </Text>
                           </Box>
@@ -343,12 +342,11 @@ function ClassEnrollmentPicker({ authToken, onComplete, cartScheduleIds }: {
         ))
       )}
 
-      <Button w="full" h="46px" borderRadius="full" color="white"
-        bg={C.btnGrad} fontFamily='var(--font-body)' fontWeight={700} fontSize="sm"
-        boxShadow="0 4px 16px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 28%, transparent)" _hover={{ opacity: 0.90 }}
+      <Button w="full" h="46px" className="sk-btn"
+        fontFamily='var(--font-body)' fontSize="sm"
         disabled={enrolling} onClick={handleEnroll}>
         {enrolling
-          ? <Spinner size="sm" color="white" />
+          ? <Spinner size="sm" color="inherit" />
           : selected.size > 0
             ? t('checkout.enrollAddBtn', { count: String(selected.size) })
             : t('checkout.enrollSkipBtn')}
@@ -889,9 +887,7 @@ function CheckoutPageInner() {
   // ── Shared card wrapper ───────────────────────────────────────────────────
 
   const card = (children: React.ReactNode) => (
-    <Box bg={C.card} borderRadius="20px" p={6}
-      border={`1px solid ${C.border}`}
-      boxShadow="0 4px 24px color-mix(in srgb, var(--brand-dark) 6%, transparent)">
+    <Box className="sk-card" p={6}>
       {children}
     </Box>
   );
@@ -916,12 +912,12 @@ function CheckoutPageInner() {
             ("Continuar · 0,00 €") — guiamos al calendario. */}
         {items.length === 0 ? card(
           <Box textAlign="center" py={6}>
-            <Box w="56px" h="56px" borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 12%, transparent)"
+            <Box w="56px" h="56px" borderRadius="full" bg="var(--accent-soft)"
               display="flex" alignItems="center" justifyContent="center" mx="auto" mb={3}>
-              <FaShoppingCart size={22} color={C.accent} />
+              <Icon name="cart" size={22} color={C.accentDark} />
             </Box>
             <Text fontFamily='var(--font-heading)' fontSize="2xl"
-              color={C.brown} letterSpacing="0.04em" mb={1}>
+              color={C.heading} letterSpacing="0.04em" mb={1}>
               {lang === 'en' ? 'Your cart is empty' : 'Tu carrito está vacío'}
             </Text>
             <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={5}>
@@ -929,9 +925,8 @@ function CheckoutPageInner() {
                 ? 'Pick a class from the calendar to book your spot.'
                 : 'Elige una clase en el calendario para reservar tu plaza.'}
             </Text>
-            <Button as="a" href="/calendar" h="44px" borderRadius="full"
-              color="white" bg={C.btnGrad} px={8}
-              fontFamily='var(--font-body)' fontWeight={700}>
+            <Button as="a" href="/calendar" h="44px" className="sk-btn" px={8}
+              fontFamily='var(--font-body)'>
               {lang === 'en' ? 'View calendar' : 'Ver calendario'}
             </Button>
           </Box>
@@ -942,13 +937,13 @@ function CheckoutPageInner() {
         ) : card(
           <>
             <Text fontFamily='var(--font-heading)' fontSize="2xl"
-              color={C.brown} letterSpacing="0.04em" mb={4}>
+              color={C.heading} letterSpacing="0.04em" mb={4}>
               {guestCreated ? t('checkout.guestStep2') : t('checkout.guestTitle')}
             </Text>
             {!guestCreated ? (
               <VStack as="form" gap={3} align="stretch" onSubmit={handleGuestCheckout}>
                 {error && (
-                  <Alert.Root status="error" borderRadius="10px">
+                  <Alert.Root status="error" borderRadius="var(--radius-input)">
                     <Alert.Description fontFamily='var(--font-body)'>{error}</Alert.Description>
                   </Alert.Root>
                 )}
@@ -958,18 +953,16 @@ function CheckoutPageInner() {
                   </Field.Label>
                   <Input type="email" value={guestEmail}
                     onChange={e => setGuestEmail(e.target.value)}
-                    disabled={isEmailLocked} borderColor={C.border} borderRadius="10px"
-                    fontFamily='var(--font-body)'
-                    _focus={{ borderColor: C.accent, boxShadow: `0 0 0 1px ${C.accent}` }} />
+                    disabled={isEmailLocked} className="sk-input"
+                    fontFamily='var(--font-body)' />
                 </Field.Root>
                 <Field.Root required>
                   <Field.Label fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
                     {t('checkout.guestName')}
                   </Field.Label>
                   <Input type="text" value={name} onChange={e => setName(e.target.value)}
-                    borderColor={C.border} borderRadius="10px"
-                    fontFamily='var(--font-body)'
-                    _focus={{ borderColor: C.accent, boxShadow: `0 0 0 1px ${C.accent}` }} />
+                    className="sk-input"
+                    fontFamily='var(--font-body)' />
                 </Field.Root>
                 <Field.Root required>
                   <Field.Label fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
@@ -978,22 +971,31 @@ function CheckoutPageInner() {
                   <Box w="full" css={{
                     "& .react-international-phone-input-container": { width: "100% !important" },
                     "& .react-international-phone-input": { width: "100% !important", height: "40px !important" },
+                    // Colores del campo de teléfono (librería externa) con los tokens del estilo
+                    "--react-international-phone-background-color": "var(--input-bg)",
+                    "--react-international-phone-text-color": "var(--page-text)",
+                    "--react-international-phone-border-color": "var(--input-border)",
+                    "--react-international-phone-border-radius": "var(--radius-input)",
+                    "--react-international-phone-country-selector-background-color-hover": "var(--surface-muted)",
+                    "--react-international-phone-dropdown-item-background-color": "var(--surface-strong)",
+                    "--react-international-phone-dropdown-item-dial-code-color": "var(--text-muted)",
+                    "--react-international-phone-selected-dropdown-item-background-color": "var(--accent-soft)",
+                    "--react-international-phone-dropdown-shadow": "var(--shadow-float)",
                   }}>
                     <PhoneInput defaultCountry="es" value={phone} onChange={setPhone} />
                   </Box>
                 </Field.Root>
-                <Button type="submit" w="full" h="44px" borderRadius="full"
-                  color="white" bg={C.btnGrad}
-                  fontFamily='var(--font-body)' fontWeight={700}
+                <Button type="submit" w="full" h="44px" className="sk-btn"
+                  fontFamily='var(--font-body)'
                   disabled={isSubmitting || totalPrice === 0}>
                   {isSubmitting
-                    ? <Spinner size="sm" color="white" />
+                    ? <Spinner size="sm" color="inherit" />
                     : t('checkout.continueBtn', { price: formatPrice(totalPrice, lang) })}
                 </Button>
               </VStack>
             ) : (
               <VStack gap={4} align="stretch">
-                <Alert.Root status="success" borderRadius="10px">
+                <Alert.Root status="success" borderRadius="var(--radius-input)">
                   <Alert.Description fontFamily='var(--font-body)'>
                     {t('checkout.guestDataSaved')}
                   </Alert.Description>
@@ -1008,7 +1010,7 @@ function CheckoutPageInner() {
         {card(
           <>
             <Text fontFamily='var(--font-heading)' fontSize="xl"
-              color={C.brown} letterSpacing="0.04em" mb={2}>
+              color={C.heading} letterSpacing="0.04em" mb={2}>
               {t('checkout.loginPrompt')}
             </Text>
             <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={4}>
@@ -1022,12 +1024,12 @@ function CheckoutPageInner() {
 
     if (canReserve) return card(
       <Box textAlign="center" py={2}>
-        <Box w="56px" h="56px" borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 12%, transparent)"
+        <Box w="56px" h="56px" borderRadius="full" bg="var(--accent-soft)"
           display="flex" alignItems="center" justifyContent="center" mx="auto" mb={3}>
-          <FaCheckCircle size={24} color={C.accentDark} />
+          <Icon name="check-circle" size={24} color={C.accentDark} />
         </Box>
         <Text fontFamily='var(--font-heading)' fontSize="2xl"
-          color={C.brown} letterSpacing="0.04em">
+          color={C.heading} letterSpacing="0.04em">
           {t('checkout.balanceOk')}
         </Text>
         <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mt={1}>
@@ -1057,7 +1059,7 @@ function CheckoutPageInner() {
               }} />
           </Box>
           <Text fontFamily='var(--font-heading)' fontSize="2xl"
-            color={C.brown} letterSpacing="0.04em" mb={4}>
+            color={C.heading} letterSpacing="0.04em" mb={4}>
             {t('checkout.choosePackTitle')}
           </Text>
           {plansLoading ? (
@@ -1077,9 +1079,8 @@ function CheckoutPageInner() {
                     onSelect={() => setSelectedPackId(plan.id.toString())} />
                 ))}
               </Stack>
-              <Button type="submit" w="full" h="46px" borderRadius="full"
-                color="white" bg={C.btnGrad}
-                fontFamily='var(--font-body)' fontWeight={700} mt={2}
+              <Button type="submit" w="full" h="46px" className="sk-btn"
+                fontFamily='var(--font-body)' mt={2}
                 disabled={!selectedPackId}>
                 {t('checkout.nextBtn')}
               </Button>
@@ -1091,7 +1092,7 @@ function CheckoutPageInner() {
           <FlowStepper step={2} labels={lang === 'en' ? ['Pack', 'Payment', 'Book'] : ['Bono', 'Pago', 'Reservar']} ariaLabel={lang === 'en' ? 'Progress' : 'Progreso'} />
           <Flex justify="space-between" align="center" mb={4}>
             <Text fontFamily='var(--font-heading)' fontSize="2xl"
-              color={C.brown} letterSpacing="0.04em">
+              color={C.heading} letterSpacing="0.04em">
               {t('checkout.payTitle')}
             </Text>
             <Button variant="ghost" size="sm"
@@ -1137,9 +1138,9 @@ function CheckoutPageInner() {
   const renderSubscriptionTab = () => {
     if (!isLoggedIn) return card(
       <Box textAlign="center" py={4}>
-        <FaCrown size={32} color={C.accent} style={{ margin: '0 auto 12px' }} />
+        <Icon name="crown" size={32} color={C.accent} style={{ margin: '0 auto 12px' }} />
         <Text fontFamily='var(--font-heading)' fontSize="2xl"
-          color={C.brown} letterSpacing="0.04em" mb={2}>
+          color={C.heading} letterSpacing="0.04em" mb={2}>
           {t('checkout.subTitle')}
         </Text>
         <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={4}>
@@ -1154,7 +1155,7 @@ function CheckoutPageInner() {
       <VStack gap={5} align="stretch">
         <Box>
           <Text fontFamily='var(--font-heading)' fontSize="2xl"
-            color={C.brown} letterSpacing="0.04em" mb={1}>
+            color={C.heading} letterSpacing="0.04em" mb={1}>
             {t('checkout.subActivatedCartTitle')}
           </Text>
           <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
@@ -1163,14 +1164,14 @@ function CheckoutPageInner() {
         </Box>
 
         {/* Cart preview */}
-        <Box borderRadius="14px" border={`1px solid ${C.border}`}
-          bg="rgba(255,255,255,0.60)" px={4} py={3}>
+        <Box borderRadius="var(--radius-input)" border={`1px solid ${C.border}`}
+          bg="var(--surface-muted)" px={4} py={3}>
           {items.map(item => (
             <Flex key={item.id} align="center" gap={3} py={2}
               borderBottom={`1px solid ${C.border}`}
               _last={{ borderBottom: 'none' }}>
               <img src={optimizedImage(item.image, 256) || '/placeholder-class.svg'} onError={withOriginalFallback(item.image)} alt={tr(item, 'title', lang)}
-                style={{ width: '40px', height: '40px', borderRadius: '8px', flexShrink: 0, objectFit: 'cover' }} />
+                style={{ width: '40px', height: '40px', borderRadius: 'var(--radius-input)', flexShrink: 0, objectFit: 'cover' }} />
               <Box flex={1} minW={0}>
                 <Text fontFamily='var(--font-body)' fontWeight={700}
                   fontSize="sm" color={C.brown}
@@ -1191,10 +1192,8 @@ function CheckoutPageInner() {
         </Box>
 
         <VStack gap={2} align="stretch">
-          <Button w="full" h="46px" borderRadius="full" color="white" bg={C.btnGrad}
-            fontFamily='var(--font-body)' fontWeight={700}
-            boxShadow="0 4px 14px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 22%, transparent)"
-            _hover={{ opacity: 0.90 }}
+          <Button w="full" h="46px" className="sk-btn"
+            fontFamily='var(--font-body)'
             disabled={isSubmitting}
             onClick={async () => {
               // Solo avanzar si la reserva se completó de verdad — antes se
@@ -1202,14 +1201,14 @@ function CheckoutPageInner() {
               const ok = await handleCreditBooking(undefined, true);
               if (ok) setSubStep('enroll');
             }}>
-            {isSubmitting ? <Spinner size="sm" color="white" /> : (
+            {isSubmitting ? <Spinner size="sm" color="inherit" /> : (
               <Flex align="center" gap={2}>
-                <FaCheckCircle size={13} />
+                <Icon name="check-circle" size={13} />
                 {t('checkout.subActivatedCartBtn')}
               </Flex>
             )}
           </Button>
-          <Button w="full" h="40px" borderRadius="full" variant="ghost"
+          <Button w="full" h="40px" borderRadius="var(--radius-button)" variant="ghost"
             color={C.textMuted} fontFamily='var(--font-body)' fontWeight={600} fontSize="sm"
             onClick={() => setSubStep('enroll')}>
             {t('checkout.subActivatedCartSkip')}
@@ -1222,7 +1221,7 @@ function CheckoutPageInner() {
       <>
         <Box mb={5}>
           <Text fontFamily='var(--font-heading)' fontSize="2xl"
-            color={C.brown} letterSpacing="0.04em">
+            color={C.heading} letterSpacing="0.04em">
             {t('checkout.enrollTitle')}
           </Text>
           <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mt={1}>
@@ -1246,13 +1245,13 @@ function CheckoutPageInner() {
         {/* Hero */}
         <Box textAlign="center" pt={2}>
           <Box w="64px" h="64px" borderRadius="full"
-            bg="linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)))"
+            bg="var(--accent)"
             display="flex" alignItems="center" justifyContent="center" mx="auto" mb={3}
-            boxShadow="0 6px 20px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 28%, transparent)">
-            <FaCheckCircle size={28} color="white" />
+            boxShadow="var(--shadow-card)">
+            <Icon name="check-circle" size={28} color="var(--on-primary)" />
           </Box>
           <Text fontFamily='var(--font-heading)' fontSize="3xl"
-            color={C.brown} letterSpacing="0.04em" lineHeight="1">
+            color={C.heading} letterSpacing="0.04em" lineHeight="1">
             {t('checkout.subActivatedTitle')}
           </Text>
           <Text fontFamily='var(--font-body)' fontSize="sm"
@@ -1266,13 +1265,13 @@ function CheckoutPageInner() {
 
         {/* Booked cart classes (only shown when cart was booked) */}
         {bookedCartSnapshot.length > 0 && (
-          <Box borderRadius="16px" border={`1px solid rgba(45,125,70,0.22)`}
-            bg="rgba(45,125,70,0.04)" overflow="hidden">
+          <Box borderRadius="var(--radius-card)" border={`1px solid ${successMix(22)}`}
+            bg={successMix(4)} overflow="hidden">
             <Flex align="center" gap={2} px={4} py={3}
-              borderBottom={`1px solid rgba(45,125,70,0.15)`}>
-              <FaCheckCircle size={12} color="#2D7D46" />
+              borderBottom={`1px solid ${successMix(15)}`}>
+              <Icon name="check-circle" size={12} color="var(--success)" />
               <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={700}
-                color="#2D7D46" textTransform="uppercase" letterSpacing="0.08em">
+                color="var(--success)" textTransform="uppercase" letterSpacing="0.08em">
                 {lang === 'en'
                   ? `${bookedCartSnapshot.length} class${bookedCartSnapshot.length > 1 ? 'es' : ''} booked`
                   : `${bookedCartSnapshot.length} clase${bookedCartSnapshot.length > 1 ? 's' : ''} reservada${bookedCartSnapshot.length > 1 ? 's' : ''}`}
@@ -1280,9 +1279,9 @@ function CheckoutPageInner() {
             </Flex>
             {bookedCartSnapshot.map((item, idx) => (
               <Flex key={item.id} align="center" gap={3} px={4} py={2.5}
-                borderBottom={idx < bookedCartSnapshot.length - 1 ? `1px solid rgba(45,125,70,0.10)` : 'none'}>
+                borderBottom={idx < bookedCartSnapshot.length - 1 ? `1px solid ${successMix(10)}` : 'none'}>
                 <img src={optimizedImage(item.image, 256) || '/placeholder-class.svg'} onError={withOriginalFallback(item.image)} alt={tr(item, 'title', lang)}
-                  style={{ width: '36px', height: '36px', borderRadius: '8px',
+                  style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-input)',
                     flexShrink: 0, objectFit: 'cover', opacity: 0.85 }} />
                 <Box flex={1} minW={0}>
                   <Text fontFamily='var(--font-body)' fontWeight={700}
@@ -1298,20 +1297,20 @@ function CheckoutPageInner() {
                       { hour: '2-digit', minute: '2-digit' })}
                   </Text>
                 </Box>
-                <FaCheckCircle size={11} color="#2D7D46" style={{ flexShrink: 0 }} />
+                <Icon name="check-circle" size={11} color="var(--success)" style={{ flexShrink: 0 }} />
               </Flex>
             ))}
           </Box>
         )}
 
         {/* Auto-booking timeline — how it works from here */}
-        <Box borderRadius="16px" border={`1px solid ${C.border}`} overflow="hidden">
-          <Box px={4} py={3} bg="color-mix(in srgb, var(--brand-primary) 7%, transparent)"
+        <Box borderRadius="var(--radius-card)" border={`1px solid ${C.border}`} overflow="hidden">
+          <Box px={4} py={3} bg="var(--accent-soft)"
             borderBottom={`1px solid ${C.border}`}>
             <Flex align="center" gap={2}>
-              <FaCalendarAlt size={13} color={C.accentDark} />
+              <Icon name="calendar" size={13} color={C.accentDark} />
               <Text fontFamily='var(--font-heading)' fontSize="md"
-                color={C.brown} letterSpacing="0.06em">
+                color={C.heading} letterSpacing="0.06em">
                 {lang === 'en' ? 'How auto-booking works' : 'Cómo funciona la reserva automática'}
               </Text>
             </Flex>
@@ -1321,14 +1320,14 @@ function CheckoutPageInner() {
           <VStack gap={0} align="stretch" px={4} py={3}>
             {[
               {
-                icon: <FaCheckCircle size={13} color="#2D7D46" />,
-                dot: '#2D7D46',
+                icon: <Icon name="check-circle" size={13} color="var(--success)" />,
+                dot: 'var(--success)',
                 label: lang === 'en' ? 'Subscription activated' : 'Suscripción activada',
                 sub: lang === 'en' ? 'Credits added to your account' : 'Créditos añadidos a tu cuenta',
                 done: true,
               },
               {
-                icon: <FaCalendarAlt size={13} color={C.accentDark} />,
+                icon: <Icon name="calendar" size={13} color={C.accentDark} />,
                 dot: C.accentDark,
                 label: lang === 'en' ? 'Set your class preferences' : 'Configura tus clases',
                 sub: lang === 'en'
@@ -1337,8 +1336,8 @@ function CheckoutPageInner() {
                 done: true,
               },
               {
-                icon: <FaCalendarAlt size={13} color={C.accentDark} />,
-                dot: autoBookDates.deadlineIsToday ? '#B7791F' : C.accentDark,
+                icon: <Icon name="calendar" size={13} color={C.accentDark} />,
+                dot: autoBookDates.deadlineIsToday ? 'var(--warning)' : C.accentDark,
                 label: lang === 'en'
                   ? `Edit deadline: ${autoBookDates.deadlineIsToday ? (lang === 'en' ? 'Today!' : '¡Hoy!') : `Sat. ${autoBookDates.saturdayStr}`}`
                   : `Límite de cambios: ${autoBookDates.deadlineIsToday ? '¡Hoy!' : `Sáb. ${autoBookDates.saturdayStr}`}`,
@@ -1349,7 +1348,7 @@ function CheckoutPageInner() {
                 urgent: autoBookDates.deadlineIsToday,
               },
               {
-                icon: <FaCalendarAlt size={13} color={C.accentDark} />,
+                icon: <Icon name="calendar" size={13} color={C.accentDark} />,
                 dot: C.accentDark,
                 label: lang === 'en'
                   ? `Auto-booking: Sun. ${autoBookDates.nextSundayStr}`
@@ -1360,7 +1359,7 @@ function CheckoutPageInner() {
                 done: false,
               },
               {
-                icon: <FaCalendarAlt size={13} color={C.accentDark} />,
+                icon: <Icon name="calendar" size={13} color={C.accentDark} />,
                 dot: C.accentDark,
                 label: lang === 'en'
                   ? `Your classes start: Mon. ${autoBookDates.nextMondayStr}`
@@ -1374,23 +1373,24 @@ function CheckoutPageInner() {
               <Flex key={i} gap={3} align="flex-start" mb={i < arr.length - 1 ? 3 : 0}>
                 <Box flexShrink={0} display="flex" flexDirection="column" alignItems="center">
                   <Box w="26px" h="26px" borderRadius="full" flexShrink={0}
-                    bg={step.done ? '#2D7D46' : step.urgent ? 'rgba(183,121,31,0.12)' : 'color-mix(in srgb, var(--brand-primary) 10%, transparent)'}
-                    border={`2px solid ${step.done ? '#2D7D46' : step.urgent ? 'rgba(183,121,31,0.50)' : C.border}`}
+                    bg={step.done ? 'var(--success)' : step.urgent ? 'var(--warning-soft)' : 'var(--accent-soft)'}
+                    border={`2px solid ${step.done ? 'var(--success)' : step.urgent ? 'color-mix(in srgb, var(--warning) 50%, transparent)' : C.border}`}
                     display="flex" alignItems="center" justifyContent="center">
                     {step.done
-                      ? <FaCheckCircle size={11} color="white" />
+                      // Color de la página sobre el verde: contrasta en estilos claros y oscuros
+                      ? <Icon name="check-circle" size={11} color="var(--page-bg)" />
                       : <Box w="6px" h="6px" borderRadius="full"
-                          bg={step.urgent ? '#B7791F' : C.accentDark} />
+                          bg={step.urgent ? 'var(--warning)' : C.accentDark} />
                     }
                   </Box>
                   {i < arr.length - 1 && (
                     <Box w="1.5px" flex={1} mt={1} minH="16px"
-                      bg={step.done ? 'rgba(45,125,70,0.25)' : C.border} />
+                      bg={step.done ? successMix(25) : C.border} />
                   )}
                 </Box>
                 <Box pb={i < arr.length - 1 ? 1 : 0}>
                   <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="xs"
-                    color={step.urgent ? '#B7791F' : C.brown}>
+                    color={step.urgent ? 'var(--warning)' : C.brown}>
                     {step.label}
                   </Text>
                   <Text fontFamily='var(--font-body)' fontSize="10px"
@@ -1404,13 +1404,11 @@ function CheckoutPageInner() {
         </Box>
 
         {/* CTA */}
-        <Button w="full" h="46px" borderRadius="full" color="white" bg={C.btnGrad}
-          fontFamily='var(--font-body)' fontWeight={700}
-          boxShadow="0 4px 14px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 22%, transparent)"
-          _hover={{ opacity: 0.90 }}
+        <Button w="full" h="46px" className="sk-btn"
+          fontFamily='var(--font-body)'
           onClick={() => { window.location.href = '/dashboard?tab=suscripcion'; }}>
           <Flex align="center" gap={2}>
-            <FaCrown size={13} />
+            <Icon name="crown" size={13} />
             {lang === 'en' ? 'Go to my membership' : 'Ir a mi membresía'}
           </Flex>
         </Button>
@@ -1424,7 +1422,7 @@ function CheckoutPageInner() {
       <>
         <Flex justify="space-between" align="center" mb={4}>
           <Text fontFamily='var(--font-heading)' fontSize="2xl"
-            color={C.brown} letterSpacing="0.04em">
+            color={C.heading} letterSpacing="0.04em">
             {t('checkout.subPayTitle')}
           </Text>
           <Button variant="ghost" size="sm"
@@ -1445,18 +1443,18 @@ function CheckoutPageInner() {
       return card(
         <VStack gap={4} align="stretch">
           {/* Active plan hero */}
-          <Flex align="center" gap={3} p={4} borderRadius="14px"
-            bg="rgba(45,125,70,0.07)" border="1px solid rgba(45,125,70,0.22)">
+          <Flex align="center" gap={3} p={4} borderRadius="var(--radius-input)"
+            bg={successMix(7)} border={`1px solid ${successMix(22)}`}>
             <Box w="44px" h="44px" borderRadius="full" flexShrink={0}
-              bg="rgba(45,125,70,0.12)" display="flex" alignItems="center" justifyContent="center">
-              <FaCrown size={18} color="#2D7D46" />
+              bg="var(--success-soft)" display="flex" alignItems="center" justifyContent="center">
+              <Icon name="crown" size={18} color="var(--success)" />
             </Box>
             <Box flex={1}>
               <Text fontFamily='var(--font-heading)' fontSize="xl"
-                color={C.brown} letterSpacing="0.04em">
+                color={C.heading} letterSpacing="0.04em">
                 {t('checkout.subAlreadyActive')}
               </Text>
-              <Text fontFamily='var(--font-body)' fontSize="sm" fontWeight={700} color="#2D7D46">
+              <Text fontFamily='var(--font-body)' fontSize="sm" fontWeight={700} color="var(--success)">
                 {planDisplayName(activeSubscription.plan, lang)} · {formatPrice(parseFloat(activeSubscription.plan.price_eur), lang, 0)}{t('plans.subMonth')}
               </Text>
               <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted}>
@@ -1472,13 +1470,11 @@ function CheckoutPageInner() {
 
           {/* Action buttons */}
           <VStack gap={2} align="stretch">
-            <Button w="full" h="46px" borderRadius="full" color="white" bg={C.btnGrad}
-              fontFamily='var(--font-body)' fontWeight={700}
-              boxShadow="0 4px 14px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 22%, transparent)"
-              _hover={{ opacity: 0.90 }}
+            <Button w="full" h="46px" className="sk-btn"
+              fontFamily='var(--font-body)'
               onClick={() => { window.location.href = '/dashboard?tab=suscripcion'; }}>
               <Flex align="center" gap={2}>
-                <FaCrown size={13} />
+                <Icon name="crown" size={13} />
                 {t('checkout.subGoAccount')}
               </Flex>
             </Button>
@@ -1510,10 +1506,9 @@ function CheckoutPageInner() {
                   textAlign="center" lineHeight="1.55">
                   {t('checkout.subChangeDesc', { date: periodEnd })}
                 </Text>
-                <Button w="full" h="44px" borderRadius="full"
-                  variant="outline" borderColor="color-mix(in srgb, var(--brand-primary) 35%, transparent)" color={C.accentDark}
+                <Button w="full" h="44px" className="sk-btn-ghost"
+                  variant="outline"
                   fontFamily='var(--font-body)' fontWeight={700}
-                  _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 8%, transparent)' }}
                   disabled={!selectedSubId || subLoading}
                   onClick={handleSubPayment}>
                   {subLoading
@@ -1532,7 +1527,7 @@ function CheckoutPageInner() {
     return card(
       <>
         <Text fontFamily='var(--font-heading)' fontSize="2xl"
-          color={C.brown} letterSpacing="0.04em" mb={1}>
+          color={C.heading} letterSpacing="0.04em" mb={1}>
           {t('checkout.subTitle')}
         </Text>
         <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={5}>
@@ -1540,20 +1535,20 @@ function CheckoutPageInner() {
         </Text>
 
         {/* ── How it works explainer ── */}
-        <Box borderRadius="16px" mb={5}
+        <Box borderRadius="var(--radius-card)" mb={5}
           border={`1px solid ${C.oliveBorder}`}
-          bg="rgba(107,123,60,0.04)" overflow="hidden">
+          bg={successMix(4)} overflow="hidden">
           {/* Header strip */}
           <Flex align="center" gap={2.5} px={4} py={3}
-            bg="rgba(107,123,60,0.07)"
+            bg={successMix(7)}
             borderBottom={`1px solid ${C.oliveBorder}`}>
             <Box w="28px" h="28px" borderRadius="full" flexShrink={0}
-              bg="rgba(107,123,60,0.14)"
+              bg="var(--success-soft)"
               display="flex" alignItems="center" justifyContent="center">
-              <FaCrown size={12} color={C.olive} />
+              <Icon name="crown" size={12} color={C.olive} />
             </Box>
             <Text fontFamily='var(--font-heading)' fontSize="md"
-              color={C.brown} letterSpacing="0.06em">
+              color={C.heading} letterSpacing="0.06em">
               {t('dashboard.subscription.howTitle')}
             </Text>
           </Flex>
@@ -1569,13 +1564,13 @@ function CheckoutPageInner() {
                 {/* Number circle + connecting line */}
                 <Box flexShrink={0} display="flex" flexDirection="column" alignItems="center">
                   <Box w="26px" h="26px" borderRadius="full" flexShrink={0}
-                    bg="rgba(107,123,60,0.15)" border={`1.5px solid rgba(107,123,60,0.35)`}
+                    bg={successMix(15)} border={`1.5px solid ${successMix(35)}`}
                     display="flex" alignItems="center" justifyContent="center">
                     <Text fontFamily='var(--font-heading)' fontSize="10px"
                       color={C.olive} letterSpacing="0.04em">{step.n}</Text>
                   </Box>
                   {i < arr.length - 1 && (
-                    <Box w="1.5px" flex={1} mt={1} minH="16px" bg="rgba(107,123,60,0.18)" />
+                    <Box w="1.5px" flex={1} mt={1} minH="16px" bg={successMix(18)} />
                   )}
                 </Box>
                 {/* Text */}
@@ -1608,7 +1603,7 @@ function CheckoutPageInner() {
           </Flex>
         ) : subPlans.length === 0 ? (
           <Box textAlign="center" py={6}>
-            <FaCrown size={28} color={C.accent} style={{ margin: '0 auto 8px' }} />
+            <Icon name="crown" size={28} color={C.accent} style={{ margin: '0 auto 8px' }} />
             <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
               {t('checkout.subNoPlans')}
             </Text>
@@ -1622,10 +1617,8 @@ function CheckoutPageInner() {
                   onSelect={() => setSelectedSubId(plan.id.toString())} />
               ))}
             </Stack>
-            <Button w="full" h="50px" borderRadius="full" color="white"
-              bg={C.btnGrad}
-              fontFamily='var(--font-body)' fontWeight={800} mt={2}
-              boxShadow="0 6px 18px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 28%, transparent)"
+            <Button w="full" h="50px" className="sk-btn"
+              fontFamily='var(--font-body)' mt={2}
               disabled={!selectedSubId} onClick={handleSubPayment}>
               {t('checkout.subscribeBtn')}
             </Button>
@@ -1655,32 +1648,34 @@ function CheckoutPageInner() {
         {/* Header */}
         <MotionBox initial={{ opacity: 0, y: -14 }} animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.44 } as any} mb={8}>
-          <Text fontFamily='var(--font-heading)'
+          <Text as="h1" fontFamily='var(--font-heading)'
             fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
-            color={C.brown} letterSpacing="wide" lineHeight="1">
+            color={C.heading} letterSpacing="wide" lineHeight="1">
             {t('checkout.title')}
           </Text>
           <Box mt={3} h="1px" w="120px"
-            bg="linear-gradient(90deg, color-mix(in srgb, var(--brand-primary) 60%, transparent), transparent)" />
+            bg="linear-gradient(90deg, color-mix(in srgb, var(--accent) 60%, transparent), transparent)" />
         </MotionBox>
 
         {/* Tab selector (only when logged in) */}
         {isLoggedIn && !isAuthLoading && (
           <Flex gap={1.5} mb={7} p={1.5}
-            bg="rgba(255,255,255,0.50)" borderRadius="full"
-            border={`1px solid ${C.border}`} w="fit-content"
-            boxShadow="0 2px 12px color-mix(in srgb, var(--brand-dark) 6%, transparent)">
+            bg={C.card} borderRadius="var(--radius-button)"
+            border={`var(--border-width) solid var(--surface-border)`} w="fit-content"
+            boxShadow="var(--shadow-card)"
+            backdropFilter="var(--surface-blur)"
+            style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}>
             {([
-              { key: 'credits',      label: t('checkout.tabCredits'), icon: <FaCreditCard size={12} /> },
-              { key: 'subscription', label: t('checkout.tabSub'),     icon: <FaCrown size={12} /> },
+              { key: 'credits',      label: t('checkout.tabCredits'), icon: <Icon name="credit-card" size={12} /> },
+              { key: 'subscription', label: t('checkout.tabSub'),     icon: <Icon name="crown" size={12} /> },
             ] as const).map(tab => (
-              <Button key={tab.key} size="sm" borderRadius="full" px={4}
-                bg={activeTab === tab.key ? C.btnGrad : 'transparent'}
-                color={activeTab === tab.key ? 'white' : C.textMuted}
+              <Button key={tab.key} size="sm" borderRadius="var(--radius-button)" px={4}
+                // Pestaña activa = botón principal del estilo (.sk-btn)
+                className={activeTab === tab.key ? 'sk-btn' : undefined}
+                bg="transparent"
+                color={C.textMuted}
                 fontFamily='var(--font-body)' fontWeight={700} fontSize="sm"
-                _hover={{
-                  bg: activeTab === tab.key ? C.btnGrad : 'color-mix(in srgb, var(--brand-primary) 10%, transparent)',
-                }}
+                _hover={{ bg: 'var(--accent-soft)' }}
                 onClick={() => switchTab(tab.key)}>
                 <Flex align="center" gap={1.5}>
                   {tab.icon}
@@ -1712,13 +1707,11 @@ function CheckoutPageInner() {
 
           {/* Right: cart summary */}
           <Box>
-            <Box bg={C.card} borderRadius="20px" p={6}
-              border={`1px solid ${C.border}`}
-              boxShadow="0 4px 24px color-mix(in srgb, var(--brand-dark) 6%, transparent)"
+            <Box className="sk-card" p={6}
               position="sticky" top="100px">
 
               <Text fontFamily='var(--font-heading)' fontSize="xl"
-                color={C.brown} letterSpacing="0.04em" mb={4}>
+                color={C.heading} letterSpacing="0.04em" mb={4}>
                 {t('checkout.summaryTitle', { count: String(items.length), class: items.length === 1 ? t('checkout.summaryClass') : t('checkout.summaryClasses') })}
               </Text>
 
@@ -1781,14 +1774,14 @@ function CheckoutPageInner() {
                             {t('checkout.afterBooking')}
                           </Text>
                           <Text fontFamily='var(--font-body)' fontSize="sm" fontWeight={700}
-                            color={remainingBalance < 0 ? '#C0392B' : C.brown}>
+                            color={remainingBalance < 0 ? 'var(--danger)' : C.brown}>
                             {remainingBalance.toFixed(2)} {t('checkout.creditsUnit')}
                           </Text>
                         </Flex>
                       )}
                     </VStack>
                   ) : (
-                    <Text fontFamily='var(--font-body)' fontSize="sm" color="#C0392B">
+                    <Text fontFamily='var(--font-body)' fontSize="sm" color="var(--danger)">
                       {t('checkout.noBalanceError')}
                     </Text>
                   )}
@@ -1797,12 +1790,12 @@ function CheckoutPageInner() {
 
               {/* Credit warning */}
               {showCreditWarning && (
-                <Flex align="flex-start" gap={2} mt={3} p={3} borderRadius="12px"
-                  bg="rgba(255,200,0,0.08)" border="1px solid rgba(255,200,0,0.25)">
-                  <FaExclamationTriangle size={14} color="#B7791F" style={{ flexShrink: 0, marginTop: 2 }} />
+                <Flex align="flex-start" gap={2} mt={3} p={3} borderRadius="var(--radius-input)"
+                  bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 25%, transparent)">
+                  <Icon name="warning" size={14} color="var(--warning)" style={{ flexShrink: 0, marginTop: 2 }} />
                   <Box>
                     <Text fontFamily='var(--font-body)' fontSize="sm"
-                      fontWeight={700} color="#B7791F">
+                      fontWeight={700} color="var(--warning)">
                       {t('checkout.insufficientTitle')}
                     </Text>
                     <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted}>
@@ -1820,10 +1813,10 @@ function CheckoutPageInner() {
                   {t('checkout.couponLabel')}
                 </Text>
                 {appliedCoupon ? (
-                  <Flex align="center" justify="space-between" p={2.5} borderRadius="10px"
-                    bg="color-mix(in srgb, var(--brand-primary) 8%, transparent)" border={`1px solid ${C.border}`}>
+                  <Flex align="center" justify="space-between" p={2.5} borderRadius="var(--radius-input)"
+                    bg="var(--accent-soft)" border="1px solid var(--accent-border)">
                     <Text fontFamily='var(--font-body)' fontSize="xs"
-                      color={C.accentDark} fontWeight={700}>
+                      color={C.accent} fontWeight={700}>
                       {t('checkout.couponApplied', { code: appliedCoupon.code })}
                     </Text>
                     <IconButton aria-label={t('checkout.couponRemoveLabel')} variant="ghost" size="xs"
@@ -1833,18 +1826,17 @@ function CheckoutPageInner() {
                         setOfferCode('');
                         setIsEmailLocked(false);
                       }}>
-                      <FaTrash size={10} />
+                      <Icon name="trash" size={10} />
                     </IconButton>
                   </Flex>
                 ) : (
                   <Flex gap={2}>
                     <Input placeholder={t('checkout.couponPlaceholder')} value={offerCode}
                       onChange={e => setOfferCode(e.target.value.toUpperCase())}
-                      size="sm" borderColor={C.border} borderRadius="10px"
-                      fontFamily='var(--font-body)'
-                      _focus={{ borderColor: C.accent }} />
-                    <Button size="sm" variant="outline" borderColor={C.border}
-                      color={C.textMuted} borderRadius="10px"
+                      size="sm" className="sk-input"
+                      fontFamily='var(--font-body)' />
+                    <Button size="sm" variant="outline" borderColor="var(--input-border)"
+                      color={C.textMuted} borderRadius="var(--radius-input)"
                       disabled={!offerCode || isCouponLoading}
                       onClick={handleApplyCoupon}>
                       {isCouponLoading ? <Spinner size="sm" /> : t('checkout.couponApply')}
@@ -1856,19 +1848,17 @@ function CheckoutPageInner() {
               {/* Reserve button */}
               {isLoggedIn && (
                 <Button ref={reserveButtonRef as any} w="full" h="50px" mt={4}
-                  borderRadius="full" color="white"
-                  bg={canReserve ? C.btnGrad : 'color-mix(in srgb, var(--brand-primary) 28%, transparent)'}
-                  fontFamily='var(--font-body)' fontWeight={700} fontSize="sm"
+                  // .sk-btn ya atenúa el botón deshabilitado (sin saldo suficiente)
+                  className="sk-btn"
+                  fontFamily='var(--font-body)' fontSize="sm"
                   cursor={canReserve ? 'pointer' : 'not-allowed'}
                   disabled={!canReserve || isSubmitting}
-                  onClick={handleCreditBooking}
-                  boxShadow={canReserve ? '0 4px 20px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 28%, transparent)' : 'none'}
-                  _hover={{ opacity: canReserve ? 0.90 : 1 }}>
+                  onClick={handleCreditBooking}>
                   {isSubmitting
-                    ? <Spinner size="sm" color="white" />
+                    ? <Spinner size="sm" color="inherit" />
                     : (
                       <Flex align="center" gap={2}>
-                        <FaCheckCircle size={14} />
+                        <Icon name="check-circle" size={14} />
                         {totalCredits > 0
                           ? t('checkout.reserveBtn', { credits: String(totalCredits) })
                           : t('checkout.reserveBtn', { credits: '0' })}
@@ -1889,20 +1879,20 @@ function CheckoutPageInner() {
         motionPreset="slide-in-bottom">
         <Portal>
           <Dialog.Backdrop
-            bg="color-mix(in srgb, var(--brand-dark) 55%, transparent)"
-            backdropFilter="blur(6px)" />
+            bg="var(--overlay)"
+            backdropFilter="var(--surface-blur)" />
           <Dialog.Positioner>
             <Dialog.Content
-              borderRadius="24px"
+              className="sk-panel"
               overflow="hidden"
-              maxW="500px"
-              bg={C.bg}
-              border={`1px solid ${C.border}`}
-              boxShadow="0 24px 72px color-mix(in srgb, var(--brand-dark) 20%, transparent)">
-              <Box bg="linear-gradient(135deg, #2D7D46 0%, #1F5631 100%)" p={6} textAlign="center">
-                <FaCheckCircle size={48} color="white" style={{ margin: '0 auto 8px' }} />
+              maxW="500px">
+              {/* Banda verde de éxito: texto del color de la página (claro sobre
+                  el verde oscuro de los estilos claros, oscuro sobre el verde
+                  claro de energy/neon) */}
+              <Box bg="var(--success)" p={6} textAlign="center">
+                <Icon name="check-circle" size={48} color="var(--page-bg)" style={{ margin: '0 auto 8px' }} />
                 <Dialog.Title
-                  color="white"
+                  color="var(--page-bg)"
                   fontFamily='var(--font-heading)'
                   fontSize="2xl"
                   letterSpacing="0.04em">
@@ -1910,7 +1900,7 @@ function CheckoutPageInner() {
                     ? (lang === 'en' ? 'Credits added!' : '¡Créditos añadidos!')
                     : t('checkout.reserveSuccess')}
                 </Dialog.Title>
-                <Text color="rgba(255,255,255,0.90)" fontSize="sm"
+                <Text color="var(--page-bg)" opacity={0.9} fontSize="sm"
                   fontFamily='var(--font-body)' mt={1}>
                   {successKind === 'pack'
                     ? (lang === 'en'
@@ -1936,16 +1926,15 @@ function CheckoutPageInner() {
               <Dialog.Footer p={5} pt={0}>
                 <Flex w="100%" gap={2}>
                   <Button
-                    flex={1} h="46px" borderRadius="full"
+                    flex={1} h="46px" borderRadius="var(--radius-button)"
                     variant="outline" borderColor={C.border} color={C.textMuted}
                     fontFamily='var(--font-body)' fontWeight={700}
                     onClick={() => setShowPostReserveSuccess(false)}>
                     {successKind === 'pack' ? (lang === 'en' ? 'Later' : 'Más tarde') : t('checkout.closeBtn')}
                   </Button>
                   <Button
-                    flex={1} h="46px" borderRadius="full" color="white" bg={C.btnGrad}
-                    fontFamily='var(--font-body)' fontWeight={700}
-                    boxShadow="0 4px 14px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 22%, transparent)"
+                    flex={1} h="46px" className="sk-btn"
+                    fontFamily='var(--font-body)'
                     onClick={() => {
                       window.location.href = successKind === 'pack' ? '/calendar' : '/dashboard?tab=agenda';
                     }}>
@@ -1968,36 +1957,36 @@ function CheckoutPageInner() {
         motionPreset="slide-in-bottom">
         <Portal>
           <Dialog.Backdrop
-            bg="color-mix(in srgb, var(--brand-dark) 55%, transparent)"
-            backdropFilter="blur(6px)" />
+            bg="var(--overlay)"
+            backdropFilter="var(--surface-blur)" />
           <Dialog.Positioner>
             <Dialog.Content
-              borderRadius="24px" overflow="hidden"
-              bg={C.bg} border={`1px solid ${C.border}`}
-              boxShadow="0 24px 72px color-mix(in srgb, var(--brand-dark) 20%, transparent)">
-              <Box bg={C.btnGrad} p={6} textAlign="center">
-                <FaCheckCircle size={40} color="white"
+              className="sk-panel" overflow="hidden">
+              {/* Cabecera con relleno primario (siempre opaco, también en
+                  editorial/neón donde --button-bg es transparente o tenue) */}
+              <Box bg="var(--accent)" p={6} textAlign="center">
+                <Icon name="check-circle" size={40} color="var(--on-primary)"
                   style={{ margin: '0 auto 8px' }} />
                 <Dialog.Title
-                  color="white"
+                  color="var(--on-primary)"
                   fontFamily='var(--font-heading)'
                   fontSize="2xl" letterSpacing="0.04em">
                   {t('checkout.confirmTitle')}
                 </Dialog.Title>
-                <Text color="rgba(255,255,255,0.85)" fontSize="sm"
+                <Text color="var(--on-primary)" opacity={0.85} fontSize="sm"
                   fontFamily='var(--font-body)'>
                   {t('checkout.confirmDesc')}
                 </Text>
               </Box>
 
               <Dialog.Body p={6}>
-                <Box p={4} borderRadius="14px"
-                  bg="rgba(255,255,255,0.60)" border={`1px solid ${C.border}`}>
+                <Box p={4} borderRadius="var(--radius-input)"
+                  bg="var(--surface-muted)" border={`1px solid ${C.border}`}>
                   <Flex justify="space-between" mb={2}>
                     <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
                       {t('checkout.newBalance')}
                     </Text>
-                    <Text fontFamily='var(--font-body)' fontWeight={700} color={C.accentDark}>
+                    <Text fontFamily='var(--font-body)' fontWeight={700} color={C.accent}>
                       {userBalance?.toFixed(2)} {t('checkout.creditsUnit')}
                     </Text>
                   </Flex>
@@ -2026,12 +2015,11 @@ function CheckoutPageInner() {
               </Dialog.Body>
 
               <Dialog.Footer p={6} pt={2}>
-                <Button w="full" h="48px" borderRadius="full" color="white" bg={C.btnGrad}
-                  fontFamily='var(--font-body)' fontWeight={700}
-                  onClick={handleCreditBooking} disabled={isSubmitting}
-                  boxShadow="0 4px 16px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 28%, transparent)">
+                <Button w="full" h="48px" className="sk-btn"
+                  fontFamily='var(--font-body)'
+                  onClick={handleCreditBooking} disabled={isSubmitting}>
                   {isSubmitting
-                    ? <Spinner size="sm" color="white" />
+                    ? <Spinner size="sm" color="inherit" />
                     : t('checkout.confirmBooking')}
                 </Button>
               </Dialog.Footer>
@@ -2039,7 +2027,7 @@ function CheckoutPageInner() {
               <Dialog.CloseTrigger asChild
                 position="absolute" top="3" right="3"
                 disabled={isSubmitting}>
-                <CloseButton size="sm" color="white"
+                <CloseButton size="sm" color="var(--on-primary)"
                   _hover={{ bg: 'rgba(255,255,255,0.20)' }} />
               </Dialog.CloseTrigger>
             </Dialog.Content>
@@ -2071,21 +2059,22 @@ function FlowStepper({ step, labels, ariaLabel = 'Progreso' }: { step: number; l
             aria-current={current ? 'step' : undefined}>
             <Flex direction="column" align="center" gap={1} minW="56px">
               <Flex w="30px" h="30px" borderRadius="full" align="center" justify="center"
-                bg={done ? '#2D7D46' : current ? 'linear-gradient(135deg,var(--brand-primary),color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)))' : 'color-mix(in srgb, var(--brand-primary) 12%, transparent)'}
-                color={done || current ? 'white' : 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))'}
-                boxShadow={current ? '0 3px 10px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 35%, transparent)' : 'none'}
+                bg={done ? 'var(--success)' : current ? 'var(--accent)' : 'var(--accent-soft)'}
+                // Hecho: color de la página sobre el verde (contrasta en claro y oscuro)
+                color={done ? 'var(--page-bg)' : current ? 'var(--on-primary)' : 'var(--text-muted)'}
+                boxShadow={current ? '0 3px 10px color-mix(in srgb, var(--accent) 35%, transparent)' : 'none'}
                 fontFamily='var(--font-body)' fontWeight={800} fontSize="xs"
                 transition="all .25s ease">
-                {done ? <FaCheckCircle size={13} /> : n}
+                {done ? <Icon name="check-circle" size={13} /> : n}
               </Flex>
               <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={current ? 800 : 600}
-                color={current ? 'var(--brand-dark)' : 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))'} whiteSpace="nowrap">
+                color={current ? 'var(--page-text)' : 'var(--text-muted)'} whiteSpace="nowrap">
                 {label}
               </Text>
             </Flex>
             {n < labels.length && (
               <Box flex={1} h="2px" mx={1} mb="18px" borderRadius="full"
-                bg={done ? 'rgba(45,125,70,0.45)' : 'color-mix(in srgb, var(--brand-primary) 20%, transparent)'} />
+                bg={done ? successMix(45) : 'var(--accent-border)'} />
             )}
           </Flex>
         );

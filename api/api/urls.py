@@ -17,7 +17,7 @@ from .views import (
 )
 from .views_site import (
     FAQItemViewSet, SiteConfigAdminView, SiteConfigCheckDomainView, SiteConfigPublicView, SiteConfigStripeView,
-    SiteConfigTestEmailView, SiteIconView, SiteOgImageView, TestimonialViewSet,
+    SiteBadgeView, SiteConfigTestEmailView, SiteIconView, SiteOgImageView, TestimonialViewSet,
 )
 
 router = DefaultRouter()
@@ -71,6 +71,7 @@ urlpatterns = [
     path('v1/site-config/stripe/', SiteConfigStripeView.as_view(), name='site-config-stripe'),
     path('v1/site-config/icon/<int:size>.png', SiteIconView.as_view(), name='site-icon'),
     path('v1/site-config/og.png', SiteOgImageView.as_view(), name='site-og-image'),
+    path('v1/site-config/badge.png', SiteBadgeView.as_view(), name='site-badge'),
     path('v1/site-config/check-domain/', SiteConfigCheckDomainView.as_view(), name='site-config-check-domain'),
     path('v1/me/membership-suggestion/', MembershipSuggestionView.as_view(), name='membership-suggestion'),
     path('v1/me/membership-suggestion/event/', MembershipNudgeEventView.as_view(), name='membership-suggestion-event'),

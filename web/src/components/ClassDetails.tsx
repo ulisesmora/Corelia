@@ -6,7 +6,7 @@ import {
   Dialog, CloseButton, Portal, Spinner, Center,
 } from "@chakra-ui/react";
 import { motion } from "framer-motion";
-import { FaClock, FaDoorOpen, FaChevronLeft, FaChevronRight, FaLeaf, FaWhatsapp, FaUserCircle } from "react-icons/fa";
+import { Icon } from "./ui/Icon";
 import Chakra from "./ChakraProvider";
 import { useLangStore } from "./stores/lang.store";
 import { useT, formatPrice } from "../i18n";
@@ -23,11 +23,12 @@ const MotionBox = motion(Box as any);
 
 const API_BASE_URL = API_V1;
 
+// Paleta de la ficha: tokens del estilo visual (presets.css)
 const C = {
-  accent: 'var(--brand-primary)', accentDark: 'color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))', brown: 'var(--brand-dark)', brownMid: 'color-mix(in srgb, var(--brand-primary) 28%, var(--brand-dark))',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))', textLight: 'color-mix(in srgb, var(--brand-secondary) 65%, white)',
-  bg: 'var(--brand-bg)', cardBg: 'rgba(255,255,255,0.72)', border: 'rgba(255,255,255,0.80)',
-  borderMuted: 'color-mix(in srgb, var(--brand-primary) 18%, transparent)',
+  accent: 'var(--accent)', accentText: 'var(--accent-text)', brown: 'var(--page-text)', brownMid: 'var(--text-muted)',
+  textMuted: 'var(--text-muted)', textLight: 'var(--text-subtle)',
+  bg: 'var(--page-bg)', cardBg: 'var(--surface)', border: 'var(--surface-border)',
+  borderMuted: 'var(--border-neutral)',
 };
 
 interface ApiClassType {
@@ -137,11 +138,10 @@ function ClassDetailInner() {
           : error === 'load' ? t('classDetail.errorLoad')
           : t('classDetail.errorNoData')}
       </Text>
-      <Box as="a" href={classesHref} px={6} h="44px" borderRadius="12px"
+      <Box as="a" href={classesHref} className="sk-btn" px={6} h="44px"
         display="flex" alignItems="center"
-        bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDark})`}
-        color="white" fontFamily='var(--font-body)'
-        fontWeight={700} fontSize="sm" cursor="pointer">
+        fontFamily='var(--font-body)'
+        fontSize="sm" cursor="pointer">
         {t('classDetail.backBtn')}
       </Box>
     </Center>
@@ -187,7 +187,7 @@ function ClassDetailInner() {
           top={{ lg: 0 }}
           flexShrink={0}
           overflow="hidden"
-          bg="linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 50%, white), color-mix(in srgb, var(--brand-primary) 72%, white))"
+          bg="var(--accent-soft)"
         >
           {classData.image ? (
             <Box
@@ -197,7 +197,7 @@ function ClassDetailInner() {
             />
           ) : (
             <Flex position="absolute" inset={0} align="center" justify="center">
-              <FaLeaf size={60} color="rgba(255,255,255,0.20)" />
+              <Icon name="leaf" size={60} color="rgba(255,255,255,0.20)" />
             </Flex>
           )}
 
@@ -209,12 +209,12 @@ function ClassDetailInner() {
           <Box as="a" href={classesHref}
             position="absolute" top={6} left={6} zIndex={10}
             display="flex" alignItems="center" gap={2}
-            px={3} py={2} borderRadius="full"
+            px={3} py={2} borderRadius="var(--radius-button)"
             bg="rgba(255,255,255,0.18)" border="1px solid rgba(255,255,255,0.30)"
             backdropFilter="blur(12px)" style={{ WebkitBackdropFilter: 'blur(12px)' }}
             cursor="pointer" transition="all 0.2s" _hover={{ bg: 'rgba(255,255,255,0.28)' }}
           >
-            <FaChevronLeft size={10} color="white" />
+            <Icon name="chevron-left" size={10} color="white" />
             <Text fontFamily='var(--font-body)' fontSize="12px" fontWeight={700} color="white">
               {t('classDetail.backToClasses')}
             </Text>
@@ -224,7 +224,7 @@ function ClassDetailInner() {
           <Box position="absolute" bottom={0} left={0} right={0}
             px={{ base: 5, lg: 8 }} pb={{ base: 6, lg: 10 }}>
             <Box
-              display="inline-flex" px={3} py={1} borderRadius="full" mb={3}
+              display="inline-flex" px={3} py={1} borderRadius="var(--radius-chip)" mb={3}
               bg="rgba(255,255,255,0.15)" border="1px solid rgba(255,255,255,0.25)"
             >
               <Text fontSize="10px" fontWeight={700} color="rgba(255,255,255,0.90)"
@@ -244,7 +244,7 @@ function ClassDetailInner() {
         <Box
           flex={1}
           overflowY="auto"
-          bg="linear-gradient(180deg, var(--brand-bg) 0%, color-mix(in srgb, var(--brand-primary) 22%, white) 100%)"
+          bg="var(--section-bg)"
           px={{ base: 5, md: 10, lg: 12 }}
           py={{ base: 8, lg: 14 }}
           display="flex"
@@ -269,10 +269,10 @@ function ClassDetailInner() {
           <MotionBox {...fadeUp(0.10)}>
             <Flex gap={2} flexWrap="wrap">
               <Flex align="center" gap={1.5}
-                px={3} py={1.5} borderRadius="full"
+                px={3} py={1.5} borderRadius="var(--radius-chip)"
                 bg={C.cardBg} border={`1px solid ${C.borderMuted}`}
-                backdropFilter="blur(12px)" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
-                <FaClock size={10} color={C.accent} />
+                backdropFilter="var(--surface-blur)" style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}>
+                <Icon name="clock" size={10} color={C.accent} />
                 <Text fontSize="12px" fontWeight={600} color={C.textMuted}
                   fontFamily='var(--font-body)'>
                   {classData.duration_minutes} min
@@ -280,9 +280,9 @@ function ClassDetailInner() {
               </Flex>
 
               <Flex align="center" gap={1.5}
-                px={3} py={1.5} borderRadius="full"
+                px={3} py={1.5} borderRadius="var(--radius-chip)"
                 bg={C.cardBg} border={`1px solid ${C.borderMuted}`}
-                backdropFilter="blur(12px)" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
+                backdropFilter="var(--surface-blur)" style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}>
                 <Box w="6px" h="6px" borderRadius="full" bg={C.accent} flexShrink={0} />
                 <Text fontSize="12px" fontWeight={600} color={C.textMuted}
                   fontFamily='var(--font-body)'>
@@ -291,10 +291,10 @@ function ClassDetailInner() {
               </Flex>
 
               <Flex align="center" gap={1.5}
-                px={3} py={1.5} borderRadius="full"
-                bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)"
-                backdropFilter="blur(12px)" style={{ WebkitBackdropFilter: 'blur(12px)' }}>
-                <Text fontSize="12px" fontWeight={700} color={C.accent}
+                px={3} py={1.5} borderRadius="var(--radius-chip)"
+                bg="var(--accent-soft)" border="1px solid var(--accent-border)"
+                backdropFilter="var(--surface-blur)" style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}>
+                <Text fontSize="12px" fontWeight={700} color={C.accentText}
                   fontFamily='var(--font-body)'>
                   {classData.default_price_credits} {Number(classData.default_price_credits) !== 1 ? t('classDetail.credits') : t('classDetail.credit')}
                 </Text>
@@ -311,31 +311,31 @@ function ClassDetailInner() {
           {instructorName && (
             <MotionBox {...fadeUp(0.13)}>
               <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700}
-                color={C.accent} letterSpacing="0.12em" textTransform="uppercase" mb={3}>
+                color={C.accentText} letterSpacing="0.12em" textTransform="uppercase" mb={3}>
                 {t('classDetail.instructorLabel')}
               </Text>
               <Box
                 as={instructor ? 'button' : 'div'}
                 onClick={instructor ? () => setInstructorOpen(true) : undefined}
                 w="full" display="flex" alignItems="center" gap={4}
-                px={4} py={4} borderRadius="20px"
-                bg={C.cardBg} border={`1px solid ${C.border}`}
-                backdropFilter="blur(16px)" style={{ WebkitBackdropFilter: 'blur(16px)' }}
-                boxShadow="0 2px 16px color-mix(in srgb, var(--brand-dark) 8%, transparent), inset 0 1px 0 rgba(255,255,255,0.90)"
+                px={4} py={4} borderRadius="var(--radius-card)"
+                bg={C.cardBg} border={`var(--border-width) solid ${C.border}`}
+                backdropFilter="var(--surface-blur)" style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
+                boxShadow="var(--shadow-card)"
                 cursor={instructor ? 'pointer' : 'default'}
                 transition="all 0.22s"
                 _hover={instructor ? {
-                  boxShadow: '0 6px 24px color-mix(in srgb, var(--brand-dark) 12%, transparent), inset 0 1px 0 rgba(255,255,255,0.95)',
-                  borderColor: C.borderMuted,
+                  boxShadow: 'var(--shadow-hover)',
+                  borderColor: 'var(--accent-border)',
                 } : {}}
                 textAlign="left"
               >
                 {/* Photo circle */}
                 <Box
                   w="64px" h="64px" borderRadius="full" overflow="hidden" flexShrink={0}
-                  bg="linear-gradient(135deg, color-mix(in srgb, var(--brand-primary) 50%, white), color-mix(in srgb, var(--brand-primary) 72%, white))"
-                  border="2px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)"
-                  boxShadow="0 4px 16px color-mix(in srgb, var(--brand-dark) 12%, transparent)"
+                  bg={C.accent}
+                  border="2px solid var(--accent-border)"
+                  boxShadow="var(--shadow-card)"
                 >
                   {instructor?.image ? (
                     <Image
@@ -345,8 +345,8 @@ function ClassDetailInner() {
                   ) : (
                     <Flex w="full" h="full" align="center" justify="center">
                       {initials
-                        ? <Text fontFamily='var(--font-heading)' fontSize="2xl" color="white" letterSpacing="0.04em">{initials}</Text>
-                        : <FaLeaf size={20} color="rgba(255,255,255,0.50)" />}
+                        ? <Text fontFamily='var(--font-heading)' fontSize="2xl" color="var(--on-primary)" letterSpacing="0.04em">{initials}</Text>
+                        : <Icon name="leaf" size={20} color="var(--on-primary)" style={{ opacity: 0.5 }} />}
                     </Flex>
                   )}
                 </Box>
@@ -359,18 +359,17 @@ function ClassDetailInner() {
                   {instructor ? (
                     <Flex mt={2}>
                       <Flex
+                        className="sk-btn"
                         align="center" gap={1.5}
-                        px={3} py={1} borderRadius="full"
-                        bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDark})`}
-                        boxShadow="0 2px 10px color-mix(in srgb, var(--brand-primary) 35%, transparent)"
+                        px={3} py={1}
                         display="inline-flex"
                       >
-                        <FaUserCircle size={10} color="rgba(255,255,255,0.85)" />
+                        <Icon name="user-circle" size={10} style={{ opacity: 0.85 }} />
                         <Text fontFamily='var(--font-body)'
-                          fontSize="11px" fontWeight={700} color="white">
+                          fontSize="11px" fontWeight={700}>
                           {t('classDetail.instructorViewProfile')}
                         </Text>
-                        <FaChevronRight size={7} color="rgba(255,255,255,0.70)" />
+                        <Icon name="chevron-right" size={7} style={{ opacity: 0.7 }} />
                       </Flex>
                     </Flex>
                   ) : (
@@ -387,20 +386,20 @@ function ClassDetailInner() {
           {/* ── Room card ── */}
           <MotionBox {...fadeUp(0.17)}>
             <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700}
-              color={C.accent} letterSpacing="0.12em" textTransform="uppercase" mb={3}>
+              color={C.accentText} letterSpacing="0.12em" textTransform="uppercase" mb={3}>
               {t('classDetail.spaceLabel')}
             </Text>
             <Box
               as="button" onClick={() => setRoomOpen(true)}
               w="full" display="flex" alignItems="center" gap={4}
-              px={4} py={4} borderRadius="20px"
-              bg={C.cardBg} border={`1px solid ${C.border}`}
-              backdropFilter="blur(16px)" style={{ WebkitBackdropFilter: 'blur(16px)' }}
-              boxShadow="0 2px 16px color-mix(in srgb, var(--brand-dark) 8%, transparent), inset 0 1px 0 rgba(255,255,255,0.90)"
+              px={4} py={4} borderRadius="var(--radius-card)"
+              bg={C.cardBg} border={`var(--border-width) solid ${C.border}`}
+              backdropFilter="var(--surface-blur)" style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
+              boxShadow="var(--shadow-card)"
               cursor="pointer" transition="all 0.22s"
               _hover={{
-                boxShadow: '0 6px 24px color-mix(in srgb, var(--brand-dark) 12%, transparent), inset 0 1px 0 rgba(255,255,255,0.95)',
-                borderColor: C.borderMuted,
+                boxShadow: 'var(--shadow-hover)',
+                borderColor: 'var(--accent-border)',
               }}
               textAlign="left"
               overflow="hidden"
@@ -413,7 +412,7 @@ function ClassDetailInner() {
                     w="full" h="full"
                     style={{ objectFit: 'cover', objectPosition: 'center', display: 'block', opacity: 0.22 }} />
                   <Box position="absolute" inset={0}
-                    bg="linear-gradient(to right, var(--brand-bg) 0%, transparent 55%)" />
+                    bg="linear-gradient(to right, var(--surface-strong) 0%, transparent 55%)" />
                 </Box>
               )}
 
@@ -421,14 +420,14 @@ function ClassDetailInner() {
               <Flex
                 w="64px" h="64px" borderRadius="full" flexShrink={0}
                 align="center" justify="center"
-                bg="color-mix(in srgb, var(--brand-primary) 12%, transparent)" border="2px solid color-mix(in srgb, var(--brand-primary) 22%, transparent)"
+                bg="var(--accent-soft)" border="2px solid var(--accent-border)"
                 position="relative" zIndex={1}
               >
                 {room?.image ? (
                   <Image src={optimizedImage(room.image, 256)} onError={withOriginalFallback(room.image)} alt={tr(room, 'title', lang) || room.name}
                     w="full" h="full" objectFit="cover" borderRadius="full" loading="lazy" />
                 ) : (
-                  <FaDoorOpen size={22} color={C.accent} />
+                  <Icon name="door" size={22} color={C.accent} />
                 )}
               </Flex>
 
@@ -445,18 +444,17 @@ function ClassDetailInner() {
                 )}
                 <Flex mt={2}>
                   <Flex
+                    className="sk-btn"
                     align="center" gap={1.5}
-                    px={3} py={1} borderRadius="full"
-                    bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDark})`}
-                    boxShadow="0 2px 10px color-mix(in srgb, var(--brand-primary) 35%, transparent)"
+                    px={3} py={1}
                     display="inline-flex"
                   >
-                    <FaDoorOpen size={10} color="rgba(255,255,255,0.85)" />
+                    <Icon name="door" size={10} style={{ opacity: 0.85 }} />
                     <Text fontFamily='var(--font-body)'
-                      fontSize="11px" fontWeight={700} color="white">
+                      fontSize="11px" fontWeight={700}>
                       {t('classDetail.spaceViewAll')}
                     </Text>
-                    <FaChevronRight size={7} color="rgba(255,255,255,0.70)" />
+                    <Icon name="chevron-right" size={7} style={{ opacity: 0.7 }} />
                   </Flex>
                 </Flex>
               </Box>
@@ -466,24 +464,21 @@ function ClassDetailInner() {
           {/* Divider */}
           <MotionBox {...fadeUp(0.20)}>
             <Flex align="center" gap={3}>
-              <Box flex={1} h="1px" bg="color-mix(in srgb, var(--brand-primary) 15%, transparent)" />
+              <Box flex={1} h="1px" bg="var(--border-neutral)" />
               <Text fontFamily='var(--font-heading)'
-                fontSize="xs" color="color-mix(in srgb, var(--brand-primary) 35%, transparent)" letterSpacing="0.15em" textTransform="uppercase">
+                fontSize="xs" color="var(--text-subtle)" letterSpacing="0.15em" textTransform="uppercase">
                 {getSiteClient().studio_name}
               </Text>
-              <Box flex={1} h="1px" bg="color-mix(in srgb, var(--brand-primary) 15%, transparent)" />
+              <Box flex={1} h="1px" bg="var(--border-neutral)" />
             </Flex>
           </MotionBox>
 
           {/* ── Booking panel ── */}
           <MotionBox {...fadeUp(0.22)}>
-            <Box p={6} borderRadius="24px"
-              bg={C.cardBg} border={`1px solid ${C.border}`}
-              backdropFilter="blur(20px)" style={{ WebkitBackdropFilter: 'blur(20px)' }}
-              boxShadow="0 8px 32px color-mix(in srgb, var(--brand-dark) 8%, transparent), inset 0 1px 0 rgba(255,255,255,0.90)"
-            >
+            {/* Tarjeta del estilo (fondo, borde, radio, sombra, blur) */}
+            <Box p={6} className="sk-card">
               <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700}
-                color={C.accent} letterSpacing="0.12em" textTransform="uppercase" mb={1}>
+                color={C.accentText} letterSpacing="0.12em" textTransform="uppercase" mb={1}>
                 {t('classDetail.priceLabel')}
               </Text>
               <Flex align="baseline" gap={2} mb={5}>
@@ -508,7 +503,7 @@ function ClassDetailInner() {
               {sessions && sessions.length > 0 && (
                 <Box mb={5}>
                   <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700}
-                    color={C.accent} letterSpacing="0.12em" textTransform="uppercase" mb={2}>
+                    color={C.accentText} letterSpacing="0.12em" textTransform="uppercase" mb={2}>
                     {lang === 'en' ? 'When it runs' : 'Cuándo se da'}
                   </Text>
                   <VStack gap={1.5} align="stretch">
@@ -523,7 +518,7 @@ function ClassDetailInner() {
                             : '';
                         return (
                           <Flex key={ses.id} align="center" justify="space-between"
-                            px={3} py={2} borderRadius="10px" bg="color-mix(in srgb, var(--brand-primary) 7%, transparent)">
+                            px={3} py={2} borderRadius="var(--radius-input)" bg="var(--accent-soft)">
                             <Text fontFamily='var(--font-body)' fontSize="sm" fontWeight={700}
                               color={C.brown} textTransform="capitalize">
                               {ses.is_recurrent ? (lang === 'en' ? `Every ${dayName}` : `Cada ${dayName}`) : dayName}
@@ -539,8 +534,8 @@ function ClassDetailInner() {
               )}
 
               {sessions && sessions.length === 0 && (
-                <Box mb={4} p={3.5} borderRadius="14px"
-                  bg="color-mix(in srgb, var(--brand-primary) 8%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 22%, transparent)">
+                <Box mb={4} p={3.5} borderRadius="var(--radius-input)"
+                  bg="var(--accent-soft)" border="1px solid var(--accent-border)">
                   <Text fontFamily='var(--font-body)' fontSize="sm" fontWeight={700} color={C.brown} mb={0.5}>
                     {lang === 'en' ? 'Not on the timetable right now' : 'Ahora mismo no está en el horario'}
                   </Text>
@@ -557,8 +552,8 @@ function ClassDetailInner() {
                   <>
                     <Box
                       aria-disabled="true"
-                      w="full" h="50px" borderRadius="14px"
-                      bg="color-mix(in srgb, var(--brand-primary) 14%, transparent)" color={C.textMuted}
+                      w="full" h="50px" borderRadius="var(--radius-button)"
+                      bg="var(--accent-soft)" color={C.textMuted}
                       fontFamily='var(--font-body)' fontWeight={700} fontSize="sm"
                       display="flex" alignItems="center" justifyContent="center"
                       cursor="not-allowed"
@@ -567,11 +562,10 @@ function ClassDetailInner() {
                     </Box>
                     <Box
                       as="a" href={classesHref}
-                      w="full" h="46px" borderRadius="14px"
-                      bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDark})`}
-                      color="white" fontFamily='var(--font-body)' fontWeight={700} fontSize="sm"
+                      className="sk-btn"
+                      w="full" h="46px"
+                      fontFamily='var(--font-body)' fontSize="sm"
                       display="flex" alignItems="center" justifyContent="center"
-                      _hover={{ opacity: 0.93 }}
                     >
                       {lang === 'en' ? 'See other classes' : 'Ver otras clases'}
                     </Box>
@@ -579,13 +573,10 @@ function ClassDetailInner() {
                 ) : (
                   <Box
                     as="button" onClick={() => setIsCalendarOpen(true)}
-                    w="full" h="50px" borderRadius="14px"
-                    bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDark})`}
-                    color="white" fontFamily='var(--font-body)'
-                    fontWeight={700} fontSize="sm" cursor="pointer"
-                    boxShadow="0 6px 20px color-mix(in srgb, var(--brand-primary) 30%, transparent)"
-                    transition="all 0.22s ease"
-                    _hover={{ boxShadow: '0 10px 28px color-mix(in srgb, var(--brand-primary) 40%, transparent)', opacity: 0.93 }}
+                    className="sk-btn"
+                    w="full" h="50px"
+                    fontFamily='var(--font-body)'
+                    fontSize="sm" cursor="pointer"
                     display="flex" alignItems="center" justifyContent="center"
                   >
                     {lang === 'en' ? 'Choose a date and book' : 'Elegir fecha y reservar'}
@@ -597,15 +588,13 @@ function ClassDetailInner() {
                   as="a"
                   href={contactUrl(getSiteClient(), t('classDetail.waMessage', { title }))}
                   target="_blank" rel="noopener noreferrer"
-                  w="full" h="46px" borderRadius="14px"
-                  bg="transparent" border={`1px solid ${C.borderMuted}`}
-                  color={C.textMuted} fontFamily='var(--font-body)'
+                  className="sk-btn-ghost"
+                  w="full" h="46px"
+                  fontFamily='var(--font-body)'
                   fontWeight={600} fontSize="sm" cursor="pointer"
-                  transition="all 0.2s"
-                  _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 6%, transparent)', color: C.brown }}
                   display="flex" alignItems="center" justifyContent="center" gap={2}
                 >
-                  <FaWhatsapp size={14} />
+                  <Icon name="whatsapp" size={14} />
                   {sessions && sessions.length === 0
                     ? (lang === 'en' ? 'Let me know when it’s back' : 'Avísame cuando vuelva')
                     : t('classDetail.privateBtn')}
@@ -630,16 +619,14 @@ function ClassDetailInner() {
       {/* ── Calendar dialog ── */}
       <Dialog.Root open={isCalendarOpen} size="xl">
         <Portal>
-          <Dialog.Backdrop bg="color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 50%, black) 45%, transparent)" backdropFilter="blur(6px)"
-            style={{ WebkitBackdropFilter: 'blur(6px)' }} />
+          <Dialog.Backdrop bg="var(--overlay)" backdropFilter="var(--surface-blur)"
+            style={{ WebkitBackdropFilter: 'var(--surface-blur)' }} />
           <Dialog.Positioner>
             <Dialog.Content
-              borderRadius="24px" overflow="hidden"
-              bg="color-mix(in srgb, var(--brand-bg) 55%, white)"
-              style={{ WebkitBackdropFilter: 'blur(20px)' }}
-              border={`1px solid ${C.border}`}
+              // Panel del estilo: superficie, borde, radio, sombra flotante y blur
+              className="sk-panel"
+              overflow="hidden"
               maxW={{ base: '95vw', md: '760px' }} w="full"
-              boxShadow="0 24px 80px color-mix(in srgb, color-mix(in srgb, var(--brand-dark) 50%, black) 18%, transparent)"
             >
               <Dialog.Header px={6} pt={6} pb={4}
                 borderBottom={`1px solid ${C.borderMuted}`}>
@@ -656,8 +643,8 @@ function ClassDetailInner() {
                   </Box>
                   <Dialog.CloseTrigger asChild>
                     <CloseButton onClick={() => setIsCalendarOpen(false)} size="sm" borderRadius="full"
-                      bg="rgba(255,255,255,0.55)" border={`1px solid ${C.border}`}
-                      _hover={{ bg: 'white' }} cursor="pointer" />
+                      bg="var(--surface-strong)" border={`1px solid ${C.border}`}
+                      _hover={{ bg: 'var(--surface)' }} cursor="pointer" />
                   </Dialog.CloseTrigger>
                 </Flex>
               </Dialog.Header>

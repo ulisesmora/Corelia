@@ -4,9 +4,11 @@ import AppFixed from '../components/AppFixed';
 import CheckoutPage from '../components/CheckoutPage';
 import PageLoader from '../components/PageLoader.astro';
 import OptimizedHead from '../components/OptimizedHead.astro';
+import { getSiteConfig, htmlThemeAttrs } from '../lib/site';
+const site = await getSiteConfig();
 ---
 
-<html lang="es">
+<html lang="es" {...htmlThemeAttrs(site)}>
   <head>
     <OptimizedHead title="Finalizar reserva" titleEn="Checkout" noindex />
   </head>

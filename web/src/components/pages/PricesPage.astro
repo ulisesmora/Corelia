@@ -1,0 +1,61 @@
+---
+// Página de precios, compartida por /prices (ES) y /en/prices (EN). Se
+// renderiza en servidor en cada petición (con caché corta): planes, FAQs y
+// marca salen de la API y van en el HTML para buscadores e IA.
+import Footer from '../Footer';
+import AppFixed from '../AppFixed';
+import SuscriptionPlans from '../SuscriptionPlans';
+import OptimizedHead from '../OptimizedHead.astro';
+import JsonLd from '../seo/JsonLd.astro';
+import FaqList from '../sections/FaqList.astro';
+import { BRAND_CACHE, breadcrumbJsonLd, businessJsonLd, faqJsonLd } from '../../seo/site';
+import { getFaqs, getPlans, getSchedules } from '../../seo/catalog';
+import { formatMoney, getSiteConfig, htmlThemeAttrs } from '../../lib/site';
+
+interface Props { lang: 'es' | 'en' }
+const { lang } = Astro.props;
+const en = lang === 'en';
+
+Astro.response.headers.set('Cache-Control', BRAND_CACHE);
+
+const [site, plans, faqs, schedules] = await Promise.all([getSiteConfig(), getPlans(), getFaqs('prices'), getSchedules()]);
+const packs = plans.filter((p) => p.type === 'pack');
+const subs = plans.filter((p) => p.type === 'sub').sort((a, b) => Number(a.price_eur) - Number(b.price_eur));
+const money = (n: number) => formatMoney(n, site, lang);
+const dropIn = money(Number(site.drop_in_price));
+const from = subs[0] ? money(Number(subs[0].price_eur)) : '';
+const description = en
+  ? `${site.studio_name} prices: drop-in class ${dropIn}${packs.length ? ', class packs' : ''}${from ? ` and memberships from ${from} per month` : ''}.`
+  : `Precios de ${site.studio_name}: clase suelta ${dropIn}${packs.length ? ', bonos de créditos' : ''}${from ? ` y membresías desde ${from} al mes` : ''}.`;
+const path = en ? '/en/prices' : '/prices';
+const jsonLd = [
+  businessJsonLd(site, lang, { schedules, plans }),
+  breadcrumbJsonLd(en
+    ? [{ name: 'Home', path: '/en' }, { name: 'Prices', path }]
+    : [{ name: 'Inicio', path: '/' }, { name: 'Precios', path }]),
+  faqJsonLd(faqs, lang),
+].filter(Boolean);
+---
+
+<html lang={lang} {...htmlThemeAttrs(site)}>
+  <head>
+    <OptimizedHead
+      title={en ? 'Prices and plans' : 'Precios, bonos y membresías'}
+      titleEn="Prices and plans"
+      description={description}
+      canonicalPath={path}
+      alternates={{ es: '/prices', en: '/en/prices' }}
+    />
+    {jsonLd.map((d) => <JsonLd data={d} />)}
+  </head>
+  <body class="format">
+    <AppFixed client:only="react" />
+
+    <main id="contenido">
+      <SuscriptionPlans client:load lang={lang} initialPlans={plans} />
+      <FaqList faqs={faqs} lang={lang} />
+    </main>
+
+    <Footer client:visible lang={lang} />
+  </body>
+</html>

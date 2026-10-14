@@ -2,17 +2,18 @@
 
 import React, { useEffect, useState } from 'react';
 import { Box, Flex, Text } from '@chakra-ui/react';
-import { FaHome, FaSpa, FaCalendarPlus, FaTags, FaUser } from 'react-icons/fa';
+import { Icon, type IconName } from './ui/Icon';
 import { useCartStore } from './stores/car.store';
 import { useT, localizedPath } from '../i18n';
 
+// Paleta con los tokens del estilo visual (presets.css): la barra es un panel fijo
 const C = {
-  accent: 'var(--brand-primary)',
-  accentDark: 'color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  muted: 'color-mix(in srgb, var(--brand-secondary) 83%, white)',
-  bg: 'color-mix(in srgb, var(--brand-bg) 92%, transparent)',
-  border: 'color-mix(in srgb, var(--brand-primary) 18%, transparent)',
+  accent: 'var(--accent)',
+  accentDark: 'var(--accent-text)',
+  brown: 'var(--page-text)',
+  muted: 'var(--text-muted)',
+  bg: 'var(--surface-strong)',
+  border: 'var(--surface-border)',
 };
 
 const NAV_H = 62; // px, sin contar safe-area
@@ -37,11 +38,11 @@ export default function BottomNav() {
   const homeHref = t('nav.items.home.href') || '/';
   const classesHref = t('nav.items.classes.href') || '/classes';
   const items = [
-    { href: homeHref, label: t('nav.items.home.label') || 'Inicio', icon: FaHome },
-    { href: classesHref, label: t('nav.items.classes.label') || 'Clases', icon: FaSpa },
-    { href: reserveHref, label: t('bottomNav.book') || 'Reservar', icon: FaCalendarPlus, primary: true, matches: ['/calendar', '/checkout'] },
-    { href: '/prices', label: t('nav.items.prices.label') || 'Precios', icon: FaTags },
-    { href: '/dashboard', label: t('bottomNav.account') || 'Mi cuenta', icon: FaUser },
+    { href: homeHref, label: t('nav.items.home.label') || 'Inicio', icon: 'home' as IconName },
+    { href: classesHref, label: t('nav.items.classes.label') || 'Clases', icon: 'spa' as IconName },
+    { href: reserveHref, label: t('bottomNav.book') || 'Reservar', icon: 'calendar-plus' as IconName, primary: true, matches: ['/calendar', '/checkout'] },
+    { href: '/prices', label: t('nav.items.prices.label') || 'Precios', icon: 'tags' as IconName },
+    { href: '/dashboard', label: t('bottomNav.account') || 'Mi cuenta', icon: 'user' as IconName },
   ];
 
   const isActive = (item: (typeof items)[number]) => {
@@ -72,16 +73,15 @@ export default function BottomNav() {
         right={0}
         zIndex={1200}
         bg={C.bg}
-        backdropFilter="blur(18px) saturate(160%)"
-        style={{ WebkitBackdropFilter: 'blur(18px) saturate(160%)' }}
-        borderTop={`1px solid ${C.border}`}
-        boxShadow="0 -4px 24px color-mix(in srgb, var(--brand-dark) 8%, transparent)"
+        backdropFilter="var(--surface-blur)"
+        style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
+        borderTop={`var(--border-width) solid ${C.border}`}
+        boxShadow="var(--shadow-float)"
         pb="env(safe-area-inset-bottom, 0px)"
       >
         <Flex h={`${NAV_H}px`} align="stretch" justify="space-around">
           {items.map((item) => {
             const active = isActive(item);
-            const Icon = item.icon;
 
             if (item.primary) {
               return (
@@ -103,13 +103,14 @@ export default function BottomNav() {
                     h="46px"
                     mt="-18px"
                     borderRadius="full"
-                    bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDark})`}
-                    color="white"
-                    boxShadow="0 6px 18px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 40%, transparent)"
-                    border="3px solid color-mix(in srgb, var(--brand-bg) 95%, transparent)"
+                    // CTA central: relleno primario (en todos los estilos) con texto legible encima
+                    bg="linear-gradient(135deg, var(--brand-primary), var(--brand-primary-2))"
+                    color="var(--on-primary)"
+                    boxShadow="var(--button-shadow)"
+                    border={`3px solid ${C.bg}`}
                     position="relative"
                   >
-                    <Icon size={17} />
+                    <Icon name={item.icon} size={17} />
                     {cartCount > 0 && (
                       <Flex
                         position="absolute"
@@ -119,8 +120,9 @@ export default function BottomNav() {
                         h="18px"
                         px="4px"
                         borderRadius="full"
-                        bg="#C0392B"
-                        color="white"
+                        bg="var(--danger)"
+                        // Fondo de la página como texto: contrasta con --danger en claros y oscuros
+                        color="var(--page-bg)"
                         fontSize="10px"
                         fontWeight={800}
                         align="center"
@@ -159,7 +161,7 @@ export default function BottomNav() {
                 aria-current={active ? 'page' : undefined}
                 position="relative"
               >
-                <Icon size={17} />
+                <Icon name={item.icon} size={17} />
                 <Text
                   fontSize="10px"
                   fontWeight={active ? 800 : 600}

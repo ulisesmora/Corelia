@@ -114,6 +114,7 @@ def public_config_payload(cfg: SiteConfig) -> dict:
             'icon_512': '/api/v1/site-config/icon/512.png',
             'maskable_512': '/api/v1/site-config/icon/512.png?maskable=1',
             'og_image': cfg.og_image_url or '/api/v1/site-config/og.png',
+            'badge': '/api/v1/site-config/badge.png',
         },
         'legal': {'name': cfg.legal_name, 'tax_id': cfg.tax_id},
         'theme': {
@@ -123,6 +124,8 @@ def public_config_payload(cfg: SiteConfig) -> dict:
             'background': cfg.color_background,
             'font_heading': cfg.font_heading,
             'font_body': cfg.font_body,
+            'style': cfg.style_preset,
+            'icons': cfg.icon_style,
         },
         'currency': cfg.currency,
         'drop_in_price': str(cfg.drop_in_price),
@@ -165,6 +168,11 @@ class SiteConfigAdminView(APIView):
         data['default_api_url'] = settings.API_URL
         from api.utils.emailing import email_enabled
         data['email_ready'] = email_enabled()
+        # Avisos al móvil: cuántas clientas los tienen activados (app instalada)
+        from api.models import PushSubscription
+        subs = PushSubscription.objects.all()
+        data['push_devices'] = subs.count()
+        data['push_clients'] = subs.values('user_id').distinct().count()
         return Response(data)
 
     def patch(self, request):
@@ -328,6 +336,18 @@ class SiteIconView(APIView):
         resp = HttpResponse(render_icon(cfg, size, maskable, panel), content_type='image/png')
         resp['Cache-Control'] = 'public, max-age=86400'
         resp['ETag'] = etag
+        return resp
+
+
+class SiteBadgeView(APIView):
+    """GET /api/v1/site-config/badge.png — icono monocromo de las notificaciones."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def get(self, request):
+        from api.utils.brand_images import render_badge
+        resp = HttpResponse(render_badge(get_site_config()), content_type='image/png')
+        resp['Cache-Control'] = 'public, max-age=86400'
         return resp
 
 

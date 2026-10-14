@@ -15,8 +15,7 @@ import {
   Separator,
 } from '@chakra-ui/react';
 import { motion } from 'framer-motion';
-import { GiHamburgerMenu } from "react-icons/gi";
-import { AiOutlineCloseCircle } from "react-icons/ai";
+import { Icon } from './ui/Icon';
 import { useScrollDirection } from './hooks/useScrollDetection';
 import { useT, localizedPath, isStaticLangPage } from '../i18n/index';
 import { useLangStore } from './stores/lang.store';
@@ -55,9 +54,10 @@ function LangToggle({ scrolled, size = 'sm' }: { scrolled?: boolean; size?: 'sm'
   return (
     <Flex
       align="center"
-      borderRadius="full"
-      bg={isLg ? 'color-mix(in srgb, var(--brand-primary) 10%, transparent)' : scrolled ? 'color-mix(in srgb, var(--brand-secondary) 10%, transparent)' : 'rgba(255,255,255,0.12)'}
-      border={isLg ? '1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)' : `1px solid ${scrolled ? 'color-mix(in srgb, var(--brand-secondary) 20%, transparent)' : 'rgba(255,255,255,0.22)'}`}
+      borderRadius="var(--radius-chip)"
+      // Sobre el hero (transparente) se queda blanco; sobre la barra sólida o el cajón, tokens
+      bg={isLg ? 'var(--accent-soft)' : scrolled ? 'var(--surface-muted)' : 'rgba(255,255,255,0.12)'}
+      border={isLg ? '1px solid var(--accent-border)' : `1px solid ${scrolled ? 'var(--border-neutral)' : 'rgba(255,255,255,0.22)'}`}
       p="2px"
       gap={0}
     >
@@ -74,20 +74,20 @@ function LangToggle({ scrolled, size = 'sm' }: { scrolled?: boolean; size?: 'sm'
               alignItems: 'center',
               gap: isLg ? '6px' : '4px',
               padding: isLg ? '8px 16px' : '4px 10px',
-              borderRadius: '999px',
+              borderRadius: 'var(--radius-chip)',
               border: 'none',
               cursor: 'pointer',
               background: active
-                ? isLg ? 'linear-gradient(135deg,var(--brand-primary),color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)))' : scrolled ? 'color-mix(in srgb, var(--brand-secondary) 18%, transparent)' : 'rgba(255,255,255,0.22)'
+                ? isLg ? 'var(--accent)' : scrolled ? 'var(--accent-soft)' : 'rgba(255,255,255,0.22)'
                 : 'transparent',
-              color: isLg ? (active ? 'white' : 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))') : (scrolled ? 'var(--brand-dark)' : 'white'),
+              color: isLg ? (active ? 'var(--on-primary)' : 'var(--text-muted)') : (scrolled ? 'var(--page-text)' : 'white'),
               fontSize: isLg ? '14px' : '12px',
               fontWeight: 700,
               fontFamily: 'var(--font-body)',
               transition: 'all 0.18s ease',
               WebkitTapHighlightColor: 'transparent',
               touchAction: 'manipulation',
-              boxShadow: active && isLg ? '0 2px 8px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 25%, transparent)' : 'none',
+              boxShadow: active && isLg ? 'var(--button-shadow)' : 'none',
             }}
           >
             <span style={{ fontSize: isLg ? '18px' : '13px', lineHeight: 1 }}>{l.flag}</span>
@@ -207,11 +207,12 @@ const NAV_ITEMS: NavItem[] = useMemo(
 
   /** ✅ memo: estilos/props que dependen de `scrolled` */
   const navPosition = useMemo(() => (scrolled ? 'sticky' : 'absolute'), [scrolled]);
-  const boxShadowVal = useMemo(() => (scrolled ? '0 8px 32px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 35%, white) 35%, transparent)' : 'none'), [scrolled]);
-  const bgVal = useMemo(() => (scrolled ? 'color-mix(in srgb, var(--brand-bg) 65%, transparent)' : 'transparent'), [scrolled]);
-  const backdropVal = useMemo(() => (scrolled ? 'blur(24px) saturate(180%)' : 'none'), [scrolled]);
-  const borderBottomVal = useMemo(() => (scrolled ? '1px solid rgba(255,255,255,0.2)' : 'none'), [scrolled]);
-  const linkColor = useMemo(() => (scrolled ? 'var(--brand-secondary)' : 'white'), [scrolled]);
+  // Transparente sobre el hero (texto blanco); sólida al hacer scroll: barra fija con los tokens de superficie
+  const boxShadowVal = useMemo(() => (scrolled ? 'var(--shadow-card)' : 'none'), [scrolled]);
+  const bgVal = useMemo(() => (scrolled ? 'var(--surface-strong)' : 'transparent'), [scrolled]);
+  const backdropVal = useMemo(() => (scrolled ? 'var(--surface-blur)' : 'none'), [scrolled]);
+  const borderBottomVal = useMemo(() => (scrolled ? 'var(--border-width) solid var(--surface-border)' : 'none'), [scrolled]);
+  const linkColor = useMemo(() => (scrolled ? 'var(--page-text)' : 'white'), [scrolled]);
   const textShadowVal = useMemo(() => (scrolled ? 'none' : '0 0 4px rgba(0,0,0,0.4)'), [scrolled]);
 
   const [openMobileMenu, setOpenMobileMenu] = useState(false)
@@ -220,18 +221,18 @@ const NAV_ITEMS: NavItem[] = useMemo(
 const MobileNavItem = ({ label, href }: NavItem) => {
 
   return (
-    <Stack borderBottom="1px solid color-mix(in srgb, var(--brand-secondary) 15%, transparent)">
+    <Stack borderBottom="1px solid var(--border-neutral)">
       <Flex
         py={4} // Aumentamos padding vertical (antes era 2) para facilitar el toque
         as="a"
         justifyContent="space-between"
         alignItems="center"
-        _hover={{ textDecoration: 'none', bg: 'rgba(0,0,0,0.02)' }}
+        _hover={{ textDecoration: 'none', bg: 'var(--surface-muted)' }}
       >
         <Link 
           fontWeight="bold" // Texto más grueso
           fontSize="lg"     // Texto más grande para lectura fácil
-          color="#333"      // Color oscuro para buen contraste
+          color="var(--page-text)" // Texto de la página: legible también en estilos oscuros
           onClick={(e) => setOpenMobileMenu(false)}  
           href={href}>{label}</Link>
       </Flex>
@@ -272,8 +273,8 @@ const MobileNavItem = ({ label, href }: NavItem) => {
       boxShadow={boxShadowVal}
       bg={bgVal}
       backdropFilter={backdropVal}
+      style={{ WebkitBackdropFilter: backdropVal }}
       borderBottom={borderBottomVal}
-      _dark={{ bg: scrolled ? 'gray.800' : 'transparent' }}
     >
       {/* Bubbles — warm taupe palette */}
       <motion.div
@@ -304,7 +305,7 @@ const MobileNavItem = ({ label, href }: NavItem) => {
           borderRadius: '50%',
           background: 'color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 40%, transparent)',
           filter: 'blur(50px)',
-          boxShadow: '0 0 80px rgba(212,165,116,0.7)',
+          boxShadow: '0 0 80px color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 70%, white) 60%, transparent)',
           zIndex: 0,
         }}
       />
@@ -348,16 +349,16 @@ const MobileNavItem = ({ label, href }: NavItem) => {
           display={{ md: 'none' }}
           variant="ghost"
           // CAMBIO: Color dinámico. Blanco arriba (para ver sobre imagen) y Marca al bajar.
-          color={scrolled ? 'var(--brand-secondary)' : 'white'} 
+          color={scrolled ? 'var(--page-text)' : 'white'} 
           // CAMBIO: Fondo semitransparente arriba para asegurar contraste si la foto es clara
           bg={scrolled ? 'transparent' : 'rgba(0,0,0,0.2)'}
           aria-label={t('nav.a11y.toggleNav')}
           zIndex={2}
           fontSize="2rem" // CAMBIO: Icono mucho más grande
           size="lg"       // CAMBIO: Botón más grande
-          _hover={{ bg: scrolled ? 'color-mix(in srgb, var(--brand-secondary) 10%, transparent)' : 'rgba(255,255,255,0.2)' }}
+          _hover={{ bg: scrolled ? 'var(--surface-muted)' : 'rgba(255,255,255,0.2)' }}
         >
-          {openMobileMenu ? <AiOutlineCloseCircle /> : <GiHamburgerMenu />}
+          {openMobileMenu ? <Icon name="close-circle" /> : <Icon name="menu" />}
           
         </IconButton>
       </Drawer.Trigger>
@@ -367,7 +368,7 @@ const MobileNavItem = ({ label, href }: NavItem) => {
           <Drawer.Content>
             <Drawer.Header>
               <Drawer.Title 
-          color={'var(--brand-secondary)'}>{t('nav.drawer.title')}</Drawer.Title>
+          color={'var(--heading-color)'}>{t('nav.drawer.title')}</Drawer.Title>
             </Drawer.Header>
             <Drawer.Body>
                {NAV_ITEMS.map((navItem, index) => (
@@ -377,7 +378,7 @@ const MobileNavItem = ({ label, href }: NavItem) => {
             <Drawer.Footer>
               <Box w="full" pt={2}>
                 <Text fontFamily='var(--font-body)' fontSize="11px" fontWeight={700}
-                  color="color-mix(in srgb, var(--brand-secondary) 65%, white)" textTransform="uppercase" letterSpacing="0.10em" mb={3}>
+                  color="var(--text-subtle)" textTransform="uppercase" letterSpacing="0.10em" mb={3}>
                   {t('nav.languageLabel')}
                 </Text>
                 <LangToggle size="lg" />
@@ -431,17 +432,20 @@ const MobileNavItem = ({ label, href }: NavItem) => {
                 {item.label}
               </Link>
             ))}
+            {/* Sobre el hero: píldora translúcida con texto blanco; en la barra sólida, botón secundario del estilo */}
             <Button
+              className={scrolled ? 'sk-btn-ghost' : undefined}
               marginLeft="1rem"
               fontSize={scrolled ? '13px' : '16px'}
               fontFamily='var(--font-body)'
               fontWeight="bold"
-              _hover={{ color: 'black' }}
+              borderRadius="var(--radius-button)"
+              _hover={scrolled ? undefined : { color: 'black' }}
               variant={scrolled ? 'ghost' : 'ghost'}
               bg="color-mix(in srgb, var(--brand-secondary) 44%, transparent)"
         
                 textShadow={textShadowVal}
-              color={scrolled ? 'white' : 'white'}
+              color="white" // en la barra sólida manda sk-btn-ghost
             >
               <a href={'#contact'}>        {t("nav.cta.contact")}</a>
             </Button>

@@ -2,9 +2,9 @@
 
 import React, { useEffect, useState, useRef, useCallback } from 'react';
 import {
-  Box, Heading, Text, VStack, Button, Spinner, Icon, Progress,
+  Box, Heading, Text, VStack, Button, Spinner, Progress,
 } from '@chakra-ui/react';
-import { FaCheckCircle, FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import Chakra from './ChakraProvider';
 import { useCartStore } from './stores/car.store';
 import SpamWarning from './SpamWarning';
@@ -97,18 +97,18 @@ export default function CheckoutSuccessPage() {
 
   return (
     <Chakra>
-      <Box bg="gray.50" minH="100vh" py={12} px={{ base: 4, md: 8 }}>
-        <Box maxW="md" mx="auto" bg="white" p={8} rounded="lg" shadow="base">
+      <Box bg="var(--page-bg)" minH="100vh" py={12} px={{ base: 4, md: 8 }}>
+        <Box maxW="md" mx="auto" className="sk-card" p={8}>
           {status === 'success' && (
             <VStack gap={4} textAlign="center">
-              <Icon as={FaCheckCircle} boxSize={16} color="green.500" />
-              <Heading size="lg" color="gray.800">{t('paymentFinish.successTitle')}</Heading>
-              <Text fontSize="md" color="gray.600">
+              <Icon name="check-circle" size="4rem" color="var(--success)" />
+              <Heading size="lg" color="var(--heading-color)">{t('paymentFinish.successTitle')}</Heading>
+              <Text fontSize="md" color="var(--text-muted)">
                 {t('paymentFinish.successDesc')}
               </Text>
               <SpamWarning variant="booking" />
               {showInstallHint && <InstallInlineHint />}
-              <Button colorScheme="purple" mt={6} onClick={() => window.location.href = homeHref}>
+              <Button className="sk-btn" colorScheme="purple" mt={6} onClick={() => window.location.href = homeHref}>
                 {t('paymentFinish.backHome')}
               </Button>
             </VStack>
@@ -116,16 +116,16 @@ export default function CheckoutSuccessPage() {
 
           {status === 'timeout' && (
             <VStack gap={4} textAlign="center">
-              <Icon as={FaEnvelope} boxSize={16} color="orange.400" />
-              <Heading size="lg" color="gray.800">{t('paymentFinish.timeoutTitle')}</Heading>
-              <Text fontSize="md" color="gray.600">
+              <Icon name="mail" size="4rem" color="var(--warning)" />
+              <Heading size="lg" color="var(--heading-color)">{t('paymentFinish.timeoutTitle')}</Heading>
+              <Text fontSize="md" color="var(--text-muted)">
                 {t('paymentFinish.timeoutDesc')}
               </Text>
-              <Text fontSize="sm" color="gray.500">
+              <Text fontSize="sm" color="var(--text-muted)">
                 {t('paymentFinish.timeoutHint')}
               </Text>
               <SpamWarning variant="booking" />
-              <Button colorScheme="purple" mt={6} onClick={() => window.location.href = homeHref}>
+              <Button className="sk-btn" colorScheme="purple" mt={6} onClick={() => window.location.href = homeHref}>
                 {t('paymentFinish.backHome')}
               </Button>
             </VStack>
@@ -133,13 +133,13 @@ export default function CheckoutSuccessPage() {
 
           {status === 'error' && (
             <VStack gap={4} textAlign="center">
-              <Icon as={FaExclamationTriangle} boxSize={16} color="red.500" />
-              <Heading size="lg" color="gray.800">{t('paymentFinish.errorTitle')}</Heading>
-              <Text fontSize="sm" color="red.700">{errorMessage === 'noSession' ? t('paymentFinish.noSession') : errorMessage || t('common.unknownError')}</Text>
-              <Text fontSize="sm" color="gray.600" mt={2}>
+              <Icon name="warning" size="4rem" color="var(--danger)" />
+              <Heading size="lg" color="var(--heading-color)">{t('paymentFinish.errorTitle')}</Heading>
+              <Text fontSize="sm" color="var(--danger)">{errorMessage === 'noSession' ? t('paymentFinish.noSession') : errorMessage || t('common.unknownError')}</Text>
+              <Text fontSize="sm" color="var(--text-muted)" mt={2}>
                 {t('paymentFinish.errorHint')}
               </Text>
-              <Button variant="outline" mt={6} onClick={() => window.location.href = '/checkout'}>
+              <Button variant="outline" className="sk-btn-ghost" mt={6} onClick={() => window.location.href = '/checkout'}>
                 {t('paymentFinish.backCheckout')}
               </Button>
             </VStack>
@@ -147,11 +147,11 @@ export default function CheckoutSuccessPage() {
 
           {(status === 'loading' || status === 'polling') && (
             <VStack gap={4} textAlign="center">
-              <Spinner color="var(--brand-secondary)" size="xl" />
-              <Heading size="md" color="gray.800" mt={4}>
+              <Spinner color="var(--accent)" size="xl" />
+              <Heading size="md" color="var(--heading-color)" mt={4}>
                 {status === 'loading' ? t('checkout.verifying') : t('paymentFinish.processing')}
               </Heading>
-              <Text color="gray.600">
+              <Text color="var(--text-muted)">
                 {status === 'loading'
                   ? t('paymentFinish.dontClose')
                   : t('paymentFinish.processingDesc')}

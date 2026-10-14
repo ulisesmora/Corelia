@@ -1,7 +1,7 @@
 ---
 // Página 404 con la marca del estudio (nombre, colores y fuentes de la config).
 import OptimizedHead from '../components/OptimizedHead.astro';
-import { getSiteConfig } from '../lib/site';
+import { getSiteConfig, htmlThemeAttrs } from '../lib/site';
 
 export const prerender = false;
 
@@ -9,21 +9,21 @@ Astro.response.status = 404;
 const site = await getSiteConfig();
 const en = Astro.url.pathname.startsWith('/en');
 ---
-<html lang={en ? 'en' : 'es'}>
+<html lang={en ? 'en' : 'es'} {...htmlThemeAttrs(site)}>
   <head>
     <OptimizedHead title={en ? 'Page not found' : 'Página no encontrada'} noindex />
     <style is:inline>
-      body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--brand-bg); color: var(--brand-dark); }
+      /* Acabado con los tokens del estilo visual (styles/presets.css) */
+      body { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: var(--page-pattern), var(--page-bg); color: var(--page-text); }
       .nf { max-width: 520px; padding: 2rem 1.25rem; text-align: center; }
       .nf-logo { max-width: 180px; max-height: 90px; height: auto; margin: 0 auto 1.5rem; display: block; }
-      .nf-name { font-family: var(--font-heading); font-size: 1.6rem; margin: 0 0 1.5rem; color: var(--brand-secondary); }
-      .nf-code { font-family: var(--font-heading); font-size: clamp(4rem, 18vw, 7rem); line-height: 1; margin: 0; color: var(--brand-primary); }
-      .nf h1 { font-family: var(--font-heading); font-size: 1.8rem; margin: .5rem 0 .75rem; }
-      .nf p { line-height: 1.6; margin: 0 0 1.75rem; color: color-mix(in srgb, var(--brand-secondary) 70%, var(--brand-dark)); }
+      .nf-name { font-family: var(--font-heading); font-size: 1.6rem; margin: 0 0 1.5rem; color: var(--accent-text); }
+      .nf-code { font-family: var(--font-heading); font-size: clamp(4rem, 18vw, 7rem); line-height: 1; margin: 0; color: var(--accent); }
+      .nf h1 { font-family: var(--font-heading); font-size: 1.8rem; margin: .5rem 0 .75rem; color: var(--heading-color); }
+      .nf p { line-height: 1.6; margin: 0 0 1.75rem; color: var(--text-muted); }
       .nf-actions { display: flex; flex-wrap: wrap; gap: .75rem; justify-content: center; }
-      .nf-actions a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 1.5rem; border-radius: 999px; font-weight: 700; text-decoration: none; }
-      .nf-primary { background: var(--brand-primary); color: #fff; }
-      .nf-secondary { border: 1.5px solid var(--brand-primary); color: var(--brand-dark); }
+      /* Color, borde, radio y sombra: .sk-btn / .sk-btn-ghost */
+      .nf-actions a { display: inline-flex; align-items: center; min-height: 48px; padding: 0 1.5rem; font-weight: 700; text-decoration: none; }
     </style>
   </head>
   <body>
@@ -37,8 +37,8 @@ const en = Astro.url.pathname.startsWith('/en');
         ? "The page you are looking for doesn't exist or has moved."
         : 'La página que buscas no existe o ha cambiado de sitio.'}</p>
       <div class="nf-actions">
-        <a class="nf-primary" href={en ? '/en' : '/'}>{en ? 'Back to home' : 'Volver al inicio'}</a>
-        <a class="nf-secondary" href="/calendar">{en ? 'See the timetable' : 'Ver el horario'}</a>
+        <a class="nf-primary sk-btn" href={en ? '/en' : '/'}>{en ? 'Back to home' : 'Volver al inicio'}</a>
+        <a class="nf-secondary sk-btn-ghost" href="/calendar">{en ? 'See the timetable' : 'Ver el horario'}</a>
       </div>
     </main>
   </body>

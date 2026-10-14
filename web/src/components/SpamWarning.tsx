@@ -1,8 +1,8 @@
 "use client";
 
 import React from 'react';
-import { Box, Flex, Text, Icon } from '@chakra-ui/react';
-import { FaExclamationTriangle, FaEnvelope } from 'react-icons/fa';
+import { Box, Flex, Text } from '@chakra-ui/react';
+import { Icon } from './ui/Icon';
 import { useLangStore } from './stores/lang.store';
 import { getSiteClient } from '../lib/site';
 
@@ -58,18 +58,18 @@ export default function SpamWarning({ email, variant = 'payment' }: SpamWarningP
     <Box
       mt={4}
       p={4}
-      borderRadius="14px"
-      bg="linear-gradient(135deg, #FFF4E5 0%, #FFE8D6 100%)"
-      border="2px solid #F59E0B"
-      boxShadow="0 4px 14px rgba(245,158,11,0.20)"
+      borderRadius="var(--radius-input)"
+      bg="var(--warning-soft)"
+      border="2px solid var(--warning)"
+      boxShadow="var(--shadow-card)"
     >
       <Flex gap={3} align="flex-start">
-        <Icon as={FaExclamationTriangle} boxSize={6} color="#B7791F" mt={0.5} flexShrink={0} />
+        <Icon name="warning" size="1.5rem" color="var(--warning)" style={{ marginTop: '0.125rem', flexShrink: 0 }} />
         <Box flex={1}>
           <Text
             fontWeight={800}
             fontSize="sm"
-            color="#7C2D12"
+            color="var(--warning)"
             textTransform="uppercase"
             letterSpacing="0.04em"
             mb={1.5}
@@ -77,7 +77,7 @@ export default function SpamWarning({ email, variant = 'payment' }: SpamWarningP
             {title}
           </Text>
 
-          <Text fontSize="sm" color="#7C2D12" lineHeight="1.6" mb={2}>
+          <Text fontSize="sm" color="var(--page-text)" lineHeight="1.6" mb={2}>
             {main}
           </Text>
 
@@ -85,26 +85,26 @@ export default function SpamWarning({ email, variant = 'payment' }: SpamWarningP
             <Flex
               align="center" gap={2}
               p={2} mb={2}
-              borderRadius="8px"
-              bg="rgba(255,255,255,0.55)"
-              border="1px solid rgba(183,121,31,0.30)"
+              borderRadius="var(--radius-input)"
+              bg="var(--surface-muted)"
+              border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)"
             >
-              <Icon as={FaEnvelope} boxSize={3.5} color="#7C2D12" />
-              <Text fontSize="xs" fontWeight={700} color="#7C2D12">
+              <Icon name="mail" size="0.875rem" color="var(--page-text)" />
+              <Text fontSize="xs" fontWeight={700} color="var(--page-text)">
                 {email}
               </Text>
             </Flex>
           )}
 
-          <Text fontSize="xs" color="#92400E" lineHeight="1.55" mb={1.5}>
+          <Text fontSize="xs" color="var(--warning)" lineHeight="1.55" mb={1.5}>
             <strong>{providers}</strong>
           </Text>
 
-          <Text fontSize="xs" color="#92400E" lineHeight="1.55" mb={2}>
+          <Text fontSize="xs" color="var(--warning)" lineHeight="1.55" mb={2}>
             {action}
           </Text>
 
-          <Text fontSize="xs" color="#15803D" fontWeight={700} lineHeight="1.55">
+          <Text fontSize="xs" color="var(--success)" fontWeight={700} lineHeight="1.55">
             ✓ {reassurance}
           </Text>
         </Box>

@@ -6,7 +6,11 @@
  * - Serializa la config del estudio en `window.__SITE__` (la leen los
  *   componentes React con useSite()/getSiteClient()).
  * - Variables CSS de marca: --brand-primary, --brand-secondary, --brand-dark,
- *   --brand-bg, --font-heading, --font-body.
+ *   --brand-bg, --font-heading, --font-body (+ derivadas de contraste).
+ * - Estilo visual e iconos: carga styles/presets.css (tokens de acabado por
+ *   estilo) y asegura `data-style` / `data-icons` en <html> antes del primer
+ *   pintado. Lo normal es que la página ya los traiga en su <html>
+ *   (`htmlThemeAttrs(site)`); el script en línea es la red de seguridad.
  * - Carga las dos fuentes de Google Fonts de la config sin bloquear el pintado.
  * - Favicon, manifest (PWA), theme-color y nombre de la app al instalarla
  *   (los iconos los genera el backend: /api/v1/site-config/icon/…).
@@ -15,6 +19,7 @@
 import {
   ICON_URL, getSiteConfig, googleFontsHref, shortName, siteJsonForScript, themeCss,
 } from '../lib/site';
+import '../styles/presets.css';
 
 interface Props {
   /** Si true, no carga analítica (páginas legales, pagos…). */
@@ -31,7 +36,7 @@ const env = (globalThis as { process?: { env?: Record<string, string | undefined
 const rawClarity = env?.PUBLIC_CLARITY_ID || (import.meta.env.PUBLIC_CLARITY_ID as string | undefined) || '';
 const clarityId = /^[a-z0-9]{4,20}$/i.test(rawClarity) ? rawClarity : '';
 ---
-<script is:inline set:html={`window.__SITE__=${siteJsonForScript(site)};`} />
+<script is:inline set:html={`window.__SITE__=${siteJsonForScript(site)};(function(d){d.setAttribute('data-style',${JSON.stringify(site.theme.style)});d.setAttribute('data-icons',${JSON.stringify(site.theme.icons)});})(document.documentElement);`} />
 <style is:inline set:html={`${themeCss(site)}body{font-family:var(--font-body);}`} />
 
 {/* Fuentes de la marca: preconnect + carga no bloqueante (print → all) */}

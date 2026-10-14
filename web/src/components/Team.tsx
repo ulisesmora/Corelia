@@ -5,7 +5,7 @@ import { useState, useEffect, useRef, useMemo, useCallback, useId } from 'react'
 import { cachedFetch } from '../utils/fetchCache';
 import Chakra from './ChakraProvider';
 import { useLangStore, withSsrLang } from './stores/lang.store';
-import { FaLeaf, FaChevronLeft, FaChevronRight, FaArrowRight } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import InstructorDialog, { type Instructor } from './InstructorDialog';
 import { tr } from '../utils/localized';
 
@@ -13,9 +13,10 @@ import { optimizedImage, withOriginalFallback } from '../utils/img';
 import { API_V1 } from '../config';
 const API_BASE_URL = API_V1;
 
+// Paleta de la sección: tokens del estilo visual (presets.css)
 const C = {
-  accent: 'var(--brand-primary)', brandDark: 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))', brown: 'var(--brand-dark)', brownMid: 'color-mix(in srgb, var(--brand-primary) 28%, var(--brand-dark))',
-  focus: 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
+  accent: 'var(--accent)', brandDark: 'var(--accent-text)', brown: 'var(--heading-color)', brownMid: 'var(--text-muted)',
+  focus: 'var(--accent)',
 };
 
 const TXT = {
@@ -147,18 +148,18 @@ function ArrowButton({ dir, disabled, label, onClick, controls }: {
       aria-label={label} aria-controls={controls}
       w="48px" h="48px" flexShrink={0} borderRadius="full"
       display="inline-flex" alignItems="center" justifyContent="center"
-      bg="white" color={C.brandDark}
-      border="1px solid color-mix(in srgb, var(--brand-primary) 30%, transparent)"
-      boxShadow="0 2px 10px color-mix(in srgb, var(--brand-dark) 8%, transparent)"
+      bg="var(--surface-strong)" color={C.brandDark}
+      border="var(--border-width) solid var(--accent-border)"
+      boxShadow="var(--shadow-card)"
       cursor="pointer" transition="background 0.2s, color 0.2s, box-shadow 0.2s, opacity 0.2s"
-      _hover={{ bg: C.accent, color: 'white', borderColor: C.accent, boxShadow: '0 6px 18px color-mix(in srgb, var(--brand-dark) 16%, transparent)' }}
+      _hover={{ bg: C.accent, color: 'var(--on-primary)', borderColor: C.accent, boxShadow: 'var(--shadow-hover)' }}
       _focusVisible={focusRing}
       _disabled={{
         opacity: 0.4, cursor: 'not-allowed', boxShadow: 'none',
-        _hover: { bg: 'white', color: C.brandDark, borderColor: 'color-mix(in srgb, var(--brand-primary) 30%, transparent)' },
+        _hover: { bg: 'var(--surface-strong)', color: C.brandDark, borderColor: 'var(--accent-border)' },
       }}
     >
-      {dir === 'prev' ? <FaChevronLeft size={15} aria-hidden /> : <FaChevronRight size={15} aria-hidden />}
+      {dir === 'prev' ? <Icon name="chevron-left" size={15} aria-hidden /> : <Icon name="chevron-right" size={15} aria-hidden />}
     </chakra.button>
   );
 }
@@ -178,18 +179,20 @@ function InstructorCard({ instructor, en, T, onOpen }: {
   return (
     <chakra.article
       position="relative" display="flex" flexDirection="column" w="full"
-      bg="rgba(255,255,255,0.78)" borderRadius="22px" overflow="hidden"
-      border="1px solid color-mix(in srgb, var(--brand-primary) 16%, transparent)"
-      boxShadow="0 4px 20px color-mix(in srgb, var(--brand-dark) 7%, transparent)"
+      bg="var(--surface)" borderRadius="var(--radius-card)" overflow="hidden"
+      border="var(--border-width) solid var(--surface-border)"
+      boxShadow="var(--shadow-card)"
+      backdropFilter="var(--surface-blur)"
       cursor="pointer"
       transition="transform 0.3s ease, box-shadow 0.3s ease"
       css={{
+        WebkitBackdropFilter: 'var(--surface-blur)',
         '& .team-photo': { transition: 'transform 0.55s cubic-bezier(0.25,0.46,0.45,0.94)' },
         '@media (hover: hover)': {
-          '&:hover': { transform: 'translateY(-4px)', boxShadow: '0 16px 40px color-mix(in srgb, var(--brand-dark) 15%, transparent)' },
+          '&:hover': { transform: 'var(--hover-lift)', boxShadow: 'var(--shadow-hover)' },
           '&:hover .team-photo': { transform: 'scale(1.04)' },
         },
-        '&:focus-within': { boxShadow: '0 16px 40px color-mix(in srgb, var(--brand-dark) 15%, transparent)' },
+        '&:focus-within': { boxShadow: 'var(--shadow-hover)' },
         '@media (prefers-reduced-motion: reduce)': {
           transition: 'none',
           '&:hover': { transform: 'none' },
@@ -200,7 +203,7 @@ function InstructorCard({ instructor, en, T, onOpen }: {
     >
       {/* Foto: mismo recorte para todas */}
       <Box position="relative" aspectRatio="4 / 5" overflow="hidden"
-        bg="linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 50%, white), color-mix(in srgb, var(--brand-primary) 72%, white))">
+        bg="var(--accent-soft)">
         {instructor.image && !imgFailed ? (
           <chakra.img
             className="team-photo"
@@ -211,7 +214,7 @@ function InstructorCard({ instructor, en, T, onOpen }: {
           />
         ) : (
           <Flex w="full" h="full" align="center" justify="center" aria-hidden>
-            <FaLeaf size={40} color="rgba(255,255,255,0.55)" />
+            <Icon name="leaf" size={40} color="var(--accent-border)" />
           </Flex>
         )}
       </Box>
@@ -240,18 +243,16 @@ function InstructorCard({ instructor, en, T, onOpen }: {
             un único punto de foco/clic accesible. */}
         <chakra.button
           type="button" onClick={onOpen} aria-haspopup="dialog"
+          className="sk-btn-ghost"
           alignSelf="flex-start" minH="44px" px={4} gap={2}
           display="inline-flex" alignItems="center"
-          borderRadius="full" border={`1.5px solid ${C.accent}`}
-          bg="transparent" color={C.brandDark}
           fontFamily='var(--font-body)' fontWeight={700} fontSize="14px"
-          cursor="pointer" transition="background 0.2s, color 0.2s"
-          _hover={{ bg: C.accent, color: 'white' }}
+          cursor="pointer"
           _focusVisible={focusRing}
-          _after={{ content: '""', position: 'absolute', inset: 0, borderRadius: '22px' }}
+          _after={{ content: '""', position: 'absolute', inset: 0, borderRadius: 'var(--radius-card)' }}
         >
           {T.meet(firstName)}
-          <FaArrowRight size={11} aria-hidden />
+          <Icon name="arrow-right" size={11} aria-hidden />
         </chakra.button>
       </Flex>
     </chakra.article>
@@ -260,15 +261,15 @@ function InstructorCard({ instructor, en, T, onOpen }: {
 
 function CardSkeleton() {
   return (
-    <Box w="full" borderRadius="22px" overflow="hidden" bg="rgba(255,255,255,0.6)"
-      border="1px solid color-mix(in srgb, var(--brand-primary) 12%, transparent)">
-      <Skeleton aspectRatio="4 / 5" borderRadius={0} css={{ '--start-color': 'color-mix(in srgb, var(--brand-primary) 14%, transparent)', '--end-color': 'color-mix(in srgb, var(--brand-primary) 26%, transparent)' }} />
+    <Box w="full" borderRadius="var(--radius-card)" overflow="hidden" bg="var(--surface)"
+      border="var(--border-width) solid var(--surface-border)">
+      <Skeleton aspectRatio="4 / 5" borderRadius={0} css={{ '--start-color': 'var(--accent-soft)', '--end-color': 'var(--accent-border)' }} />
       <Box px={5} pt={4} pb={5}>
         <Skeleton h="24px" w="65%" mb={2} />
         <Skeleton h="14px" w="45%" mb={3} />
         <Skeleton h="14px" w="95%" mb={1.5} />
         <Skeleton h="14px" w="80%" mb={4} />
-        <Skeleton h="44px" w="60%" borderRadius="full" />
+        <Skeleton h="44px" w="60%" borderRadius="var(--radius-button)" />
       </Box>
     </Box>
   );
@@ -322,19 +323,17 @@ function TeamInner({ initialInstructors }: { initialInstructors?: Instructor[] |
 
   return (
     <Box w="full" py={{ base: 14, md: 24 }}
-      bg="linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 50%, color-mix(in srgb, var(--brand-primary) 22%, white) 100%)"
+      bg="var(--section-bg)"
       overflow="hidden">
       <Container maxW="6xl">
         {/* Cabecera */}
         <Box mb={{ base: 7, md: 10 }} maxW="560px">
-          <Box display="inline-flex" px={3} py={1} borderRadius="full" mb={3}
-            bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)" border="1px solid color-mix(in srgb, var(--brand-primary) 22%, transparent)">
-            <Text fontSize="11px" fontWeight={700} color={C.brandDark}
-              fontFamily='var(--font-body)' letterSpacing="0.10em" textTransform="uppercase">
+          <Box className="sk-eyebrow" display="inline-flex" px={3} py={1} mb={3}>
+            <Text fontSize="11px" fontWeight={700}>
               {T.eyebrow}
             </Text>
           </Box>
-          <Text as="h2" id={headingId} fontFamily='var(--font-heading)' fontWeight={400}
+          <Text as="h2" id={headingId} className="sk-section-title" fontFamily='var(--font-heading)' fontWeight={400}
             fontSize={{ base: '4xl', md: '5xl', lg: '6xl' }}
             color={C.brown} letterSpacing="wide" lineHeight="1">
             {T.heading}
@@ -359,7 +358,7 @@ function TeamInner({ initialInstructors }: { initialInstructors?: Instructor[] |
             position="relative"
             mx={`-${PAD}px`} px={`${PAD}px`} py={3}
             justifyContent={car.fits ? 'center' : 'flex-start'}
-            borderRadius="24px"
+            borderRadius="var(--radius-card)"
             _focusVisible={focusRing}
             css={{
               scrollSnapType: 'x mandatory',
@@ -409,7 +408,7 @@ function TeamInner({ initialInstructors }: { initialInstructors?: Instructor[] |
                       >
                         <Box as="span" display="block" h="8px" borderRadius="full"
                           w={active ? '22px' : '8px'}
-                          bg={active ? C.brandDark : 'color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 30%, transparent)'}
+                          bg={active ? C.brandDark : 'var(--accent-border)'}
                           transition="width 0.25s ease, background 0.25s ease" />
                       </chakra.button>
                     );

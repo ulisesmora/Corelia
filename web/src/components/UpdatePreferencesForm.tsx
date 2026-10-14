@@ -19,30 +19,23 @@ import {
   createListCollection,
   Center,
 } from "@chakra-ui/react";
-import { FaEnvelope, FaUser, FaCheckCircle, FaExclamationTriangle } from "react-icons/fa";
 import Chakra from "./ChakraProvider"; // Assuming you have this
 import { Toaster, toaster } from "./ui/toaster"; // Assuming you have this
 import { useT } from '../i18n/index';
+import { useLangStore } from './stores/lang.store';
 import { API_V1 } from '../config';
+import { scheduleOptions, useInterestOptions } from '../utils/preferenceOptions';
 
-// --- Reusable Collections (Copied from HeroWithVideo) ---
-// (You might want to extract these into a separate file later)
+// --- Opciones de los selectores (intereses = clases reales del estudio) ---
 const useFormCollections = () => {
     const t = useT();
-    const interestsCollection = useMemo(() => createListCollection({
-        items: [
-             { label: t("home.heroVideo.intReformer") || "Pilates Reformer", value: "Reformer" },
-        { label: t("home.heroVideo.intSuelo") || "Pilates Suelo (Mat)", value: "Suelo" },
-        { label: t("home.heroVideo.intYoga") || "Yoga", value: "Yoga" },
-        { label: t("home.heroVideo.intYogaKids") || "Yoga Niños", value: "Yoga niños" },
-        { label: t("home.heroVideo.intPrePostParto") || "Pilates Pre/Post Parto", value: "Pre/Post parto" },
-        { label: t("home.heroVideo.intSenior") || "Grupo Senior", value: "Senior" },
-        ],
-    }), [t]);
+    const lang = useLangStore((s) => s.lang);
+    const interestOptions = useInterestOptions(lang);
+    const interestsCollection = useMemo(() => createListCollection({ items: interestOptions }), [interestOptions]);
 
     const experienceCollection = useMemo(() => createListCollection({
         items: [
-                { value: "Nunca", label: t("home.heroVideo.expNever") || "Nunca he hecho Pilates" },
+                { value: "Nunca", label: t("home.heroVideo.expNever") || "Primera vez" },
         { value: "Principiante", label: t("home.heroVideo.expBeginner") || "Principiante" },
         { value: "Intermedio", label: t("home.heroVideo.expIntermediate") || "Intermedio" },
         { value: "Avanzado", label: t("home.heroVideo.expAdvanced") || "Avanzado" },
@@ -61,15 +54,7 @@ const useFormCollections = () => {
         ],
     }), [t]);
 
-    const scheduleCollection = useMemo(() => createListCollection({
-        items: [
-          { value: "8:30", label: t("home.heroVideo.schFirst") || "Primera hora (8:30)" },
-        { value: "9:30-13:30", label: t("home.heroVideo.schMorning") || "Mañana (9:30 - 13:30)" },
-        { value: "13:30-16:30", label: t("home.heroVideo.schMidday") || "Medio día (13:30 - 16:30)" },
-        { value: "16:30-20:30", label: t("home.heroVideo.schAfternoon") || "Tarde (16:30 – 20:30)" },
-        { value: "20:30", label: t("home.heroVideo.schLast") || "Última hora (20:30)" },
-      ],
-    }), [t]);
+    const scheduleCollection = useMemo(() => createListCollection({ items: scheduleOptions(t) }), [t]);
 
     return { interestsCollection, experienceCollection, daysCollection, scheduleCollection };
 };
@@ -198,7 +183,7 @@ export default function UpdatePreferencesForm() {
   }, []);
 
   // --- Styles ---
-  const inputFocus = useMemo(() => ({ borderColor: "var(--brand-secondary)", boxShadow: "0 0 0 1px var(--brand-secondary)" }), []);
+  const inputFocus = useMemo(() => ({ borderColor: "var(--accent)", boxShadow: "0 0 0 3px var(--accent-soft)" }), []);
 
   // --- Render ---
   return (
@@ -206,17 +191,15 @@ export default function UpdatePreferencesForm() {
       <Toaster /> {/* Needed for toaster messages */}
       <Center py={12} px={4}>
         <Box
-          bg="white"
+          className="sk-card"
           p={8}
-          rounded="xl"
-          shadow="xl"
           w="full"
           maxW="md" // Limit width
         >
-          <Heading mb={2} size="lg" textAlign="center" color="#333">
+          <Heading mb={2} size="lg" textAlign="center" color="var(--heading-color)">
             {t('updatePrefs.title')}
           </Heading>
-          <Text mb={6} textAlign="center" color="gray.600">
+          <Text mb={6} textAlign="center" color="var(--text-muted)">
             {step === 1 ? t('updatePrefs.step1Intro') : t('updatePrefs.step2Intro')} ({t('updatePrefs.stepOf', { step })})
           </Text>
 
@@ -240,9 +223,10 @@ export default function UpdatePreferencesForm() {
                 <Field.Label>{t('updatePrefs.emailLabel')}</Field.Label>
                 <InputGroup>
                    {/* If you want an icon */}
-                   {/* <InputLeftElement pointerEvents="none"> <Icon as={FaEnvelope} color="gray.400" /> </InputLeftElement> */}
+                   {/* <InputLeftElement pointerEvents="none"> <SiteIcon name="mail" color="var(--text-subtle)" /> </InputLeftElement> (de ./ui/Icon) */}
                    <Input
                      type="email"
+                     className="sk-input"
                      placeholder={t('updatePrefs.emailPlaceholder')}
                      value={email}
                      onChange={(e) => setEmail(e.target.value)}
@@ -253,9 +237,7 @@ export default function UpdatePreferencesForm() {
               </Field.Root>
               <Button
                 w="full"
-                bg="var(--brand-secondary)"
-                color="white"
-                _hover={{ bg: "color-mix(in srgb, var(--brand-secondary) 74%, var(--brand-dark))" }}
+                className="sk-btn"
                 onClick={handleCheckEmail}
                 disabled={isCheckingEmail} // Use correct prop 'disabled'
                 loading={isCheckingEmail} // Use correct prop 'loading'
@@ -281,7 +263,7 @@ export default function UpdatePreferencesForm() {
                   <Select.HiddenSelect />
                   <Select.Label>{t('updatePrefs.interestsLabel')}</Select.Label>
                   <Select.Control>
-                    <Select.Trigger _focus={inputFocus}>
+                    <Select.Trigger className="sk-input" _focus={inputFocus}>
                       <Select.ValueText placeholder={t('updatePrefs.interestsPlaceholder')} />
                     </Select.Trigger>
                     {/* Indicator can be removed if preferred */}
@@ -310,7 +292,7 @@ export default function UpdatePreferencesForm() {
                     <Select.HiddenSelect />
                     <Select.Label>{t('updatePrefs.experienceLabel')}</Select.Label>
                     <Select.Control>
-                      <Select.Trigger _focus={inputFocus}>
+                      <Select.Trigger className="sk-input" _focus={inputFocus}>
                          <Select.ValueText placeholder={t('updatePrefs.selectPlaceholder')} />
                       </Select.Trigger>
                     </Select.Control>
@@ -332,6 +314,7 @@ export default function UpdatePreferencesForm() {
                 <Field.Label>{t('updatePrefs.birthDateLabel')}</Field.Label>
                 <Input
                   type="date"
+                  className="sk-input"
                   value={birthDate}
                   onChange={(e) => setBirthDate(e.target.value)}
                   _focus={inputFocus}
@@ -352,7 +335,7 @@ export default function UpdatePreferencesForm() {
                   <Select.HiddenSelect />
                   <Select.Label>{t('updatePrefs.daysLabel')}</Select.Label>
                   <Select.Control>
-                    <Select.Trigger _focus={inputFocus}>
+                    <Select.Trigger className="sk-input" _focus={inputFocus}>
                        <Select.ValueText placeholder={t('updatePrefs.daysPlaceholder')} />
                     </Select.Trigger>
                   </Select.Control>
@@ -380,7 +363,7 @@ export default function UpdatePreferencesForm() {
                     <Select.HiddenSelect />
                     <Select.Label>{t('updatePrefs.scheduleLabel')}</Select.Label>
                     <Select.Control>
-                      <Select.Trigger _focus={inputFocus}>
+                      <Select.Trigger className="sk-input" _focus={inputFocus}>
                          <Select.ValueText placeholder={t('updatePrefs.selectPlaceholder')} />
                       </Select.Trigger>
                     </Select.Control>
@@ -401,7 +384,7 @@ export default function UpdatePreferencesForm() {
               <Flex w="full" gap={4} mt={4}>
                 <Button
                   variant="outline"
-                  borderColor="gray.300"
+                  className="sk-btn-ghost"
                   onClick={handleBackStep}
                   disabled={isSubmitting} // Disable while submitting
                   flex={1} // Make buttons share space
@@ -409,9 +392,7 @@ export default function UpdatePreferencesForm() {
                   {t('updatePrefs.back')}
                 </Button>
                 <Button
-                  bg="var(--brand-secondary)"
-                  color="white"
-                  _hover={{ bg: "color-mix(in srgb, var(--brand-secondary) 74%, var(--brand-dark))" }}
+                  className="sk-btn"
                   onClick={handleUpdatePreferences}
                   disabled={isSubmitting} // Use correct prop 'disabled'
                   loading={isSubmitting} // Use correct prop 'loading'

@@ -12,7 +12,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { Button, Menu, Avatar, Dialog, Portal, chakra, Box, Flex, Spinner } from '@chakra-ui/react';
-import { FaUser, FaTimes } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import Chakra from './ChakraProvider';
 // PERF: el formulario (y el acceso con Google) se descarga solo al abrir el modal, no en
 // cada página donde está el menú.
@@ -79,8 +79,10 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
   const [initial, setInitial] = useState('D');
 
   // Colores dinámicos
-  const userAvatarBg = useMemo<string>(() => scrolled ? 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))' : 'white', [scrolled]);
-  const userAvatarColor = useMemo<string>(() => scrolled ? 'white' : 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))', [scrolled]);
+  // Con scroll: relleno de acento (legible en barra clara u oscura). Sin
+  // scroll va sobre el hero (foto): blanco fijo.
+  const userAvatarBg = useMemo<string>(() => scrolled ? 'var(--accent)' : 'white', [scrolled]);
+  const userAvatarColor = useMemo<string>(() => scrolled ? 'var(--on-primary)' : 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))', [scrolled]);
 
   // 1. Autenticación y coachmark
   useEffect(() => {
@@ -115,15 +117,17 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
   }, []);
 
   const buttonHoverStyles = useMemo(() => ({
-    bg: scrolled ? 'color-mix(in srgb, var(--brand-secondary) 76%, white)' : 'var(--brand-bg)',
-    color: scrolled ? 'white' : 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
-    borderColor: scrolled ? 'color-mix(in srgb, var(--brand-secondary) 76%, white)' : 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
+    // Con scroll: hover del botón principal del estilo. Sin scroll (sobre el
+    // hero): fondo claro garantizado (--brand-bg-light) con texto oscuro.
+    bg: scrolled ? 'var(--button-hover-bg)' : 'var(--brand-bg-light)',
+    color: scrolled ? 'var(--button-hover-text)' : 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
+    borderColor: scrolled ? 'var(--accent)' : 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
     boxShadow: 'lg',
   }), [scrolled]);
 
   // === Con sesión: menú de usuaria ===
   if (isAuthenticated) {
-    const itemStyle = { minH: '44px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '15px', color: 'var(--brand-dark)', cursor: 'pointer', textTransform: 'none' as const };
+    const itemStyle = { minH: '44px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '15px', color: 'var(--page-text)', cursor: 'pointer', textTransform: 'none' as const };
     return (
       <Chakra>
         <chakra.div position="relative" display="inline-block">
@@ -137,7 +141,7 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
             </Menu.Trigger>
 
             <Menu.Positioner>
-              <Menu.Content minW="220px" borderRadius="14px" p={1.5}>
+              <Menu.Content className="sk-panel" minW="220px" p={1.5}>
                 <Menu.Item value="calendar" asChild {...itemStyle}>
                   <a href="/myCalendar">{tx.myCalendar}</a>
                 </Menu.Item>
@@ -148,7 +152,7 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
                   <a href="/mySubscription">{tx.subscription}</a>
                 </Menu.Item>
                 <Menu.Separator />
-                <Menu.Item value="logout" onClick={handleLogout} {...itemStyle} color="#B42318">
+                <Menu.Item value="logout" onClick={handleLogout} {...itemStyle} color="var(--danger)">
                   {tx.logout}
                 </Menu.Item>
               </Menu.Content>
@@ -159,15 +163,15 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
             <Box
               role="status"
               position="absolute" top="100%" right={0} mt={2} width="220px"
-              bg="color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))" color="white" borderRadius="12px" boxShadow="lg" p={3} zIndex={1000}
+              bg="var(--accent)" color="var(--on-primary)" borderRadius="var(--radius-input)" boxShadow="var(--shadow-float)" p={3} zIndex={1000}
               fontFamily='var(--font-body)'
             >
-              <Box position="absolute" top="-5px" right="15px" width="10px" height="10px" bg="color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))" transform="rotate(45deg)" />
+              <Box position="absolute" top="-5px" right="15px" width="10px" height="10px" bg="var(--accent)" transform="rotate(45deg)" />
               <Box fontSize="sm" fontWeight={600} mb={2} lineHeight="1.4">{tx.coachmark}</Box>
               <Flex justify="flex-end">
                 <chakra.button type="button" onClick={handleCloseCoachmark} minH="36px" px={3}
-                  border="1px solid rgba(255,255,255,0.7)" borderRadius="8px" bg="transparent" color="white"
-                  fontWeight={700} fontSize="13px" cursor="pointer" _hover={{ bg: 'rgba(255,255,255,0.12)' }}>
+                  border="1px solid currentColor" borderRadius="var(--radius-button)" bg="transparent" color="inherit"
+                  fontWeight={700} fontSize="13px" cursor="pointer" _hover={{ bg: 'color-mix(in srgb, currentColor 12%, transparent)' }}>
                   {tx.gotIt}
                 </chakra.button>
               </Flex>
@@ -209,26 +213,30 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
             translate="no"
             className="notranslate"
           >
-            <FaUser aria-hidden />
+            <Icon name="user" aria-hidden />
             <span>{tx.trigger}</span>
           </Button>
         </Dialog.Trigger>
 
         <Portal>
-          <Dialog.Backdrop bg="color-mix(in srgb, var(--brand-dark) 55%, transparent)" backdropFilter="blur(3px)" />
+          <Dialog.Backdrop bg="var(--overlay)" backdropFilter="blur(3px)" />
           <Dialog.Positioner>
             <Dialog.Content
               suppressHydrationWarning
-              bg="color-mix(in srgb, var(--brand-bg) 55%, white)"
+              bg="var(--surface-strong)"
+              color="var(--surface-text)"
+              backdropFilter="var(--surface-blur)"
+              style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
               maxW={{ md: '480px' }}
               h={{ base: '100dvh', md: 'auto' }}
               minH={{ base: '100dvh', md: 'auto' }}
               my={{ base: 0, md: 'auto' }}
               maxH={{ base: '100dvh', md: 'calc(100dvh - 3rem)' }}
-              borderRadius={{ base: 0, md: '24px' }}
+              borderRadius={{ base: 0, md: 'var(--radius-card-lg)' }}
+              border={{ md: 'var(--border-width) solid var(--surface-border)' }}
               overflow="hidden"
               fontFamily='var(--font-body)'
-              boxShadow={{ md: '0 24px 60px color-mix(in srgb, var(--brand-dark) 28%, transparent)' }}
+              boxShadow={{ md: 'var(--shadow-float)' }}
               translate="no"
               className="notranslate"
             >
@@ -236,11 +244,11 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
                 display="flex" alignItems="center" justifyContent="space-between" gap={3}
                 px={{ base: 4, md: 6 }} py={2}
                 pt={{ base: 'max(8px, env(safe-area-inset-top))', md: 3 }}
-                bg="color-mix(in srgb, var(--brand-bg) 55%, white)" borderBottom="1px solid color-mix(in srgb, var(--brand-primary) 30%, white)" flexShrink={0}
+                bg="var(--surface-strong)" borderBottom="1px solid var(--border-neutral)" flexShrink={0}
               >
                 <Flex align="center" gap={3} minW={0}>
                   <BrandLogo width={64} maxHeight={32} alt="" />
-                  <Dialog.Title fontFamily='var(--font-body)' fontWeight={700} fontSize="16px" color="var(--brand-dark)" truncate>
+                  <Dialog.Title fontFamily='var(--font-body)' fontWeight={700} fontSize="16px" color="var(--heading-color)" truncate>
                     {tx.dialogTitle}
                   </Dialog.Title>
                 </Flex>
@@ -251,17 +259,17 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
                     aria-label={tx.close}
                     w="48px" h="48px" flexShrink={0} mr={-1}
                     display="flex" alignItems="center" justifyContent="center"
-                    borderRadius="full" bg="transparent" color="var(--brand-dark)" fontSize="20px" cursor="pointer"
-                    _hover={{ bg: 'color-mix(in srgb, var(--brand-primary) 18%, white)' }}
-                    _focusVisible={{ outline: '2px solid color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))', outlineOffset: '2px' }}
+                    borderRadius="full" bg="transparent" color="var(--page-text)" fontSize="20px" cursor="pointer"
+                    _hover={{ bg: 'var(--accent-soft)' }}
+                    _focusVisible={{ outline: '2px solid var(--accent-text)', outlineOffset: '2px' }}
                   >
-                    <FaTimes aria-hidden />
+                    <Icon name="close" aria-hidden />
                   </chakra.button>
                 </Dialog.CloseTrigger>
               </Dialog.Header>
 
               <Dialog.Body p={0} pb="env(safe-area-inset-bottom)" flex="1" minH={0} overflowY="auto" overscrollBehavior="contain">
-                <Suspense fallback={<Flex justify="center" py={16}><Spinner color="var(--brand-primary)" size="lg" /></Flex>}>
+                <Suspense fallback={<Flex justify="center" py={16}><Spinner color="var(--accent)" size="lg" /></Flex>}>
                   <AuthPage isInModal />
                 </Suspense>
               </Dialog.Body>

@@ -1044,6 +1044,26 @@ class SiteConfig(models.Model):
     color_background = models.CharField(max_length=9, default='#F5F0EA')
     font_heading = models.CharField(max_length=60, default='Playfair Display')
     font_body = models.CharField(max_length=60, default='Jost')
+    # Añadir un estilo: una entrada aquí + su bloque en web/src/styles/presets.css
+    # + su ficha en crm/src/components/setup/presets.ts (ver docs/ESTILOS.md)
+    STYLE_PRESETS = [
+        ('natural', 'Natural — orgánico, cálido y suave'),
+        ('minimal', 'Minimal — limpio, mucho aire'),
+        ('editorial', 'Editorial — elegante, de revista'),
+        ('glass', 'Liquid Glass — translúcido y luminoso'),
+        ('brutalist', 'Brutalista — bordes gruesos y bloques de color'),
+        ('energy', 'Energía — deportivo, oscuro y dinámico'),
+        ('pop', 'Pop — rosa, pastel y juguetón'),
+        ('neon', 'Neón — oscuro con brillos (cyberpunk)'),
+    ]
+    ICON_STYLES = [
+        ('line', 'Línea fina'),
+        ('soft', 'Suaves y redondeados'),
+        ('solid', 'Rellenos'),
+    ]
+    style_preset = models.CharField(max_length=16, choices=STYLE_PRESETS, default='natural',
+                                    help_text='Aspecto general de la web (no cambia la estructura).')
+    icon_style = models.CharField(max_length=8, choices=ICON_STYLES, default='line')
 
     # ── Negocio ──
     currency = models.CharField(max_length=3, default='EUR')

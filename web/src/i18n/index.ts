@@ -87,12 +87,10 @@ export const baseDict: Record<ReturnType<typeof getLangConst>, Dict> = {
       "dayWeekend": "Fin de semana",
       
       // --- TRADUCCIONES MODIFICADAS: HORARIO ---
-      // schMorning, schMidday, schAfternoon ya existían, pero ahora tienen nuevos textos
-      "schFirst": "Primera hora (8:30)",
-      "schMorning": "Mañana (9:30 - 13:30)",
-      "schMidday": "Medio día (13:30 - 16:30)",
-      "schAfternoon": "Tarde (16:30 – 20:30)",
-      "schLast": "Última hora (20:30)",
+      "schMorning": "Mañana (antes de las 12:00)",
+      "schMidday": "Mediodía (12:00 - 16:00)",
+      "schAfternoon": "Tarde (16:00 - 20:00)",
+      "schLast": "Noche (después de las 20:00)",
 
       
       // --- INTERESES (NUEVO CAMPO MULTISELECCIÓN) ---
@@ -101,12 +99,7 @@ export const baseDict: Record<ReturnType<typeof getLangConst>, Dict> = {
 
       // --- OPCIONES DE INTERESES (Labels de la colección) ---
       // NOTA: Los 'value' (Reformer, Suelo, etc.) no se traducen, solo los 'label'
-      "intReformer": "Pilates Reformer",
-      "intSuelo": "Pilates Suelo (Mat)",
       "intYoga": "Yoga",
-      "intYogaKids": "Yoga Niños",
-      "intPrePostParto": "Pilates Pre/Post Parto",
-      "intSenior": "Grupo Senior",
 
       },
        welcome: {
@@ -829,12 +822,7 @@ export const baseDict: Record<ReturnType<typeof getLangConst>, Dict> = {
       "interestsSelectPlaceholder": "E.g., Pilates, Yoga",
 
       // --- OPCIONES DE INTERESES (Labels de la colección) ---
-      "intReformer": "Pilates Reformer",
-      "intSuelo": "Mat Pilates",
       "intYoga": "Yoga",
-      "intYogaKids": "Kids Yoga",
-      "intPrePostParto": "Pre/Post Natal Pilates",
-      "intSenior": "Senior Group",
 
 
         experienceLabel: "Experience level",
@@ -858,11 +846,10 @@ export const baseDict: Record<ReturnType<typeof getLangConst>, Dict> = {
       // --- TRADUCCIONES MODIFICADAS: HORARIO ---
       "scheduleLabel": "Preferred Time Slot",
       "scheduleSelectPlaceholder": "Select...",
-      "schFirst": "First Hour (8:30)",
-      "schMorning": "Morning (9:30 - 1:30 PM)",
-      "schMidday": "Midday (1:30 PM - 4:30 PM)",
-      "schAfternoon": "Afternoon (4:30 PM – 8:30 PM)",
-      "schLast": "Last Hour (8:30 PM)",
+      "schMorning": "Morning (before 12 PM)",
+      "schMidday": "Midday (12 PM - 4 PM)",
+      "schAfternoon": "Afternoon (4 PM - 8 PM)",
+      "schLast": "Evening (after 8 PM)",
       schNight: "Evening (6 PM - 9 PM)",
       },
        welcome: {

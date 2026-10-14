@@ -6,10 +6,7 @@ import { useT } from "../../i18n";
 import { API_V1 } from "../../config";
 import { cachedFetch } from "../../utils/fetchCache";
 import { useSite } from "../../lib/site";
-import {
-  MdOutlineArrowBackIosNew,
-  MdOutlineArrowForwardIos,
-} from "react-icons/md";
+import { Icon } from "../ui/Icon";
 
 const MotionImage = motion(ChakraImage);
 
@@ -141,7 +138,7 @@ export default function ImageSlider({ initialImages }: { initialImages?: string[
       <Box
         w="100%"
         h={{ base: "50vh", md: "70vh" }}
-        borderRadius="3xl"
+        borderRadius="var(--radius-card-lg)"
         overflow="hidden"
         display="flex"
         alignItems="center"
@@ -161,13 +158,13 @@ export default function ImageSlider({ initialImages }: { initialImages?: string[
       w={{ base: "100%", md: "100%" }}
       h={{ base: "50vh", md: "70vh" }}
       position="relative"
-      borderRadius="3xl"
+      borderRadius="var(--radius-card-lg)"
       overflow="hidden"
-      bg="rgba(255,255,255,0.4)"
-      backdropFilter="blur(30px) saturate(180%)"
-      WebkitBackdropFilter="blur(30px) saturate(180%)"
-      boxShadow="0 16px 48px color-mix(in srgb, var(--brand-primary) 20%, transparent)"
-      border="1px solid rgba(255,255,255,0.5)"
+      bg="var(--surface-muted)"
+      backdropFilter="var(--surface-blur)"
+      WebkitBackdropFilter="var(--surface-blur)"
+      boxShadow="var(--shadow-card)"
+      border="var(--border-width) solid var(--surface-border)"
     >
       <AnimatePresence initial={false} custom={direction} mode="popLayout">
         <MotionImage
@@ -204,12 +201,13 @@ export default function ImageSlider({ initialImages }: { initialImages?: string[
         left="4"
         transform="translateY(-50%)"
         zIndex="2"
-        bg="var(--brand-secondary)"
-        _hover={{ bg: "black" }}
-        color="white"
+        // Relleno primario con su texto legible (contraste garantizado en cualquier estilo)
+        bg="var(--accent)"
+        _hover={{ bg: "var(--brand-primary-2)" }}
+        color="var(--on-primary)"
         rounded="full"
       >
-        <MdOutlineArrowBackIosNew />
+        <Icon name="chevron-left" />
       </IconButton>
 
       <IconButton
@@ -220,12 +218,13 @@ export default function ImageSlider({ initialImages }: { initialImages?: string[
         right="4"
         transform="translateY(-50%)"
         zIndex="2"
-        bg="var(--brand-secondary)"
-        _hover={{ bg: "black" }}
-        color="white"
+        // Relleno primario con su texto legible (contraste garantizado en cualquier estilo)
+        bg="var(--accent)"
+        _hover={{ bg: "var(--brand-primary-2)" }}
+        color="var(--on-primary)"
         rounded="full"
       >
-        <MdOutlineArrowForwardIos />
+        <Icon name="chevron-right" />
       </IconButton>
       </>}
     </Box>

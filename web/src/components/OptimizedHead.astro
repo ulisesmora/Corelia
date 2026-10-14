@@ -32,8 +32,10 @@ interface Props {
   canonicalPath?: string;
   /** Páginas privadas (cuenta, pago, formularios con token): fuera de Google. */
   noindex?: boolean;
+  /** Versiones por idioma de esta página (hreflang): { es: '/prices', en: '/en/prices' } */
+  alternates?: { es: string; en: string };
 }
-const { title, titleEn, description, noAnalytics = false, canonicalPath, noindex = false } = Astro.props;
+const { title, titleEn, description, noAnalytics = false, canonicalPath, noindex = false, alternates } = Astro.props;
 
 const site = await getSiteConfig();
 const withBrand = (t?: string) => (t ? `${t} | ${site.studio_name}` : site.studio_name);
@@ -49,6 +51,13 @@ const desc = description || business(site).description.es;
 <meta name="description" content={desc} />
 <meta name="robots" content={noindex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large'} />
 {canonicalPath && !noindex && <link rel="canonical" href={abs(canonicalPath)} />}
+{alternates && !noindex && (
+  <>
+    <link rel="alternate" hreflang="es" href={abs(alternates.es)} />
+    <link rel="alternate" hreflang="en" href={abs(alternates.en)} />
+    <link rel="alternate" hreflang="x-default" href={abs(alternates.es)} />
+  </>
+)}
 {canonicalPath && !noindex && (
   <>
     <meta property="og:type" content="website" />
@@ -82,22 +91,23 @@ const desc = description || business(site).description.es;
     *:hover {
       transition-duration: 0.01ms !important;
     }
-    /* Fallback automático para preservar el look "glass" sin backdrop-filter:
-       sustituye bg translúcido blanco por un gradiente más opaco. Cero coste GPU. */
-    [style*="rgba(255,255,255,0.5"],
-    [style*="rgba(255,255,255,0.6"],
-    [style*="rgba(255,255,255,0.7"],
-    [style*="rgba(255, 255, 255, 0.5"],
-    [style*="rgba(255, 255, 255, 0.6"],
-    [style*="rgba(255, 255, 255, 0.7"] {
+    /* Solo estilo "glass" (Liquid Glass): sin backdrop-filter, un fondo blanco
+       translúcido escrito a mano pasa a un degradado más opaco. Cero coste GPU.
+       Los demás estilos usan superficies sólidas (tokens de styles/presets.css). */
+    :root[data-style="glass"] [style*="rgba(255,255,255,0.5"],
+    :root[data-style="glass"] [style*="rgba(255,255,255,0.6"],
+    :root[data-style="glass"] [style*="rgba(255,255,255,0.7"],
+    :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.5"],
+    :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.6"],
+    :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.7"] {
       background: linear-gradient(135deg, rgba(255,255,255,0.92) 0%, color-mix(in srgb, var(--brand-bg) 85%, transparent) 100%) !important;
     }
-    [style*="rgba(255,255,255,0.1"],
-    [style*="rgba(255,255,255,0.2"],
-    [style*="rgba(255,255,255,0.3"],
-    [style*="rgba(255, 255, 255, 0.1"],
-    [style*="rgba(255, 255, 255, 0.2"],
-    [style*="rgba(255, 255, 255, 0.3"] {
+    :root[data-style="glass"] [style*="rgba(255,255,255,0.1"],
+    :root[data-style="glass"] [style*="rgba(255,255,255,0.2"],
+    :root[data-style="glass"] [style*="rgba(255,255,255,0.3"],
+    :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.1"],
+    :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.2"],
+    :root[data-style="glass"] [style*="rgba(255, 255, 255, 0.3"] {
       background: linear-gradient(135deg, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.18) 100%) !important;
     }
   }

@@ -15,7 +15,7 @@ import {
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
-import { FaChevronLeft, FaChevronRight, FaCalendarAlt, FaShoppingCart, FaCheck } from 'react-icons/fa';
+import { Icon } from './ui/Icon';
 import { useCartStore, type CartItem } from './stores/car.store';
 import { toaster, Toaster } from './ui/toaster';
 import { useLangStore } from './stores/lang.store';
@@ -34,16 +34,16 @@ const API_BASE_URL = `${API_ROOT}/`;
 const TIMEZONE = getSiteClient().timezone || 'Europe/Madrid';
 const LIMITED_THRESHOLD = 5;
 
+// Solo tokens del estilo visual (presets.css): se lee igual en estilos oscuros.
 const C = {
-  accent: 'var(--brand-primary)',
-  accentDark: 'color-mix(in srgb, var(--brand-primary) 78%, var(--brand-dark))',
-  brown: 'var(--brand-dark)',
-  brownMid: 'color-mix(in srgb, var(--brand-primary) 28%, var(--brand-dark))',
-  textMuted: 'color-mix(in srgb, var(--brand-secondary) 88%, var(--brand-dark))',
-  textLight: 'color-mix(in srgb, var(--brand-secondary) 65%, white)',
-  bg: 'var(--brand-bg)',
-  cardBg: 'rgba(255,255,255,0.72)',
-  border: 'rgba(255,255,255,0.70)',
+  accent: 'var(--accent)',            // rellenos/decoración de acento
+  accentText: 'var(--accent-text)',   // texto pequeño de acento
+  brown: 'var(--page-text)',
+  heading: 'var(--heading-color)',
+  textMuted: 'var(--text-muted)',
+  textLight: 'var(--text-subtle)',
+  cardBg: 'var(--surface)',
+  border: 'var(--surface-border)',
 };
 
 export interface ApiScheduleEvent {
@@ -85,10 +85,10 @@ function getStatus(event: CalendarEvent): Status {
 }
 
 const statusConfig: Record<Status, { color: string; dot: string }> = {
-  available: { color: '#22C55E', dot: '#22C55E' },
-  limited:   { color: '#F59E0B', dot: '#F59E0B' },
-  full:      { color: '#EF4444', dot: '#EF4444' },
-  past:      { color: 'color-mix(in srgb, var(--brand-secondary) 65%, white)', dot: 'color-mix(in srgb, var(--brand-secondary) 65%, white)' },
+  available: { color: 'var(--success)', dot: 'var(--success)' },
+  limited:   { color: 'var(--warning)', dot: 'var(--warning)' },
+  full:      { color: 'var(--danger)', dot: 'var(--danger)' },
+  past:      { color: 'var(--text-subtle)', dot: 'var(--text-subtle)' },
 };
 
 // ─── Event card ───────────────────────────────────────────────────
@@ -114,19 +114,19 @@ function EventCard({ event, onAdd, hideDetailLink }: { event: CalendarEvent; onA
       transition={{ duration: 0.28 }}
     >
       <Flex
-        p={4} borderRadius="16px"
+        p={4} borderRadius="var(--radius-card)"
         bg={C.cardBg}
-        backdropFilter="blur(16px)"
-        style={{ WebkitBackdropFilter: 'blur(16px)' }}
-        border={`1px solid ${isDisabled ? 'rgba(200,190,180,0.3)' : 'rgba(255,255,255,0.70)'}`}
-        boxShadow={isDisabled ? 'none' : '0 2px 14px color-mix(in srgb, var(--brand-dark) 6%, transparent)'}
+        backdropFilter="var(--surface-blur)"
+        style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
+        border={`var(--border-width) solid ${isDisabled ? 'var(--border-neutral)' : C.border}`}
+        boxShadow={isDisabled ? 'none' : 'var(--shadow-card)'}
         borderLeft={`3px solid ${cfg.dot}`}
         opacity={isDisabled ? 0.6 : 1}
         align="center"
         gap={3}
         cursor={isDisabled ? 'not-allowed' : 'default'}
         transition="all 0.2s ease"
-        _hover={!isDisabled ? { boxShadow: '0 6px 20px color-mix(in srgb, var(--brand-dark) 10%, transparent)', transform: 'translateY(-1px)' } : {}}
+        _hover={!isDisabled ? { boxShadow: 'var(--shadow-hover)', transform: 'translateY(-1px)' } : {}}
       >
         {/* Thumbnail */}
         {event.resource.image && (
@@ -136,7 +136,7 @@ function EventCard({ event, onAdd, hideDetailLink }: { event: CalendarEvent; onA
             loading="lazy"
             alt={tr(event.resource, 'title', lang) || event.title}
             boxSize="46px"
-            borderRadius="10px"
+            borderRadius="var(--radius-input)"
             objectFit="cover"
             flexShrink={0}
           />
@@ -169,13 +169,13 @@ function EventCard({ event, onAdd, hideDetailLink }: { event: CalendarEvent; onA
             </Text>
           </Text>
           {credits > 0 && (
-            <Text fontSize="11px" fontWeight={600} color={C.accent}
+            <Text fontSize="11px" fontWeight={600} color={C.accentText}
               fontFamily='var(--font-body)'>
               {credits} {t('checkout.creditsUnit')}
             </Text>
           )}
           {credits === 0 && price > 0 && (
-            <Text fontSize="11px" fontWeight={600} color={C.accent}
+            <Text fontSize="11px" fontWeight={600} color={C.accentText}
               fontFamily='var(--font-body)'>
               {formatPrice(price, lang, 'auto')}
             </Text>
@@ -187,26 +187,27 @@ function EventCard({ event, onAdd, hideDetailLink }: { event: CalendarEvent; onA
           {/* Add to cart — acción PRIMARIA, con etiqueta (antes: icono suelto
               que nadie descubría; el "Ver detalle" fantasma parecía la única acción) */}
           {!isDisabled && (
+            // Sin añadir: botón principal del estilo (sk-btn). Añadida: relleno suave de acento.
             <Button
+              className={inCart ? undefined : 'sk-btn'}
               aria-label={inCart ? t('calendar.inCart') : t('calendar.addToCart')}
               size="sm"
               h="36px"
               px={3}
-              borderRadius="10px"
-              bg={inCart ? 'color-mix(in srgb, var(--brand-primary) 12%, transparent)' : C.accent}
-              color={inCart ? C.accentDark : 'white'}
-              border={inCart ? `1.5px solid color-mix(in srgb, var(--brand-primary) 35%, transparent)` : 'none'}
+              borderRadius="var(--radius-button)"
+              bg={inCart ? 'var(--accent-soft)' : undefined}
+              color={inCart ? C.accentText : undefined}
+              border={inCart ? '1.5px solid var(--accent-border)' : undefined}
               disabled={inCart}
               cursor={inCart ? 'default' : 'pointer'}
               onClick={() => onAdd(event)}
-              _hover={!inCart ? { bg: C.accentDark } : {}}
               transition="all 0.2s"
               fontFamily='var(--font-body)'
               fontWeight={700}
               fontSize="12px"
               gap={1.5}
             >
-              {inCart ? <FaCheck size={11} /> : <FaShoppingCart size={11} />}
+              {inCart ? <Icon name="check" size={11} /> : <Icon name="cart" size={11} />}
               {inCart ? t('calendar.added') : t('calendar.add')}
             </Button>
           )}
@@ -215,28 +216,24 @@ function EventCard({ event, onAdd, hideDetailLink }: { event: CalendarEvent; onA
           {!hideDetailLink && event.resource.class_type_slug && (
             <Box
               as="a"
+              className="sk-btn-ghost"
               href={classUrl(event.resource.class_type_slug, lang)}
               display="flex" alignItems="center" justifyContent="center"
-              h="28px" px={2.5} borderRadius="8px"
-              bg="rgba(255,255,255,0.85)"
-              border="1px solid color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)) 45%, transparent)"
-              color={C.brownMid}
+              h="28px" px={2.5}
               fontSize="11px" fontWeight={700}
               fontFamily='var(--font-body)'
               cursor="pointer" transition="all 0.2s"
               whiteSpace="nowrap"
-              _hover={{ bg: 'white', color: C.brown, borderColor: C.accentDark }}
-              letterSpacing="0.02em"
             >
               {t('calendar.viewDetail')}
             </Box>
           )}
           {isDisabled && status === 'full' && (
             <Box
-              px={2.5} py={1} borderRadius="8px"
-              bg="rgba(239,68,68,0.08)"
+              px={2.5} py={1} borderRadius="var(--radius-chip)"
+              bg="var(--danger-soft)"
             >
-              <Text fontSize="11px" fontWeight={600} color="#EF4444"
+              <Text fontSize="11px" fontWeight={600} color="var(--danger)"
                 fontFamily='var(--font-body)' textAlign="center">
                 {t('calendar.statusFull')}
               </Text>
@@ -260,36 +257,34 @@ function DayPill({
     <Flex
       direction="column" align="center" gap={1}
       px={{ base: 2.5, md: 3 }} py={2.5}
-      borderRadius="16px" cursor={isPast ? 'default' : 'pointer'}
+      borderRadius="var(--radius-card)" cursor={isPast ? 'default' : 'pointer'}
       transition="all 0.2s ease"
       minW={{ base: '42px', md: '52px' }}
       opacity={isPast ? 0.45 : 1}
-      bg={isActive
-        ? 'linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)))'
-        : 'rgba(255,255,255,0.55)'}
+      bg={isActive ? C.accent : C.cardBg}
       border={isActive
         ? 'none'
         : isToday
-          ? '1.5px solid color-mix(in srgb, var(--brand-primary) 45%, transparent)'
-          : '1px solid rgba(255,255,255,0.65)'}
+          ? '1.5px solid var(--accent-border)'
+          : `var(--border-width) solid ${C.border}`}
       boxShadow={isActive
-        ? '0 6px 18px color-mix(in srgb, var(--brand-primary) 30%, transparent)'
-        : '0 2px 8px color-mix(in srgb, var(--brand-dark) 5%, transparent)'}
-      backdropFilter="blur(12px)"
-      style={{ WebkitBackdropFilter: 'blur(12px)' }}
+        ? 'var(--button-shadow)'
+        : 'var(--shadow-card)'}
+      backdropFilter="var(--surface-blur)"
+      style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
       onClick={!isPast ? onClick : undefined}
-      _hover={!isPast && !isActive ? { bg: 'rgba(255,255,255,0.80)', transform: 'translateY(-2px)' } : {}}
+      _hover={!isPast && !isActive ? { bg: 'var(--surface-strong)', transform: 'translateY(-2px)' } : {}}
     >
       <Text
         fontSize="10px" fontWeight={700} textTransform="uppercase" letterSpacing="0.06em"
-        color={isActive ? 'rgba(255,255,255,0.80)' : C.textMuted}
+        color={isActive ? 'var(--on-primary)' : C.textMuted}
         fontFamily='var(--font-body)'
       >
         {format(date, 'EEE', { locale: lang === 'es' ? es : enUS }).slice(0, 3)}
       </Text>
       <Text
         fontSize={{ base: 'md', md: 'lg' }} fontWeight={800}
-        color={isActive ? 'white' : isToday ? C.accent : C.brown}
+        color={isActive ? 'var(--on-primary)' : isToday ? C.accentText : C.brown}
         fontFamily='var(--font-heading)'
         lineHeight="1"
       >
@@ -298,7 +293,7 @@ function DayPill({
       {/* Dot indicator */}
       <Box
         w="5px" h="5px" borderRadius="full"
-        bg={isActive ? 'rgba(255,255,255,0.7)' : hasEvents ? C.accent : 'transparent'}
+        bg={isActive ? 'color-mix(in srgb, var(--on-primary) 70%, transparent)' : hasEvents ? C.accent : 'transparent'}
         transition="background 0.2s"
       />
     </Flex>
@@ -513,7 +508,7 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
       <Toaster />
       <Box
         w="full"
-        bg={compact ? 'transparent' : `linear-gradient(150deg, color-mix(in srgb, var(--brand-primary) 22%, white) 0%, var(--brand-bg) 60%, color-mix(in srgb, var(--brand-primary) 25%, white) 100%)`}
+        bg={compact ? 'transparent' : 'var(--section-bg)'}
         minH={compact ? 'auto' : '80vh'}
         pt={compact ? 0 : { base: 4, md: 8 }}
         pb={compact ? 0 : { base: 8, md: 12 }}
@@ -531,7 +526,7 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
             <Text
               fontFamily='var(--font-heading)'
               fontSize={{ base: 'xl', md: '2xl' }}
-              color={C.brown} letterSpacing="0.04em"
+              color={C.heading} letterSpacing="0.04em"
             >
               {format(weekStart, "d MMM", { locale: lang === 'es' ? es : enUS })}
               {' — '}
@@ -543,35 +538,35 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
               {/* Prev week */}
               <IconButton
                 aria-label={t('calendar.prevWeek')}
-                size="sm" borderRadius="10px"
-                bg="rgba(255,255,255,0.60)"
-                border="1px solid rgba(255,255,255,0.70)"
+                size="sm" borderRadius="var(--radius-button)"
+                bg={C.cardBg}
+                border={`var(--border-width) solid ${C.border}`}
                 color={C.textMuted}
                 disabled={isPrevDisabled}
                 onClick={handlePrevWeek}
                 cursor="pointer"
-                _hover={{ bg: 'white' }}
-                boxShadow="0 2px 8px color-mix(in srgb, var(--brand-dark) 6%, transparent)"
+                _hover={{ bg: 'var(--surface-strong)' }}
+                boxShadow="var(--shadow-card)"
               >
-                <FaChevronLeft size={11} />
+                <Icon name="chevron-left" size={11} />
               </IconButton>
 
               {/* Date picker button */}
               <Box position="relative">
                 <Button
-                  size="sm" borderRadius="10px"
-                  bg={showPicker ? C.accent : 'rgba(255,255,255,0.60)'}
-                  color={showPicker ? 'white' : C.textMuted}
-                  border="1px solid rgba(255,255,255,0.70)"
+                  size="sm" borderRadius="var(--radius-button)"
+                  bg={showPicker ? C.accent : C.cardBg}
+                  color={showPicker ? 'var(--on-primary)' : C.textMuted}
+                  border={`var(--border-width) solid ${C.border}`}
                   cursor="pointer"
                   onClick={() => setShowPicker(v => !v)}
-                  _hover={{ bg: showPicker ? C.accentDark : 'white' }}
-                  boxShadow="0 2px 8px color-mix(in srgb, var(--brand-dark) 6%, transparent)"
+                  _hover={{ bg: showPicker ? C.accent : 'var(--surface-strong)' }}
+                  boxShadow="var(--shadow-card)"
                   gap={1.5} fontFamily='var(--font-body)'
                   fontWeight={600} fontSize="xs"
                   transition="all 0.2s"
                 >
-                  <FaCalendarAlt size={11} />
+                  <Icon name="calendar" size={11} />
                   {format(selectedDate, 'd MMM', { locale: lang === 'es' ? es : enUS })}
                 </Button>
 
@@ -580,16 +575,11 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
                   {showPicker && (
                     <MotionBox
                       ref={pickerRef}
+                      className="sk-panel"
                       position="absolute"
                       top="calc(100% + 8px)"
                       right={0}
                       zIndex={50}
-                      bg="rgba(255,255,255,0.95)"
-                      backdropFilter="blur(20px)"
-                      style={{ WebkitBackdropFilter: 'blur(20px)' }}
-                      borderRadius="20px"
-                      border="1px solid rgba(255,255,255,0.80)"
-                      boxShadow="0 16px 48px color-mix(in srgb, var(--brand-dark) 18%, transparent)"
                       p={3}
                       initial={{ opacity: 0, y: -8, scale: 0.96 }}
                       animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -606,7 +596,8 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
                         showOutsideDays={false}
                         style={{
                           '--rdp-accent-color': C.accent,
-                          '--rdp-background-color': 'color-mix(in srgb, var(--brand-primary) 10%, transparent)',
+                          '--rdp-accent-background-color': 'var(--accent-soft)',
+                          '--rdp-background-color': 'var(--accent-soft)',
                           fontSize: '13px',
                         } as React.CSSProperties}
                       />
@@ -618,24 +609,24 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
               {/* Next week */}
               <IconButton
                 aria-label={t('calendar.nextWeek')}
-                size="sm" borderRadius="10px"
-                bg="rgba(255,255,255,0.60)"
-                border="1px solid rgba(255,255,255,0.70)"
+                size="sm" borderRadius="var(--radius-button)"
+                bg={C.cardBg}
+                border={`var(--border-width) solid ${C.border}`}
                 color={C.textMuted}
                 onClick={handleNextWeek}
                 cursor="pointer"
-                _hover={{ bg: 'white' }}
-                boxShadow="0 2px 8px color-mix(in srgb, var(--brand-dark) 6%, transparent)"
+                _hover={{ bg: 'var(--surface-strong)' }}
+                boxShadow="var(--shadow-card)"
               >
-                <FaChevronRight size={11} />
+                <Icon name="chevron-right" size={11} />
               </IconButton>
             </Flex>
           </Flex>
 
           {showGuideHint && (
             <Flex as="a" href={`${t('nav.items.classes.href') || '/classes'}#guia`} align="center" justify="space-between" gap={3}
-              mb={4} p={3.5} borderRadius="16px" bg="rgba(255,255,255,0.70)"
-              border="1px solid color-mix(in srgb, var(--brand-primary) 25%, transparent)" _hover={{ borderColor: C.accent }}>
+              mb={4} p={3.5} borderRadius="var(--radius-card)" bg={C.cardBg}
+              border="1px solid var(--accent-border)" _hover={{ borderColor: C.accent }}>
               <Box>
                 <Text fontFamily='var(--font-body)' fontWeight={800} fontSize="sm" color={C.brown}>
                   {lang === 'en' ? 'Not sure which class to pick?' : '¿No sabes qué clase elegir?'}
@@ -644,12 +635,11 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
                   {lang === 'en' ? 'Answer 2 questions and we’ll recommend one.' : 'Responde 2 preguntas y te recomendamos una.'}
                 </Text>
               </Box>
-              <Flex align="center" gap={1.5} px={3.5} py={2} borderRadius="full" flexShrink={0}
-                bg={`linear-gradient(135deg, ${C.accent}, ${C.accentDark})`} color="white">
+              <Flex className="sk-btn" align="center" gap={1.5} px={3.5} py={2} flexShrink={0}>
                 <Text fontFamily='var(--font-body)' fontWeight={800} fontSize="xs">
                   {lang === 'en' ? 'Help me' : 'Ayúdame'}
                 </Text>
-                <FaChevronRight size={9} />
+                <Icon name="chevron-right" size={9} />
               </Flex>
             </Flex>
           )}
@@ -665,9 +655,9 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
           {isFiltered && !loading && upcomingDays.length === 0 && (
             <Center py={10}>
               <VStack gap={3} maxW="320px" textAlign="center">
-                <Box w="52px" h="52px" borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)"
+                <Box w="52px" h="52px" borderRadius="full" bg="var(--accent-soft)"
                   display="flex" alignItems="center" justifyContent="center">
-                  <FaCalendarAlt color={C.textLight} size={20} />
+                  <Icon name="calendar" color={C.textLight} size={20} />
                 </Box>
                 <Text fontSize="md" fontWeight={700} color={C.brown} fontFamily='var(--font-body)'>
                   {t('calendar.noUpcomingTitle')}
@@ -689,15 +679,14 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
           >
             {isFiltered && !loading && visibleDays.length === 0 && upcomingDays.length > 0 && (
               <Flex w="full" align="center" justify="space-between" gap={3} wrap="wrap"
-                p={3} borderRadius="14px" bg="color-mix(in srgb, var(--brand-primary) 8%, transparent)"
-                border="1px solid color-mix(in srgb, var(--brand-primary) 20%, transparent)">
+                p={3} borderRadius="var(--radius-card)" bg="var(--accent-soft)"
+                border="1px solid var(--accent-border)">
                 <Text fontSize="sm" color={C.textMuted} fontFamily='var(--font-body)'>
                   {t('calendar.noDatesThisWeek')}
                 </Text>
                 {nextDayAfterWeek && (
-                  <Button size="sm" borderRadius="full" bg={C.accent} color="white"
+                  <Button className="sk-btn" size="sm"
                     fontFamily='var(--font-body)' fontWeight={700} minH="40px"
-                    _hover={{ bg: C.accentDark }}
                     onClick={() => goToDay(nextDayAfterWeek)}>
                     {t('calendar.nextDate')}{' '}
                     {format(nextDayAfterWeek, lang === 'es' ? "EEEE d MMM" : 'EEEE, MMM d', { locale: lang === 'es' ? es : enUS })}
@@ -741,10 +730,10 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
                     <VStack gap={2}>
                       <Box
                         w="48px" h="48px" borderRadius="full"
-                        bg="color-mix(in srgb, var(--brand-primary) 10%, transparent)"
+                        bg="var(--accent-soft)"
                         display="flex" alignItems="center" justifyContent="center"
                       >
-                        <FaCalendarAlt color={C.textLight} size={18} />
+                        <Icon name="calendar" color={C.textLight} size={18} />
                       </Box>
                       <Text fontSize="sm" color={C.textMuted}
                         fontFamily='var(--font-body)' fontWeight={500}>
@@ -762,8 +751,8 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
                           : format(selectedDate, 'EEEE, MMMM d', { locale: enUS })}
                       </Text>
                       <Badge
-                        px={2.5} py={0.5} borderRadius="full"
-                        bg="color-mix(in srgb, var(--brand-primary) 12%, transparent)" color={C.accent}
+                        px={2.5} py={0.5} borderRadius="var(--radius-chip)"
+                        bg="var(--accent-soft)" color={C.accentText}
                         fontSize="11px" fontWeight={700}
                         fontFamily='var(--font-body)'
                       >

@@ -22,13 +22,14 @@ import {
   HStack,
   Box,
 } from "@chakra-ui/react";
-import { FaGift, FaEnvelope, FaUser, FaArrowRight } from "react-icons/fa";
+import { Icon as SiteIcon } from "./ui/Icon";
 import Chakra from "./ChakraProvider";
 import { Toaster, toaster } from "./ui/toaster";
 import { useT } from '../i18n/index';
 import { useLangStore } from './stores/lang.store';
 import { trStrict } from '../utils/localized';
 import { API_ROOT, API_V1 } from '../config';
+import { scheduleOptions, useInterestOptions } from '../utils/preferenceOptions';
 import { lt, useSite } from '../lib/site';
 
 
@@ -91,20 +92,12 @@ export default function HeroWithVideo() {
     ],
 }), [t]);
 
-const interestsCollection = useMemo(() => createListCollection({
-    items: [
-        { label: t("home.heroVideo.intReformer") || "Pilates Reformer", value: "Reformer" },
-        { label: t("home.heroVideo.intSuelo") || "Pilates Suelo (Mat)", value: "Suelo" },
-        { label: t("home.heroVideo.intYoga") || "Yoga", value: "Yoga" },
-        { label: t("home.heroVideo.intYogaKids") || "Yoga Niños", value: "Yoga niños" },
-        { label: t("home.heroVideo.intPrePostParto") || "Pilates Pre/Post Parto", value: "Pre/Post parto" },
-        { label: t("home.heroVideo.intSenior") || "Grupo Senior", value: "Senior" },
-    ],
-}), [t]);
+const interestOptions = useInterestOptions(lang);
+    const interestsCollection = useMemo(() => createListCollection({ items: interestOptions }), [interestOptions]);
 
 const experienceCollection = useMemo(() => createListCollection({
     items: [
-        { value: "Nunca", label: t("home.heroVideo.expNever") || "Nunca he hecho Pilates" },
+        { value: "Nunca", label: t("home.heroVideo.expNever") || "Primera vez" },
         { value: "Principiante", label: t("home.heroVideo.expBeginner") || "Principiante" },
         { value: "Intermedio", label: t("home.heroVideo.expIntermediate") || "Intermedio" },
         { value: "Avanzado", label: t("home.heroVideo.expAdvanced") || "Avanzado" },
@@ -124,15 +117,7 @@ const daysCollection = useMemo(() => createListCollection({
 }), [t]);
 
 // ✅ COLECCIÓN MODIFICADA: Horarios
-const scheduleCollection = useMemo(() => createListCollection({
-    items: [
-        { value: "8:30", label: t("home.heroVideo.schFirst") || "Primera hora (8:30)" },
-        { value: "9:30-13:30", label: t("home.heroVideo.schMorning") || "Mañana (9:30 - 13:30)" },
-        { value: "13:30-16:30", label: t("home.heroVideo.schMidday") || "Medio día (13:30 - 16:30)" },
-        { value: "16:30-20:30", label: t("home.heroVideo.schAfternoon") || "Tarde (16:30 – 20:30)" },
-        { value: "20:30", label: t("home.heroVideo.schLast") || "Última hora (20:30)" },
-    ],
-}), [t]);
+const scheduleCollection = useMemo(() => createListCollection({ items: scheduleOptions(t) }), [t]);
 
 
   // ➡️ Handler para avanzar al Paso 2 (NUEVO)
@@ -332,18 +317,22 @@ const scheduleCollection = useMemo(() => createListCollection({
                 size="lg"
                 px={10}
                 py={7}
-                bg="linear-gradient(135deg, var(--brand-primary), color-mix(in srgb, var(--brand-primary) 60%, var(--brand-dark)))"
+                // Sobre la foto: relleno primario fijo en todos los estilos (sk-btn sería un
+                // contorno oscuro en editorial/neón); radio y mayúsculas del estilo
+                bg="linear-gradient(135deg, var(--brand-primary), var(--brand-primary-2))"
                 border="1px solid rgba(255,255,255,0.35)"
-                color="white"
+                color="var(--on-primary)"
                 fontSize="lg"
                 fontWeight="700"
-                borderRadius="full"
+                borderRadius="var(--radius-button)"
+                textTransform="var(--button-text-transform)"
+                letterSpacing="var(--button-spacing)"
                 boxShadow="0 8px 30px color-mix(in srgb, var(--brand-primary) 45%, transparent)"
                 _hover={{ transform: 'translateY(-2px)', boxShadow: '0 12px 40px color-mix(in srgb, var(--brand-primary) 55%, transparent)' }}
                 transition="all 0.3s ease"
               >
                 {t("home.heroVideo.comingSoon")}
-                <Box as="span" ml={2}><FaArrowRight /></Box>
+                <Box as="span" ml={2}><SiteIcon name="arrow-right" /></Box>
               </Button>
 
               <HStack gap={3} flexWrap="wrap" justify="center">
@@ -354,11 +343,13 @@ const scheduleCollection = useMemo(() => createListCollection({
                   size="md"
                   px={6}
                   border="1.5px solid rgba(255,255,255,0.55)"
-                  backdropFilter="blur(12px) saturate(180%)"
+                  backdropFilter="var(--surface-blur)"
                   color="white"
                   fontSize="sm"
                   fontWeight="600"
-                  borderRadius="full"
+                  borderRadius="var(--radius-button)"
+                  textTransform="var(--button-text-transform)"
+                  letterSpacing="var(--button-spacing)"
                   bg="rgba(255,255,255,0.10)"
                   _hover={{ bg: 'rgba(255,255,255,0.18)', borderColor: 'white' }}
                   transition="all 0.3s ease"
@@ -372,11 +363,13 @@ const scheduleCollection = useMemo(() => createListCollection({
                   size="md"
                   px={6}
                   border="1.5px solid rgba(255,255,255,0.55)"
-                  backdropFilter="blur(12px) saturate(180%)"
+                  backdropFilter="var(--surface-blur)"
                   color="white"
                   fontSize="sm"
                   fontWeight="600"
-                  borderRadius="full"
+                  borderRadius="var(--radius-button)"
+                  textTransform="var(--button-text-transform)"
+                  letterSpacing="var(--button-spacing)"
                   bg="rgba(255,255,255,0.10)"
                   _hover={{ bg: 'rgba(255,255,255,0.18)', borderColor: 'white' }}
                   transition="all 0.3s ease"
