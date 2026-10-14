@@ -101,12 +101,50 @@ class SiteConfigSerializer(serializers.ModelSerializer):
     google_ads_purchase_label = serializers.CharField(required=False, allow_blank=True, max_length=300)
     google_ads_signup_label = serializers.CharField(required=False, allow_blank=True, max_length=300)
     meta_pixel_id = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    # ── Portada ──
+    hero_mode = serializers.ChoiceField(
+        choices=SiteConfig.HERO_MODES, required=False,
+        error_messages={'invalid_choice': 'Elige qué quieres en la portada: foto, vídeo o ilustración.'})
+    hero_illustration = serializers.ChoiceField(
+        choices=SiteConfig.HERO_ILLUSTRATIONS, required=False,
+        error_messages={'invalid_choice': 'Elige una de las ilustraciones de la lista.'})
+    hero_image_url = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+    hero_video_url = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+    hero_video_id = serializers.SerializerMethodField()
 
     class Meta:
         model = SiteConfig
         exclude = ('id', 'stripe_secret_key', 'stripe_webhook_secret', 'stripe_webhook_id',
                    'vapid_private_key', 'vapid_public_key')
-        read_only_fields = ('payments_enabled', 'stripe_publishable_key', 'updated_at')
+        read_only_fields = ('payments_enabled', 'stripe_publishable_key', 'updated_at', 'hero_video_poster_url')
+
+    # ── Portada ──
+    def validate_hero_image_url(self, value):
+        return _clean_public_url(value, 500)
+
+    def validate_hero_video_url(self, value):
+        from api.utils.youtube import watch_url, youtube_id
+        value = (value or '').strip()
+        if not value:
+            return ''
+        video_id = youtube_id(value)
+        if not video_id:
+            raise serializers.ValidationError(
+                'Ese enlace no es de un vídeo de YouTube. Abre el vídeo en YouTube, pulsa «Compartir» → '
+                '«Copiar» y pégalo aquí (algo como https://youtu.be/… o https://www.youtube.com/watch?v=…).')
+        return watch_url(video_id)
+
+    def validate(self, attrs):
+        mode = attrs.get('hero_mode', getattr(self.instance, 'hero_mode', 'image'))
+        video = attrs.get('hero_video_url', getattr(self.instance, 'hero_video_url', ''))
+        if mode == 'video' and not video:
+            raise serializers.ValidationError(
+                {'hero_video_url': 'Pega el enlace del vídeo de YouTube que quieres en la portada.'})
+        return attrs
+
+    def get_hero_video_id(self, obj):
+        from api.utils.youtube import youtube_id
+        return youtube_id(obj.hero_video_url)
 
     def _clean_domain(self, value):
         value = (value or '').strip().lower()
@@ -203,12 +241,34 @@ class SiteConfigSerializer(serializers.ModelSerializer):
         # Contraseña vacía = no cambiarla (el panel no la conoce)
         if not validated_data.get('smtp_password'):
             validated_data.pop('smtp_password', None)
+        # Vídeo nuevo → copia propia de su miniatura (la web no pide nada a
+        # YouTube hasta que la visitante acepta). Si falla, queda vacía y se
+        # vuelve a intentar la próxima vez que se guarde el mismo enlace.
+        if 'hero_video_url' in validated_data and (
+                validated_data['hero_video_url'] != instance.hero_video_url
+                or not instance.hero_video_poster_url):
+            from api.utils.youtube import fetch_poster, youtube_id
+            new_id = youtube_id(validated_data['hero_video_url'])
+            validated_data['hero_video_poster_url'] = fetch_poster(new_id) if new_id else ''
         return super().update(instance, validated_data)
 
 
 def _web_url():
     from api.utils.site import web_url
     return web_url()
+
+
+def _hero_payload(cfg: SiteConfig) -> dict:
+    from api.utils.youtube import youtube_id
+    modes = {m for m, _ in SiteConfig.HERO_MODES}
+    poses = {p for p, _ in SiteConfig.HERO_ILLUSTRATIONS}
+    return {
+        'hero_mode': cfg.hero_mode if cfg.hero_mode in modes else 'image',
+        'hero_image_url': safe_public_url(cfg.hero_image_url),
+        'hero_video_id': youtube_id(cfg.hero_video_url),
+        'hero_video_poster_url': safe_public_url(cfg.hero_video_poster_url),
+        'hero_illustration': cfg.hero_illustration if cfg.hero_illustration in poses else 'reformer',
+    }
 
 
 def public_config_payload(cfg: SiteConfig) -> dict:
@@ -254,6 +314,8 @@ def public_config_payload(cfg: SiteConfig) -> dict:
             'og_image': cfg.og_image_url or '/api/v1/site-config/og.png',
             'badge': '/api/v1/site-config/badge.png',
         },
+        # Portada: foto, vídeo de YouTube (solo el ID y el póster propio) o ilustración
+        **_hero_payload(cfg),
         'legal': {'name': cfg.legal_name, 'tax_id': cfg.tax_id},
         'theme': {
             'primary': cfg.color_primary,

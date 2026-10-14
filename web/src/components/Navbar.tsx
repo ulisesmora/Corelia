@@ -105,6 +105,11 @@ export default function Navbar({ forceScrolled = false }: NavbarProps = {}) {
   const isMobile = useBreakpointValue({ base: true, md: false })
   const scrolledFromHook = useScrollDirection();
   const scrolled = forceScrolled || scrolledFromHook;
+  // Portada con ilustración de fondo claro (Ajustes → Portada; HomePage pone
+  // <html data-hero="light">): arriba del todo la barra sigue transparente,
+  // pero con texto y logo oscuros para que se lean.
+  const [lightHero] = useState(() => typeof document !== 'undefined' && document.documentElement.dataset.hero === 'light');
+  const darkText = scrolled || lightHero;
 
   useEffect(() => {
      const VERSION_KEY = 'storageVersion';      // Tu "etiqueta"
@@ -212,8 +217,8 @@ const NAV_ITEMS: NavItem[] = useMemo(
   const bgVal = useMemo(() => (scrolled ? 'var(--surface-strong)' : 'transparent'), [scrolled]);
   const backdropVal = useMemo(() => (scrolled ? 'var(--surface-blur)' : 'none'), [scrolled]);
   const borderBottomVal = useMemo(() => (scrolled ? 'var(--border-width) solid var(--surface-border)' : 'none'), [scrolled]);
-  const linkColor = useMemo(() => (scrolled ? 'var(--page-text)' : 'white'), [scrolled]);
-  const textShadowVal = useMemo(() => (scrolled ? 'none' : '0 0 4px rgba(0,0,0,0.4)'), [scrolled]);
+  const linkColor = useMemo(() => (darkText ? 'var(--page-text)' : 'white'), [darkText]);
+  const textShadowVal = useMemo(() => (darkText ? 'none' : '0 0 4px rgba(0,0,0,0.4)'), [darkText]);
 
   const [openMobileMenu, setOpenMobileMenu] = useState(false)
 
@@ -257,8 +262,8 @@ const MobileNavItem = ({ label, href }: NavItem) => {
     [t]
   );
   const logoDefaultEl = useMemo(
-    () => <BrandLogo variant="light" width={180} maxHeight={72} alt={t('nav.brandAltDefault')} style={{ transition: 'width 0.3s' }} />,
-    [t]
+    () => <BrandLogo variant={lightHero ? 'default' : 'light'} width={180} maxHeight={72} alt={t('nav.brandAltDefault')} style={{ transition: 'width 0.3s' }} />,
+    [t, lightHero]
   );
 
   return (
@@ -349,9 +354,9 @@ const MobileNavItem = ({ label, href }: NavItem) => {
           display={{ md: 'none' }}
           variant="ghost"
           // CAMBIO: Color dinámico. Blanco arriba (para ver sobre imagen) y Marca al bajar.
-          color={scrolled ? 'var(--page-text)' : 'white'} 
+          color={darkText ? 'var(--page-text)' : 'white'} 
           // CAMBIO: Fondo semitransparente arriba para asegurar contraste si la foto es clara
-          bg={scrolled ? 'transparent' : 'rgba(0,0,0,0.2)'}
+          bg={scrolled ? 'transparent' : lightHero ? 'rgba(255,255,255,0.55)' : 'rgba(0,0,0,0.2)'}
           aria-label={t('nav.a11y.toggleNav')}
           zIndex={2}
           fontSize="2rem" // CAMBIO: Icono mucho más grande
@@ -434,7 +439,7 @@ const MobileNavItem = ({ label, href }: NavItem) => {
             ))}
             {/* Sobre el hero: píldora translúcida con texto blanco; en la barra sólida, botón secundario del estilo */}
             <Button
-              className={scrolled ? 'sk-btn-ghost' : undefined}
+              className={darkText ? 'sk-btn-ghost' : undefined}
               marginLeft="1rem"
               fontSize={scrolled ? '13px' : '16px'}
               fontFamily='var(--font-body)'
@@ -451,7 +456,7 @@ const MobileNavItem = ({ label, href }: NavItem) => {
             </Button>
 
             <Box ml={3}>
-              <LangToggle scrolled={scrolled} size="sm" />
+              <LangToggle scrolled={darkText} size="sm" />
             </Box>
 
             <AuthEntrypoint scrolled={false} linkColor={''}/>

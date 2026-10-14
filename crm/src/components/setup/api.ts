@@ -35,6 +35,16 @@ export interface StudioSettings {
   about_text: string;
   about_text_en: string;
   about_image_url: string;
+  // Portada (Ajustes → Portada)
+  hero_mode: 'image' | 'video' | 'illustration';
+  hero_image_url: string;
+  /** Se guarda normalizado: https://www.youtube.com/watch?v=ID */
+  hero_video_url: string;
+  hero_illustration: string;
+  /** Solo lectura: miniatura del vídeo copiada en el servidor ('' si no se pudo). */
+  hero_video_poster_url: string;
+  /** Solo lectura: ID del vídeo de YouTube. */
+  hero_video_id: string;
   google_client_id: string;
   // Google y anuncios
   google_business_url: string;
@@ -92,7 +102,7 @@ export interface StudioSettings {
 export type StudioSettingsPatch = Partial<Omit<StudioSettings,
   'has_smtp_password' | 'has_stripe' | 'stripe_mode' | 'webhook_url' | 'api_url' | 'web_url' | 'email_ready'
   | 'default_web_url' | 'default_api_url' | 'push_devices' | 'push_clients'
-  | 'payments_enabled' | 'stripe_publishable_key'>> & { smtp_password?: string };
+  | 'payments_enabled' | 'stripe_publishable_key' | 'hero_video_poster_url' | 'hero_video_id'>> & { smtp_password?: string };
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {

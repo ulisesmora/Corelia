@@ -19,6 +19,11 @@
 //  - Analítica  → GA4 (gtag.js) y Microsoft Clarity.
 //  - Publicidad → Google Ads (gtag.js) y píxel de Meta (fbevents.js).
 //
+// Además hay una tercera categoría, «Vídeos»: el vídeo de YouTube de la
+// portada (lib/hero.ts). Sin ella aceptada no se pide nada a YouTube/Google:
+// se ve el póster propio y un botón «Ver vídeo» (consentimiento solo para ese
+// vídeo). El banner aparece también si hay vídeo aunque no haya ningún ID.
+//
 // El banner (lib/cookie-consent.ts) guarda la elección con saveConsent().
 
 export type TrackEvent = 'sign_up' | 'purchase' | 'book' | 'contact';
@@ -46,6 +51,8 @@ export interface TrackingConfig {
   adsSignup?: string;
   pixel?: string;
   clarity?: string;
+  /** La portada tiene un vídeo de YouTube: categoría «Vídeos» en el banner. */
+  videos?: boolean;
   /**
    * Página sin analítica automática (legales, resultado del pago, enlaces con
    * token): ni page_view ni Clarity. Los eventos (compra…) sí se envían.
@@ -59,6 +66,8 @@ export interface ConsentChoice {
   at: string;
   analytics: boolean;
   ads: boolean;
+  /** Vídeos de YouTube incrustados (portada). */
+  videos: boolean;
 }
 
 type Fn = (...args: unknown[]) => void;
@@ -75,24 +84,24 @@ declare global {
 }
 
 export const CONSENT_KEY = 'cookie.consent';
-/** Súbela si cambian las categorías o los proveedores: se vuelve a preguntar. */
-export const CONSENT_VERSION = 1;
+/** Súbela si cambian las categorías o los proveedores: se vuelve a preguntar. (2: «Vídeos») */
+export const CONSENT_VERSION = 2;
 /** La elección se vuelve a pedir pasados 12 meses (criterio de la AEPD: máx. 24). */
 const CONSENT_MAX_AGE_MS = 365 * 24 * 3600 * 1000;
 const SENT_KEY = 'trk.sent';
 
 const isBrowser = () => typeof window !== 'undefined';
 
-/** IDs configurados en esta página, o null si no hay ninguno. */
+/** IDs configurados en esta página (o el vídeo de la portada), o null si no hay nada que consentir. */
 export function trackingConfig(): TrackingConfig | null {
   if (!isBrowser()) return null;
   const c = window.__TRK__;
-  return c && (c.ga4 || c.ads || c.pixel || c.clarity) ? c : null;
+  return c && (c.ga4 || c.ads || c.pixel || c.clarity || c.videos) ? c : null;
 }
 
 /** Categorías que existen según lo configurado. */
 export function availableCategories(cfg: TrackingConfig | null = trackingConfig()) {
-  return { analytics: !!(cfg?.ga4 || cfg?.clarity), ads: !!(cfg?.ads || cfg?.pixel) };
+  return { analytics: !!(cfg?.ga4 || cfg?.clarity), ads: !!(cfg?.ads || cfg?.pixel), videos: !!cfg?.videos };
 }
 
 /** Elección vigente (misma versión y de menos de 12 meses) o null. */
@@ -105,15 +114,15 @@ export function readConsent(): ConsentChoice | null {
     if (!c || c.v !== CONSENT_VERSION) return null;
     const at = Date.parse(c.at);
     if (!Number.isFinite(at) || Date.now() - at > CONSENT_MAX_AGE_MS) return null;
-    return { v: c.v, at: c.at, analytics: c.analytics === true, ads: c.ads === true };
+    return { v: c.v, at: c.at, analytics: c.analytics === true, ads: c.ads === true, videos: c.videos === true };
   } catch {
     return null;
   }
 }
 
 /** Guarda la elección, la aplica (carga o retira scripts) y avisa con el evento `cookie-consent`. */
-export function saveConsent(analytics: boolean, ads: boolean): ConsentChoice {
-  const c: ConsentChoice = { v: CONSENT_VERSION, at: new Date().toISOString(), analytics, ads };
+export function saveConsent(analytics: boolean, ads: boolean, videos = false): ConsentChoice {
+  const c: ConsentChoice = { v: CONSENT_VERSION, at: new Date().toISOString(), analytics, ads, videos };
   try {
     localStorage.setItem(CONSENT_KEY, JSON.stringify(c));
   } catch { /* modo privado: vale para esta página */ }

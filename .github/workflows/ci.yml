@@ -28,6 +28,16 @@ jobs:
       - run: uv run --frozen --no-dev python manage.py test api
         env: { DEBUG: '1' }
 
+  hero-art:
+    name: Ilustraciones de la portada (web y panel iguales)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: crm/src/components/setup/hero-art.ts es copia de web/src/lib/hero-art.ts
+        run: |
+          tail -n +4 crm/src/components/setup/hero-art.ts | diff -u web/src/lib/hero-art.ts - \
+            || { echo "::error::hero-art.ts del panel y de la web se han separado: copia web/src/lib/hero-art.ts al panel (debajo de su cabecera de 3 líneas)"; exit 1; }
+
   panel:
     name: Panel (build)
     runs-on: ubuntu-latest

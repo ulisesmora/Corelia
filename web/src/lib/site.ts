@@ -97,6 +97,18 @@ export interface SiteConfig {
   google_site_verification: string;
   bing_site_verification: string;
 
+  // ── Portada (lib/hero.ts) ──
+  /** Qué se ve en la portada: foto, vídeo de YouTube o ilustración (lib/hero-art.ts). */
+  hero_mode: 'image' | 'video' | 'illustration';
+  /** Foto elegida en Ajustes → Portada ('' = la primera de Imágenes → Portada). */
+  hero_image_url: string;
+  /** ID del vídeo de YouTube (11 caracteres) o ''. */
+  hero_video_id: string;
+  /** Miniatura del vídeo guardada en el propio servidor (nada de pedirla a YouTube). */
+  hero_video_poster_url: string;
+  /** Postura de la ilustración (HERO_POSES de lib/hero-art.ts). */
+  hero_illustration: string;
+
   // ── Analítica y publicidad (IDs públicos; solo con consentimiento: lib/tracking.ts) ──
   ga4_measurement_id: string;
   google_ads_id: string;
@@ -170,6 +182,11 @@ export const DEFAULT_SITE: SiteConfig = {
   youtube_url: '',
   google_site_verification: '',
   bing_site_verification: '',
+  hero_mode: 'image',
+  hero_image_url: '',
+  hero_video_id: '',
+  hero_video_poster_url: '',
+  hero_illustration: 'reformer',
   ga4_measurement_id: '',
   google_ads_id: '',
   google_ads_purchase_label: '',
@@ -205,6 +222,9 @@ const font = (v: unknown, fallback: string) => (typeof v === 'string' && FONT.te
 // bloque en presets.css; si el bloque no existe se ve como 'natural'.
 const STYLE = /^[a-z][a-z0-9-]{0,23}$/;
 const ICON_FAMILIES = ['line', 'soft', 'solid'] as const;
+const HERO_MODES = ['image', 'video', 'illustration'] as const;
+/** ID de un vídeo de YouTube: va dentro de la URL del iframe, así que solo este patrón. */
+export const YOUTUBE_ID = /^[A-Za-z0-9_-]{11}$/;
 
 /** Origen (https://dominio) de una URL absoluta http(s), o '' si no es válida. */
 export function originOf(url: string): string {
@@ -337,6 +357,11 @@ export function normalizeSite(raw: unknown): SiteConfig {
     youtube_url: publicUrl(r.youtube_url),
     google_site_verification: tracking('google_site_verification', r.google_site_verification),
     bing_site_verification: tracking('bing_site_verification', r.bing_site_verification),
+    hero_mode: (HERO_MODES as readonly string[]).includes(r.hero_mode) ? r.hero_mode : 'image',
+    hero_image_url: publicUrl(r.hero_image_url),
+    hero_video_id: typeof r.hero_video_id === 'string' && YOUTUBE_ID.test(r.hero_video_id) ? r.hero_video_id : '',
+    hero_video_poster_url: publicUrl(r.hero_video_poster_url),
+    hero_illustration: typeof r.hero_illustration === 'string' && STYLE.test(r.hero_illustration) ? r.hero_illustration : 'reformer',
     ga4_measurement_id: tracking('ga4_measurement_id', r.ga4_measurement_id),
     google_ads_id: tracking('google_ads_id', r.google_ads_id),
     google_ads_purchase_label: tracking('google_ads_purchase_label', r.google_ads_purchase_label),

@@ -1,10 +1,11 @@
 // Banner de consentimiento de cookies (RGPD / LSSI / guía de la AEPD).
 //
-// Solo se carga si el estudio tiene algún ID de analítica o publicidad (lo
-// decide SiteHead.astro → CookieConsent.astro): sin IDs, ni banner ni scripts.
+// Solo se carga si el estudio tiene algún ID de analítica o publicidad o un
+// vídeo de YouTube en la portada (lo decide SiteHead.astro → CookieConsent.astro):
+// sin nada de eso, ni banner ni scripts.
 //
 //  - «Aceptar» y «Rechazar» igual de visibles (mismo estilo, mismo tamaño) y
-//    «Configurar» para elegir por categorías (Analítica / Publicidad).
+//    «Configurar» para elegir por categorías (Analítica / Publicidad / Vídeos).
 //  - La elección se guarda en localStorage con versión y fecha (lib/tracking.ts).
 //  - Cualquier elemento con `data-cookie-settings` (el enlace «Cookies» del pie
 //    de página, el botón de la política de cookies) vuelve a abrirlo.
@@ -30,8 +31,10 @@ const TEXT = {
     analytics: 'cookies de analítica',
     ads: 'cookies de publicidad',
     and: 'y',
+    videos: 'cookies de YouTube',
     analyticsWhy: 'para saber cómo se usa la web y mejorarla',
     adsWhy: 'para medir los resultados de nuestros anuncios',
+    videosWhy: 'para ver el vídeo de la portada',
     outro: 'Puedes cambiar tu elección cuando quieras en «Cookies», al pie de la página.',
     policy: 'Política de cookies',
     accept: 'Aceptar',
@@ -45,6 +48,8 @@ const TEXT = {
     adsLabel: 'Publicidad',
     analyticsDesc: 'Estadísticas de uso para mejorar la web',
     adsDesc: 'Medir los resultados de nuestros anuncios',
+    videosLabel: 'Vídeos',
+    videosDesc: 'Ver el vídeo de YouTube de la portada (YouTube guarda sus cookies)',
     saved: 'Preferencias de cookies guardadas',
     policyHref: '/cookies',
   },
@@ -55,8 +60,10 @@ const TEXT = {
     analytics: 'analytics cookies',
     ads: 'advertising cookies',
     and: 'and',
+    videos: 'YouTube cookies',
     analyticsWhy: 'to understand how the website is used and improve it',
     adsWhy: 'to measure the results of our ads',
+    videosWhy: 'to watch the video on the home page',
     outro: 'You can change your choice at any time from "Cookies" at the bottom of the page.',
     policy: 'Cookie policy',
     accept: 'Accept',
@@ -70,6 +77,8 @@ const TEXT = {
     adsLabel: 'Advertising',
     analyticsDesc: 'Usage statistics to improve the website',
     adsDesc: 'Measure the results of our ads',
+    videosLabel: 'Videos',
+    videosDesc: 'Watch the YouTube video on the home page (YouTube sets its own cookies)',
     saved: 'Cookie preferences saved',
     policyHref: '/en/cookies',
   },
@@ -132,6 +141,7 @@ interface UI {
   prefs: HTMLElement;
   analytics: HTMLInputElement | null;
   ads: HTMLInputElement | null;
+  videos: HTMLInputElement | null;
   accept: HTMLButtonElement;
   reject: HTMLButtonElement;
   third: HTMLButtonElement;
@@ -164,7 +174,7 @@ function build(): UI {
 
   const prefs = el('fieldset', { class: 'skc-prefs' });
   prefs.hidden = true;
-  const option = (key: 'necessary' | 'analytics' | 'ads') => {
+  const option = (key: 'necessary' | 'analytics' | 'ads' | 'videos') => {
     const label = el('label', { class: 'skc-opt' });
     const input = el('input', { type: 'checkbox', name: `skc-${key}` }) as HTMLInputElement;
     if (key === 'necessary') { input.checked = true; input.disabled = true; }
@@ -177,6 +187,7 @@ function build(): UI {
   option('necessary');
   const analytics = cats.analytics ? option('analytics') : null;
   const ads = cats.ads ? option('ads') : null;
+  const videos = cats.videos ? option('videos') : null;
 
   const actions = el('div', { class: 'skc-actions' });
   // Rechazar y Aceptar: mismo estilo y tamaño (igual de visibles)
@@ -192,14 +203,14 @@ function build(): UI {
   document.body.prepend(root);
   document.body.appendChild(status);
 
-  reject.addEventListener('click', () => choose(false, false));
-  accept.addEventListener('click', () => choose(!!analytics, !!ads));
+  reject.addEventListener('click', () => choose(false, false, false));
+  accept.addEventListener('click', () => choose(!!analytics, !!ads, !!videos));
   third.addEventListener('click', () => {
     if (!showingPrefs) {
       setPrefs(true);
-      (analytics || ads)?.focus();
+      (analytics || ads || videos)?.focus();
     } else {
-      choose(!!analytics?.checked, !!ads?.checked);
+      choose(!!analytics?.checked, !!ads?.checked, !!videos?.checked);
     }
   });
   close.addEventListener('click', hide);
@@ -208,7 +219,7 @@ function build(): UI {
     if (e.key === 'Escape' && readConsent()) { e.preventDefault(); hide(); }
   });
 
-  return { root, title, desc, prefs, analytics, ads, accept, reject, third, close, status };
+  return { root, title, desc, prefs, analytics, ads, videos, accept, reject, third, close, status };
 }
 
 /** Pinta los textos en el idioma de la página. */
@@ -223,6 +234,7 @@ function render() {
   const parts: string[] = [];
   if (cats.analytics) parts.push(`${t.analytics}, ${t.analyticsWhy}`);
   if (cats.ads) parts.push(`${t.ads}, ${t.adsWhy}`);
+  if (cats.videos) parts.push(`${t.videos}, ${t.videosWhy}`);
   ui.desc.append(`${t.intro} ${parts.join(`, ${t.and} `)}. ${t.outro} `);
   const link = el('a', { href: t.policyHref }, t.policy);
   ui.desc.append(link);
@@ -245,6 +257,7 @@ function setPrefs(on: boolean) {
   const c = readConsent();
   if (ui.analytics) ui.analytics.checked = !!c?.analytics;
   if (ui.ads) ui.ads.checked = !!c?.ads;
+  if (ui.videos) ui.videos.checked = !!c?.videos;
   render();
 }
 
@@ -255,7 +268,7 @@ function show(opts: { prefs?: boolean; trigger?: HTMLElement | null } = {}) {
   if (opts.trigger) {
     // Abierto por la usuaria: el foco va al panel y vuelve al enlace al cerrar
     returnFocus = opts.trigger;
-    (ui.analytics || ui.ads || ui.reject).focus();
+    (ui.analytics || ui.ads || ui.videos || ui.reject).focus();
   }
 }
 
@@ -268,8 +281,8 @@ function hide() {
   back?.focus?.();
 }
 
-function choose(analytics: boolean, ads: boolean) {
-  saveConsent(analytics, ads);
+function choose(analytics: boolean, ads: boolean, videos: boolean) {
+  saveConsent(analytics, ads, videos);
   if (ui) ui.status.textContent = TEXT[pageLang()].saved;
   hide();
 }

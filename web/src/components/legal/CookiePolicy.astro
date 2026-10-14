@@ -2,7 +2,8 @@
 // Política de cookies del estudio (ES en /cookies, EN en /en/cookies). Se
 // genera con lo que el estudio tiene configurado: las técnicas siempre; las
 // de Google Analytics, Google Ads, Meta y Microsoft Clarity solo si están
-// activas (panel → Ajustes, y PUBLIC_CLARITY_ID para Clarity).
+// activas (panel → Ajustes, y PUBLIC_CLARITY_ID para Clarity), y las de YouTube
+// si la portada tiene un vídeo (Ajustes → Portada).
 import LegalLayout from './LegalLayout.astro';
 import { clarityProjectId, getSiteConfig } from '../../lib/site';
 
@@ -15,9 +16,14 @@ const ga4 = !!site.ga4_measurement_id;
 const ads = !!site.google_ads_id;
 const pixel = !!site.meta_pixel_id;
 const clarity = !!clarityProjectId();
+const hasVideos = site.hero_mode === 'video' && !!site.hero_video_id;
 const hasAnalytics = ga4 || clarity;
 const hasAds = ads || pixel;
-const hasOptional = hasAnalytics || hasAds;
+const hasOptional = hasAnalytics || hasAds || hasVideos;
+// Números de los apartados según los que existan
+const nAnalytics = 3;
+const nAds = hasAnalytics ? 4 : 3;
+const nVideos = 3 + (hasAnalytics ? 1 : 0) + (hasAds ? 1 : 0);
 const holder = site.legal.name || site.studio_name;
 const email = site.contact.email;
 const termsHref = es ? '/terminos-condiciones' : '/en/terms-conditions';
@@ -61,6 +67,10 @@ const advertising: Row[] = [
     : { name: '_fbp, _fbc', provider: 'Meta Pixel (Meta Platforms Ireland Ltd.)', purpose: 'Measure the results of our ads on Facebook and Instagram.', duration: '90 days' }] : []),
 ];
 
+const videos: Row[] = hasVideos ? [es
+  ? { name: 'YSC, VISITOR_INFO1_LIVE, VISITOR_PRIVACY_METADATA, yt-remote-*, ytidb::* (almacenamiento local)', provider: 'YouTube (Google Ireland Ltd.), en modo de privacidad mejorada (youtube-nocookie.com)', purpose: 'Reproducir el vídeo de la portada y recordar sus ajustes. Solo se cargan si aceptas «Vídeos» o pulsas «Ver vídeo»; hasta entonces ves una imagen guardada en esta web.', duration: 'Sesión / hasta 6 meses' }
+  : { name: 'YSC, VISITOR_INFO1_LIVE, VISITOR_PRIVACY_METADATA, yt-remote-*, ytidb::* (local storage)', provider: 'YouTube (Google Ireland Ltd.), privacy-enhanced mode (youtube-nocookie.com)', purpose: 'Play the video on the home page and remember its settings. Only loaded if you accept "Videos" or press "Watch video"; until then you see an image stored on this website.', duration: 'Session / up to 6 months' }] : [];
+
 const H = es
   ? { name: 'Nombre', provider: 'Titular', purpose: 'Finalidad', duration: 'Duración' }
   : { name: 'Name', provider: 'Provider', purpose: 'Purpose', duration: 'Duration' };
@@ -92,7 +102,7 @@ const H = es
 
   {hasAnalytics && (
     <>
-      <h2>{es ? '3. Cookies de analítica (solo si las aceptas)' : '3. Analytics cookies (only if you accept them)'}</h2>
+      <h2>{es ? `${nAnalytics}. Cookies de analítica (solo si las aceptas)` : `${nAnalytics}. Analytics cookies (only if you accept them)`}</h2>
       <p>{es
         ? 'Nos ayudan a saber cuántas personas visitan la web y cómo la usan, para mejorarla. No se activan hasta que las aceptas.'
         : 'They help us understand how many people visit the website and how they use it, so we can improve it. They are not activated until you accept them.'}</p>
@@ -105,13 +115,26 @@ const H = es
 
   {hasAds && (
     <>
-      <h2>{es ? `${hasAnalytics ? '4' : '3'}. Cookies de publicidad (solo si las aceptas)` : `${hasAnalytics ? '4' : '3'}. Advertising cookies (only if you accept them)`}</h2>
+      <h2>{es ? `${nAds}. Cookies de publicidad (solo si las aceptas)` : `${nAds}. Advertising cookies (only if you accept them)`}</h2>
       <p>{es
         ? 'Nos permiten medir si nuestros anuncios funcionan (por ejemplo, cuántas reservas llegan desde un anuncio). No se activan hasta que las aceptas.'
         : 'They let us measure whether our ads work (for example, how many bookings come from an ad). They are not activated until you accept them.'}</p>
       <div class="ck-table"><table>
         <thead><tr><th>{H.name}</th><th>{H.provider}</th><th>{H.purpose}</th><th>{H.duration}</th></tr></thead>
         <tbody>{advertising.map((r) => <tr><td><code>{r.name}</code></td><td>{r.provider}</td><td>{r.purpose}</td><td>{r.duration}</td></tr>)}</tbody>
+      </table></div>
+    </>
+  )}
+
+  {hasVideos && (
+    <>
+      <h2>{es ? `${nVideos}. Vídeos de YouTube (solo si los aceptas)` : `${nVideos}. YouTube videos (only if you accept them)`}</h2>
+      <p>{es
+        ? 'La portada tiene un vídeo de YouTube. Mientras no aceptes la categoría «Vídeos» (o pulses «Ver vídeo»), la web no pide nada a YouTube ni a Google: solo ves una imagen guardada en esta web. Al aceptarlo, YouTube carga el vídeo y puede guardar estas cookies:'
+        : 'The home page has a YouTube video. Until you accept the "Videos" category (or press "Watch video"), the website does not request anything from YouTube or Google: you only see an image stored on this website. Once you accept, YouTube loads the video and may set these cookies:'}</p>
+      <div class="ck-table"><table>
+        <thead><tr><th>{H.name}</th><th>{H.provider}</th><th>{H.purpose}</th><th>{H.duration}</th></tr></thead>
+        <tbody>{videos.map((r) => <tr><td><code>{r.name}</code></td><td>{r.provider}</td><td>{r.purpose}</td><td>{r.duration}</td></tr>)}</tbody>
       </table></div>
     </>
   )}
@@ -124,8 +147,8 @@ const H = es
         : 'The first time you visit we ask you with a notice: you can accept, reject or choose by category. Rejecting is as easy as accepting and the website works the same. Your choice is kept for 12 months; after that we ask again. You can change it at any time from the "Cookies" link at the bottom of the page or here:'}</p>
       <p><a class="sk-btn ck-btn" href={es ? '/cookies' : '/en/cookies'} data-cookie-settings>{es ? 'Cambiar mis preferencias de cookies' : 'Change my cookie preferences'}</a></p>
       <p>{es
-        ? 'Si retiras tu consentimiento, borramos las cookies de analítica y publicidad de esta web y dejamos de enviar datos a esos proveedores.'
-        : 'If you withdraw your consent, we delete the analytics and advertising cookies of this website and stop sending data to those providers.'}</p>
+        ? 'Si retiras tu consentimiento, borramos las cookies de analítica y publicidad de esta web y dejamos de enviar datos a esos proveedores. Las de YouTube las guarda YouTube en su propio dominio: puedes borrarlas desde los ajustes de tu navegador.'
+        : 'If you withdraw your consent, we delete the analytics and advertising cookies of this website and stop sending data to those providers. YouTube cookies are stored by YouTube on its own domain: you can delete them from your browser settings.'}</p>
       <h2>{es ? 'Transferencias internacionales' : 'International transfers'}</h2>
       <p>{es
         ? 'Google, Meta y Microsoft pueden tratar datos fuera del Espacio Económico Europeo (por ejemplo, en Estados Unidos). Están adheridos al Marco de Privacidad de Datos UE-EE. UU. y usan cláusulas contractuales tipo aprobadas por la Comisión Europea.'

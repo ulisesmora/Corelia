@@ -79,6 +79,13 @@ ilegible. `lib/site.ts → themeCss()` calcula unas variables que lo garantizan:
 3. **Panel (CRM)**: añade su ficha (nombre, descripción y vista previa) en
    `crm/src/components/setup/presets.ts`.
 
+4. **Ilustraciones de la portada** (opcional): cada estilo tiene su tratamiento en
+   `web/src/lib/hero-art.ts` (`styleScene`). Un estilo sin caso propio se dibuja como
+   `natural`. Si lo añades, copia el archivo a `crm/src/components/setup/hero-art.ts`
+   (debajo de su cabecera de 3 líneas): la CI comprueba que las dos copias son iguales.
+   Para revisar las 6 posturas en todos los estilos, renderiza `renderHeroArt()` para
+   cada combinación en una página y mírala en escritorio y en móvil.
+
 Para probarlo en local:
 
 ```bash

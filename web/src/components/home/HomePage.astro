@@ -25,6 +25,9 @@ import {
   getTestimonials, offeredClasses, tr,
 } from '../../seo/catalog';
 import { getSiteConfig, htmlThemeAttrs, lt } from '../../lib/site';
+import { HERO_CSS, HERO_LABELS, heroArtVars, heroView } from '../../lib/hero';
+import { dict } from '../../i18n';
+import { trStrict } from '../../utils/localized';
 
 interface Props { lang: Lang }
 const { lang } = Astro.props;
@@ -40,11 +43,23 @@ const [site, classes, schedules, instructors, rooms, plans, faqs, testimonials, 
 ]);
 const offered = offeredClasses(classes, schedules);
 const b = business(site);
-const hero = heroImgs[0]?.image || '';
+// Portada (Ajustes → Portada): foto, vídeo de YouTube o ilustración (lib/hero.ts)
+const heroImg = heroImgs[0] || null;
+const view = heroView(site, heroImg?.image || '');
+const art = view.mode === 'illustration';
+const heroLogo = art && !view.theme?.dark ? (site.logo_url || site.logo_light_url) : site.logo_light_url;
+const heroVars = Object.entries(heroArtVars(view.theme)).map(([k, v]) => `${k}:${v}`).join(';');
+const HL = HERO_LABELS[lang];
 const headline = (es ? site.tagline : site.tagline_en) || (es ? 'Pilates, Yoga y movimiento' : 'Pilates, Yoga and movement');
-// Textos del hero del panel (Ajustes → Contenido de la web)
-const heroTitle = lt(site.content, 'hero_title', lang);
-const heroSubtitle = lt(site.content, 'hero_subtitle', lang);
+// Textos del hero: los del panel (Ajustes → Textos de la web) o los de la foto
+// de la portada; la isla React (VideoComponent) calcula lo mismo
+const D = (dict[lang] as any).home;
+const imgTitle = heroImg
+  ? (es ? (heroImg as any).title || '' : trStrict(heroImg, 'title', 'en') || String(D.hero.h1).replace('{studio}', site.studio_name))
+  : '';
+const imgSubtitle = heroImg && !es ? trStrict(heroImg, 'subtitle', 'en') : '';
+const heroTitle = lt(site.content, 'hero_title', lang) || imgTitle;
+const heroSubtitle = lt(site.content, 'hero_subtitle', lang) || imgSubtitle;
 // Cinta de texto: nombres de las clases que se ofrecen (sin repetir)
 const classNames = [...new Set(offered.map(({ cls }) => niceTitle(tr(cls, 'title', lang))))].slice(0, 8);
 const activeRooms = (rooms || []).filter((r) => r.is_active !== false);
@@ -67,15 +82,16 @@ const jsonLd = [
   },
   faqJsonLd(faqs, lang),
 ].filter(Boolean);
-const heroBg = hero
-  ? `center / cover no-repeat url("${hero.replace(/"/g, '%22')}")`
-  : 'linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-secondary) 55%, var(--brand-primary) 100%)';
-const L = es
-  ? { book: 'Reserva ya', explore: 'Explorar clases', prices: 'Ver precios', classes: 'Clases', team: 'Nuestro equipo', rooms: 'Nuestras salas', contact: 'Contacto y ubicación', allClasses: 'Todas las clases' }
-  : { book: 'Book now', explore: 'Explore classes', prices: 'View prices', classes: 'Classes', team: 'Our team', rooms: 'Our studios', contact: 'Contact and location', allClasses: 'All classes' };
+const L = {
+  ...(es
+    ? { classes: 'Clases', team: 'Nuestro equipo', rooms: 'Nuestras salas', contact: 'Contacto y ubicación', allClasses: 'Todas las clases' }
+    : { classes: 'Classes', team: 'Our team', rooms: 'Our studios', contact: 'Contact and location', allClasses: 'All classes' }),
+  // Los mismos textos que la isla React del hero (diccionario i18n)
+  book: String(D.heroVideo.comingSoon).trim(), explore: D.heroVideo.exploreBtn, prices: D.heroVideo.pricesBtn,
+};
 ---
 
-<html lang={lang} {...htmlThemeAttrs(site)}>
+<html lang={lang} {...htmlThemeAttrs(site)} data-hero={art && !view.theme?.dark ? 'light' : undefined}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -103,27 +119,12 @@ const L = es
          con el HTML, ahorrando 100-300ms de RTT en móvil 4G/5G. -->
     <link rel="preconnect" href="https://js.stripe.com" crossorigin>
     <link rel="dns-prefetch" href="https://js.stripe.com">
-    {hero && <link rel="preload" as="image" href={hero} fetchpriority="high" />}
-    {site.logo_light_url && <link rel="preload" as="image" href={site.logo_light_url} fetchpriority="high" />}
+    {view.preload && <link rel="preload" as="image" href={view.preload} fetchpriority="high" />}
+    {heroLogo && <link rel="preload" as="image" href={heroLogo} fetchpriority="high" />}
 
-    <style is:inline set:html={`.hero-ssr{background:${heroBg};}`} />
-    <style is:inline>
-      /* Réplica en HTML del hero (VideoComponent) mientras carga React: se ve al
-         instante y es lo que mide Google como carga principal (LCP). */
-      .hero-ssr { position: relative; width: 100%; height: 100vh; overflow: hidden; font-family: var(--font-body); }
-      .hero-ssr-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.5); }
-      .hero-ssr-content { position: relative; z-index: 2; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; padding: 0 24px; text-align: center; }
-      .hero-ssr-content img { width: 280px; max-width: 70vw; height: auto; }
-      .hero-ssr-name { color: #fff; font-family: var(--font-heading); font-size: clamp(3rem, 9vw, 4.5rem); line-height: 1; letter-spacing: .02em; text-shadow: 0 2px 20px rgba(0,0,0,0.3); }
-      .hero-ssr-title { color: #fff; font-family: var(--font-heading); font-size: clamp(1.9rem, 6vw, 3.75rem); font-weight: 700; line-height: 1.1; letter-spacing: .02em; margin: 0; text-shadow: 0 2px 20px rgba(0,0,0,0.3); }
-      .hero-ssr-sub { color: rgba(255,255,255,0.92); font-size: clamp(1rem, 2.4vw, 1.25rem); max-width: 600px; margin: 0; text-shadow: 0 1px 10px rgba(0,0,0,0.2); }
-      .hero-ssr-h1 { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-      /* Botones del hero: van sobre la foto oscurecida en todos los estilos, así
-         que siempre son de relleno primario; del estilo toman forma y letra. */
-      .hero-ssr-cta { display: inline-flex; align-items: center; gap: 8px; margin-top: 8px; padding: 0 40px; height: 56px; border-radius: var(--radius-button); color: var(--on-primary); font-size: 1.125rem; font-weight: 700; text-decoration: none; text-transform: var(--button-text-transform); letter-spacing: var(--button-spacing); background: linear-gradient(135deg, var(--brand-primary), var(--brand-primary-2)); border: 1px solid rgba(255,255,255,0.35); box-shadow: 0 8px 30px color-mix(in srgb, var(--brand-primary) 45%, transparent); }
-      .hero-ssr-row { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-      .hero-ssr-ghost { display: inline-flex; align-items: center; height: 40px; padding: 0 24px; border-radius: var(--radius-button); color: #fff; font-size: 0.875rem; font-weight: 600; text-decoration: none; background: rgba(255,255,255,0.10); border: 1.5px solid rgba(255,255,255,0.55); }
-    </style>
+    {/* Hero: CSS común de la réplica del servidor y de la isla React (lib/hero.ts).
+        La réplica se ve al instante y es lo que mide Google como carga principal (LCP). */}
+    <style is:inline set:html={HERO_CSS} />
     {jsonLd.map((d) => <JsonLd data={d} />)}
 
     <!-- PERF móvil — bloque CSS crítico inline. Apaga backdrop-filter en iPhone
@@ -190,23 +191,29 @@ const L = es
         Hidratan inmediatamente porque el usuario los ve al cargar.
         App necesita auth state al mount. HeroWithVideo pinta el hero. */}
     <App client:only="react" />
-    <HeroWithVideo client:only="react">
-      <div slot="fallback" class="hero-ssr">
-        <div class="hero-ssr-overlay"></div>
-        <div class="hero-ssr-content">
-          {site.logo_light_url
-            ? <img src={site.logo_light_url} width="280" alt={site.studio_name} fetchpriority="high" />
-            : <span class="hero-ssr-name" aria-hidden="true">{site.studio_name}</span>}
+    <HeroWithVideo client:only="react" heroImage={heroImg}>
+      <div slot="fallback" class={`hero hero--${art ? 'art' : view.mode}`} style={heroVars || undefined}>
+        {art
+          ? <div class="hero-art" aria-hidden="true" set:html={view.art} />
+          : <><div class="hero-media" aria-hidden="true" style={`background:${view.background}`}></div><div class="hero-overlay"></div></>}
+        <div class="hero-content">
+          {heroLogo
+            ? <img class="hero-logo" src={heroLogo} width="280" alt={site.studio_name} fetchpriority="high" />
+            : <span class="hero-name" aria-hidden="true">{site.studio_name}</span>}
           {heroTitle
-            ? <h1 class="hero-ssr-title">{heroTitle}</h1>
-            : <h1 class="hero-ssr-h1">{site.studio_name} · {headline}</h1>}
-          {heroSubtitle && <p class="hero-ssr-sub">{heroSubtitle}</p>}
-          <a class="hero-ssr-cta" href="/calendar">{L.book} <span aria-hidden="true">→</span></a>
-          <div class="hero-ssr-row">
-            <a class="hero-ssr-ghost" href={es ? '/classes' : '/en/classes'}>{L.explore}</a>
-            <a class="hero-ssr-ghost" href={es ? '/prices' : '/en/prices'}>{L.prices}</a>
+            ? <h1 class="hero-title">{heroTitle}</h1>
+            : <h1 class="hero-sr">{site.studio_name} · {headline}</h1>}
+          {heroSubtitle && <p class="hero-sub">{heroSubtitle}</p>}
+          <a class="hero-cta" href="/calendar">{L.book} <span aria-hidden="true">→</span></a>
+          <div class="hero-row">
+            <a class="hero-ghost" href={es ? '/classes' : '/en/classes'}>{L.explore}</a>
+            <a class="hero-ghost" href={es ? '/prices' : '/en/prices'}>{L.prices}</a>
           </div>
         </div>
+        {/* Vídeo: antes de hidratar, póster y botón (nada se pide a YouTube) */}
+        {view.mode === 'video' && (
+          <button type="button" class="hero-play"><span aria-hidden="true">▶</span> {HL.play} <small>· {HL.playHint}</small></button>
+        )}
       </div>
     </HeroWithVideo>
 

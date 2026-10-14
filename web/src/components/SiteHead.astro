@@ -19,6 +19,8 @@
  * - Analítica y publicidad (GA4, Google Ads, píxel de Meta y Microsoft Clarity
  *   con PUBLIC_CLARITY_ID): SOLO con consentimiento (CookieConsent.astro +
  *   lib/tracking.ts). Sin ningún ID no se pinta nada: ni banner ni scripts.
+ * - Vídeo de YouTube en la portada (Ajustes → Portada): categoría «Vídeos»
+ *   del mismo banner; el iframe solo se carga con ese consentimiento (lib/hero.ts).
  */
 import {
   ICON_URL, clarityProjectId, getSiteConfig, googleFontsHref, shortName, siteJsonForScript, themeCss,
@@ -53,8 +55,9 @@ const trk: TrackingConfig = {
   ...(ads && site.google_ads_signup_label ? { adsSignup: site.google_ads_signup_label } : {}),
   ...(site.meta_pixel_id ? { pixel: site.meta_pixel_id } : {}),
   ...(clarityId ? { clarity: clarityId } : {}),
+  ...(site.hero_mode === 'video' && site.hero_video_id ? { videos: true } : {}),
 };
-const hasTracking = !!(trk.ga4 || trk.ads || trk.pixel || trk.clarity);
+const hasTracking = !!(trk.ga4 || trk.ads || trk.pixel || trk.clarity || trk.videos);
 if (noAnalytics) trk.lazy = true;
 ---
 <script is:inline set:html={`window.__SITE__=${siteJsonForScript(site)};(function(d){d.setAttribute('data-style',${JSON.stringify(site.theme.style)});d.setAttribute('data-icons',${JSON.stringify(site.theme.icons)});})(document.documentElement);`} />
@@ -84,5 +87,5 @@ if (noAnalytics) trk.lazy = true;
 {site.google_site_verification && <meta name="google-site-verification" content={site.google_site_verification} />}
 {site.bing_site_verification && <meta name="msvalidate.01" content={site.bing_site_verification} />}
 
-{/* Consentimiento de cookies + GA4 / Google Ads / Meta / Clarity (solo si hay algún ID) */}
+{/* Consentimiento de cookies + GA4 / Google Ads / Meta / Clarity / vídeo de YouTube (solo si hay algo de eso) */}
 {hasTracking && <CookieConsent config={trk} />}

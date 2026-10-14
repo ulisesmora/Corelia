@@ -1059,6 +1059,32 @@ class SiteConfig(models.Model):
     about_text_en = models.TextField(blank=True, default='')
     about_image_url = models.URLField(max_length=500, blank=True, default='')
 
+    # ── Portada (hero): foto, vídeo de YouTube o ilustración ──
+    HERO_MODES = [
+        ('image', 'Foto'),
+        ('video', 'Vídeo de YouTube'),
+        ('illustration', 'Ilustración'),
+    ]
+    # Mismos slugs que HERO_POSES en web/src/lib/hero-art.ts
+    HERO_ILLUSTRATIONS = [
+        ('reformer', 'Pilates en reformer'),
+        ('rollup', 'Roll-up en esterilla'),
+        ('tree', 'Árbol (yoga)'),
+        ('warrior', 'Guerrero II (yoga)'),
+        ('barre', 'Barre'),
+        ('downdog', 'Perro boca abajo'),
+    ]
+    hero_mode = models.CharField(max_length=12, choices=HERO_MODES, default='image',
+                                 help_text='Qué se ve de fondo en la portada.')
+    hero_image_url = models.URLField(max_length=500, blank=True, default='',
+                                     help_text='Foto de la portada. Vacío = la primera foto de Imágenes → Portada.')
+    hero_video_url = models.URLField(max_length=200, blank=True, default='',
+                                     help_text='Vídeo de YouTube (se guarda como https://www.youtube.com/watch?v=ID).')
+    # La rellena el servidor al guardar el vídeo: copia propia de la miniatura
+    # para que la web no pida nada a Google antes del consentimiento.
+    hero_video_poster_url = models.URLField(max_length=500, blank=True, default='')
+    hero_illustration = models.CharField(max_length=24, choices=HERO_ILLUSTRATIONS, default='reformer')
+
     # ── Datos legales (términos y condiciones, aviso legal) ──
     legal_name = models.CharField(max_length=160, blank=True, default='',
                                   help_text='Nombre de la empresa o autónomo')
