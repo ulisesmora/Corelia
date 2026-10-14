@@ -1,5 +1,5 @@
 """
-Ajustes de Django para Studio Kit.
+Ajustes de Django para Corelia.
 
 Todo lo que cambia entre instalaciones viene de VARIABLES DE ENTORNO (ver
 .env.example en la raíz del repo). No hay ningún valor por defecto que apunte
@@ -152,7 +152,7 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
 }
 
-SPECTACULAR_SETTINGS = {'TITLE': 'Studio Kit API', 'VERSION': '1.0.0'}
+SPECTACULAR_SETTINGS = {'TITLE': 'Corelia API', 'VERSION': '1.0.0'}
 
 # Sesiones largas a propósito (las clientas usan la app instalada en el móvil y
 # no queremos pedirles la contraseña cada semana), pero firmadas con la
@@ -367,7 +367,7 @@ if LOKI_URL and LOKI_USER and LOKI_API_KEY:
         'url': LOKI_URL,
         'username': LOKI_USER,
         'password': LOKI_API_KEY,
-        'labels': {'service': 'studio-kit-api', 'env': env('RAILWAY_ENVIRONMENT_NAME', 'production')},
+        'labels': {'service': 'corelia-api', 'env': env('RAILWAY_ENVIRONMENT_NAME', 'production')},
         'filters': ['request_id'],
         'formatter': 'json',
         'level': LOG_LEVEL,

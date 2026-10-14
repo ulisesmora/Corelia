@@ -57,7 +57,7 @@ def geocode(address: str, city: str, postal_code: str, country: str):
             r = requests.get(
                 'https://nominatim.openstreetmap.org/search',
                 params={k: v for k, v in params.items() if v},
-                headers={'User-Agent': 'StudioKit/1.0 (self-hosted studio booking app)'},
+                headers={'User-Agent': 'Corelia/1.0 (self-hosted studio booking app)'},
                 timeout=6,
             )
             for result in (r.json() if r.ok else []):

@@ -97,7 +97,7 @@ function buildIcsContent(booking: { what: string; start_datetime: string; end_da
   return [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Studio Kit//Reservas//ES',
+    'PRODID:-//Corelia//Reservas//ES',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     'BEGIN:VEVENT',
@@ -150,7 +150,7 @@ function downloadAllIcs(bookings: { id?: number; what: string; start_datetime: s
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
-    'PRODID:-//Studio Kit//Reservas//ES',
+    'PRODID:-//Corelia//Reservas//ES',
     'CALSCALE:GREGORIAN',
     'METHOD:PUBLISH',
     `X-WR-CALNAME:${calText().studio}`,

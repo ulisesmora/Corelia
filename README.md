@@ -1,4 +1,4 @@
-# Studio Kit
+# Corelia
 
 **Web de reservas + panel de gestión para estudios de pilates, yoga y fitness.**
 Gratis, de código abierto y pensado para que lo use alguien que no sabe de informática.
@@ -8,6 +8,10 @@ reservas, bonos y clientas a diario. Ahora cualquier estudio puede tenerlo con s
 propio nombre, logo y colores.
 
 [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/TU-CODIGO-DE-PLANTILLA)
+
+> **¿Prefieres no instalar nada?** [Corelia Cloud](https://corelia.com) te lo deja funcionando con tu
+> marca en 2 minutos, alojado y mantenido por nosotros: 3 meses gratis, sin tarjeta. Es el mismo
+> código que ves aquí.
 
 ---
 
@@ -29,6 +33,8 @@ propio nombre, logo y colores.
 **Para ti (el panel)**
 - Un asistente de bienvenida y una pantalla de Ajustes para tu marca: nombre, logo, icono de la app,
   colores, tipografía, textos de la portada, preguntas frecuentes y opiniones. Sin tocar código.
+- 8 estilos visuales (natural, minimal, editorial, liquid glass, brutalista, energía, pop y neón) y
+  3 familias de iconos, que se cambian con un clic sin perder nada.
 - Clases, salas, instructores y horarios con fecha de efecto («desde el lunes 3, a las 10:00»).
 - Vacaciones, cierres y clases privadas, con aviso y devolución automática a quien tenía reserva.
 - Clientas, créditos, bonos, membresías, cupones y estadísticas.

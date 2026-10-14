@@ -1,4 +1,4 @@
-# Studio Kit — API + panel de administración en una sola imagen.
+# Corelia — API + panel de administración en una sola imagen.
 #
 # 1) Compila el panel (crm/, React) a archivos estáticos.
 # 2) Instala el backend (api/, Django) y copia el panel dentro: Django lo

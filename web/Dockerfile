@@ -1,7 +1,7 @@
-# Web pública de Studio Kit (Astro + adaptador Node standalone).
+# Web pública de Corelia (Astro + adaptador Node standalone).
 #
-#   docker build -t studio-kit-web .
-#   docker run -p 4321:4321 -e API_URL=http://backend:8000 -e PUBLIC_SITE_URL=https://mi-estudio.com studio-kit-web
+#   docker build -t corelia-web .
+#   docker run -p 4321:4321 -e API_URL=http://backend:8000 -e PUBLIC_SITE_URL=https://mi-estudio.com corelia-web
 #
 # Variables de entorno (en tiempo de ejecución, no hace falta reconstruir):
 #   API_URL          URL del backend (p. ej. http://localhost:8000 o la URL privada de Railway). Obligatoria.

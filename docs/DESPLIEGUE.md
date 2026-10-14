@@ -1,4 +1,4 @@
-# Desplegar Studio Kit paso a paso
+# Desplegar Corelia paso a paso
 
 Esta guía es para la persona que pone en marcha el estudio (o para quien lo
 instala para otra persona). Tiempo: unos 10 minutos, más la espera del dominio.

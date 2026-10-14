@@ -1,0 +1,29 @@
+# Actualizaciones automáticas de dependencias: un PR por semana y ecosistema,
+# con las versiones menores y parches agrupados. La CI comprueba cada PR.
+version: 2
+updates:
+  - package-ecosystem: uv
+    directory: /api
+    schedule: { interval: weekly, day: monday }
+    groups:
+      python-menores: { update-types: [minor, patch] }
+    # Django: solo parches de la LTS 5.2 (el salto de major se hace a mano)
+    ignore:
+      - dependency-name: django
+        update-types: [version-update:semver-major, version-update:semver-minor]
+
+  - package-ecosystem: npm
+    directory: /crm
+    schedule: { interval: weekly, day: monday }
+    groups:
+      panel-menores: { update-types: [minor, patch] }
+
+  - package-ecosystem: npm
+    directory: /web
+    schedule: { interval: weekly, day: monday }
+    groups:
+      web-menores: { update-types: [minor, patch] }
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: monthly }

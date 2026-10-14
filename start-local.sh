@@ -1,5 +1,5 @@
 #!/bin/sh
-# Studio Kit en tu ordenador, como si lo desplegaras: te pide los mismos datos
+# Corelia en tu ordenador, como si lo desplegaras: te pide los mismos datos
 # que el botón de Railway, lo arranca todo y te abre el panel.
 set -e
 cd "$(dirname "$0")"

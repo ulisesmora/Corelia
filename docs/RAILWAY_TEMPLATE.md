@@ -53,7 +53,7 @@ reenvía `/api/*`.
 
 ## Texto de la plantilla (descripción para el marketplace)
 
-> **Studio Kit** — web de reservas + panel de gestión para estudios de pilates,
+> **Corelia** — web de reservas + panel de gestión para estudios de pilates,
 > yoga y fitness. Clases y horarios, bonos y membresías con créditos, reservas
 > online, avisos al móvil (app instalable), emails desde tu propio Gmail y
 > pagos con Stripe opcionales. Tras desplegar, entra en el dominio del servicio

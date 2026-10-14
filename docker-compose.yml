@@ -1,4 +1,4 @@
-# Todo Studio Kit en tu ordenador:  ./start-local.sh   (o: docker compose up --build)
+# Todo Corelia en tu ordenador:  ./start-local.sh   (o: docker compose up --build)
 #   Panel del estudio → http://localhost:8000   (entra con ADMIN_EMAIL / ADMIN_PASSWORD)
 #   Web de reservas   → http://localhost:4321
 #   Emails enviados   → http://localhost:8025   (Mailpit: buzón de pruebas, no sale nada a internet)

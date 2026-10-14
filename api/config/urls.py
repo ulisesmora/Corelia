@@ -19,7 +19,7 @@ def panel_index(request, *args, **kwargs):
     if not index.exists():
         if request.path in ('', '/'):
             return HttpResponse(
-                'Studio Kit API funcionando. El panel no está compilado en esta '
+                'Corelia API funcionando. El panel no está compilado en esta '
                 'instalación (en desarrollo, arráncalo con: cd crm && pnpm dev).',
                 content_type='text/plain; charset=utf-8',
             )

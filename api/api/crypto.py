@@ -16,6 +16,8 @@ _PREFIX = 'enc:'
 
 
 def _fernet():
+    # 'studio-kit:' es una sal interna (nombre antiguo del proyecto): NO cambiar, o las
+    # instalaciones existentes no podrían descifrar sus claves de SMTP/Stripe guardadas.
     digest = hashlib.sha256(f'studio-kit:{settings.SECRET_KEY}'.encode()).digest()
     return Fernet(base64.urlsafe_b64encode(digest))
 

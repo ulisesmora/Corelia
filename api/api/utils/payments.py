@@ -97,7 +97,7 @@ def connect_stripe(secret_key: str, webhook_url: str) -> dict:
         endpoint = client.v1.webhook_endpoints.create(params={
             'url': webhook_url,
             'enabled_events': WEBHOOK_EVENTS,
-            'description': f'Studio Kit — {cfg.studio_name}',
+            'description': f'Corelia — {cfg.studio_name}',
         })
     except stripe.StripeError as e:
         raise ValueError(f'No se pudo crear el aviso automático (webhook) en Stripe: {e.user_message or e}')
