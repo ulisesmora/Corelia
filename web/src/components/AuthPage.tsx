@@ -26,6 +26,7 @@ import { useLangStore } from "./stores/lang.store";
 import { API_ROOT } from '../config';
 import BrandLogo from './BrandLogo';
 import { useSite } from '../lib/site';
+import { track } from '../lib/tracking';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constantes compartidas
@@ -705,6 +706,8 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
       });
       if (res.ok) {
         if (res.data?.access) saveSession(res.data);
+        // Conversión de registro (solo con consentimiento: lib/tracking.ts)
+        track("sign_up", { method: "email" });
         setPassword("");
         setConfirmPassword("");
         setAcceptTerms(false);

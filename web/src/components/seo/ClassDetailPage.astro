@@ -12,6 +12,7 @@ import { optimizedImage } from '../../utils/img';
 import {
   abs, breadcrumbJsonLd, business, businessJsonLd, classPath,
   metaDescription, niceTitle, type Lang,
+  robotsContent,
 } from '../../seo/site';
 import { formatMoney, getSiteConfig, htmlThemeAttrs } from '../../lib/site';
 import {
@@ -155,7 +156,7 @@ const jsonLd = cls ? [
     <style is:inline>html,body{margin:0;padding:0}</style>
     <title>{pageTitle}</title>
     <meta name="description" content={metaDesc} />
-    <meta name="robots" content={indexable ? 'index,follow,max-image-preview:large' : 'noindex,follow'} />
+    <meta name="robots" content={robotsContent(site, indexable, 'noindex,follow')} />
     {cls && <link rel="canonical" href={canonical} />}
     {cls && <link rel="alternate" hreflang="es" href={abs(pathEs)} />}
     {cls && <link rel="alternate" hreflang="en" href={abs(pathEn)} />}

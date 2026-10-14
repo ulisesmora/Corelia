@@ -18,6 +18,7 @@ import { toaster } from './ui/toaster';
 import { useLangStore } from './stores/lang.store';
 import { API_ROOT } from '../config';
 import { useSite } from '../lib/site';
+import { track } from '../lib/tracking';
 
 const API_LOGIN_URL = `${API_ROOT}/google-login/`;
 const GSI_SRC = 'https://accounts.google.com/gsi/client';
@@ -148,6 +149,8 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({ onSuccess, onError 
 
       const data: AuthResponse = await response.json();
       const userId = data.user_id ?? data.userid;
+      // Cuenta nueva creada con Google → conversión de registro (con consentimiento)
+      if ((data as { created?: boolean }).created === true) track('sign_up', { method: 'google' });
       const displayName = (data.username || data.name || (data.email || '').split('@')[0] || '').trim();
 
       try {

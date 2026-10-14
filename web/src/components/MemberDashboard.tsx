@@ -21,6 +21,7 @@ import { planDisplayName } from '../utils/planUtils';
 import { cancelMinHours, canCancelBooking } from '../utils/cancelPolicy';
 import { API_ROOT } from '../config';
 import { addressLine, contactUrl, getSiteClient } from '../lib/site';
+import { contactMethod, track } from '../lib/tracking';
 import { Icon } from './ui/Icon';
 
 const MotionBox = motion(Box as any);
@@ -1799,7 +1800,11 @@ function MemberDashboardInner() {
                   const url = contactUrl(getSiteClient(), lang === 'en'
                     ? 'Hi, I have a pending payment on my subscription and would like to sort it out'
                     : 'Hola, tengo un pago pendiente en mi suscripción y quiero resolverlo');
-                  if (url) window.open(url, '_blank');
+                  if (!url) return;
+                  // Botón (no enlace): el clic de contacto se mide aquí (con consentimiento)
+                  const method = contactMethod(url);
+                  if (method) track('contact', { method });
+                  window.open(url, '_blank');
                 }}>
                 {t('dashboard.subscription.pastDueWhatsapp')}
               </Button>

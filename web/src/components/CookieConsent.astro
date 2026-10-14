@@ -1,0 +1,35 @@
+---
+/**
+ * CookieConsent — consentimiento de cookies + analítica/publicidad del estudio.
+ *
+ * SiteHead SOLO lo pinta si el estudio tiene algún ID (GA4, Google Ads, píxel
+ * de Meta o Microsoft Clarity): sin IDs no se añade ni un byte a la página.
+ *
+ * 1. Script en línea (síncrono, en el <head>): deja los IDs en window.__TRK__
+ *    y, si hay Google, el Consent Mode v2 por defecto (todo denegado) ANTES de
+ *    que pueda cargarse gtag.js.
+ * 2. Módulo (diferido): lib/cookie-consent.ts — banner, elección guardada y
+ *    carga de los scripts de terceros solo de las categorías aceptadas.
+ * Las conversiones se envían con track() de lib/tracking.ts.
+ */
+import type { TrackingConfig } from '../lib/tracking';
+
+interface Props {
+  config: TrackingConfig;
+}
+const { config } = Astro.props;
+const json = JSON.stringify(config).replace(/</g, '\\u003c');
+const google = !!(config.ga4 || config.ads);
+const boot = `window.__TRK__=${json};`
+  + (google
+    ? 'window.dataLayer=window.dataLayer||[];window.gtag=window.gtag||function(){dataLayer.push(arguments)};'
+      + "gtag('consent','default',{ad_storage:'denied',ad_user_data:'denied',ad_personalization:'denied',analytics_storage:'denied',wait_for_update:500});"
+      + "gtag('set','ads_data_redaction',true);"
+    : '');
+---
+<script is:inline set:html={boot} />
+<script>
+  import { initCookieConsent } from '../lib/cookie-consent';
+
+  initCookieConsent();
+</script>

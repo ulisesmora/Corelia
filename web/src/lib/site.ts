@@ -83,6 +83,26 @@ export interface SiteConfig {
   google_client_id: string;
   vapid_public_key: string;
   setup_completed: boolean;
+
+  // ── Google Business y redes (enlaces públicos http(s) o '') ──
+  /** Ficha de Google Business (maps.app.goo.gl, g.page, google.com/maps…). */
+  google_business_url: string;
+  /** Enlace «Escribir una reseña» de la ficha de Google. */
+  google_review_url: string;
+  facebook_url: string;
+  tiktok_url: string;
+  youtube_url: string;
+
+  // ── Verificación de buscadores (solo el código) ──
+  google_site_verification: string;
+  bing_site_verification: string;
+
+  // ── Analítica y publicidad (IDs públicos; solo con consentimiento: lib/tracking.ts) ──
+  ga4_measurement_id: string;
+  google_ads_id: string;
+  google_ads_purchase_label: string;
+  google_ads_signup_label: string;
+  meta_pixel_id: string;
 }
 
 /** Valores por defecto: los mismos que usa el backend para un estudio recién creado. */
@@ -143,7 +163,34 @@ export const DEFAULT_SITE: SiteConfig = {
   google_client_id: '',
   vapid_public_key: '',
   setup_completed: false,
+  google_business_url: '',
+  google_review_url: '',
+  facebook_url: '',
+  tiktok_url: '',
+  youtube_url: '',
+  google_site_verification: '',
+  bing_site_verification: '',
+  ga4_measurement_id: '',
+  google_ads_id: '',
+  google_ads_purchase_label: '',
+  google_ads_signup_label: '',
+  meta_pixel_id: '',
 };
+
+/**
+ * Patrones de los IDs de verificación/analítica (los mismos que valida el
+ * backend). Se vuelven a comprobar aquí porque van dentro de <meta> y de
+ * scripts: un valor que no cumpla el patrón se descarta.
+ */
+export const TRACKING_PATTERNS = {
+  google_site_verification: /^[A-Za-z0-9_-]{10,120}$/,
+  bing_site_verification: /^[A-Za-z0-9]{8,120}$/,
+  ga4_measurement_id: /^G-[A-Z0-9]{4,15}$/,
+  google_ads_id: /^AW-\d{6,15}$/,
+  google_ads_purchase_label: /^[A-Za-z0-9_-]{4,60}$/,
+  google_ads_signup_label: /^[A-Za-z0-9_-]{4,60}$/,
+  meta_pixel_id: /^\d{10,20}$/,
+} as const;
 
 const HEX = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/;
 // Nombres de Google Fonts: letras, números, espacios y guiones (nada que pueda
@@ -180,6 +227,34 @@ function validTimeZone(tz: string): string {
     return '';
   }
 }
+
+/**
+ * ID del proyecto de Microsoft Clarity (variable PUBLIC_CLARITY_ID del
+ * servidor o fijada en el build), o '' si no hay o no es válido. Solo se carga
+ * con consentimiento de «Analítica» (lib/tracking.ts).
+ */
+export function clarityProjectId(): string {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  const raw = env?.PUBLIC_CLARITY_ID || (import.meta.env.PUBLIC_CLARITY_ID as string | undefined) || '';
+  return /^[a-z0-9]{4,20}$/i.test(raw) ? raw : '';
+}
+
+/** Enlace público http(s) válido (o ''). */
+function publicUrl(v: unknown): string {
+  const raw = str(v);
+  if (!raw || !/^https?:\/\//i.test(raw)) return '';
+  try {
+    const u = new URL(raw);
+    return (u.protocol === 'http:' || u.protocol === 'https:') && !/["'<>\s]/.test(raw) ? raw : '';
+  } catch {
+    return '';
+  }
+}
+
+const tracking = (key: keyof typeof TRACKING_PATTERNS, v: unknown): string => {
+  const raw = str(v);
+  return TRACKING_PATTERNS[key].test(raw) ? raw : '';
+};
 
 /** Mezcla lo que llega del API con los valores por defecto y lo valida. */
 export function normalizeSite(raw: unknown): SiteConfig {
@@ -255,6 +330,18 @@ export function normalizeSite(raw: unknown): SiteConfig {
     google_client_id: str(r.google_client_id),
     vapid_public_key: str(r.vapid_public_key),
     setup_completed: r.setup_completed === true,
+    google_business_url: publicUrl(r.google_business_url),
+    google_review_url: publicUrl(r.google_review_url),
+    facebook_url: publicUrl(r.facebook_url),
+    tiktok_url: publicUrl(r.tiktok_url),
+    youtube_url: publicUrl(r.youtube_url),
+    google_site_verification: tracking('google_site_verification', r.google_site_verification),
+    bing_site_verification: tracking('bing_site_verification', r.bing_site_verification),
+    ga4_measurement_id: tracking('ga4_measurement_id', r.ga4_measurement_id),
+    google_ads_id: tracking('google_ads_id', r.google_ads_id),
+    google_ads_purchase_label: tracking('google_ads_purchase_label', r.google_ads_purchase_label),
+    google_ads_signup_label: tracking('google_ads_signup_label', r.google_ads_signup_label),
+    meta_pixel_id: tracking('meta_pixel_id', r.meta_pixel_id),
   };
 }
 
@@ -265,6 +352,15 @@ const TTL_MS = 60 * 1000;
 const FAIL_TTL_MS = 10 * 1000;
 let cached: { at: number; ttl: number; data: SiteConfig } | null = null;
 let inflight: Promise<SiteConfig> | null = null;
+
+/**
+ * true si `cfg` son los valores por defecto porque el backend no respondió
+ * (nunca se ha cargado una config real). Útil para no publicar decisiones de
+ * SEO (robots.txt) basadas en datos que no son del estudio.
+ */
+export function isFallbackSite(cfg: SiteConfig): boolean {
+  return cfg === DEFAULT_SITE;
+}
 
 /** Config del estudio para el servidor. Nunca lanza: si falla, valores por defecto. */
 export async function getSiteConfig(): Promise<SiteConfig> {
@@ -474,6 +570,23 @@ export function instagramHandle(cfg: SiteConfig): string {
 export function instagramUrl(cfg: SiteConfig): string {
   const h = instagramHandle(cfg);
   return h ? `https://www.instagram.com/${h}/` : '';
+}
+
+export type SocialNetwork = 'instagram' | 'facebook' | 'tiktok' | 'youtube' | 'google-business';
+
+/**
+ * Perfiles públicos del estudio (Instagram, Facebook, TikTok, YouTube y la
+ * ficha de Google), en ese orden y solo los que existen. Para enlaces de la
+ * web y `sameAs` del JSON-LD.
+ */
+export function socialProfiles(cfg: SiteConfig): { network: SocialNetwork; label: string; url: string }[] {
+  return ([
+    { network: 'instagram', label: 'Instagram', url: instagramUrl(cfg) },
+    { network: 'facebook', label: 'Facebook', url: cfg.facebook_url },
+    { network: 'tiktok', label: 'TikTok', url: cfg.tiktok_url },
+    { network: 'youtube', label: 'YouTube', url: cfg.youtube_url },
+    { network: 'google-business', label: 'Google', url: cfg.google_business_url },
+  ] as const).filter((p) => !!p.url).map((p) => ({ ...p }));
 }
 
 /** Dirección en una línea: "Calle X, 29000 Ciudad" (solo las partes que existan). */

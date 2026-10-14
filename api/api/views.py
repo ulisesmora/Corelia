@@ -2418,6 +2418,19 @@ class CreateCheckoutSessionView(APIView):
             
 
 
+def _session_amount(session) -> dict:
+    """Importe total y moneda de una sesión de Stripe Checkout (para la
+    conversión de compra de la web). Vacío si Stripe no los trae."""
+    try:
+        total = session.get('amount_total') if hasattr(session, 'get') else getattr(session, 'amount_total', None)
+        currency = session.get('currency') if hasattr(session, 'get') else getattr(session, 'currency', None)
+        if total is None:
+            return {}
+        return {'amount_total': str(Decimal(total) / 100), 'currency': (currency or '').upper()}
+    except Exception:
+        return {}
+
+
 class VerifyCheckoutSessionView(APIView):
     """
     Verifica el estado de un pago de checkout de Stripe.
@@ -2441,6 +2454,8 @@ class VerifyCheckoutSessionView(APIView):
                     'status': 'success',
                     'message': 'Pago confirmado. Tu reserva será procesada en breve.',
                     'payment_status': session.payment_status,
+                    # Importe y moneda para la conversión de compra (analítica, con consentimiento)
+                    **_session_amount(session),
                 }, status=status.HTTP_200_OK)
 
             return Response({
@@ -3358,6 +3373,7 @@ class VerifyPlanPurchaseView(APIView):
                     'status': 'success',
                     'message': 'Pago completado. Si los créditos aún no aparecen, se actualizarán en breve.',
                     'payment_status': session.payment_status,
+                    **_session_amount(session),
                 }, status=status.HTTP_200_OK)
 
             return Response({

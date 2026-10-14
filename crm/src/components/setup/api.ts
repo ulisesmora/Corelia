@@ -36,6 +36,19 @@ export interface StudioSettings {
   about_text_en: string;
   about_image_url: string;
   google_client_id: string;
+  // Google y anuncios
+  google_business_url: string;
+  google_review_url: string;
+  facebook_url: string;
+  tiktok_url: string;
+  youtube_url: string;
+  google_site_verification: string;
+  bing_site_verification: string;
+  ga4_measurement_id: string;
+  google_ads_id: string;
+  google_ads_purchase_label: string;
+  google_ads_signup_label: string;
+  meta_pixel_id: string;
   web_domain: string;
   panel_domain: string;
   legal_name: string;
@@ -125,6 +138,8 @@ export interface FAQItem {
   page: 'home' | 'prices' | 'both';
   order: number;
   is_active: boolean;
+  /** Pregunta de ejemplo sin editar: no se publica como datos para Google. */
+  is_sample?: boolean;
 }
 
 export interface Testimonial {

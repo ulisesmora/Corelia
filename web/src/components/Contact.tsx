@@ -8,7 +8,8 @@ import { Toaster, toaster } from './ui/toaster';
 import { useT } from '../i18n';
 import { Icon, type IconName } from './ui/Icon';
 import { API_V1 } from '../config';
-import { addressLine, instagramHandle, instagramUrl, mapsUrl, phoneHref, useSite, whatsappUrl } from '../lib/site';
+import { addressLine, instagramHandle, instagramUrl, mapsUrl, phoneHref, socialProfiles, useSite, whatsappUrl } from '../lib/site';
+import { useLangStore } from './stores/lang.store';
 import { withSsrLang } from './stores/lang.store';
 
 const MotionBox = motion(Box as any);
@@ -53,6 +54,11 @@ function ContactInner() {
     ig && { icon: 'instagram' as IconName, label: 'Instagram', value: `@${instagramHandle(site)}`, href: ig, color: '#F472B6' },
     address && { icon: 'map-pin' as IconName, label: t('home.contact.locationLabel'), value: address, href: mapsUrl(site) || '#', color: C.accent },
   ].filter(Boolean) as { icon: IconName; label: string; value: string; href: string; color: string }[];
+  // Otras redes y la ficha de Google (Instagram ya va arriba como canal)
+  const lang = useLangStore((st) => st.lang);
+  const en = lang === 'en';
+  const otherProfiles = socialProfiles(site).filter((p) => p.network !== 'instagram');
+  const reviewUrl = site.google_review_url;
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -197,6 +203,46 @@ function ContactInner() {
               </MotionBox>
             ))}
           </VStack>
+
+          {/* Redes y ficha de Google (solo las que tenga el estudio) */}
+          {otherProfiles.length > 0 && (
+            <Flex gap={2.5} mt={4} flexWrap="wrap" aria-label={en ? 'Find us on' : 'Encuéntranos en'} role="list">
+              {otherProfiles.map((p) => {
+                const label = p.network === 'google-business' ? (en ? 'Google Business Profile' : 'Ficha de Google') : p.label;
+                return (
+                  <Box key={p.network} role="listitem">
+                    <Box
+                      as="a" href={p.url} target="_blank" rel="noopener noreferrer"
+                      display="inline-flex" alignItems="center" gap={2}
+                      px={3.5} h="40px" borderRadius="var(--radius-button)"
+                      bg={C.fill(4)} border={`1px solid ${C.border}`}
+                      color={C.fill(80)} fontFamily="var(--font-body)" fontSize="sm" fontWeight={600}
+                      transition="all 0.25s ease" _hover={{ bg: C.fill(8), borderColor: C.borderHover }}
+                    >
+                      <Icon name={p.network} size={14} color={C.accent} />
+                      {label}
+                    </Box>
+                  </Box>
+                );
+              })}
+            </Flex>
+          )}
+
+          {/* Opinión en Google: el enlace «escribir una reseña» de su ficha */}
+          {reviewUrl && (
+            <Box
+              as="a" href={reviewUrl} target="_blank" rel="noopener noreferrer"
+              display="inline-flex" alignItems="center" gap={2.5} mt={5}
+              px={5} minH="46px" borderRadius="var(--radius-button)"
+              bg="linear-gradient(135deg, var(--brand-primary), var(--brand-primary-2))"
+              color="var(--on-primary)" fontFamily="var(--font-body)" fontWeight={700} fontSize="sm"
+              textTransform="var(--button-text-transform)" letterSpacing="var(--button-spacing)"
+              boxShadow="var(--button-shadow)" _hover={{ boxShadow: 'var(--button-hover-shadow)', opacity: 0.92 }}
+            >
+              <Icon name="google-business" size={15} />
+              {en ? 'Leave us a Google review' : 'Déjanos tu opinión en Google'}
+            </Box>
+          )}
 
           {/* Architectural decoration */}
           <MotionBox custom={7} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>

@@ -1018,6 +1018,33 @@ class SiteConfig(models.Model):
                                    help_text='Zonas o barrios desde donde vienen tus clientas, separados por comas '
                                              '(Google y los asistentes de IA lo usan para recomendarte).')
 
+    # ── Google Business y redes (enlaces públicos) ──
+    google_business_url = models.URLField(max_length=500, blank=True, default='',
+                                          help_text='Enlace a la ficha de Google (maps.app.goo.gl, g.page, google.com/maps…).')
+    google_review_url = models.URLField(max_length=500, blank=True, default='',
+                                        help_text='Enlace «Escribir una reseña» de la ficha de Google (g.page/r/…/review).')
+    facebook_url = models.URLField(max_length=300, blank=True, default='')
+    tiktok_url = models.URLField(max_length=300, blank=True, default='')
+    youtube_url = models.URLField(max_length=300, blank=True, default='')
+
+    # ── Buscadores: verificación de la propiedad (solo el código, sin HTML) ──
+    google_site_verification = models.CharField(max_length=120, blank=True, default='',
+                                                help_text='Código de Google Search Console (content de la etiqueta meta).')
+    bing_site_verification = models.CharField(max_length=120, blank=True, default='',
+                                              help_text='Código de Bing Webmaster Tools (msvalidate.01).')
+
+    # ── Analítica y publicidad (IDs públicos; solo se cargan con consentimiento) ──
+    ga4_measurement_id = models.CharField(max_length=20, blank=True, default='',
+                                          help_text='Google Analytics 4, p. ej. G-AB12CD34EF')
+    google_ads_id = models.CharField(max_length=20, blank=True, default='',
+                                     help_text='Google Ads, p. ej. AW-123456789')
+    google_ads_purchase_label = models.CharField(max_length=60, blank=True, default='',
+                                                 help_text='Etiqueta de la conversión de compra de Google Ads')
+    google_ads_signup_label = models.CharField(max_length=60, blank=True, default='',
+                                               help_text='Etiqueta de la conversión de registro de Google Ads')
+    meta_pixel_id = models.CharField(max_length=20, blank=True, default='',
+                                     help_text='ID del píxel de Meta (Facebook/Instagram), solo números')
+
     # ── Textos de la web (español / inglés) ──
     tagline_en = models.CharField(max_length=200, blank=True, default='')
     description_en = models.TextField(blank=True, default='')
@@ -1161,6 +1188,9 @@ class FAQItem(TimeStampedSoftDelete):
     page = models.CharField(max_length=8, choices=PAGES, default='both')
     order = models.PositiveIntegerField(default=0)
     is_active = models.BooleanField(default=True)
+    # Pregunta de ejemplo (seed_demo): se ve en la web pero NO se publica como
+    # datos estructurados (FAQPage) ni en /llms.txt. Al editarla pasa a ser suya.
+    is_sample = models.BooleanField(default=False)
 
     class Meta:
         ordering = ['order', 'id']

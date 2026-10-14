@@ -8,7 +8,7 @@ import AppFixed from '../AppFixed';
 import JsonLd from './JsonLd.astro';
 import SiteHead from '../SiteHead.astro';
 import ClassCatalog from './ClassCatalog.astro';
-import { abs, breadcrumbJsonLd, business, businessJsonLd, classPath, niceTitle, type Lang } from '../../seo/site';
+import { abs, breadcrumbJsonLd, business, businessJsonLd, classPath, niceTitle, robotsContent, type Lang } from '../../seo/site';
 import { getSiteConfig, htmlThemeAttrs } from '../../lib/site';
 import { getClassTypes, getSchedules, offeredClasses, tr } from '../../seo/catalog';
 
@@ -63,7 +63,7 @@ const jsonLd = [
     <link rel="alternate" hreflang="es" href={abs('/classes')} />
     <link rel="alternate" hreflang="en" href={abs('/en/classes')} />
     <link rel="alternate" hreflang="x-default" href={abs('/classes')} />
-    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="robots" content={robotsContent(site)} />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.studio_name} />
     <meta property="og:locale" content={es ? 'es_ES' : 'en_GB'} />

@@ -8,7 +8,7 @@ import {
   LEVELS, WEEKDAYS, getClassTypes, getFaqs, getInstructors, getPlans, getSchedules, getRooms,
   hhmm, offeredClasses, tr,
 } from './catalog';
-import { formatMoney, getSiteConfig, lt, mapsUrl } from '../lib/site';
+import { formatMoney, getSiteConfig, lt, mapsUrl, socialProfiles } from '../lib/site';
 
 export async function buildLlmsText(full: boolean): Promise<string> {
   const [site, classes, schedules, plans, faqsHome, faqsPrices, instructors, rooms] = await Promise.all([
@@ -22,9 +22,12 @@ export async function buildLlmsText(full: boolean): Promise<string> {
   const items = offeredClasses(classes, schedules);
   const packs = plans.filter((p) => p.type === 'pack').sort((a, b2) => a.credits - b2.credits);
   const subs = plans.filter((p) => p.type === 'sub').sort((a, b2) => Number(a.price_eur) - Number(b2.price_eur));
-  // FAQs sin repetir (la misma pregunta puede estar en portada y precios)
+  // FAQs sin repetir (la misma pregunta puede estar en portada y precios) y sin
+  // las de ejemplo (is_sample): aquí solo va información real del estudio
   const seen = new Set<string>();
-  const faqs = [...faqsHome, ...faqsPrices].filter((f) => !seen.has(f.question) && seen.add(f.question));
+  const faqs = [...faqsHome, ...faqsPrices]
+    .filter((f) => !f.is_sample)
+    .filter((f) => !seen.has(f.question) && seen.add(f.question));
   const map = mapsUrl(site);
 
   const L: string[] = [];
@@ -35,7 +38,8 @@ export async function buildLlmsText(full: boolean): Promise<string> {
   L.push('## Key facts');
   if (b.addressLine) L.push(`- Address: ${b.addressLine}${c.country ? `, ${c.country}` : ''}`);
   if (c.latitude != null && c.longitude != null) L.push(`- Coordinates: ${c.latitude}, ${c.longitude}`);
-  if (map) L.push(`- Map: ${map}`);
+  if (site.google_business_url) L.push(`- Google Business Profile (reviews, photos, opening hours): ${site.google_business_url}`);
+  if (map && map !== site.google_business_url) L.push(`- Map: ${map}`);
   if (b.areaServed.length) L.push(`- Areas served: ${b.areaServed.join(', ')}`);
   L.push(`- Website and online booking: ${ORIGIN}`);
   L.push(`- Weekly timetable: ${ORIGIN}/calendar`);
@@ -44,7 +48,10 @@ export async function buildLlmsText(full: boolean): Promise<string> {
   if (b.phone) L.push(`- Phone: ${b.phone}`);
   if (b.whatsapp) L.push(`- WhatsApp: ${b.whatsapp}`);
   if (b.email) L.push(`- Email: ${b.email}`);
-  if (b.sameAs.length) L.push(`- Instagram: ${b.sameAs.join(', ')}`);
+  for (const p of socialProfiles(site)) {
+    if (p.network !== 'google-business') L.push(`- ${p.label}: ${p.url}`);
+  }
+  if (site.google_review_url) L.push(`- Leave a Google review: ${site.google_review_url}`);
   if (Number(site.drop_in_price) > 0) L.push(`- Drop-in class: ${money(Number(site.drop_in_price))} (1 credit).`);
   L.push(`- Cancellation: free up to ${site.cancel_min_hours} hours before the class.`);
   L.push(`- Online card payments: ${site.payments_enabled ? 'yes' : 'no (packs are bought at the studio)'}`);

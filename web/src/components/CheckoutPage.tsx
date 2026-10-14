@@ -32,6 +32,7 @@ import { API_ROOT } from '../config';
 import PaymentsDisabledNotice from './PaymentsDisabledNotice';
 import { paymentsEnabled } from '../utils/payments';
 import { getSiteClient } from '../lib/site';
+import { hashId, track } from '../lib/tracking';
 const MotionBox = motion(Box as any);
 
 // Paleta del checkout: solo tokens del estilo (presets.css). Los botones
@@ -478,6 +479,8 @@ function CheckoutPageInner() {
     // FIX #10: ahora distinguimos 'auth' (401/403) de 'pending' para no
     // polear con un token muerto durante 30 segundos en silencio.
 
+    // Importe y moneda del pago confirmado (para la conversión de compra)
+    let paid: { amount_total?: string; currency?: string } = {};
     const checkOnce = async (): Promise<'success' | 'pending' | 'auth'> => {
       try {
         const res = await fetch(`${API_BASE}v1/checkout/verify-plan/`, {
@@ -488,7 +491,7 @@ function CheckoutPageInner() {
         if (res.status === 401 || res.status === 403) return 'auth';
         if (res.ok) {
           const d = await res.json();
-          if (d.status === 'success') return 'success';
+          if (d.status === 'success') { paid = d; return 'success'; }
         }
       } catch {}
       return 'pending';
@@ -521,6 +524,16 @@ function CheckoutPageInner() {
       }
 
       if (result === 'success') {
+        // Conversión de compra del bono/membresía (con consentimiento). Antes se
+        // quita la sesión de pago de la URL para que no llegue a terceros.
+        window.history.replaceState(null, '', window.location.pathname);
+        const value = Number(paid.amount_total);
+        track('purchase', {
+          transaction_id: hashId(sessionId),
+          value: Number.isFinite(value) ? value : undefined,
+          currency: paid.currency || getSiteClient().currency,
+          items: [{ item_name: localStorage.getItem('pendingPaymentType') === 'sub' ? 'membership' : 'pack', quantity: 1 }],
+        });
         toaster.create({
           title: t('checkout.paySuccess'),
           description: t('checkout.paySuccessDesc'),
@@ -825,6 +838,8 @@ function CheckoutPageInner() {
         throw new Error(backendMsg || t('checkout.reserveError'));
       }
       toaster.create({ title: t('checkout.reserveSuccess'), type: 'success', duration: 2000 });
+      // Reserva con créditos → conversión «reserva» por clase (con consentimiento)
+      for (const it of snapshot) track('book', { class_name: it.title });
       clearCart();
       if (fromSubFlow) {
         setBookedCartSnapshot(snapshot);

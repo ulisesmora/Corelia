@@ -80,6 +80,11 @@ export default function FaqEditor() {
                 <Chip size="small" label={PAGE_LABEL[f.page]} />
                 {!f.question_en && <Chip size="small" variant="outlined" label="Sin inglés" />}
                 {!f.is_active && <Chip size="small" color="warning" label="Oculta" />}
+                {f.is_sample && (
+                  <Tooltip title="Es un texto de ejemplo: edítala con tus palabras para que Google la tenga en cuenta.">
+                    <Chip size="small" color="info" variant="outlined" label="Ejemplo: edítala" />
+                  </Tooltip>
+                )}
               </Stack>
             </Box>
             <Stack>

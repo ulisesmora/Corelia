@@ -16,7 +16,7 @@
  *     <other-meta />
  *   </head>
  */
-import { abs, business } from '../seo/site';
+import { abs, business, robotsContent } from '../seo/site';
 import { getSiteConfig } from '../lib/site';
 import SiteHead from './SiteHead.astro';
 
@@ -49,7 +49,8 @@ const desc = description || business(site).description.es;
 {fullTitleEn && <meta name="site:title-es" content={fullTitle} />}
 {fullTitleEn && <meta name="site:title-en" content={fullTitleEn} />}
 <meta name="description" content={desc} />
-<meta name="robots" content={noindex ? 'noindex,nofollow' : 'index,follow,max-image-preview:large'} />
+{/* noindex también mientras el estudio no termine el asistente (seo/site.ts → siteNoindex) */}
+<meta name="robots" content={robotsContent(site, !noindex)} />
 {canonicalPath && !noindex && <link rel="canonical" href={abs(canonicalPath)} />}
 {alternates && !noindex && (
   <>

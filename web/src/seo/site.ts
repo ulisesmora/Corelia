@@ -2,7 +2,7 @@
 // Los datos salen de la configuración del estudio (lib/site.ts → panel →
 // Ajustes): si cambia la dirección o el teléfono, se cambia allí, no aquí.
 import { siteOrigin } from '../config';
-import { ICON_URL, addressLine, formatMoney, instagramUrl, mapsUrl, whatsappUrl, type SiteConfig } from '../lib/site';
+import { ICON_URL, addressLine, formatMoney, mapsUrl, socialProfiles, whatsappUrl, type SiteConfig } from '../lib/site';
 import type { ApiFaq, ApiInstructor, ApiPlan, ApiSchedule } from './catalog';
 
 export type Lang = 'es' | 'en';
@@ -28,7 +28,9 @@ export function defaultDescription(site: SiteConfig, lang: Lang): string {
 /** Datos del negocio derivados de la config del estudio. */
 export function business(site: SiteConfig) {
   const c = site.contact;
-  const sameAs = [instagramUrl(site)].filter(Boolean);
+  // Perfiles del mismo negocio en otros sitios (Google los usa para unir la
+  // ficha de Google Business, las redes y la web en una sola entidad)
+  const sameAs = socialProfiles(site).map((p) => p.url);
   const icon = abs(ICON_URL.icon512);
   const og = site.og_image_url || abs(ICON_URL.og);
   return {
@@ -180,7 +182,8 @@ export function businessJsonLd(site: SiteConfig, lang: Lang, extras: BusinessExt
   const hasAddress = address.streetAddress || address.addressLocality || address.postalCode;
   const hours = openingHoursFromSchedules(extras.schedules);
   const range = priceRange(site, extras.plans || []);
-  const map = mapsUrl(site);
+  // La ficha de Google Business es el mejor «mapa»: enlaza la web con ella
+  const map = site.google_business_url || mapsUrl(site);
   return {
     '@context': 'https://schema.org',
     '@type': ['SportsActivityLocation', 'ExerciseGym', 'LocalBusiness'],
@@ -237,14 +240,19 @@ export function faqText(f: ApiFaq, lang: Lang) {
   };
 }
 
-/** FAQPage (solo si hay preguntas). */
+/**
+ * FAQPage (solo si hay preguntas propias del estudio). Las preguntas de
+ * ejemplo (`is_sample`, de los datos de demostración) se ven en la web pero no
+ * se publican como datos estructurados: no son información real del negocio.
+ */
 export function faqJsonLd(faqs: ApiFaq[], lang: Lang) {
-  if (!faqs.length) return null;
+  const own = faqs.filter((f) => !f.is_sample);
+  if (!own.length) return null;
   return {
     '@context': 'https://schema.org',
     '@type': 'FAQPage',
     inLanguage: lang,
-    mainEntity: faqs.map((f) => {
+    mainEntity: own.map((f) => {
       const { q, a } = faqText(f, lang);
       return { '@type': 'Question', name: q, acceptedAnswer: { '@type': 'Answer', text: a } };
     }),
@@ -262,6 +270,29 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
       item: abs(it.path),
     })),
   };
+}
+
+/** NOINDEX=1 (o true) en el servidor: entorno de pruebas, fuera de buscadores. */
+export function envNoindex(): boolean {
+  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
+  return env?.NOINDEX === '1' || env?.NOINDEX === 'true';
+}
+
+/**
+ * El estudio todavía no debe salir en buscadores: no ha terminado el asistente
+ * de bienvenida (la web aún tiene textos y datos de ejemplo) o NOINDEX=1.
+ */
+export function siteNoindex(site: SiteConfig): boolean {
+  return !site.setup_completed || envNoindex();
+}
+
+/**
+ * Contenido de <meta name="robots"> de una página. `indexable` = la página en
+ * sí puede indexarse; `noindexValue` = lo que se pone si no.
+ */
+export function robotsContent(site: SiteConfig, indexable = true, noindexValue = 'noindex,nofollow'): string {
+  if (siteNoindex(site)) return 'noindex,nofollow';
+  return indexable ? 'index,follow,max-image-preview:large' : noindexValue;
 }
 
 /** Cabecera de caché para páginas renderizadas en servidor (CDN / proxy delante). */

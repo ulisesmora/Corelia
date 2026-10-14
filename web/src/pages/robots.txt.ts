@@ -1,7 +1,8 @@
-// /robots.txt — dinámico. Para bloquear la indexación (entornos de prueba)
-// define NOINDEX=1 en el servidor.
-import { origin } from '../seo/site';
-import { getSiteConfig } from '../lib/site';
+// /robots.txt — dinámico. Bloquea la indexación (Disallow: /) mientras el
+// estudio no haya terminado el asistente de bienvenida (setup_completed) o si
+// el servidor tiene NOINDEX=1 (entornos de prueba).
+import { envNoindex, origin } from '../seo/site';
+import { getSiteConfig, isFallbackSite } from '../lib/site';
 
 export const prerender = false;
 
@@ -21,9 +22,12 @@ const AI_BOTS = [
 ];
 
 export async function GET() {
-  await getSiteConfig(); // el dominio (Sitemap:) sale de la config del estudio
-  const env = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
-  const noindex = !import.meta.env.PROD || env?.NOINDEX === '1' || env?.NOINDEX === 'true';
+  const site = await getSiteConfig(); // el dominio (Sitemap:) sale de la config del estudio
+  // Si el backend no responde (config por defecto) no se decide nada por
+  // setup_completed: un corte momentáneo no debe bloquear a los buscadores.
+  const fallback = isFallbackSite(site);
+  const unfinished = !fallback && !site.setup_completed;
+  const noindex = !import.meta.env.PROD || envNoindex() || unfinished;
   const lines: string[] = [];
   if (noindex) {
     lines.push('User-agent: *', 'Disallow: /');
@@ -37,7 +41,7 @@ export async function GET() {
   return new Response(lines.join('\n') + '\n', {
     headers: {
       'Content-Type': 'text/plain; charset=utf-8',
-      'Cache-Control': noindex ? 'no-store' : 'public, max-age=3600',
+      'Cache-Control': noindex || fallback ? 'no-store' : 'public, max-age=3600',
     },
   });
 }

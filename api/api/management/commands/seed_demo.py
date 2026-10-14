@@ -116,8 +116,10 @@ class Command(BaseCommand):
             })
 
         for i, (q, a, q_en, a_en) in enumerate(FAQS):
+            # is_sample: se muestran, pero no van a Google como FAQPage hasta que el estudio las edite
             FAQItem.objects.get_or_create(question=q, defaults={
-                'answer': a, 'question_en': q_en, 'answer_en': a_en, 'order': i, 'page': 'both'})
+                'answer': a, 'question_en': q_en, 'answer_en': a_en, 'order': i, 'page': 'both',
+                'is_sample': True})
 
         cfg = SiteConfig.load()
         if not cfg.hero_title:

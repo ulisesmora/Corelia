@@ -19,7 +19,7 @@ import JsonLd from '../seo/JsonLd.astro';
 import FaqList from '../sections/FaqList.astro';
 import Testimonials from '../sections/Testimonials.astro';
 import Location from '../sections/Location.astro';
-import { abs, business, businessJsonLd, classPath, faqJsonLd, niceTitle, origin, type Lang } from '../../seo/site';
+import { abs, business, businessJsonLd, classPath, faqJsonLd, niceTitle, origin, robotsContent, type Lang } from '../../seo/site';
 import {
   getClassTypes, getFaqs, getInstructors, getPlans, getRooms, getSchedules, getSiteImages,
   getTestimonials, offeredClasses, tr,
@@ -85,7 +85,7 @@ const L = es
     <link rel="alternate" hreflang="es" href={abs('/')} />
     <link rel="alternate" hreflang="en" href={abs('/en')} />
     <link rel="alternate" hreflang="x-default" href={abs('/')} />
-    <meta name="robots" content="index,follow,max-image-preview:large" />
+    <meta name="robots" content={robotsContent(site)} />
     <SiteHead />
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content={site.studio_name} />
@@ -246,7 +246,7 @@ const L = es
         <SuscriptionPlans client:visible={{ rootMargin: "600px" }} lang={lang} initialPlans={plans} />
       </section>
 
-      <Testimonials items={testimonials} lang={lang} />
+      <Testimonials items={testimonials} lang={lang} reviewUrl={site.google_review_url} />
       <FaqList faqs={faqs} lang={lang} />
 
       <section id="contacto" aria-label={L.contact}>

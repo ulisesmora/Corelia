@@ -8,7 +8,7 @@ import { useMemo } from 'react';
 import { useT } from '../i18n';
 import BrandLogo from './BrandLogo';
 import { useLangStore, withSsrLang } from './stores/lang.store';
-import { addressLine, instagramHandle, instagramUrl, mapsUrl, phoneHref, useSite, whatsappUrl } from '../lib/site';
+import { addressLine, instagramHandle, instagramUrl, mapsUrl, phoneHref, socialProfiles, useSite, whatsappUrl, type SocialNetwork } from '../lib/site';
 
 // Zona profunda: tokens --deep-* del estilo visual (presets.css)
 const C = {
@@ -16,6 +16,14 @@ const C = {
   textMuted: 'var(--deep-muted)', textLight: 'color-mix(in srgb, var(--deep-text) 40%, transparent)',
   text: 'var(--deep-text)',
 };
+
+// Color del logo de cada red sobre la zona profunda (tonos claros, legibles en oscuro)
+const SOCIAL_COLOR: Record<SocialNetwork, string> = {
+  instagram: '#F472B6', facebook: '#60A5FA', tiktok: 'var(--deep-text)', youtube: '#F87171',
+  'google-business': 'var(--deep-text)',
+};
+const SOCIAL_LABEL_ES: Partial<Record<SocialNetwork, string>> = { 'google-business': 'Ficha de Google' };
+const SOCIAL_LABEL_EN: Partial<Record<SocialNetwork, string>> = { 'google-business': 'Google Business Profile' };
 
 function FooterInner() {
   const t = useT();
@@ -31,7 +39,10 @@ function FooterInner() {
   const tel = phoneHref(site);
   const address = addressLine(site);
   const socialLinks = [
-    ig && { icon: 'instagram' as IconName, href: ig, label: 'Instagram', color: '#F472B6' },
+    ...socialProfiles(site).map((p) => ({
+      icon: p.network as IconName, href: p.url, color: SOCIAL_COLOR[p.network],
+      label: (lang === 'en' ? SOCIAL_LABEL_EN : SOCIAL_LABEL_ES)[p.network] || p.label,
+    })),
     wa && { icon: 'whatsapp' as IconName, href: wa, label: 'WhatsApp', color: '#4ADE80' },
   ].filter(Boolean) as { icon: IconName; href: string; label: string; color: string }[];
   const contactItems = [
@@ -91,7 +102,7 @@ function FooterInner() {
             </Box>
 
             {/* Redes (solo las que tenga el estudio) */}
-            <Flex gap={3} display={socialLinks.length ? 'flex' : 'none'}>
+            <Flex gap={3} flexWrap="wrap" display={socialLinks.length ? 'flex' : 'none'}>
               {socialLinks.map(({ icon, href, label, color }) => (
                 <Box
                   key={label}
@@ -102,6 +113,7 @@ function FooterInner() {
                   cursor="pointer" transition="all 0.22s"
                   _hover={{ bg: 'color-mix(in srgb, var(--deep-text) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--deep-text) 18%, transparent)' }}
                   title={label}
+                  aria-label={label}
                 >
                   <SiteIcon name={icon} size={18} color={color} />
                 </Box>
@@ -126,8 +138,12 @@ function FooterInner() {
                 { label: t('nav.items.prices.label') || 'Precios', href: lang === 'en' ? '/en/prices' : '/prices' },
                 { label: t('home.footer.nav.contact') || 'Contacto', href: `${homeHref}#contacto` },
                 { label: lang === 'en' ? 'Terms & conditions' : 'Términos y condiciones', href: t('links.terms') || '/terminos-condiciones' },
-              ].map(({ label, href }) => (
+                // «Cookies»: abre las preferencias si el estudio usa analítica o
+                // publicidad (lib/cookie-consent.ts); si no, la política de cookies
+                { label: 'Cookies', href: lang === 'en' ? '/en/cookies' : '/cookies', cookies: true },
+              ].map(({ label, href, cookies }) => (
                 <Box as="a" key={label} href={href}
+                  {...(cookies ? { 'data-cookie-settings': '' } : {})}
                   fontFamily='var(--font-body)'
                   fontSize="md" color={C.textMuted} fontWeight={500}
                   transition="color 0.18s"

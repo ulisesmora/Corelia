@@ -10,7 +10,8 @@
  *  - soft  → Phosphor Duotone (`react-icons/pi`): redondeados, con relleno suave.
  *  - solid → FontAwesome (`react-icons/fa`): rellenos (el look de siempre).
  *
- * Los LOGOS DE MARCAS (WhatsApp, Instagram, LinkedIn, Google, Apple) son
+ * Los LOGOS DE MARCAS (WhatsApp, Instagram, Facebook, TikTok, YouTube, LinkedIn,
+ * Google, Apple) son
  * siempre los de FontAwesome Brands, en las tres familias.
  *
  * La familia sale de `useSite()`: en el navegador es `window.__SITE__` y en el
@@ -29,7 +30,8 @@ import {
   FaGooglePlusG, FaHistory, FaHome, FaInfinity, FaInstagram, FaLeaf, FaLinkedin, FaListUl, FaLock,
   FaMapMarkerAlt, FaPhone, FaPlus, FaRedo, FaRegCircle, FaShoppingBag, FaShoppingCart, FaSpa,
   FaStar, FaStore, FaTag, FaTags, FaTimes, FaTimesCircle, FaTrash, FaUser, FaUserCircle,
-  FaUserFriends, FaWhatsapp, FaBars,
+  FaUserFriends, FaWhatsapp, FaBars, FaFacebook, FaTiktok, FaYoutube, FaGoogle, FaCommentDots,
+  FaCookieBite,
 } from 'react-icons/fa';
 import {
   LuArrowLeft, LuArrowRight, LuCalendar, LuCalendarCheck, LuCalendarDays, LuCalendarPlus,
@@ -38,7 +40,7 @@ import {
   LuEye, LuEyeOff, LuFlower2, LuGift, LuGlobe, LuHistory, LuHouse, LuInfinity, LuLeaf, LuList,
   LuLock, LuMail, LuMapPin, LuMenu, LuPhone, LuPlus, LuPresentation, LuRotateCcw, LuShoppingBag,
   LuShoppingCart, LuSparkles, LuSquarePen, LuStar, LuStore, LuTag, LuTags, LuTrash2,
-  LuTriangleAlert, LuUser, LuUsers, LuX, LuPersonStanding, LuActivity,
+  LuTriangleAlert, LuUser, LuUsers, LuX, LuPersonStanding, LuActivity, LuMessageSquareHeart, LuCookie,
 } from 'react-icons/lu';
 import {
   PiArrowCounterClockwiseDuotone, PiArrowLeftDuotone, PiArrowRightDuotone, PiCalendarBlankDuotone,
@@ -53,6 +55,7 @@ import {
   PiShoppingBagDuotone, PiShoppingCartDuotone, PiSparkleDuotone, PiStarDuotone, PiStorefrontDuotone,
   PiTagDuotone, PiTagSimpleDuotone, PiTrashDuotone, PiUserCircleDuotone, PiUserDuotone,
   PiUsersDuotone, PiWarningCircleDuotone, PiWarningDuotone, PiXCircleDuotone, PiXDuotone,
+  PiChatCircleTextDuotone, PiCookieDuotone,
 } from 'react-icons/pi';
 // Disciplinas: FontAwesome no tiene yoga/pilates; en "solid" se usan estos rellenos.
 import { GrYoga } from 'react-icons/gr';
@@ -108,6 +111,10 @@ const ICONS = {
   // Contacto
   mail: [LuMail, PiEnvelopeSimpleDuotone, FaEnvelope],
   phone: [LuPhone, PiPhoneDuotone, FaPhone],
+  /** Dejar una opinión / reseña */
+  review: [LuMessageSquareHeart, PiChatCircleTextDuotone, FaCommentDots],
+  /** Preferencias de cookies */
+  cookie: [LuCookie, PiCookieDuotone, FaCookieBite],
   // Compra y planes
   cart: [LuShoppingCart, PiShoppingCartDuotone, FaShoppingCart],
   bag: [LuShoppingBag, PiShoppingBagDuotone, FaShoppingBag],
@@ -132,6 +139,11 @@ const ICONS = {
   instagram: [FaInstagram, FaInstagram, FaInstagram],
   linkedin: [FaLinkedin, FaLinkedin, FaLinkedin],
   google: [FaGooglePlusG, FaGooglePlusG, FaGooglePlusG],
+  /** Ficha de Google Business (logo «G») */
+  'google-business': [FaGoogle, FaGoogle, FaGoogle],
+  facebook: [FaFacebook, FaFacebook, FaFacebook],
+  tiktok: [FaTiktok, FaTiktok, FaTiktok],
+  youtube: [FaYoutube, FaYoutube, FaYoutube],
   apple: [FaApple, FaApple, FaApple],
 } satisfies Record<string, readonly [IconType, IconType, IconType]>;
 

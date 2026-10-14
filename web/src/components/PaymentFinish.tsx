@@ -11,10 +11,30 @@ import SpamWarning from './SpamWarning';
 import { requestInstallPrompt, InstallInlineHint } from './InstallAppBanner';
 import { useT } from '../i18n';
 import { API_ROOT } from '../config';
+import { getSiteClient } from '../lib/site';
+import { hashId, track } from '../lib/tracking';
 
 const API_BASE = `${API_ROOT}/`;
 const POLL_INTERVAL = 3000;
 const POLL_TIMEOUT = 30000;
+// La sesión de pago se quita de la URL nada más leerla (no debe llegar a
+// terceros ni quedarse en el historial); aquí se guarda por si se recarga.
+const SESSION_KEY = 'checkout.session';
+
+type Verified = { status: 'success' | 'pending'; amount?: number; currency?: string };
+
+/** Conversión de compra (y reserva de cada clase pagada). Sin consentimiento no hace nada. */
+function trackPaidBooking(sessionId: string, v: Verified, items: { title: string; price: number }[]) {
+  const value = Number.isFinite(v.amount) ? Number(v.amount) : items.reduce((s, i) => s + (Number(i.price) || 0), 0);
+  // Id anónimo y estable: evita contar la compra dos veces si se recarga la página
+  track('purchase', {
+    transaction_id: hashId(sessionId),
+    value,
+    currency: v.currency || getSiteClient().currency,
+    items: items.map((i) => ({ item_name: i.title, price: Number(i.price) || 0, quantity: 1 })),
+  });
+  for (const i of items) track('book', { class_name: i.title });
+}
 
 export default function CheckoutSuccessPage() {
   const t = useT();
@@ -26,7 +46,7 @@ export default function CheckoutSuccessPage() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const timedOutRef = useRef(false);
 
-  const verifyOnce = useCallback(async (sessionId: string): Promise<'success' | 'pending'> => {
+  const verifyOnce = useCallback(async (sessionId: string): Promise<Verified> => {
     try {
       const res = await fetch(`${API_BASE}v1/checkout/verify-checkout/`, {
         method: 'POST',
@@ -34,27 +54,44 @@ export default function CheckoutSuccessPage() {
         body: JSON.stringify({ session_id: sessionId }),
       });
       const data = await res.json();
-      if (data.status === 'success') return 'success';
-      return 'pending';
+      if (data.status === 'success') {
+        const amount = Number(data.amount_total);
+        return {
+          status: 'success',
+          amount: Number.isFinite(amount) ? amount : undefined,
+          currency: typeof data.currency === 'string' ? data.currency : undefined,
+        };
+      }
+      return { status: 'pending' };
     } catch {
-      return 'pending';
+      return { status: 'pending' };
     }
   }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const sessionId = params.get('session_id');
+    let found = params.get('session_id');
+    if (found) {
+      try { sessionStorage.setItem(SESSION_KEY, found); } catch { /* sin almacenamiento */ }
+      window.history.replaceState(null, '', window.location.pathname);
+    } else {
+      try { found = sessionStorage.getItem(SESSION_KEY); } catch { /* sin almacenamiento */ }
+    }
+    // Lo pagado (el carrito se vacía al confirmar): para la conversión
+    const paidItems = useCartStore.getState().items.map((i) => ({ title: i.title, price: i.price }));
 
-    if (!sessionId) {
+    if (!found) {
       setStatus('error');
       setErrorMessage('noSession');
       return;
     }
+    const sessionId: string = found;
 
     const startPolling = async () => {
       const first = await verifyOnce(sessionId);
-      if (first === 'success') {
+      if (first.status === 'success') {
         setStatus('success');
+        trackPaidBooking(sessionId, first, paidItems);
         clearCart();
         setTimeout(() => { if (requestInstallPrompt('booking') === 'inline') setShowInstallHint(true); }, 1500);
         return;
@@ -79,9 +116,10 @@ export default function CheckoutSuccessPage() {
         }
 
         const result = await verifyOnce(sessionId);
-        if (result === 'success') {
+        if (result.status === 'success') {
           if (pollingRef.current) clearInterval(pollingRef.current);
           setStatus('success');
+          trackPaidBooking(sessionId, result, paidItems);
           clearCart();
           setTimeout(() => { if (requestInstallPrompt('booking') === 'inline') setShowInstallHint(true); }, 1500);
         }

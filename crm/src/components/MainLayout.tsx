@@ -118,7 +118,7 @@ const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
   {
     title: 'Ajustes (se usan poco)',
     items: [
-      { text: 'Mi estudio y mi web', hint: 'Nombre, aspecto, textos, emails y pagos', icon: <TuneIcon />, path: '/ajustes' },
+      { text: 'Mi estudio y mi web', hint: 'Nombre, aspecto, textos, Google y anuncios, emails y pagos', icon: <TuneIcon />, path: '/ajustes' },
       { text: 'Salas', hint: 'Espacios del estudio', icon: <MeetingRoomIcon />, path: '/rooms' },
       { text: 'Categorías', hint: 'Grupos de clases en la web', icon: <CategoryIcon />, path: '/categories' },
       { text: 'Fotos de la web', hint: 'Imágenes de tu web', icon: <PhotoLibraryIcon />, path: '/site-images' },

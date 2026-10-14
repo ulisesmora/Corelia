@@ -7,6 +7,7 @@ import PushSection from '../components/setup/PushSection';
 import EmailSection from '../components/setup/EmailSection';
 import FaqEditor from '../components/setup/FaqEditor';
 import GoogleSection from '../components/setup/GoogleSection';
+import MarketingSection, { MARKETING_FIELDS } from '../components/setup/MarketingSection';
 import TestimonialEditor from '../components/setup/TestimonialEditor';
 import PaymentsSection from '../components/setup/PaymentsSection';
 import StudioSection from '../components/setup/StudioSection';
@@ -14,7 +15,7 @@ import StyleSection from '../components/setup/StyleSection';
 import { loadSettings, saveSettings, type StudioSettings as Settings } from '../components/setup/api';
 import { useSite } from '../site/SiteProvider';
 
-// Pestañas: 0 Mi estudio · 1 Aspecto · 2 Textos · 3 Preguntas · 4 Opiniones · 5 Emails · 6 Avisos al móvil · 7 Pagos · 8 Google · 9 Dominio
+// Pestañas: 0 Mi estudio · 1 Aspecto · 2 Textos · 3 Preguntas · 4 Opiniones · 5 Google y anuncios · 6 Emails · 7 Avisos al móvil · 8 Pagos · 9 Acceso con Google · 10 Dominio
 const STUDIO_FIELDS = [
   'studio_name', 'logo_url', 'icon_url', 'phone', 'whatsapp', 'contact_email', 'instagram',
   'address', 'city', 'postal_code', 'area_served', 'maps_url', 'legal_name', 'tax_id',
@@ -24,7 +25,7 @@ const CONTENT_FIELDS = [
   'hero_title', 'hero_title_en', 'hero_subtitle', 'hero_subtitle_en', 'about_title', 'about_title_en',
   'about_text', 'about_text_en', 'about_image_url', 'description', 'description_en', 'tagline', 'tagline_en',
 ] as const;
-const FORM_TABS: Record<number, readonly string[]> = { 0: STUDIO_FIELDS, 1: STYLE_FIELDS, 2: CONTENT_FIELDS };
+const FORM_TABS: Record<number, readonly string[]> = { 0: STUDIO_FIELDS, 1: STYLE_FIELDS, 2: CONTENT_FIELDS, 5: MARKETING_FIELDS };
 
 /** Ajustes del estudio: lo mismo que el asistente de bienvenida, en pestañas. */
 export default function StudioSettings() {
@@ -72,7 +73,7 @@ export default function StudioSettings() {
       <PageIntro
         pageKey="studio-settings"
         title="Ajustes del estudio"
-        subtitle="El nombre, el aspecto y los textos de tu web, los emails, los pagos online y el acceso con Google."
+        subtitle="El nombre, el aspecto y los textos de tu web, tu ficha de Google y tus anuncios, los emails, los pagos online y el acceso con Google."
       />
       <SectionTabs value={tab} onChange={(_, v) => setTab(v)}>
         <Tab label="Mi estudio" />
@@ -80,6 +81,7 @@ export default function StudioSettings() {
         <Tab label="Textos de la web" />
         <Tab label="Preguntas frecuentes" />
         <Tab label="Opiniones" />
+        <Tab label="Google y anuncios" />
         <Tab label="Emails" />
         <Tab label="Avisos al móvil" />
         <Tab label="Pagos online" />
@@ -92,11 +94,12 @@ export default function StudioSettings() {
         {tab === 2 && <ContentSection value={settings} onChange={(p) => setSettings({ ...settings, ...p })} onBusyChange={setUploading} />}
         {tab === 3 && <FaqEditor />}
         {tab === 4 && <TestimonialEditor />}
-        {tab === 5 && <EmailSection value={settings} onSaved={onSaved} />}
-        {tab === 6 && <PushSection value={settings} />}
-        {tab === 7 && <PaymentsSection value={settings} onSaved={onSaved} />}
-        {tab === 8 && <GoogleSection value={settings} onSaved={onSaved} />}
-        {tab === 9 && <DomainSection value={settings} onSaved={onSaved} />}
+        {tab === 5 && <MarketingSection value={settings} onChange={(p) => setSettings({ ...settings, ...p })} />}
+        {tab === 6 && <EmailSection value={settings} onSaved={onSaved} />}
+        {tab === 7 && <PushSection value={settings} />}
+        {tab === 8 && <PaymentsSection value={settings} onSaved={onSaved} />}
+        {tab === 9 && <GoogleSection value={settings} onSaved={onSaved} />}
+        {tab === 10 && <DomainSection value={settings} onSaved={onSaved} />}
         {isForm && (
           <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
             <Button variant="contained" size="large" onClick={save} disabled={!dirty || saving || uploading}

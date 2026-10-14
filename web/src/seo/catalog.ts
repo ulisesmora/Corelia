@@ -30,6 +30,8 @@ export interface ApiPlan {
 export interface ApiFaq {
   id: number; question: string; answer: string; question_en?: string; answer_en?: string;
   page?: string; order?: number; is_active?: boolean;
+  /** Pregunta de ejemplo (datos de demostración): no va en FAQPage ni en llms.txt. */
+  is_sample?: boolean;
 }
 export interface ApiTestimonial {
   id: number; author: string; text: string; text_en?: string; rating?: number | null;

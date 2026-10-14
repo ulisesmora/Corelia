@@ -17,6 +17,64 @@ logger = logging.getLogger(__name__)
 HEX_COLOR = r'^#[0-9A-Fa-f]{6}$'
 DOMAIN_RE = re.compile(r'^(?=.{1,253}$)([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}$')
 
+# ── Google Business, redes, verificación y analítica ──────────────────────────
+# Estos valores la web los mete en <meta> y en scripts (gtag, píxel de Meta),
+# así que SOLO se guardan si cumplen el patrón exacto: nada de HTML libre.
+TRACKING_PATTERNS = {
+    'google_site_verification': re.compile(r'^[A-Za-z0-9_\-]{10,120}$'),
+    'bing_site_verification': re.compile(r'^[A-Za-z0-9]{8,120}$'),
+    'ga4_measurement_id': re.compile(r'^G-[A-Z0-9]{4,15}$'),
+    'google_ads_id': re.compile(r'^AW-\d{6,15}$'),
+    'google_ads_purchase_label': re.compile(r'^[A-Za-z0-9_\-]{4,60}$'),
+    'google_ads_signup_label': re.compile(r'^[A-Za-z0-9_\-]{4,60}$'),
+    'meta_pixel_id': re.compile(r'^\d{10,20}$'),
+}
+SOCIAL_URL_FIELDS = {
+    'google_business_url': 500, 'google_review_url': 500,
+    'facebook_url': 300, 'tiktok_url': 300, 'youtube_url': 300,
+}
+_META_CONTENT_RE = re.compile(r'''content\s*=\s*["']?([^"'\s>]*)''', re.IGNORECASE)
+
+
+def _meta_content(value: str) -> str:
+    """Si pegan la etiqueta <meta … content="X"> entera, devuelve solo X."""
+    value = (value or '').strip()
+    if '<' in value or 'content' in value.lower():
+        m = _META_CONTENT_RE.search(value)
+        return m.group(1).strip() if m else value
+    # Registro TXT del método DNS de Search Console: «google-site-verification=X»
+    return re.sub(r'^google-site-verification\s*[=:]\s*', '', value, flags=re.IGNORECASE)
+
+
+def _clean_public_url(value: str, max_length: int) -> str:
+    """URL pública http(s). Sin esquema se asume https:// (pegan «facebook.com/…»)."""
+    from django.core.validators import URLValidator
+    from django.core.exceptions import ValidationError as DjangoValidationError
+    value = (value or '').strip()
+    if not value:
+        return ''
+    if not re.match(r'^[a-z][a-z0-9+.\-]*:', value, re.IGNORECASE):
+        value = f'https://{value.lstrip("/")}'
+    try:
+        URLValidator(schemes=['http', 'https'])(value)
+    except DjangoValidationError:
+        raise serializers.ValidationError(
+            'Pega el enlace completo, que empiece por https:// (cópialo de la barra del navegador).')
+    if len(value) > max_length:
+        raise serializers.ValidationError(f'El enlace es demasiado largo (máximo {max_length} caracteres).')
+    return value
+
+
+def safe_tracking_value(field: str, value: str) -> str:
+    """El valor solo si cumple su patrón (por si se editó saltándose el API)."""
+    value = value or ''
+    return value if TRACKING_PATTERNS[field].match(value) else ''
+
+
+def safe_public_url(value: str) -> str:
+    value = value or ''
+    return value if re.match(r'^https?://[^\s"\'<>]+$', value) else ''
+
 
 class SiteConfigSerializer(serializers.ModelSerializer):
     """Lo que el panel puede leer/editar. Los secretos son de solo escritura:
@@ -29,6 +87,20 @@ class SiteConfigSerializer(serializers.ModelSerializer):
     color_secondary = serializers.RegexField(HEX_COLOR, required=False)
     color_dark = serializers.RegexField(HEX_COLOR, required=False)
     color_background = serializers.RegexField(HEX_COLOR, required=False)
+    # Sin max_length aquí: se puede pegar la etiqueta <meta> entera o el enlace
+    # sin https://; el validate_* de cada uno limpia y comprueba el resultado.
+    google_business_url = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+    google_review_url = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+    facebook_url = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+    tiktok_url = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+    youtube_url = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+    google_site_verification = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+    bing_site_verification = serializers.CharField(required=False, allow_blank=True, max_length=2000)
+    ga4_measurement_id = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    google_ads_id = serializers.CharField(required=False, allow_blank=True, max_length=200)
+    google_ads_purchase_label = serializers.CharField(required=False, allow_blank=True, max_length=300)
+    google_ads_signup_label = serializers.CharField(required=False, allow_blank=True, max_length=300)
+    meta_pixel_id = serializers.CharField(required=False, allow_blank=True, max_length=200)
 
     class Meta:
         model = SiteConfig
@@ -48,6 +120,72 @@ class SiteConfigSerializer(serializers.ModelSerializer):
 
     def validate_panel_domain(self, value):
         return self._clean_domain(value)
+
+    # ── Google Business y redes ──
+    def validate_google_business_url(self, value):
+        return _clean_public_url(value, SOCIAL_URL_FIELDS['google_business_url'])
+
+    def validate_google_review_url(self, value):
+        return _clean_public_url(value, SOCIAL_URL_FIELDS['google_review_url'])
+
+    def validate_facebook_url(self, value):
+        return _clean_public_url(value, SOCIAL_URL_FIELDS['facebook_url'])
+
+    def validate_tiktok_url(self, value):
+        return _clean_public_url(value, SOCIAL_URL_FIELDS['tiktok_url'])
+
+    def validate_youtube_url(self, value):
+        return _clean_public_url(value, SOCIAL_URL_FIELDS['youtube_url'])
+
+    # ── Verificación de buscadores ──
+    def _check(self, field, value, message):
+        if value and not TRACKING_PATTERNS[field].match(value):
+            raise serializers.ValidationError(message)
+        return value
+
+    def validate_google_site_verification(self, value):
+        return self._check('google_site_verification', _meta_content(value),
+                           'Pega el código de verificación de Google Search Console (lo que va dentro de '
+                           'content="…") o la etiqueta <meta name="google-site-verification"> entera.')
+
+    def validate_bing_site_verification(self, value):
+        return self._check('bing_site_verification', _meta_content(value),
+                           'Pega el código de Bing Webmaster Tools (lo que va dentro de content="…") '
+                           'o la etiqueta <meta name="msvalidate.01"> entera.')
+
+    # ── Analítica y publicidad ──
+    def validate_ga4_measurement_id(self, value):
+        value = re.sub(r'\s+', '', value or '').upper()
+        return self._check('ga4_measurement_id', value,
+                           'Pega el ID de medición de Google Analytics, el que empieza por G-, como G-AB12CD34EF '
+                           '(Administrar → Flujos de datos → tu web).')
+
+    def validate_google_ads_id(self, value):
+        value = re.sub(r'\s+', '', value or '').upper()
+        # Si pegan el send_to completo («AW-123456789/AbC…»), nos quedamos con el ID
+        value = value.split('/')[0]
+        return self._check('google_ads_id', value,
+                           'Pega el ID de Google Ads que empieza por AW-, como AW-123456789.')
+
+    def _ads_label(self, field, value):
+        value = re.sub(r'\s+', '', value or '')
+        if '/' in value:  # «AW-123456789/AbCdEf» → «AbCdEf»
+            value = value.split('/', 1)[1]
+        return self._check(field, value,
+                           'Pega la etiqueta de la conversión de Google Ads (lo que va después de la barra en '
+                           '«AW-123456789/etiqueta»): solo letras, números, guiones y guiones bajos.')
+
+    def validate_google_ads_purchase_label(self, value):
+        return self._ads_label('google_ads_purchase_label', value)
+
+    def validate_google_ads_signup_label(self, value):
+        return self._ads_label('google_ads_signup_label', value)
+
+    def validate_meta_pixel_id(self, value):
+        value = re.sub(r'\s+', '', value or '')
+        return self._check('meta_pixel_id', value,
+                           'Pega el identificador del píxel de Meta: solo números, entre 10 y 20 cifras '
+                           '(Administrador de eventos → Orígenes de datos).')
 
     def get_has_smtp_password(self, obj):
         return bool(obj.smtp_password)
@@ -138,6 +276,11 @@ def public_config_payload(cfg: SiteConfig) -> dict:
         'vapid_public_key': vapid_public,
         'setup_completed': cfg.setup_completed,
         'site_url': _web_url(),
+        # Google Business y redes (enlaces públicos)
+        **{f: safe_public_url(getattr(cfg, f)) for f in SOCIAL_URL_FIELDS},
+        # Verificación de buscadores y analítica/publicidad: IDs públicos que la
+        # web solo usa en <meta> o, con consentimiento, en gtag / píxel de Meta
+        **{f: safe_tracking_value(f, getattr(cfg, f)) for f in TRACKING_PATTERNS},
     }
 
 
@@ -374,7 +517,9 @@ from api.models import FAQItem, Testimonial  # noqa: E402
 class FAQItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = FAQItem
-        fields = ('id', 'question', 'answer', 'question_en', 'answer_en', 'page', 'order', 'is_active')
+        fields = ('id', 'question', 'answer', 'question_en', 'answer_en', 'page', 'order', 'is_active', 'is_sample')
+        # Solo seed_demo crea preguntas de ejemplo; al editarla deja de serlo (perform_update)
+        read_only_fields = ('is_sample',)
 
 
 class TestimonialSerializer(serializers.ModelSerializer):
@@ -416,6 +561,11 @@ class FAQItemViewSet(_PublicReadAdminWrite):
     """/api/v1/faqs/ — ?page=home|prices filtra por página."""
     queryset = FAQItem.objects.all()
     serializer_class = FAQItemSerializer
+
+    def perform_update(self, serializer):
+        # Editada por el estudio → ya es suya: se publica como FAQPage
+        serializer.save(is_sample=False)
+        _ping_search_engines()
 
     def get_queryset(self):
         qs = super().get_queryset()

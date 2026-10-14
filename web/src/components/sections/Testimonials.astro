@@ -1,20 +1,31 @@
 ---
 // Opiniones del panel, solo en HTML. NO se marcan como Review/AggregateRating
 // en JSON-LD: Google considera autopromoción las reseñas que publica el propio
-// negocio. Si no hay opiniones, la sección no se muestra.
+// negocio. Si no hay opiniones ni enlace para dejar una en Google, la sección
+// no se muestra.
 import type { Lang } from '../../seo/site';
 import type { ApiTestimonial } from '../../seo/catalog';
+import { Icon } from '../ui/Icon';
 
-interface Props { items: ApiTestimonial[]; lang: Lang }
-const { items, lang } = Astro.props;
+interface Props {
+  items: ApiTestimonial[];
+  lang: Lang;
+  /** Enlace «Escribir una reseña» de la ficha de Google (panel → Ajustes). */
+  reviewUrl?: string;
+}
+const { items, lang, reviewUrl = '' } = Astro.props;
 const es = lang === 'es';
 const text = (t: ApiTestimonial) => (lang === 'en' && t.text_en?.trim()) || t.text;
 const stars = (n: number) => Math.max(0, Math.min(5, Math.round(n)));
 ---
-{items.length > 0 && (
+{(items.length > 0 || reviewUrl) && (
   <section class="tst sk-section" id="opiniones" aria-labelledby="tst-title">
-    <h2 id="tst-title" class="sk-section-title">{es ? 'Lo que dicen nuestras alumnas y alumnos' : 'What our members say'}</h2>
-    <ul>
+    <h2 id="tst-title" class="sk-section-title">
+      {items.length > 0
+        ? (es ? 'Lo que dicen nuestras alumnas y alumnos' : 'What our members say')
+        : (es ? '¿Has venido a clase?' : 'Been to a class?')}
+    </h2>
+    {items.length > 0 && <ul>
       {items.map((t) => (
         <li>
           <figure>
@@ -31,7 +42,15 @@ const stars = (n: number) => Math.max(0, Math.min(5, Math.round(n)));
           </figure>
         </li>
       ))}
-    </ul>
+    </ul>}
+    {reviewUrl && (
+      <p class="tst-review">
+        <a class="sk-btn" href={reviewUrl} target="_blank" rel="noopener noreferrer">
+          <Icon name="google-business" size={16} />
+          {es ? 'Déjanos tu opinión en Google' : 'Leave us a Google review'}
+        </a>
+      </p>
+    )}
   </section>
 )}
 
@@ -47,4 +66,6 @@ const stars = (n: number) => Math.max(0, Math.min(5, Math.round(n)));
   .tst figcaption img { width: 40px; height: 40px; border-radius: 50%; object-fit: cover; }
   .tst figcaption span { display: flex; flex-direction: column; }
   .tst small { color: var(--text-muted); }
+  .tst-review { margin: 2rem 0 0; text-align: center; }
+  .tst-review a { display: inline-flex; align-items: center; gap: .6rem; min-height: 48px; padding: 0 1.5rem; text-decoration: none; font-family: var(--font-body); }
 </style>

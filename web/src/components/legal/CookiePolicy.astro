@@ -1,0 +1,157 @@
+---
+// Política de cookies del estudio (ES en /cookies, EN en /en/cookies). Se
+// genera con lo que el estudio tiene configurado: las técnicas siempre; las
+// de Google Analytics, Google Ads, Meta y Microsoft Clarity solo si están
+// activas (panel → Ajustes, y PUBLIC_CLARITY_ID para Clarity).
+import LegalLayout from './LegalLayout.astro';
+import { clarityProjectId, getSiteConfig } from '../../lib/site';
+
+interface Props { lang: 'es' | 'en' }
+const { lang } = Astro.props;
+const es = lang === 'es';
+const site = await getSiteConfig();
+
+const ga4 = !!site.ga4_measurement_id;
+const ads = !!site.google_ads_id;
+const pixel = !!site.meta_pixel_id;
+const clarity = !!clarityProjectId();
+const hasAnalytics = ga4 || clarity;
+const hasAds = ads || pixel;
+const hasOptional = hasAnalytics || hasAds;
+const holder = site.legal.name || site.studio_name;
+const email = site.contact.email;
+const termsHref = es ? '/terminos-condiciones' : '/en/terms-conditions';
+
+type Row = { name: string; provider: string; purpose: string; duration: string };
+const own = es ? 'Propia' : 'First party';
+
+const technical: Row[] = es
+  ? [
+      { name: 'accessToken, refreshToken, iduser, username, sessionTimestamp', provider: own, purpose: 'Mantener tu sesión iniciada (almacenamiento local del navegador).', duration: 'Hasta que cierres sesión' },
+      { name: 'site.lang', provider: own, purpose: 'Recordar el idioma que eliges.', duration: 'Hasta que la borres' },
+      { name: 'site-cart-storage', provider: own, purpose: 'Guardar las clases que añades al carrito.', duration: 'Hasta que reserves o la borres' },
+      ...(hasOptional ? [{ name: 'cookie.consent', provider: own, purpose: 'Guardar tu elección sobre cookies (con la fecha).', duration: '12 meses' }] : []),
+      ...(site.payments_enabled ? [{ name: '__stripe_mid, __stripe_sid', provider: 'Stripe', purpose: 'Pago seguro con tarjeta y prevención del fraude (solo en la página de pago).', duration: '1 año / 30 minutos' }] : []),
+      ...(site.google_login_enabled ? [{ name: 'g_state', provider: 'Google', purpose: 'Funcionamiento del botón «Continuar con Google» (solo si lo usas).', duration: 'Hasta 6 meses' }] : []),
+    ]
+  : [
+      { name: 'accessToken, refreshToken, iduser, username, sessionTimestamp', provider: own, purpose: 'Keep you signed in (browser local storage).', duration: 'Until you sign out' },
+      { name: 'site.lang', provider: own, purpose: 'Remember your language.', duration: 'Until you delete it' },
+      { name: 'site-cart-storage', provider: own, purpose: 'Keep the classes you add to the cart.', duration: 'Until you book or delete it' },
+      ...(hasOptional ? [{ name: 'cookie.consent', provider: own, purpose: 'Store your cookie choice (with its date).', duration: '12 months' }] : []),
+      ...(site.payments_enabled ? [{ name: '__stripe_mid, __stripe_sid', provider: 'Stripe', purpose: 'Secure card payment and fraud prevention (payment page only).', duration: '1 year / 30 minutes' }] : []),
+      ...(site.google_login_enabled ? [{ name: 'g_state', provider: 'Google', purpose: 'Make the "Continue with Google" button work (only if you use it).', duration: 'Up to 6 months' }] : []),
+    ];
+
+const analytics: Row[] = [
+  ...(ga4 ? [es
+    ? { name: '_ga, _ga_*', provider: 'Google Analytics (Google Ireland Ltd.)', purpose: 'Distinguir visitas y sesiones para saber cómo se usa la web (estadísticas).', duration: '2 años' }
+    : { name: '_ga, _ga_*', provider: 'Google Analytics (Google Ireland Ltd.)', purpose: 'Tell visits and sessions apart to understand how the website is used (statistics).', duration: '2 years' }] : []),
+  ...(clarity ? [es
+    ? { name: '_clck, _clsk, CLID, MUID', provider: 'Microsoft Clarity (Microsoft Ireland)', purpose: 'Ver de forma agregada cómo se navega (clics, desplazamiento) para mejorar la web.', duration: '1 año / 1 día' }
+    : { name: '_clck, _clsk, CLID, MUID', provider: 'Microsoft Clarity (Microsoft Ireland)', purpose: 'See in aggregate how people browse (clicks, scrolling) to improve the website.', duration: '1 year / 1 day' }] : []),
+];
+
+const advertising: Row[] = [
+  ...(ads ? [es
+    ? { name: '_gcl_au, _gcl_aw', provider: 'Google Ads (Google Ireland Ltd.)', purpose: 'Medir cuántas reservas, compras o registros llegan desde nuestros anuncios de Google.', duration: '90 días' }
+    : { name: '_gcl_au, _gcl_aw', provider: 'Google Ads (Google Ireland Ltd.)', purpose: 'Measure how many bookings, purchases or sign-ups come from our Google ads.', duration: '90 days' }] : []),
+  ...(pixel ? [es
+    ? { name: '_fbp, _fbc', provider: 'Píxel de Meta (Meta Platforms Ireland Ltd.)', purpose: 'Medir los resultados de nuestros anuncios en Facebook e Instagram.', duration: '90 días' }
+    : { name: '_fbp, _fbc', provider: 'Meta Pixel (Meta Platforms Ireland Ltd.)', purpose: 'Measure the results of our ads on Facebook and Instagram.', duration: '90 days' }] : []),
+];
+
+const H = es
+  ? { name: 'Nombre', provider: 'Titular', purpose: 'Finalidad', duration: 'Duración' }
+  : { name: 'Name', provider: 'Provider', purpose: 'Purpose', duration: 'Duration' };
+---
+<LegalLayout title={es ? 'Política de cookies' : 'Cookie policy'} lang={lang}>
+  <h1>{es ? 'Política de cookies' : 'Cookie policy'}</h1>
+
+  {es ? (
+    <p>Las cookies y tecnologías parecidas (como el almacenamiento local del navegador) son pequeños archivos que una web guarda en tu dispositivo. En esta página te explicamos cuáles usa la web de <strong>{site.studio_name}</strong>, para qué y cómo puedes aceptarlas, rechazarlas o cambiar de opinión, conforme al artículo 22.2 de la Ley 34/2002 (LSSI) y al RGPD.</p>
+  ) : (
+    <p>Cookies and similar technologies (such as the browser's local storage) are small files a website stores on your device. This page explains which ones the <strong>{site.studio_name}</strong> website uses, what for, and how you can accept, reject or change your mind, in line with article 22.2 of Spanish Law 34/2002 (LSSI) and the GDPR.</p>
+  )}
+
+  <h2>{es ? '1. Quién es el responsable' : '1. Who is responsible'}</h2>
+  <p>
+    {holder}{email && <>{' · '}<a href={`mailto:${email}`}>{email}</a></>}.
+    {es ? ' Más información en la ' : ' More information in the '}
+    <a href={termsHref}>{es ? 'política de privacidad' : 'privacy policy'}</a>.
+  </p>
+
+  <h2>{es ? '2. Cookies técnicas (siempre activas)' : '2. Technical cookies (always on)'}</h2>
+  <p>{es
+    ? 'Son necesarias para que la web funcione (iniciar sesión, reservar, pagar) y no necesitan tu consentimiento.'
+    : 'They are needed for the website to work (signing in, booking, paying) and do not require your consent.'}</p>
+  <div class="ck-table"><table>
+    <thead><tr><th>{H.name}</th><th>{H.provider}</th><th>{H.purpose}</th><th>{H.duration}</th></tr></thead>
+    <tbody>{technical.map((r) => <tr><td><code>{r.name}</code></td><td>{r.provider}</td><td>{r.purpose}</td><td>{r.duration}</td></tr>)}</tbody>
+  </table></div>
+
+  {hasAnalytics && (
+    <>
+      <h2>{es ? '3. Cookies de analítica (solo si las aceptas)' : '3. Analytics cookies (only if you accept them)'}</h2>
+      <p>{es
+        ? 'Nos ayudan a saber cuántas personas visitan la web y cómo la usan, para mejorarla. No se activan hasta que las aceptas.'
+        : 'They help us understand how many people visit the website and how they use it, so we can improve it. They are not activated until you accept them.'}</p>
+      <div class="ck-table"><table>
+        <thead><tr><th>{H.name}</th><th>{H.provider}</th><th>{H.purpose}</th><th>{H.duration}</th></tr></thead>
+        <tbody>{analytics.map((r) => <tr><td><code>{r.name}</code></td><td>{r.provider}</td><td>{r.purpose}</td><td>{r.duration}</td></tr>)}</tbody>
+      </table></div>
+    </>
+  )}
+
+  {hasAds && (
+    <>
+      <h2>{es ? `${hasAnalytics ? '4' : '3'}. Cookies de publicidad (solo si las aceptas)` : `${hasAnalytics ? '4' : '3'}. Advertising cookies (only if you accept them)`}</h2>
+      <p>{es
+        ? 'Nos permiten medir si nuestros anuncios funcionan (por ejemplo, cuántas reservas llegan desde un anuncio). No se activan hasta que las aceptas.'
+        : 'They let us measure whether our ads work (for example, how many bookings come from an ad). They are not activated until you accept them.'}</p>
+      <div class="ck-table"><table>
+        <thead><tr><th>{H.name}</th><th>{H.provider}</th><th>{H.purpose}</th><th>{H.duration}</th></tr></thead>
+        <tbody>{advertising.map((r) => <tr><td><code>{r.name}</code></td><td>{r.provider}</td><td>{r.purpose}</td><td>{r.duration}</td></tr>)}</tbody>
+      </table></div>
+    </>
+  )}
+
+  {hasOptional ? (
+    <>
+      <h2>{es ? 'Cómo aceptar, rechazar o cambiar tu elección' : 'How to accept, reject or change your choice'}</h2>
+      <p>{es
+        ? 'La primera vez que entras te preguntamos con un aviso: puedes aceptar, rechazar o elegir por categorías. Rechazar es igual de fácil que aceptar y la web funciona igual. Tu elección se guarda 12 meses; después te volvemos a preguntar. Puedes cambiarla cuando quieras desde el enlace «Cookies» del pie de página o aquí:'
+        : 'The first time you visit we ask you with a notice: you can accept, reject or choose by category. Rejecting is as easy as accepting and the website works the same. Your choice is kept for 12 months; after that we ask again. You can change it at any time from the "Cookies" link at the bottom of the page or here:'}</p>
+      <p><a class="sk-btn ck-btn" href={es ? '/cookies' : '/en/cookies'} data-cookie-settings>{es ? 'Cambiar mis preferencias de cookies' : 'Change my cookie preferences'}</a></p>
+      <p>{es
+        ? 'Si retiras tu consentimiento, borramos las cookies de analítica y publicidad de esta web y dejamos de enviar datos a esos proveedores.'
+        : 'If you withdraw your consent, we delete the analytics and advertising cookies of this website and stop sending data to those providers.'}</p>
+      <h2>{es ? 'Transferencias internacionales' : 'International transfers'}</h2>
+      <p>{es
+        ? 'Google, Meta y Microsoft pueden tratar datos fuera del Espacio Económico Europeo (por ejemplo, en Estados Unidos). Están adheridos al Marco de Privacidad de Datos UE-EE. UU. y usan cláusulas contractuales tipo aprobadas por la Comisión Europea.'
+        : 'Google, Meta and Microsoft may process data outside the European Economic Area (for example, in the United States). They participate in the EU-U.S. Data Privacy Framework and use standard contractual clauses approved by the European Commission.'}</p>
+    </>
+  ) : (
+    <>
+      <h2>{es ? '3. Sin cookies de analítica ni de publicidad' : '3. No analytics or advertising cookies'}</h2>
+      <p>{es
+        ? 'Esta web no usa cookies de analítica ni de publicidad, así que no te pedimos ningún consentimiento.'
+        : 'This website does not use analytics or advertising cookies, so we do not ask for any consent.'}</p>
+    </>
+  )}
+
+  <h2>{es ? 'Desde tu navegador' : 'From your browser'}</h2>
+  <p>{es
+    ? 'También puedes ver y borrar las cookies y el almacenamiento de esta web desde los ajustes de privacidad de tu navegador (Chrome, Safari, Firefox, Edge…). Si borras las técnicas, tendrás que volver a iniciar sesión.'
+    : 'You can also view and delete this website\'s cookies and storage from your browser\'s privacy settings (Chrome, Safari, Firefox, Edge…). If you delete the technical ones, you will need to sign in again.'}</p>
+</LegalLayout>
+
+<style>
+  .ck-table { overflow-x: auto; margin: 0 0 1.5rem; border: 1px solid var(--border-neutral); border-radius: var(--radius-input); }
+  .ck-table table { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  .ck-table th, .ck-table td { text-align: left; vertical-align: top; padding: .6rem .75rem; border-bottom: 1px solid var(--border-neutral); }
+  .ck-table tr:last-child td { border-bottom: 0; }
+  .ck-table th { background: var(--surface-muted); color: var(--page-text); font-weight: 700; }
+  .ck-table code { font-family: var(--font-mono); font-size: .85em; word-break: break-word; }
+  .ck-btn { display: inline-flex; align-items: center; min-height: 46px; padding: 0 1.4rem; text-decoration: none; font-family: var(--font-body); }
+</style>
