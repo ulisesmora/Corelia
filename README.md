@@ -1,3 +1,12 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/corelia-logo-reversed.svg">
+    <img src="docs/brand/corelia-logo.svg" alt="Corelia" height="56">
+  </picture>
+</p>
+
+<p align="center"><b>El centro de tu estudio.</b></p>
+
 # Corelia
 
 **Web de reservas + panel de gestión para estudios de pilates, yoga y fitness.**
