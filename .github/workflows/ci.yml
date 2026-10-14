@@ -13,7 +13,7 @@ jobs:
       run:
         working-directory: api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: astral-sh/setup-uv@v6
         with:
           version: '0.10.0'
@@ -32,7 +32,7 @@ jobs:
     name: Ilustraciones de la portada (web y panel iguales)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: crm/src/components/setup/hero-art.ts es copia de web/src/lib/hero-art.ts
         run: |
           tail -n +4 crm/src/components/setup/hero-art.ts | diff -u web/src/lib/hero-art.ts - \
@@ -45,7 +45,7 @@ jobs:
       run:
         working-directory: crm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4   # versión: campo packageManager de crm/package.json
         with:
           package_json_file: crm/package.json
@@ -65,7 +65,7 @@ jobs:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v4   # versión: campo packageManager de web/package.json
         with:
           package_json_file: web/package.json
@@ -81,5 +81,5 @@ jobs:
     name: Imagen Docker del API + panel
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - run: docker build -t corelia-api .
