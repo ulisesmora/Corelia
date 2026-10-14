@@ -238,7 +238,12 @@ export default function Home() {
   useEffect(() => {
     loadStudioStats().then(setStats).catch(() => {});
     const d = madridDate(new Date());
-    fetch(`${API_BASE_URL}v1/bookings/?status=reserved&start_datetime__gte=${d}&end_date=${d}&page_size=200`, {
+    // Solo las reservas de hoy (hasta mañana, sin incluir) y ordenadas: con muchas reservas futuras,
+    // la primera página de 200 podía no traerlas todas.
+    const next = new Date(`${d}T12:00:00Z`);
+    next.setUTCDate(next.getUTCDate() + 1);
+    const tomorrow = next.toISOString().slice(0, 10);
+    fetch(`${API_BASE_URL}v1/bookings/?status=reserved&start_datetime__gte=${d}&start_datetime__lt=${tomorrow}&ordering=start_datetime&page_size=200`, {
       headers: authHeaders(),
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(r)))
