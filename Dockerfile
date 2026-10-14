@@ -19,14 +19,22 @@ RUN pnpm build
 
 # ── 2. API ────────────────────────────────────────────────────────────────────
 FROM python:3.11-slim
+# uv (gestor de paquetes) con versión fija; las dependencias salen de api/uv.lock.
+COPY --from=ghcr.io/astral-sh/uv:0.10.0 /uv /uvx /bin/
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PIP_NO_CACHE_DIR=1 \
-    PORT=8000
+    PORT=8000 \
+    UV_PROJECT_ENVIRONMENT=/opt/venv \
+    UV_PYTHON_DOWNLOADS=never \
+    UV_COMPILE_BYTECODE=1 \
+    UV_LINK_MODE=copy \
+    UV_NO_CACHE=1 \
+    PATH="/opt/venv/bin:$PATH"
 WORKDIR /app
 
-COPY api/requirements.txt ./
-RUN pip install --upgrade pip && pip install -r requirements.txt
+# Primero solo las dependencias: esta capa se reutiliza mientras no cambie el lock.
+COPY api/pyproject.toml api/uv.lock ./
+RUN uv sync --frozen --no-dev
 
 COPY api/ ./
 COPY --from=panel /crm/dist ./panel_dist

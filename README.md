@@ -80,11 +80,11 @@ En local no se puede conectar Stripe (necesita https); todo lo demás funciona i
 Para programar, cada parte por separado:
 
 ```bash
-# API (Python 3.11)
-cd api && python -m venv .venv && .venv/bin/pip install -r requirements.txt
-DEBUG=1 .venv/bin/python manage.py migrate
-DEBUG=1 ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=cambia-esta-clave SEED_DEMO=1 .venv/bin/python manage.py bootstrap
-DEBUG=1 .venv/bin/python manage.py runserver 8000
+# API (Python 3.11, dependencias con uv: https://docs.astral.sh/uv/)
+cd api && uv sync                          # crea .venv con las versiones de uv.lock
+DEBUG=1 uv run python manage.py migrate
+DEBUG=1 ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=cambia-esta-clave SEED_DEMO=1 uv run python manage.py bootstrap
+DEBUG=1 uv run python manage.py runserver 8000
 
 # Panel (Node 20)
 cd crm && pnpm install && pnpm dev          # http://localhost:5173
@@ -93,7 +93,11 @@ cd crm && pnpm install && pnpm dev          # http://localhost:5173
 cd web && pnpm install && API_URL=http://localhost:8000 pnpm dev   # http://localhost:4321
 ```
 
-Tests del API: `cd api && DEBUG=1 .venv/bin/python manage.py test api`
+Tests del API: `cd api && DEBUG=1 uv run python manage.py test api`
+
+Dependencias del API: se declaran en `api/pyproject.toml` y se fijan en `api/uv.lock`
+(`uv add paquete==x.y` para añadir o subir una). `api/requirements.txt` se genera desde el lock
+para quien prefiera pip (`pip install -r requirements.txt`); regenéralo con el comando de su cabecera.
 
 ## Cómo está hecho
 

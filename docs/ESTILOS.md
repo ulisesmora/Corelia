@@ -82,7 +82,7 @@ ilegible. `lib/site.ts → themeCss()` calcula unas variables que lo garantizan:
 Para probarlo en local:
 
 ```bash
-cd api && .venv/bin/python manage.py shell -c "from api.models import SiteConfig as S; c=S.load(); c.style_preset='sunset'; c.save()"
+cd api && uv run python manage.py shell -c "from api.models import SiteConfig as S; c=S.load(); c.style_preset='sunset'; c.save()"
 ```
 
 La web cachea la config unos 60 s: espera o reinicia el servidor web. Revisa la
