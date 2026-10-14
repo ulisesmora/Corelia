@@ -92,6 +92,7 @@ import { SectionTabs, PageIntro, HelpTip, EmptyState, FormStep, useConfirm, useN
 import { friendlyError } from '../utils/errors';
 import { authHeaders } from '../utils/auth';
 import { API_BASE_URL } from '../config';
+import { currencySymbol, money } from '../site/money';
 
 // ====================================================================
 // 1. INTERFACES Y CONSTANTES
@@ -2337,7 +2338,7 @@ export default function RecurringScheduleManagement() {
                   <Typography sx={{ fontSize: '0.93rem', color: 'text.secondary', mb: 1.5 }}>
                     Déjalo vacío para cobrar el precio normal
                     {formClass ? ` de ${formClass.title}: ${credLabel(formClass.default_price_credits)}` : ''}
-                    {formClass && Number(formClass.default_price_eur) > 0 ? ` o ${Number(formClass.default_price_eur)} €` : ''}. (Suelo
+                    {formClass && Number(formClass.default_price_eur) > 0 ? ` o ${money(formClass.default_price_eur, { decimals: 'auto' })}` : ''}. (Suelo
                     suele ser 1 crédito; máquinas —Reformer y Chair—, 2.)
                   </Typography>
                   <Stack direction={{ xs: 'column', sm: 'row' }} gap={2} sx={{ mb: 2 }}>
@@ -2351,11 +2352,11 @@ export default function RecurringScheduleManagement() {
                     />
                     <TextField
                       fullWidth
-                      label="Precio especial en euros"
+                      label="Precio especial con tarjeta"
                       type="number"
                       value={form.price_eur_override ?? ''}
                       onChange={(e) => setF({ price_eur_override: e.target.value ? Number(e.target.value) : null })}
-                      InputProps={{ endAdornment: <InputAdornment position="end">€</InputAdornment> }}
+                      InputProps={{ endAdornment: <InputAdornment position="end">{currencySymbol()}</InputAdornment> }}
                       helperText="Para quien paga sin bono. Vacío = precio normal"
                     />
                   </Stack>

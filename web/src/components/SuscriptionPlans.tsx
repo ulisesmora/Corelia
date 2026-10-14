@@ -8,7 +8,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import Chakra from './ChakraProvider';
 import { Icon, type IconName } from './ui/Icon';
-import { useT, formatPrice, currencySymbol } from '../i18n';
+import { useT, formatPrice, priceParts } from '../i18n';
 import { useLangStore, withSsrLang } from './stores/lang.store';
 import { planDisplayName } from '../utils/planUtils';
 import { trStrict } from '../utils/localized';
@@ -94,6 +94,7 @@ function PackCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; h
   const lang = useLangStore(s => s.lang);
   const es = lang !== 'en';
   const perClass = plan.price / plan.credits;
+  const price = priceParts(plan.price, lang);
 
   return (
     <MotionBox
@@ -168,12 +169,14 @@ function PackCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; h
         </Text>
 
         {/* Price */}
+        {/* Símbolo pequeño y número grande, en el orden del país (60 € · $60 · S/ 60) */}
         <Flex align="baseline" mb={0.5}>
-          <Text fontSize="13px" color={C.textMuted} mr={0.5} fontFamily='var(--font-body)'>{currencySymbol(lang)}</Text>
+          {price.before && <Text fontSize="13px" color={C.textMuted} mr={0.5} fontFamily='var(--font-body)'>{price.before.trim()}</Text>}
           <Text fontSize="40px" fontWeight={800} color={C.brown} lineHeight="1"
             fontFamily='var(--font-heading)' letterSpacing="0.02em">
-            {plan.price}
+            {price.number}
           </Text>
+          {price.after && <Text fontSize="13px" color={C.textMuted} ml={0.5} fontFamily='var(--font-body)'>{price.after.trim()}</Text>}
         </Flex>
         <Text fontSize="12px" color={C.textMuted} mb={4} fontFamily='var(--font-body)'>
           {perClass < dropIn
@@ -221,7 +224,6 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
   const perMonthCredits = plan.credits / months;
   const perClass = plan.price / plan.credits;
   const savingPerMonth = Math.max(0, perMonthCredits * dropIn - perMonthPrice);
-  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace('.', es ? ',' : '.'));
   const round = (n: number) => String(Math.round(n));
   const cycle = months === 1
     ? (es ? '/mes' : '/month')
@@ -376,8 +378,9 @@ function CreditsExplainer({ dropIn }: { dropIn: number }) {
     <SimpleGrid columns={{ base: 1, md: 3 }} gap={3} maxW="900px" mx="auto" mb={10}>
       {items.map((it) => (
         <Flex key={it.text} className="sk-card" align="center" gap={3} p={4}>
-          <Box textAlign="center" minW="64px">
-            <Text fontFamily='var(--font-heading)' fontSize="3xl" color={C.accentDeep} lineHeight="1">{it.big}</Text>
+          <Box textAlign="center" minW="64px" flexShrink={0}>
+            {/* Sin cortes: «MX$12» o «CLP 15,990» no se parten en dos líneas */}
+            <Text fontFamily='var(--font-heading)' fontSize="3xl" color={C.accentDeep} lineHeight="1" whiteSpace="nowrap">{it.big}</Text>
             {it.unit && <Text fontFamily='var(--font-body)' fontSize="10px" fontWeight={700} color={C.accentText} textTransform="uppercase">{it.unit}</Text>}
           </Box>
           <Text fontFamily='var(--font-body)' fontSize="sm" color={C.brownMid} lineHeight="1.5">{it.text}</Text>

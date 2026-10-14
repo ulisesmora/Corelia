@@ -3,6 +3,7 @@
 // (nombre legal, NIF/CIF, dirección, email) salen de la config del estudio.
 import LegalLayout from '../components/legal/LegalLayout.astro';
 import { getSiteConfig, addressLine } from '../lib/site';
+import { currencyName } from '../lib/money';
 import { origin } from '../seo/site';
 
 const site = await getSiteConfig();
@@ -13,7 +14,7 @@ const address = addressLine(site);
 const email = site.contact.email;
 const domain = ORIGIN.replace(/^https?:\/\//, '');
 const hours = site.cancel_min_hours;
-const currencyName = site.currency === 'EUR' ? 'euros (€)' : site.currency;
+const currencyLabel = `${currencyName(site.currency, 'es')} (${site.currency})`;
 ---
 <LegalLayout title="Términos y Condiciones" lang="es">
   <h1>Política de Privacidad</h1>
@@ -88,7 +89,7 @@ const currencyName = site.currency === 'EUR' ? 'euros (€)' : site.currency;
   <p>Los usuarios pueden reservar clases a través de la plataforma web. Las reservas están sujetas a la disponibilidad de plazas. El proceso de reserva incluye la selección de la clase, el registro de datos personales y la confirmación de la reserva.</p>
 
   <h2>4. Precios y Pagos</h2>
-  <p>Los precios de las clases y bonos se muestran en el sitio web y están expresados en {currencyName}. {site.payments_enabled
+  <p>Los precios de las clases y bonos se muestran en el sitio web y están expresados en {currencyLabel}. {site.payments_enabled
     ? 'El pago online se realiza a través de una pasarela de pago segura (Stripe).'
     : 'Los bonos y clases se abonan directamente en el estudio.'} Los precios incluyen los impuestos legalmente aplicables.</p>
 

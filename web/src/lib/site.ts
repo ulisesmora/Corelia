@@ -8,6 +8,7 @@
 //    `window.__SITE__`; los componentes React la leen con `useSite()` o
 //    `getSiteClient()`.
 import { serverApiRoot } from '../config';
+import { formatMoney } from './money';
 
 export interface SiteContact {
   email: string;
@@ -72,7 +73,10 @@ export interface SiteConfig {
   contact: SiteContact;
   legal: { name: string; tax_id: string };
   theme: SiteTheme;
+  /** Moneda del estudio (ISO 4217, mayúsculas): EUR, USD, MXN… */
   currency: string;
+  /** País del estudio (ISO-2): decide el formato de los importes (es-MX…). */
+  country: string;
   drop_in_price: string;
   timezone: string;
   cancel_min_hours: number;
@@ -166,6 +170,7 @@ export const DEFAULT_SITE: SiteConfig = {
     icons: 'line',
   },
   currency: 'EUR',
+  country: 'ES',
   drop_in_price: '12',
   timezone: 'Europe/Madrid',
   cancel_min_hours: 8,
@@ -341,6 +346,7 @@ export function normalizeSite(raw: unknown): SiteConfig {
         : d.theme.icons,
     },
     currency: /^[A-Z]{3}$/.test(str(r.currency).toUpperCase()) ? str(r.currency).toUpperCase() : d.currency,
+    country: [r.country, c.country].map((v) => str(v).toUpperCase()).find((v) => /^[A-Z]{2}$/.test(v)) || d.country,
     drop_in_price: str(r.drop_in_price != null ? String(r.drop_in_price) : '') || d.drop_in_price,
     timezone: validTimeZone(str(r.timezone)) || d.timezone,
     cancel_min_hours: Number.isFinite(hours) && hours >= 0 ? hours : d.cancel_min_hours,
@@ -651,18 +657,14 @@ export function studioInitials(cfg: SiteConfig): string {
   return (words.length > 1 ? words[0][0] + words[1][0] : (words[0] || 'S').slice(0, 1)).toUpperCase();
 }
 
-/** Formatea un importe en la moneda del estudio ("12 €", "€12.00"…). */
-export function formatMoney(amount: number | string, cfg: SiteConfig = getSiteClient(), lang: 'es' | 'en' = 'es'): string {
+/**
+ * Importe en la moneda del estudio con el formato de su país y del idioma de
+ * la página ("12 €" en es-ES, "$549" en es-MX, "$29" en en-US…). Los enteros
+ * van sin decimales (precios de tarifa); para importes exactos usa
+ * formatMoney() de ./money con `decimals`.
+ */
+export function siteMoney(amount: number | string, cfg: SiteConfig = getSiteClient(), lang: 'es' | 'en' = 'es'): string {
   const n = Number(amount);
   if (!Number.isFinite(n)) return '';
-  try {
-    return new Intl.NumberFormat(lang === 'en' ? 'en-GB' : 'es-ES', {
-      style: 'currency',
-      currency: cfg.currency || 'EUR',
-      minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
-      maximumFractionDigits: 2,
-    }).format(n);
-  } catch {
-    return `${n} ${cfg.currency || 'EUR'}`;
-  }
+  return formatMoney(n, cfg.currency, lang, { country: cfg.country, decimals: 'auto' });
 }

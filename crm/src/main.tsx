@@ -10,6 +10,7 @@ import AppUpdater from './components/AppUpdater';
 import { SiteProvider, useSite } from './site/SiteProvider';
 import { fetchPublicSiteConfig } from './site/siteConfig';
 import { setStudioTz } from './site/timezone';
+import { setStudioMoney } from './site/money';
 import { buildTheme } from './theme';
 
 // Tema MUI con los colores y fuentes del estudio (src/theme.ts). Se reconstruye
@@ -42,6 +43,7 @@ function StudioTheme({ App }: { App: ComponentType }) {
 async function bootstrap() {
   const initialConfig = await fetchPublicSiteConfig();
   setStudioTz(initialConfig.timezone);
+  setStudioMoney(initialConfig.currency, initialConfig.country, initialConfig.drop_in_price);
   const { default: App } = await import('./App');
 
   ReactDOM.createRoot(document.getElementById('root')!, {

@@ -10,7 +10,7 @@ import JsonLd from '../seo/JsonLd.astro';
 import FaqList from '../sections/FaqList.astro';
 import { BRAND_CACHE, breadcrumbJsonLd, businessJsonLd, faqJsonLd } from '../../seo/site';
 import { getFaqs, getPlans, getSchedules } from '../../seo/catalog';
-import { formatMoney, getSiteConfig, htmlThemeAttrs } from '../../lib/site';
+import { siteMoney, getSiteConfig, htmlThemeAttrs } from '../../lib/site';
 
 interface Props { lang: 'es' | 'en' }
 const { lang } = Astro.props;
@@ -21,7 +21,7 @@ Astro.response.headers.set('Cache-Control', BRAND_CACHE);
 const [site, plans, faqs, schedules] = await Promise.all([getSiteConfig(), getPlans(), getFaqs('prices'), getSchedules()]);
 const packs = plans.filter((p) => p.type === 'pack');
 const subs = plans.filter((p) => p.type === 'sub').sort((a, b) => Number(a.price_eur) - Number(b.price_eur));
-const money = (n: number) => formatMoney(n, site, lang);
+const money = (n: number) => siteMoney(n, site, lang);
 const dropIn = money(Number(site.drop_in_price));
 const from = subs[0] ? money(Number(subs[0].price_eur)) : '';
 const description = en

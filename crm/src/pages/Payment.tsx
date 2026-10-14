@@ -41,6 +41,7 @@ import ReceiptLongIcon from '@mui/icons-material/ReceiptLong';
 import { PageIntro, HelpTip, EmptyState } from '../components/guide';
 import { friendlyError } from '../utils/errors';
 import { API_BASE_URL } from '../config';
+import { formatMoney, STUDIO_CURRENCY } from '../site/money';
 import { STUDIO_TZ as TZ } from '../site/timezone';
 
 // ====================================================================
@@ -171,14 +172,12 @@ const longDateTimeFmt = new Intl.DateTimeFormat('es-ES', {
   weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: TZ,
 });
 
-function fmtEur(value: number | string): string {
-  const n = Number(value) || 0;
-  return new Intl.NumberFormat('es-ES', {
-    style: 'currency', currency: 'EUR',
-    minimumFractionDigits: Number.isInteger(n) ? 0 : 2,
-    maximumFractionDigits: 2,
-  }).format(n);
+/** Importe con la moneda del pago (los antiguos conservan la suya si el estudio cambió de moneda). */
+function fmtAmount(value: number | string, currency?: string | null): string {
+  return formatMoney(value, currency || STUDIO_CURRENCY, { decimals: 'auto' });
 }
+
+const sameCurrency = (p: Payment) => (p.currency || 'EUR').toUpperCase() === STUDIO_CURRENCY;
 
 function clientName(p: Payment): string {
   if (p.user) {
@@ -326,14 +325,16 @@ export default function PaymentViewer() {
   // ====================================================================
 
   const totals = useMemo(() => {
-    let paid = 0, paidCount = 0, refunded = 0, refundedCount = 0, unfinished = 0;
+    let paid = 0, paidCount = 0, refunded = 0, refundedCount = 0, unfinished = 0, otherCurrency = 0;
     for (const p of payments) {
       const amount = Number(p.amount_eur) || 0;
+      // Los pagos en otra moneda (de antes de cambiarla) no se suman: no se convierten
+      if (!sameCurrency(p) && (p.status === 'succeeded' || p.status === 'refunded')) { otherCurrency += 1; continue; }
       if (p.status === 'succeeded') { paid += amount; paidCount += 1; }
       else if (p.status === 'refunded') { refunded += amount; refundedCount += 1; }
       else if (p.status === 'pending' || p.status === 'requires_action') unfinished += 1;
     }
-    return { paid, paidCount, refunded, refundedCount, unfinished };
+    return { paid, paidCount, refunded, refundedCount, unfinished, otherCurrency };
   }, [payments]);
 
   const countFor = (f: StatusFilter) => {
@@ -381,7 +382,7 @@ export default function PaymentViewer() {
           { title: 'Pulsa «Ver» para el detalle', text: 'Verás quién pagó, cuánto, cuándo y qué significa su estado.' },
         ]}
         tips={[
-          <>Los <b>cobros automáticos de cada mes</b> de las membresías no salen en esta lista (solo el primer pago). Si necesitas verlos, pídeselo a Ulises.</>,
+          <>Los <b>cobros automáticos de cada mes</b> de las membresías no salen en esta lista (solo el primer pago). Si necesitas verlos, pídeselo a soporte técnico.</>,
           <>Los pagos <b>«Sin terminar»</b> no son dinero cobrado: suelen ser personas que abrieron la página de pago y la cerraron.</>,
         ]}
       />
@@ -460,7 +461,7 @@ export default function PaymentViewer() {
             <StatCard
               tone="main"
               label="Cobrado en este periodo"
-              value={fmtEur(totals.paid)}
+              value={fmtAmount(totals.paid)}
               sub={`${totals.paidCount} ${totals.paidCount === 1 ? 'pago' : 'pagos'} cobrados`}
             />
             <StatCard
@@ -470,10 +471,16 @@ export default function PaymentViewer() {
             />
             <StatCard
               label="Devuelto"
-              value={fmtEur(totals.refunded)}
+              value={fmtAmount(totals.refunded)}
               sub={`${totals.refundedCount} ${totals.refundedCount === 1 ? 'devolución' : 'devoluciones'}`}
             />
           </Box>
+          {totals.otherCurrency > 0 && (
+            <Alert severity="info" sx={{ mb: 2 }}>
+              {totals.otherCurrency === 1 ? 'Hay 1 pago' : `Hay ${totals.otherCurrency} pagos`} en otra moneda (de antes de
+              cambiar la moneda del estudio). Se muestran con su moneda y no se suman en los totales de arriba.
+            </Alert>
+          )}
           {truncated && (
             <Alert severity="info" sx={{ mb: 2 }}>
               Hay muchísimos pagos en estas fechas y solo se han cargado los más recientes. Elige un periodo más corto para ver
@@ -552,7 +559,7 @@ export default function PaymentViewer() {
                       <Typography sx={{ fontWeight: 600, color: 'var(--studio-dark)', overflowWrap: 'anywhere' }}>{clientName(p)}</Typography>
                       <Typography sx={{ color: 'text.secondary', fontSize: '0.92rem' }}>{dateTimeFmt.format(new Date(p.created_at))}</Typography>
                     </Box>
-                    <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--studio-dark)', flexShrink: 0 }}>{fmtEur(p.amount_eur)}</Typography>
+                    <Typography sx={{ fontWeight: 700, fontSize: '1.2rem', color: 'var(--studio-dark)', flexShrink: 0 }}>{fmtAmount(p.amount_eur, p.currency)}</Typography>
                   </Stack>
                   <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mt: 1 }}>
                     <StatusChip status={p.status} />
@@ -586,7 +593,7 @@ export default function PaymentViewer() {
                         </Typography>
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700, fontSize: '1.05rem', whiteSpace: 'nowrap' }}>
-                        {fmtEur(p.amount_eur)}
+                        {fmtAmount(p.amount_eur, p.currency)}
                       </TableCell>
                       <TableCell><StatusChip status={p.status} /></TableCell>
                       <TableCell align="right">
@@ -626,7 +633,7 @@ export default function PaymentViewer() {
               <Stack spacing={2}>
                 <Box>
                   <Typography sx={{ fontSize: '2rem', fontWeight: 600, color: 'var(--studio-dark)', lineHeight: 1.1 }}>
-                    {fmtEur(detail.amount_eur)}
+                    {fmtAmount(detail.amount_eur, detail.currency)}
                   </Typography>
                   <Box sx={{ mt: 1 }}><StatusChip status={detail.status} /></Box>
                   <Typography sx={{ mt: 1, color: 'var(--studio-text-strong)' }}>{STATUS_INFO[detail.status]?.text}</Typography>
@@ -668,12 +675,12 @@ export default function PaymentViewer() {
                     sx={{ minHeight: 44, color: 'text.secondary' }}
                     aria-expanded={showRefs}
                   >
-                    Datos para Ulises
+                    Datos para soporte técnico
                   </Button>
                   <Collapse in={showRefs} unmountOnExit>
                     <Paper variant="outlined" sx={{ p: 1.5, borderRadius: 2, mt: 1, fontSize: '0.92rem' }}>
                       <Typography sx={{ color: 'text.secondary', fontSize: 'inherit', mb: 0.75 }}>
-                        Solo hacen falta si Ulises te pide revisar este pago.
+                        Solo hacen falta si soporte técnico te pide revisar este pago.
                       </Typography>
                       <Typography sx={{ fontSize: 'inherit' }}>Nº de pago: <b>{detail.id}</b></Typography>
                       <Typography sx={{ fontSize: 'inherit', fontFamily: 'monospace', overflowWrap: 'anywhere' }}>

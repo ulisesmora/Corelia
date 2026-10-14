@@ -924,7 +924,7 @@ function CheckoutPageInner() {
     if (!isLoggedIn) return (
       <VStack gap={5} align="stretch">
         {/* UX: con el carrito vacío no tiene sentido el formulario de pago
-            ("Continuar · 0,00 €") — guiamos al calendario. */}
+            («Continuar» con importe cero) — guiamos al calendario. */}
         {items.length === 0 ? card(
           <Box textAlign="center" py={6}>
             <Box w="56px" h="56px" borderRadius="full" bg="var(--accent-soft)"

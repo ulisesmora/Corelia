@@ -3,6 +3,7 @@ import { API_BASE_URL } from '../config';
 import { authHeaders } from '../utils/auth';
 import { loadStudioFonts } from './fonts';
 import { setStudioTz } from './timezone';
+import { setStudioMoney } from './money';
 import { DEFAULT_SITE_CONFIG, fetchPublicSiteConfig, type SiteConfigPublic } from './siteConfig';
 
 // Proveedor de la configuración del estudio para todo el panel.
@@ -76,6 +77,8 @@ export function SiteProvider({ children, initialConfig }: SiteProviderProps) {
   const refresh = useCallback(async () => {
     setLoading(true);
     const next = await fetchPublicSiteConfig();
+    // Antes de pintar: los formateadores fuera de React (money()) ya ven la nueva moneda
+    setStudioMoney(next.currency, next.country, next.drop_in_price);
     if (mounted.current) {
       setConfig(next);
       setLoading(false);
@@ -107,6 +110,7 @@ export function SiteProvider({ children, initialConfig }: SiteProviderProps) {
     setFavicon(config.favicon_url || '/api/v1/site-config/icon/32.png?variant=panel');
     loadStudioFonts(config.theme.font_heading, config.theme.font_body);
     setStudioTz(config.timezone);
+    setStudioMoney(config.currency, config.country, config.drop_in_price);
   }, [config]);
 
   const value = useMemo(

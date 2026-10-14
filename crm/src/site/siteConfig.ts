@@ -39,7 +39,12 @@ export interface SiteConfigPublic {
   favicon_url: string;
   contact: SiteContact;
   theme: SiteThemeConfig;
+  /** Moneda del estudio (ISO 4217): EUR, USD, MXN… */
   currency: string;
+  /** País del estudio (ISO-2): formato de los importes (es-ES, es-MX…) */
+  country: string;
+  /** Precio de la clase suelta, en la moneda del estudio (0 = sin poner) */
+  drop_in_price: number;
   cancel_min_hours: number;
   payments_enabled: boolean;
   setup_completed: boolean;
@@ -65,6 +70,8 @@ export const DEFAULT_SITE_CONFIG: SiteConfigPublic = {
     font_body: 'Jost',
   },
   currency: 'EUR',
+  country: 'ES',
+  drop_in_price: 0,
   cancel_min_hours: 12,
   payments_enabled: false,
   setup_completed: false,
@@ -99,7 +106,9 @@ export function normalizeSiteConfig(raw: unknown): SiteConfigPublic {
       font_heading: cleanFontName(t.font_heading as string, d.theme.font_heading),
       font_body: cleanFontName(t.font_body as string, d.theme.font_body),
     },
-    currency: str(r.currency, d.currency),
+    currency: /^[A-Z]{3}$/.test(str(r.currency, '').toUpperCase()) ? str(r.currency, '').toUpperCase() : d.currency,
+    country: [r.country, c.country].map((v) => str(v, '').toUpperCase()).find((v) => /^[A-Z]{2}$/.test(v)) || d.country,
+    drop_in_price: Number.isFinite(Number(r.drop_in_price)) ? Math.max(0, Number(r.drop_in_price)) : 0,
     cancel_min_hours: typeof r.cancel_min_hours === 'number' ? r.cancel_min_hours : d.cancel_min_hours,
     payments_enabled: Boolean(r.payments_enabled),
     setup_completed: Boolean(r.setup_completed),

@@ -74,8 +74,8 @@ export default function Setup() {
         notify('Escribe el nombre de tu estudio.', 'error');
         return;
       }
-      const { studio_name, tagline, logo_url, icon_url, phone, whatsapp, contact_email, instagram, address, city, postal_code, area_served, maps_url } = settings;
-      if (!(await persist({ studio_name: studio_name.trim(), tagline, logo_url, icon_url, phone, whatsapp, contact_email, instagram, address, city, postal_code, area_served, maps_url }))) return;
+      const { studio_name, tagline, logo_url, icon_url, phone, whatsapp, contact_email, instagram, address, city, postal_code, area_served, maps_url, country, currency } = settings;
+      if (!(await persist({ studio_name: studio_name.trim(), tagline, logo_url, icon_url, phone, whatsapp, contact_email, instagram, address, city, postal_code, area_served, maps_url, country, currency }))) return;
     }
     if (step === 1) {
       const { style_preset, icon_style, color_primary, color_secondary, color_dark, color_background, font_heading, font_body } = settings;

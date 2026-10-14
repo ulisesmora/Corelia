@@ -398,7 +398,7 @@ export function track(event: TrackEvent, data: TrackData = {}): void {
           });
         }
         if (fb) {
-          window.fbq?.('track', 'Purchase', { value: value ?? 0, currency: currency || 'EUR' },
+          window.fbq?.('track', 'Purchase', { value: value ?? 0, currency: currency || window.__SITE__?.currency || 'EUR' },
             { eventID: data.transaction_id });
         }
         break;

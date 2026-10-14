@@ -336,7 +336,6 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
     return { plan, classesPerMonth, perClass, saving, extraClasses, months, monthlyPrice, topUpRate, isSub: plan.type === 'sub' };
   }, [freq, kind, rhythm, packs, subs, dropIn]);
 
-  const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2).replace('.', lang === 'en' ? '.' : ','));
 
   const choose = (setter: () => void, next: number) => {
     setter();

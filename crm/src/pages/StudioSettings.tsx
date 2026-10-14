@@ -19,7 +19,7 @@ import { useSite } from '../site/SiteProvider';
 // Pestañas: 0 Mi estudio · 1 Aspecto · 2 Portada · 3 Textos · 4 Preguntas · 5 Opiniones · 6 Google y anuncios · 7 Emails · 8 Avisos al móvil · 9 Pagos · 10 Acceso con Google · 11 Dominio
 const STUDIO_FIELDS = [
   'studio_name', 'logo_url', 'icon_url', 'phone', 'whatsapp', 'contact_email', 'instagram',
-  'address', 'city', 'postal_code', 'area_served', 'maps_url', 'legal_name', 'tax_id',
+  'address', 'city', 'postal_code', 'area_served', 'maps_url', 'country', 'currency', 'legal_name', 'tax_id',
 ] as const;
 const STYLE_FIELDS = ['style_preset', 'icon_style', 'color_primary', 'color_secondary', 'color_dark', 'color_background', 'font_heading', 'font_body'] as const;
 const HERO_FIELDS = ['hero_mode', 'hero_image_url', 'hero_video_url', 'hero_illustration'] as const;

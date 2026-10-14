@@ -18,6 +18,7 @@ import { PhotoPicker } from '../components/guide';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { API_BASE_URL } from '../config';
 import { useStudioWebUrl } from '../site/SiteProvider';
+import { currencySymbol, money } from '../site/money';
 
 interface Category {
   id: number;
@@ -495,7 +496,7 @@ export default function ClassTypeManagement() {
                     </Stack>
                     <Typography sx={{ color: 'var(--studio-text-strong)', fontSize: '0.95rem' }}>
                       Precio: <strong>{credits} {credits === 1 ? 'crédito' : 'créditos'}</strong>
-                      {eur > 0 ? <> o <strong>{eur} €</strong> suelta</> : ' (no se vende suelta con tarjeta)'}
+                      {eur > 0 ? <> o <strong>{money(eur, { decimals: 'auto' })}</strong> suelta</> : ' (no se vende suelta con tarjeta)'}
                     </Typography>
                     <Typography sx={{ color: 'var(--studio-text-body)', fontSize: '0.92rem' }}>
                       Profesor/a habitual: {ct.instructor?.name || 'sin poner'}
@@ -675,7 +676,7 @@ export default function ClassTypeManagement() {
                       value={cur.default_price_eur ?? ''}
                       onChange={(e) => update({ default_price_eur: e.target.value === '' ? undefined : Number(e.target.value) })}
                       inputProps={{ min: 0, step: 0.5 }}
-                      InputProps={{ endAdornment: <InputAdornment position="end">€</InputAdornment> }}
+                      InputProps={{ endAdornment: <InputAdornment position="end">{currencySymbol()}</InputAdornment> }}
                       error={errors.eur}
                       helperText={errors.eur
                         ? 'Pon un precio (0 o más).'

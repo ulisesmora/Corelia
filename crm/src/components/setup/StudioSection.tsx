@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import { PhotoPicker } from '../guide';
 import { API_BASE_URL } from '../../config';
+import LocaleSection from './LocaleSection';
 import type { StudioSettings } from './api';
 
 interface Props {
@@ -111,6 +112,8 @@ export default function StudioSection({ value, onChange, onBusyChange, showLegal
         placeholder="https://maps.app.goo.gl/…"
         helperText="En Google Maps, busca tu estudio → Compartir → Copiar enlace."
       />
+
+      <LocaleSection value={value} onChange={onChange} />
 
       {showLegal && (
         <>

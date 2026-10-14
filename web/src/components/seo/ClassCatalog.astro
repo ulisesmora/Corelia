@@ -3,7 +3,7 @@
 // contenido `fallback` del listado interactivo: se ve hasta que carga React.
 import { classPath, niceTitle, metaDescription, type Lang } from '../../seo/site';
 import { WEEKDAYS, hhmm, tr, type ApiClassType, type ApiSchedule } from '../../seo/catalog';
-import { formatMoney, getSiteConfig } from '../../lib/site';
+import { siteMoney, getSiteConfig } from '../../lib/site';
 
 interface Props {
   lang: Lang;
@@ -24,7 +24,7 @@ for (const it of items) {
   groups.get(key)!.rows.push(it);
 }
 const grouped = [...groups.values()];
-const dropIn = formatMoney(Number(site.drop_in_price), site, lang);
+const dropIn = siteMoney(Number(site.drop_in_price), site, lang);
 
 const Heading = headingLevel;
 ---

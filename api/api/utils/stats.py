@@ -130,10 +130,16 @@ def dashboard_stats(now: datetime | None = None, months: int = 6) -> dict:
     past_attended = [b for b in attended if _mdate(b.start_datetime) <= today]
 
     # ── Ventas ───────────────────────────────────────────────────────────────
-    payments = list(
+    # Solo se suman los pagos en la moneda actual del estudio: si cambió de
+    # moneda, los pagos antiguos no se convierten (ni se mezclan en el total).
+    from api.utils.locale import studio_currency
+    currency = studio_currency()
+    all_payments = list(
         Payment.objects.filter(status='succeeded', created_at__gte=_aware(oldest) - timedelta(days=31))
         .prefetch_related('bookings')
     )
+    payments = [p for p in all_payments if (p.currency or 'EUR').upper() == currency]
+    other_currency_payments = len(all_payments) - len(payments)
     plan_payment_ids = {
         str(pid) for pid in CreditLedgerEntry.objects.filter(
             kind='grant', metadata__has_key='payment_id', created_at__gte=_aware(oldest) - timedelta(days=31),
@@ -314,6 +320,9 @@ def dashboard_stats(now: datetime | None = None, months: int = 6) -> dict:
 
     return {
         'generated_at': now.isoformat(),
+        # Los importes (*_eur, nombre histórico) van en esta moneda
+        'currency': currency,
+        'other_currency_payments': other_currency_payments,
         'period': {
             'label': f"{MONTHS_ES_LONG[this_month.month - 1]} (del 1 al {day_n})",
             'compare_label': f"mismos días de {MONTHS_ES_LONG[prev_month.month - 1]}",

@@ -32,12 +32,14 @@ def fulfill_plan_purchase(session):
         payment = Payment.objects.select_for_update().get(id=payment_id)
         payment_created = False
     except Payment.DoesNotExist:
-        amount_eur = Decimal(session.amount_total) / 100
+        from api.utils.payments import from_stripe_amount, stripe_currency
+        session_currency = session.currency or stripe_currency()
+        amount_eur = from_stripe_amount(session.amount_total, session_currency)
         payment = Payment.objects.create(
             id=payment_id,
             user_id=user_id,
             amount_eur=amount_eur,
-            currency=session.currency.lower(),
+            currency=session_currency.upper(),
             method='stripe',
             raw_response=session
         )

@@ -24,7 +24,7 @@ import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import EditIcon from '@mui/icons-material/Edit';
 import LocalOfferIcon from '@mui/icons-material/LocalOffer';
 import PercentIcon from '@mui/icons-material/Percent';
-import EuroIcon from '@mui/icons-material/Euro';
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import SearchIcon from '@mui/icons-material/Search';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import PauseCircleOutlineIcon from '@mui/icons-material/PauseCircleOutline';
@@ -36,6 +36,7 @@ import { PageIntro, HelpTip, EmptyState, FormStep, useConfirm, useNotify } from 
 import { friendlyError } from '../utils/errors';
 import { API_BASE_URL } from '../config';
 import { STUDIO_TZ as TZ } from '../site/timezone';
+import { currencySymbol, money } from '../site/money';
 
 /** Fecha de fin que usamos para "no caduca nunca" (la API exige una fecha de fin). */
 const NO_END_DATE = '2099-12-31';
@@ -116,13 +117,11 @@ function longDate(day: string): string {
   );
 }
 
+/** Importe en la moneda del estudio ("5 €", "$50"…). */
 function fmtEur(value: number | string | null | undefined): string {
   const n = Number(value);
   if (value === null || value === undefined || value === '' || Number.isNaN(n)) return '—';
-  const opts: Intl.NumberFormatOptions = Number.isInteger(n)
-    ? { maximumFractionDigits: 0 }
-    : { minimumFractionDigits: 2, maximumFractionDigits: 2 };
-  return `${n.toLocaleString('es-ES', opts)} €`;
+  return money(n, { decimals: 'auto' });
 }
 
 function discountText(type: DiscountType, value: number | string): string {
@@ -495,7 +494,7 @@ export default function CouponManagement() {
         }
         steps={[
           { title: 'Pulsa «Crear un cupón»', text: 'Elige el código que escribirán las clientas, por ejemplo VERANO10.' },
-          { title: 'Di cuánto descuenta', text: 'Un porcentaje (10 %) o una cantidad fija (5 €).' },
+          { title: 'Di cuánto descuenta', text: `Un porcentaje (10 %) o una cantidad fija (${fmtEur(5)}).` },
           { title: 'Elige las fechas y cuántas veces se puede usar', text: 'Antes de guardar verás un resumen en una frase.' },
           { title: 'Compártelo', text: 'Pulsa «Copiar» y pégalo en un mensaje, en Instagram o en un aviso a clientas.' },
         ]}
@@ -591,7 +590,7 @@ export default function CouponManagement() {
                       />
                     </Stack>
                     <Typography sx={{ mt: 0.75, fontSize: '1.05rem', color: 'var(--studio-dark)' }}>
-                      {coupon.discount_type === 'percent' ? <PercentIcon sx={{ fontSize: 18, verticalAlign: '-3px', mr: 0.5 }} /> : <EuroIcon sx={{ fontSize: 18, verticalAlign: '-3px', mr: 0.5 }} />}
+                      {coupon.discount_type === 'percent' ? <PercentIcon sx={{ fontSize: 18, verticalAlign: '-3px', mr: 0.5 }} /> : <PaymentsOutlinedIcon sx={{ fontSize: 18, verticalAlign: '-3px', mr: 0.5 }} />}
                       <b>{discountText(coupon.discount_type, coupon.value)}</b>
                       {coupon.discount_type === 'credits' && ' (este tipo no se aplica en la web)'}
                     </Typography>
@@ -673,14 +672,14 @@ export default function CouponManagement() {
                     onClick={() => update({ discount_type: 'percent' })}
                     icon={<PercentIcon />}
                     title="Un porcentaje (%)"
-                    text="Ej.: 10 % → un bono de 50 € se queda en 45 €."
+                    text={`Ej.: 10 % → un bono de ${fmtEur(50)} se queda en ${fmtEur(45)}.`}
                   />
                   <ChoiceCard
                     selected={c.discount_type === 'amount'}
                     onClick={() => update({ discount_type: 'amount' })}
-                    icon={<EuroIcon />}
-                    title="Una cantidad fija (€)"
-                    text="Ej.: 5 € → un bono de 50 € se queda en 45 €."
+                    icon={<PaymentsOutlinedIcon />}
+                    title={`Una cantidad fija (${currencySymbol()})`}
+                    text={`Ej.: ${fmtEur(5)} → un bono de ${fmtEur(50)} se queda en ${fmtEur(45)}.`}
                   />
                 </Stack>
                 {c.discount_type === 'credits' && (
@@ -697,11 +696,11 @@ export default function CouponManagement() {
                   value={c.value}
                   onChange={(e) => update({ value: e.target.value === '' ? '' : Number(e.target.value) })}
                   error={Boolean(errFor('value'))}
-                  helperText={errFor('value') || (c.discount_type === 'percent' ? 'Ej.: 10 (un 10 %)' : 'Ej.: 5 (5 € menos)')}
+                  helperText={errFor('value') || (c.discount_type === 'percent' ? 'Ej.: 10 (un 10 %)' : `Ej.: 5 (${fmtEur(5)} menos)`)}
                   inputProps={{ min: 0, step: c.discount_type === 'percent' ? 1 : 0.5, inputMode: 'decimal' }}
                   slotProps={{
                     input: {
-                      endAdornment: <InputAdornment position="end">{c.discount_type === 'percent' ? '%' : '€'}</InputAdornment>,
+                      endAdornment: <InputAdornment position="end">{c.discount_type === 'percent' ? '%' : currencySymbol()}</InputAdornment>,
                     },
                   }}
                 />
@@ -814,7 +813,7 @@ export default function CouponManagement() {
                 <Collapse in={showAdvanced} unmountOnExit>
                   <Paper variant="outlined" sx={{ p: 2, mt: 1, borderRadius: 3 }}>
                     <Alert severity="warning" sx={{ mb: 2 }}>
-                      No toques esto salvo que te lo pida Ulises. Ahora mismo <b>la web no comprueba estas dos reglas</b>: se
+                      No toques esto salvo que te lo pida soporte técnico. Ahora mismo <b>la web no comprueba estas dos reglas</b>: se
                       guardan por si se activan más adelante.
                     </Alert>
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
@@ -837,7 +836,7 @@ export default function CouponManagement() {
                         error={Boolean(errFor('min_amount_eur'))}
                         helperText={errFor('min_amount_eur') || 'Ej.: 30. Vacío = sin mínimo.'}
                         inputProps={{ min: 0, step: 1, inputMode: 'decimal' }}
-                        slotProps={{ input: { endAdornment: <InputAdornment position="end">€</InputAdornment> } }}
+                        slotProps={{ input: { endAdornment: <InputAdornment position="end">{currencySymbol()}</InputAdornment> } }}
                       />
                     </Stack>
                   </Paper>

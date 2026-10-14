@@ -22,7 +22,7 @@ import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
 import { useAuth } from '../context/AuthContext';
 import { authHeaders } from '../utils/auth';
 import { EmptyState } from '../components/guide';
-import StudioStats, { euro, loadStudioStats, Stats } from '../components/StudioStats';
+import StudioStats, { amount, loadStudioStats, Stats } from '../components/StudioStats';
 import InsightsIcon from '@mui/icons-material/Insights';
 import TodayIcon from '@mui/icons-material/Today';
 import { API_BASE_URL } from '../config';
@@ -345,7 +345,7 @@ export default function Home() {
         >
           <InsightsIcon aria-hidden sx={{ color: 'var(--studio-primary-shade)' }} />
           <Typography sx={{ color: 'var(--studio-dark)', fontSize: '0.98rem', flex: 1, minWidth: 220 }}>
-            Este mes: <b>{euro(stats.kpis.sales_eur)}</b> en ventas por la web ·{' '}
+            Este mes: <b>{amount(stats.kpis.sales_eur)}</b> en ventas por la web ·{' '}
             <b>{stats.kpis.new_clients + stats.kpis.new_guests}</b> clientas nuevas ·{' '}
             <b>{stats.kpis.first_timers}</b> han venido por primera vez
           </Typography>

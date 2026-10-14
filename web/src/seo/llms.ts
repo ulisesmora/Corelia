@@ -8,7 +8,7 @@ import {
   LEVELS, WEEKDAYS, getClassTypes, getFaqs, getInstructors, getPlans, getSchedules, getRooms,
   hhmm, offeredClasses, tr,
 } from './catalog';
-import { formatMoney, getSiteConfig, lt, mapsUrl, socialProfiles } from '../lib/site';
+import { siteMoney, getSiteConfig, lt, mapsUrl, socialProfiles } from '../lib/site';
 
 export async function buildLlmsText(full: boolean): Promise<string> {
   const [site, classes, schedules, plans, faqsHome, faqsPrices, instructors, rooms] = await Promise.all([
@@ -18,7 +18,7 @@ export async function buildLlmsText(full: boolean): Promise<string> {
   const ORIGIN = origin();
   const b = business(site);
   const c = site.contact;
-  const money = (n: number) => formatMoney(n, site, 'en');
+  const money = (n: number) => siteMoney(n, site, 'en');
   const items = offeredClasses(classes, schedules);
   const packs = plans.filter((p) => p.type === 'pack').sort((a, b2) => a.credits - b2.credits);
   const subs = plans.filter((p) => p.type === 'sub').sort((a, b2) => Number(a.price_eur) - Number(b2.price_eur));

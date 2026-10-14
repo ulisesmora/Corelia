@@ -2,7 +2,7 @@
 // Los datos salen de la configuración del estudio (lib/site.ts → panel →
 // Ajustes): si cambia la dirección o el teléfono, se cambia allí, no aquí.
 import { siteOrigin } from '../config';
-import { ICON_URL, addressLine, formatMoney, mapsUrl, socialProfiles, whatsappUrl, type SiteConfig } from '../lib/site';
+import { ICON_URL, addressLine, siteMoney, mapsUrl, socialProfiles, whatsappUrl, type SiteConfig } from '../lib/site';
 import type { ApiFaq, ApiInstructor, ApiPlan, ApiSchedule } from './catalog';
 
 export type Lang = 'es' | 'en';
@@ -125,14 +125,14 @@ export function openingHoursFromSchedules(schedules: ApiSchedule[] | null | unde
     }));
 }
 
-/** Rango de precios ("12 € – 110 €") a partir de la clase suelta y los planes. */
-export function priceRange(site: SiteConfig, plans: ApiPlan[] = []): string {
+/** Rango de precios ("12 € – 110 €", "$12 – $110"…) a partir de la clase suelta y los planes. */
+export function priceRange(site: SiteConfig, plans: ApiPlan[] = [], lang: Lang = 'es'): string {
   const prices = [Number(site.drop_in_price), ...plans.map((p) => Number(p.price_eur))]
     .filter((n) => Number.isFinite(n) && n > 0);
   if (!prices.length) return '';
   const min = Math.min(...prices);
   const max = Math.max(...prices);
-  return min === max ? formatMoney(min, site) : `${formatMoney(min, site)} – ${formatMoney(max, site)}`;
+  return min === max ? siteMoney(min, site, lang) : `${siteMoney(min, site, lang)} – ${siteMoney(max, site, lang)}`;
 }
 
 /** Instructor/a como Person (va dentro de `employee` del negocio). */
@@ -181,7 +181,7 @@ export function businessJsonLd(site: SiteConfig, lang: Lang, extras: BusinessExt
   const c = site.contact;
   const hasAddress = address.streetAddress || address.addressLocality || address.postalCode;
   const hours = openingHoursFromSchedules(extras.schedules);
-  const range = priceRange(site, extras.plans || []);
+  const range = priceRange(site, extras.plans || [], lang);
   // La ficha de Google Business es el mejor «mapa»: enlaza la web con ella
   const map = site.google_business_url || mapsUrl(site);
   return {

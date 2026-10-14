@@ -636,6 +636,14 @@ class Payment(TimeStampedSoftDelete):
         who = self.user_id or self.guest_id
         return f"Payment {self.id} ({self.amount_eur} {self.currency}) -> {who}"
 
+    def save(self, *args, **kwargs):
+        # Siempre el código ISO en mayúsculas (Stripe lo manda en minúsculas). Cada
+        # pago guarda la moneda en la que se cobró: si el estudio cambia de
+        # moneda, los pagos antiguos se siguen mostrando con la suya.
+        # (`amount_eur` es un nombre histórico: el importe va en `currency`.)
+        self.currency = (self.currency or 'EUR').strip().upper()
+        super().save(*args, **kwargs)
+
     
 
 class CreditWallet(TimeStampedSoftDelete):
@@ -1119,6 +1127,9 @@ class SiteConfig(models.Model):
     icon_style = models.CharField(max_length=8, choices=ICON_STYLES, default='line')
 
     # ── Negocio ──
+    # Moneda (ISO 4217) y país (ISO 3166-1, campo `country` de arriba): listas
+    # cerradas en api/utils/locale.py, validadas al guardar desde el panel.
+    # Los precios (*_eur, nombre histórico) están en esta moneda.
     currency = models.CharField(max_length=3, default='EUR')
     drop_in_price = models.DecimalField(max_digits=8, decimal_places=2, default=12,
                                         help_text='Precio de referencia de una clase suelta')

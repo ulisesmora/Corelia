@@ -2,6 +2,23 @@ import { API_BASE_URL } from '../../config';
 import { authHeaders } from '../../utils/auth';
 import { friendlyError } from '../../utils/errors';
 
+/** Moneda que admite el estudio (lista cerrada del API: api/utils/locale.py). */
+export interface CurrencyOption {
+  code: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+}
+
+/** País con la moneda y la zona horaria que se proponen al elegirlo. */
+export interface CountryOption {
+  code: string;
+  name: string;
+  /** '' = su moneda no está entre las admitidas */
+  currency: string;
+  timezone: string;
+}
+
 /** Ajustes completos del estudio tal y como los devuelve GET /api/v1/site-config/ (admin). */
 export interface StudioSettings {
   studio_name: string;
@@ -19,6 +36,7 @@ export interface StudioSettings {
   address: string;
   city: string;
   postal_code: string;
+  /** País (ISO-2): formato de los importes y moneda que se propone */
   country: string;
   maps_url: string;
   latitude: string | null;
@@ -71,6 +89,7 @@ export interface StudioSettings {
   font_body: string;
   style_preset: string;
   icon_style: string;
+  /** Moneda (ISO 4217). Cambiarla NO convierte los precios ya puestos. */
   currency: string;
   drop_in_price: string;
   email_enabled: boolean;
@@ -96,13 +115,18 @@ export interface StudioSettings {
   email_ready: boolean;
   push_devices: number;
   push_clients: number;
+  /** Solo lectura: listas para los selectores de país y moneda */
+  locale_options: { currencies: CurrencyOption[]; countries: CountryOption[] };
+  /** Solo lectura: pagos cobrados por moneda (los antiguos guardan la suya) */
+  payment_currencies: { currency: string; count: number }[];
 }
 
 /** Campos que se pueden escribir (más la contraseña SMTP, que nunca se lee). */
 export type StudioSettingsPatch = Partial<Omit<StudioSettings,
   'has_smtp_password' | 'has_stripe' | 'stripe_mode' | 'webhook_url' | 'api_url' | 'web_url' | 'email_ready'
   | 'default_web_url' | 'default_api_url' | 'push_devices' | 'push_clients'
-  | 'payments_enabled' | 'stripe_publishable_key' | 'hero_video_poster_url' | 'hero_video_id'>> & { smtp_password?: string };
+  | 'payments_enabled' | 'stripe_publishable_key' | 'hero_video_poster_url' | 'hero_video_id'
+  | 'locale_options' | 'payment_currencies'>> & { smtp_password?: string };
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {
@@ -131,7 +155,12 @@ export const sendTestEmail = (body: Record<string, unknown>) =>
   call<{ ok: boolean; to: string }>('v1/site-config/test-email/', { method: 'POST', body: JSON.stringify(body) });
 
 export const connectStripe = (secret_key: string, publishable_key: string) =>
-  call<{ ok: boolean; account_name: string; live_mode: boolean }>('v1/site-config/stripe/', {
+  call<{
+    ok: boolean; account_name: string; live_mode: boolean;
+    /** Moneda en la que Stripe paga al estudio ('' si no se sabe) */
+    stripe_currency?: string;
+    studio_currency?: string;
+  }>('v1/site-config/stripe/', {
     method: 'POST', body: JSON.stringify({ secret_key, publishable_key }),
   });
 

@@ -615,7 +615,7 @@ export default function BroadcastManagement() {
                       </Stack>
                       {st === 'failed' && (
                         <Typography sx={{ mt: 0.75, color: 'error.main', fontSize: '0.92rem' }}>
-                          Este aviso no llegó a salir. Pulsa «Reutilizar» para intentarlo otra vez y, si vuelve a fallar, avisa a Ulises.
+                          Este aviso no llegó a salir. Pulsa «Reutilizar» para intentarlo otra vez y, si vuelve a fallar, avisa a soporte técnico.
                         </Typography>
                       )}
                     </Box>

@@ -22,6 +22,7 @@ import { authHeaders } from '../utils/auth';
 import { API_BASE_URL } from '../config';
 import { STUDIO_TZ as TZ } from '../site/timezone';
 import { useSite, useStudioWebUrl } from '../site/SiteProvider';
+import { money } from '../site/money';
 
 interface Subscription {
   id: number;
@@ -506,7 +507,7 @@ export default function SubscriptionsPage() {
                           {s.plan?.name || '—'}
                           {s.plan?.credits ? (
                             <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
-                              {s.plan.credits} créditos{s.plan.price_eur ? ` · ${String(s.plan.price_eur).replace('.00', '')} €` : ''}
+                              {s.plan.credits} créditos{s.plan.price_eur ? ` · ${money(s.plan.price_eur, { decimals: 'auto' })}` : ''}
                             </Typography>
                           ) : null}
                         </TableCell>
@@ -580,7 +581,7 @@ export default function SubscriptionsPage() {
                   <Select labelId="sub-plan" value={selPlan} label="Membresía" onChange={(e) => setSelPlan(e.target.value as number)}>
                     {plans.map((p) => (
                       <MenuItem key={p.id} value={p.id} disabled={!p.stripe_price_id} sx={{ minHeight: 48 }}>
-                        {p.name} — {p.credits} créditos, {String(p.price_eur).replace('.00', '')} € {planPeriod(p)}
+                        {p.name} — {p.credits} créditos, {money(p.price_eur, { decimals: 'auto' })} {planPeriod(p)}
                         {!p.stripe_price_id ? ' (no disponible: sin conectar a Stripe)' : ''}
                       </MenuItem>
                     ))}

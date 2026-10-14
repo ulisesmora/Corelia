@@ -3,7 +3,7 @@ import { Box, Button, Chip, CircularProgress, Paper, Stack, Typography } from '@
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 import TrendingFlatIcon from '@mui/icons-material/TrendingFlat';
-import EuroIcon from '@mui/icons-material/Euro';
+import PaymentsOutlinedIcon from '@mui/icons-material/PaymentsOutlined';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import EmojiPeopleIcon from '@mui/icons-material/EmojiPeople';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
@@ -13,9 +13,14 @@ import { authHeaders } from '../utils/auth';
 import { EmptyState, HelpTip } from './guide';
 import { API_BASE_URL } from '../config';
 import { useSite } from '../site/SiteProvider';
+import { money } from '../site/money';
 
 export interface ClassRow { title: string; sessions: number; bookings: number; avg_people: number; capacity: number | null; fill_pct: number | null }
 export interface Stats {
+  /** Moneda de los importes (*_eur es un nombre histórico) */
+  currency?: string;
+  /** Pagos del periodo en otra moneda (de antes de cambiarla): no se suman */
+  other_currency_payments?: number;
   period: { label: string; compare_label: string; month_name: string; prev_month_name: string };
   kpis: {
     sales_eur: number; sales_prev_eur: number; sales_change_pct: number | null; sales_prev_full_month_eur: number;
@@ -50,8 +55,8 @@ export function loadStudioStats(force = false): Promise<Stats> {
 
 const dec = (n: number) => String(n).replace('.', ',');
 
-export const euro = (n: number) =>
-  new Intl.NumberFormat('es-ES', { style: 'currency', currency: 'EUR', maximumFractionDigits: n % 1 ? 2 : 0 }).format(n);
+/** Importe en la moneda del estudio, sin decimales si es entero ("120 €", "$549"). */
+export const amount = (n: number) => money(n, { decimals: 'auto' });
 const shortDate = (iso: string) =>
   new Intl.DateTimeFormat('es-ES', { day: 'numeric', month: 'short' }).format(new Date(`${iso}T12:00:00`));
 
@@ -74,7 +79,7 @@ function SectionTitle({ children, help }: { children: ReactNode; help?: ReactNod
   );
 }
 
-function Trend({ cur, prev, unit = '', compare }: { cur: number; prev: number; unit?: string; compare: string }) {
+function Trend({ cur, prev, isMoney = false, compare }: { cur: number; prev: number; isMoney?: boolean; compare: string }) {
   if (!prev && !cur) return <Typography sx={{ fontSize: '0.88rem', color: 'text.secondary' }}>Sin datos para comparar</Typography>;
   const diff = cur - prev;
   const pct = prev ? Math.round((diff / prev) * 100) : null;
@@ -82,14 +87,14 @@ function Trend({ cur, prev, unit = '', compare }: { cur: number; prev: number; u
   const same = diff === 0;
   const color = same ? 'var(--studio-text-muted)' : up ? '#3D6B2E' : '#A0473A';
   const Icon = same ? TrendingFlatIcon : up ? TrendingUpIcon : TrendingDownIcon;
-  const amount = unit === '€' ? euro(Math.abs(diff)) : `${Math.abs(diff)}`;
+  const delta = isMoney ? amount(Math.abs(diff)) : `${Math.abs(diff)}`;
   return (
     <Stack direction="row" spacing={0.5} alignItems="flex-start" sx={{ color }}>
       <Icon sx={{ fontSize: 20, mt: '1px' }} aria-hidden />
       <Typography sx={{ fontSize: '0.88rem', color, lineHeight: 1.4 }}>
         {same
           ? `Igual que en los ${compare}`
-          : `${amount} ${up ? 'más' : 'menos'}${pct !== null ? ` (${up ? '+' : '−'}${Math.abs(pct)} %)` : ''} que en los ${compare}`}
+          : `${delta} ${up ? 'más' : 'menos'}${pct !== null ? ` (${up ? '+' : '−'}${Math.abs(pct)} %)` : ''} que en los ${compare}`}
       </Typography>
     </Stack>
   );
@@ -180,7 +185,7 @@ export default function StudioStats() {
         <EmptyState
           compact
           title="No se han podido cargar las cifras"
-          text="Puede ser la conexión. Si sigue pasando, avisa a Ulises."
+          text="Puede ser la conexión. Si sigue pasando, avisa a soporte técnico."
           action={<Button variant="outlined" startIcon={<RefreshIcon />} onClick={() => load(true)}>Reintentar</Button>}
         />
       </Paper>
@@ -211,22 +216,26 @@ export default function StudioStats() {
       {/* Cifras principales */}
       <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: 'repeat(2, minmax(0, 1fr))', xl: 'repeat(4, minmax(0, 1fr))' }, mb: 2.5 }}>
         <Kpi
-          icon={<EuroIcon />}
+          icon={<PaymentsOutlinedIcon />}
           label="Ventas por la web"
-          value={euro(k.sales_eur)}
+          value={amount(k.sales_eur)}
           help={
             <>
               Todo lo que se ha cobrado por la web este mes: bonos, clases sueltas, altas de membresía y sus cobros
               automáticos. <b>No incluye</b> lo que te pagan en mano o por Bizum. El mes pasado completo fueron{' '}
-              <b>{euro(k.sales_prev_full_month_eur)}</b>.
+              <b>{amount(k.sales_prev_full_month_eur)}</b>.
+              {!!data.other_currency_payments && (
+                <> Hay {data.other_currency_payments} pago{data.other_currency_payments === 1 ? '' : 's'} en otra
+                  moneda (de antes de cambiarla) que no se suman aquí; los ves en Pagos.</>
+              )}
             </>
           }
         >
-          <Trend cur={k.sales_eur} prev={k.sales_prev_eur} unit="€" compare={cmp} />
+          <Trend cur={k.sales_eur} prev={k.sales_prev_eur} isMoney compare={cmp} />
           {Object.keys(k.sales_by_kind).length > 0 && (
             <Stack direction="row" flexWrap="wrap" gap={0.75} sx={{ mt: 0.5 }}>
               {Object.entries(k.sales_by_kind).map(([kind, v]) => (
-                <Chip key={kind} size="small" label={`${KIND_LABEL[kind] || kind}: ${euro(v)}`} />
+                <Chip key={kind} size="small" label={`${KIND_LABEL[kind] || kind}: ${amount(v)}`} />
               ))}
             </Stack>
           )}
@@ -293,7 +302,7 @@ export default function StudioStats() {
               />
             ))}
           </Stack>
-          <MonthBars rows={data.monthly} field={chart} format={chart === 'sales_eur' ? euro : (n) => String(n)} />
+          <MonthBars rows={data.monthly} field={chart} format={chart === 'sales_eur' ? amount : (n) => String(n)} />
         </Paper>
 
         {/* Membresías y retención */}
@@ -308,7 +317,7 @@ export default function StudioStats() {
                 <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>activas</Typography>
               </Box>
               <Box>
-                <Typography sx={{ fontFamily: 'var(--studio-font-heading)', fontSize: '1.7rem', fontWeight: 600 }}>{euro(ms.monthly_recurring_eur)}</Typography>
+                <Typography sx={{ fontFamily: 'var(--studio-font-heading)', fontSize: '1.7rem', fontWeight: 600 }}>{amount(ms.monthly_recurring_eur)}</Typography>
                 <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>ingreso fijo al mes</Typography>
               </Box>
             </Stack>

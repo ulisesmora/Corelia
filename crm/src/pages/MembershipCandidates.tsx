@@ -14,6 +14,7 @@ import { authHeaders } from '../utils/auth';
 import { API_BASE_URL } from '../config';
 import { STUDIO_TZ } from '../site/timezone';
 import { useSite, useStudioWebUrl } from '../site/SiteProvider';
+import { money } from '../site/money';
 
 interface Candidate {
   user_id: number;
@@ -33,7 +34,8 @@ interface Candidate {
   last_emailed: string | null;
 }
 
-const fmt = (n: number) => (Number.isInteger(n) ? String(n) : n.toFixed(2)).replace('.', ',');
+/** Precio en la moneda del estudio ("12,50 €", "$549"…). */
+const fmt = (n: number) => money(n, { decimals: 'auto' });
 const niceDate = (iso: string) => new Date(iso).toLocaleDateString('es-ES', { day: 'numeric', month: 'long', timeZone: STUDIO_TZ });
 
 function suggestedMessage(c: Candidate, studioName: string, webUrl: string): string {
@@ -44,7 +46,7 @@ function suggestedMessage(c: Candidate, studioName: string, webUrl: string): str
     ? `vemos que vienes siempre ${slot.label} 😊`
     : 'vemos que vienes casi todas las semanas 😊';
   const price = cheaper
-    ? ` Con la membresía ${c.plan.name} cada clase te saldría a ${fmt(c.plan.price_per_class)} € en vez de ${fmt(c.current_price_per_class)} €.`
+    ? ` Con la membresía ${c.plan.name} cada clase te saldría a ${fmt(c.plan.price_per_class)} en vez de ${fmt(c.current_price_per_class)}.`
     : '';
   const link = webUrl ? ` Aquí puedes verla: ${webUrl}/prices` : '';
   return `¡Hola ${name}! Te escribimos de ${studioName}, ${habit} ¿Sabías que con la membresía ${c.plan.name} ${
@@ -137,12 +139,12 @@ export default function MembershipCandidates() {
       <>
         <Typography sx={{ fontWeight: 600, fontSize: '0.98rem' }}>{c.plan.name}</Typography>
         <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary' }}>
-          {fmt(c.plan.price)} € {c.plan.months === 1 ? 'al mes' : `cada ${c.plan.months} meses`}
-          {' · '}{fmt(c.plan.price_per_class)} € por clase (ahora paga {fmt(c.current_price_per_class)} €)
+          {fmt(c.plan.price)} {c.plan.months === 1 ? 'al mes' : `cada ${c.plan.months} meses`}
+          {' · '}{fmt(c.plan.price_per_class)} por clase (ahora paga {fmt(c.current_price_per_class)})
         </Typography>
         {cheaper && c.saving_per_month >= 5 && (
           <Chip size="small" color="success" variant="outlined" sx={{ mt: 0.5, fontSize: '0.85rem' }}
-            label={`Ahorraría unos ${Math.round(c.saving_per_month)} € al mes`} />
+            label={`Ahorraría unos ${fmt(Math.round(c.saving_per_month))} al mes`} />
         )}
         {!cheaper && (
           <Chip size="small" variant="outlined" sx={{ mt: 0.5, fontSize: '0.85rem' }} label="No ahorra dinero: háblale de la comodidad" />

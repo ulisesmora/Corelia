@@ -16,7 +16,8 @@ import { API_V1 } from '../config';
 interface StripeEmbeddedFormProps {
   // Pass the necessary data to create the session (e.g., amount, items)
   // For this simple example, just the amount
-  items: CartItem[]; // Amount in the smallest currency unit (e.g., cents for EUR)
+  items: CartItem[];
+  /** Moneda del estudio (solo informativa: el servidor cobra siempre en la suya). */
   currency?: string;
   email: string;
   name: string;
@@ -24,7 +25,7 @@ interface StripeEmbeddedFormProps {
   couponCode: string;
 }
 
-const StripeEmbeddedForm = ({ items, currency = 'eur', email, name, phone, couponCode }: StripeEmbeddedFormProps) => {
+const StripeEmbeddedForm = ({ items, currency, email, name, phone, couponCode }: StripeEmbeddedFormProps) => {
   const t = useT();
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

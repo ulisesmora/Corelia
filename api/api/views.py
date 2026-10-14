@@ -79,6 +79,7 @@ from django.http import HttpResponse
 import csv
 from rest_framework.decorators import action
 from api.utils.site import placeholder_email, web_url
+from api.utils.payments import from_stripe_amount, stripe_currency, to_stripe_amount
 from io import TextIOWrapper
 from django.conf import settings
 
@@ -2211,6 +2212,8 @@ class CreateCheckoutSessionView(APIView):
         line_items = []
         bookings_to_create_data = [] 
         total_price_eur = decimal.Decimal(0)
+        # Todo el dinero va en la moneda del estudio (Ajustes → Mi estudio)
+        currency = stripe_currency()
         
         try:
             guest_email = guest_email.lower()
@@ -2251,16 +2254,17 @@ class CreateCheckoutSessionView(APIView):
                 if price_decimal is None:
                     price_decimal = schedule.class_type.default_price_eur
 
-                # Validar que la clase tenga un precio en EUR
+                # Validar que la clase tenga precio
                 if price_decimal is None or price_decimal <= 0:
                     return Response(
-                        {'error': f'La clase "{schedule.class_type.title}" no tiene un precio en EUR asignado y no se puede comprar.'},
+                        {'error': f'La clase "{schedule.class_type.title}" no tiene precio y no se puede comprar con tarjeta.'},
                         status=status.HTTP_400_BAD_REQUEST
                     )
 
-                # Stripe requiere el precio en centavos (como entero)
+                # Stripe quiere un entero en la unidad mínima de la moneda
+                # (céntimos; las monedas sin decimales como CLP, tal cual)
                 total_price_eur += price_decimal
-                price_in_cents = int(price_decimal * 100)
+                price_in_cents = to_stripe_amount(price_decimal, currency)
 
                 # --- 5. Construir un nombre descriptivo para la pasarela ---
                 product_name = schedule.class_type.title
@@ -2283,7 +2287,7 @@ class CreateCheckoutSessionView(APIView):
                 # --- 6. Añadir el item a la lista para Stripe ---
                 line_items.append({
                     'price_data': {
-                        'currency': 'eur', # Asumimos EUR basado en el campo del modelo
+                        'currency': currency,
                         'product_data': {
                             'name': product_name,
                             # Opcional: puedes añadir la imagen del item.get('image') aquí
@@ -2327,8 +2331,8 @@ class CreateCheckoutSessionView(APIView):
                         final_payment_amount = total_price_eur - discount_amount
 
                     elif coupon_obj.discount_type == 'amount':
-                        stripe_coupon_params['amount_off'] = int(coupon_obj.value * 100) # Centavos
-                        stripe_coupon_params['currency'] = 'eur'
+                        stripe_coupon_params['amount_off'] = to_stripe_amount(coupon_obj.value, currency)
+                        stripe_coupon_params['currency'] = currency
                         final_payment_amount = total_price_eur - coupon_obj.value
 
                     # Crear cupón en Stripe
@@ -2347,7 +2351,7 @@ class CreateCheckoutSessionView(APIView):
                 guest=guest_profile,
                 amount_eur=final_payment_amount,
                 status='pending', # <-- ESTADO PENDIENTE
-                currency='eur',
+                currency=currency.upper(),
                 method='stripe'
             )
             
@@ -2426,7 +2430,7 @@ def _session_amount(session) -> dict:
         currency = session.get('currency') if hasattr(session, 'get') else getattr(session, 'currency', None)
         if total is None:
             return {}
-        return {'amount_total': str(Decimal(total) / 100), 'currency': (currency or '').upper()}
+        return {'amount_total': str(from_stripe_amount(total, currency)), 'currency': (currency or '').upper()}
     except Exception:
         return {}
 
@@ -2533,11 +2537,12 @@ class CreatePlanCheckoutSessionView(APIView):
 
 
         try:
-            price_in_cents = int(plan.price_eur * 100)
+            currency = stripe_currency()
+            price_in_cents = to_stripe_amount(plan.price_eur, currency)
 
             line_items = [{
                 'price_data': {
-                    'currency': 'eur',
+                    'currency': currency,
                     'product_data': {
                         'name': plan.name,
                         'description': f"{plan.credits} créditos" + (f" (Caduca en {plan.credits_expire_days} días)" if plan.credits_expire_days else ""),
@@ -2566,8 +2571,8 @@ class CreatePlanCheckoutSessionView(APIView):
                         final_payment_amount = plan.price_eur - discount_amount
 
                     elif coupon_obj.discount_type == 'amount':
-                        stripe_coupon_params['amount_off'] = int(coupon_obj.value * 100)
-                        stripe_coupon_params['currency'] = 'eur'
+                        stripe_coupon_params['amount_off'] = to_stripe_amount(coupon_obj.value, currency)
+                        stripe_coupon_params['currency'] = currency
                         final_payment_amount = plan.price_eur - coupon_obj.value
 
                     stripe_coupon = stripe.Coupon.create(**stripe_coupon_params)
@@ -2592,7 +2597,7 @@ class CreatePlanCheckoutSessionView(APIView):
                     interval_count = getattr(plan, 'interval_count', None) or 1
                     sub_line_items = [{
                         'price_data': {
-                            'currency': 'eur',
+                            'currency': currency,
                             'product_data': {
                                 'name': plan.name,
                                 'description': f"{plan.credits} créditos/{interval}",
@@ -2629,7 +2634,7 @@ class CreatePlanCheckoutSessionView(APIView):
                     user=user,
                     amount_eur=final_payment_amount,
                     status='pending',
-                    currency='eur',
+                    currency=currency.upper(),
                     method='stripe'
                 )
 
@@ -2799,12 +2804,13 @@ class StripeWebhookView(APIView):
             payment = Payment.objects.select_for_update().get(id=payment_id)
         except Payment.DoesNotExist:
             logger.info("plan.fulfill.payment_missing payment_id=%s — creando registro", payment_id)
-            amount_eur = Decimal(session.get('amount_total')) / 100
+            session_currency = session.get('currency') or stripe_currency()
+            amount_eur = from_stripe_amount(session.get('amount_total'), session_currency)
             payment = Payment.objects.create(
                 id=payment_id,
                 user_id=user_id,
                 amount_eur=amount_eur,
-                currency=session.get('currency', 'eur').lower(),
+                currency=session_currency.upper(),
                 method='stripe',
                 raw_response=session,
             )
@@ -2917,7 +2923,9 @@ class StripeWebhookView(APIView):
             # Actualizar Payment
             payment.status = 'succeeded'
             payment.stripe_payment_intent_id = session.get('payment_intent')
-            payment.amount_eur = Decimal(session.get('amount_total')) / 100
+            session_currency = session.get('currency') or payment.currency
+            payment.amount_eur = from_stripe_amount(session.get('amount_total'), session_currency)
+            payment.currency = session_currency.upper()
             payment.raw_response = session
             payment.save()
 
@@ -2938,7 +2946,7 @@ class StripeWebhookView(APIView):
                     except RecurringSchedule.DoesNotExist:
                         booking.status = 'canceled'
                         booking.save(update_fields=['status', 'updated_at'])
-                        refund_cents += self._booking_price_cents(booking)
+                        refund_cents += self._booking_price_cents(booking, session_currency)
                         if booking.user or booking.guest:
                             not_confirmed.append((booking.user or booking.guest, 'tu clase', booking.start_datetime))
                         continue
@@ -2952,7 +2960,7 @@ class StripeWebhookView(APIView):
                     if reserved_count >= locked_schedule.capacity_max:
                         booking.status = 'canceled'
                         booking.save(update_fields=['status', 'updated_at'])
-                        refund_cents += self._booking_price_cents(booking)
+                        refund_cents += self._booking_price_cents(booking, session_currency)
                         if booking.user or booking.guest:
                             not_confirmed.append(
                                 (booking.user or booking.guest,
@@ -3006,8 +3014,9 @@ class StripeWebhookView(APIView):
             # No lanzamos error para que Stripe deje de enviar el evento, es un error de datos nuestros.
 
     @staticmethod
-    def _booking_price_cents(booking):
-        """Precio en céntimos de EUR de un booking, según su schedule o evento."""
+    def _booking_price_cents(booking, currency):
+        """Precio de un booking en la unidad mínima de Stripe de `currency`
+        (la del cobro), según su schedule o evento."""
         price = None
         if booking.occurrence_id:
             schedule = booking.occurrence
@@ -3020,7 +3029,7 @@ class StripeWebhookView(APIView):
             price = booking.event.price_eur
         if not price or price <= 0:
             return 0
-        return int(Decimal(price) * 100)
+        return to_stripe_amount(price, currency)
 
     @staticmethod
     def _issue_stripe_refund(payment_intent_id, amount_cents, payment_id):
@@ -3033,13 +3042,13 @@ class StripeWebhookView(APIView):
         try:
             stripe.Refund.create(payment_intent=payment_intent_id, amount=amount_cents)
             logger.info(
-                "Refund de %s céntimos emitido en Stripe para Payment %s (bookings sin plaza).",
+                "Refund de %s (unidad mínima de la moneda) emitido en Stripe para Payment %s (bookings sin plaza).",
                 amount_cents, payment_id,
             )
         except Exception:
             # Requiere intervención manual: el cliente pagó por una plaza que no existe.
             logger.critical(
-                "FALLO emitiendo refund de %s céntimos para Payment %s (intent=%s). Reembolsar manualmente.",
+                "FALLO emitiendo refund de %s (unidad mínima) para Payment %s (intent=%s). Reembolsar manualmente.",
                 amount_cents, payment_id, payment_intent_id, exc_info=True,
             )
 
@@ -3105,13 +3114,14 @@ class StripeWebhookView(APIView):
             )
 
             # ── Idempotency guard #2: Payment row ────────────────────────────
-            amount_eur = Decimal(session.get('amount_total', 0)) / 100
+            session_currency = session.get('currency') or stripe_currency()
+            amount_eur = from_stripe_amount(session.get('amount_total', 0), session_currency)
             Payment.objects.get_or_create(
                 stripe_checkout_session_id=checkout_session_id,
                 defaults=dict(
                     user=user,
                     amount_eur=amount_eur,
-                    currency=session.get('currency', 'eur').lower(),
+                    currency=session_currency.upper(),
                     status='succeeded',
                     method='stripe',
                     stripe_payment_intent_id=session.get('payment_intent'),
@@ -3443,12 +3453,13 @@ class VerifyPlanPurchaseView(APIView):
         )
 
         amount_total = getattr(session, 'amount_total', None) or 0
+        session_currency = getattr(session, 'currency', None) or stripe_currency()
         Payment.objects.get_or_create(
             stripe_checkout_session_id=session.get('id') or getattr(session, 'id', None),
             defaults={
                 'user': user,
-                'amount_eur': Decimal(amount_total) / 100,
-                'currency': (getattr(session, 'currency', None) or 'eur').lower(),
+                'amount_eur': from_stripe_amount(amount_total, session_currency),
+                'currency': session_currency.upper(),
                 'status': 'succeeded',
                 'method': 'stripe',
                 'stripe_payment_intent_id': getattr(session, 'payment_intent', None),

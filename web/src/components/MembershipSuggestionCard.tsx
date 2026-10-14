@@ -83,10 +83,7 @@ function logEvent(action: 'shown' | 'clicked' | 'dismissed', channel: 'app' | 'c
   }).catch(() => {});
 }
 
-const fmt = (n: number, es: boolean) =>
-  (Number.isInteger(n) ? String(n) : n.toFixed(2)).replace('.', es ? ',' : '.');
-
-/** Precio en la moneda del estudio: "12,50 €" (es) · "€12.50" (en) con EUR. */
+/** Precio en la moneda del estudio con el formato de su país (formatPrice). */
 const money = (n: number, es: boolean) => formatPrice(n, es ? 'es' : 'en', 'auto');
 
 const WEEKDAYS_EN: Record<string, string> = {

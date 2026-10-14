@@ -34,6 +34,7 @@ import RefreshIcon from '@mui/icons-material/Refresh';
 import { PageIntro, HelpTip, EmptyState, FormStep, useConfirm, useNotify } from '../components/guide';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { friendlyError } from '../utils/errors';
+import { currencySymbol, money, STUDIO_DROP_IN_PRICE } from '../site/money';
 import { API_BASE_URL } from '../config';
 
 // ====================================================================
@@ -102,19 +103,18 @@ const EXPIRE_PRESETS: { label: string; days: number | '' }[] = [
   { label: 'No caducan', days: '' },
 ];
 
-const SINGLE_CLASS_PRICE = 12;
+/** Precio de la clase suelta del estudio (Ajustes; 12 si aún no se ha puesto). */
+const singleClassPrice = () => STUDIO_DROP_IN_PRICE || 12;
 
 // ====================================================================
 // 2. AYUDAS DE FORMATO (precios en español, "cada 2 meses"…)
 // ====================================================================
 
+/** Precio en la moneda del estudio ("12 €", "$549", "$15.990"…). */
 function fmtEur(value: number | string | null | undefined): string {
   const n = Number(value);
   if (value === null || value === undefined || value === '' || Number.isNaN(n)) return '—';
-  const opts: Intl.NumberFormatOptions = Number.isInteger(n)
-    ? { maximumFractionDigits: 0 }
-    : { minimumFractionDigits: 2, maximumFractionDigits: 2 };
-  return `${n.toLocaleString('es-ES', opts)} €`;
+  return money(n, { decimals: 'auto' });
 }
 
 function periodText(interval: string | null | undefined, count: number | null | undefined): string {
@@ -521,7 +521,7 @@ export default function PlanManagement() {
     else if (!Number.isInteger(credits) || credits < 1) e.credits = 'Tiene que ser un número entero, 1 o más.';
     const price = Number(currentPlan.price_eur);
     if (currentPlan.price_eur === '' || currentPlan.price_eur === undefined) e.price_eur = 'Escribe el precio. Ej.: 76';
-    else if (!(price > 0)) e.price_eur = 'El precio tiene que ser mayor que 0 €.';
+    else if (!(price > 0)) e.price_eur = 'El precio tiene que ser mayor que 0.';
     if (currentPlan.type === 'sub') {
       const c = Number(currentPlan.interval_count);
       if (!Number.isInteger(c) || c < 1) e.interval_count = 'Pon 1 o más. Ej.: 2 = cada 2 meses';
@@ -534,7 +534,7 @@ export default function PlanManagement() {
       e.saving = 'No puede ser negativo.';
     }
     if (currentPlan.price_credit !== '' && currentPlan.price_credit != null && Number(currentPlan.price_credit) <= 0) {
-      e.price_credit = 'Tiene que ser mayor que 0 € o quedarse vacío.';
+      e.price_credit = 'Tiene que ser mayor que 0 o quedarse vacío.';
     }
     return e;
   }, [currentPlan]);
@@ -618,7 +618,7 @@ export default function PlanManagement() {
               {stripeLinked && (
                 <Alert severity="warning" sx={{ mt: 1.5 }}>
                   <b>Ojo:</b> esta membresía tiene un precio fijo guardado en el sistema de cobro con tarjeta (Stripe).
-                  La web mostrará el precio nuevo, pero <b>se seguirá cobrando el precio de antes</b> hasta que Ulises lo
+                  La web mostrará el precio nuevo, pero <b>se seguirá cobrando el precio de antes</b> hasta que soporte técnico lo
                   cambie allí. Avísale antes de guardar.
                 </Alert>
               )}
@@ -757,7 +757,7 @@ export default function PlanManagement() {
         tips={[
           <>Si quieres dejar de vender uno, pulsa <b>«Ocultar de la web»</b> en lugar de borrarlo: así puedes volver a ponerlo cuando quieras.</>,
           <>Cambiar el precio de una <b>membresía</b> solo afecta a las clientas nuevas: las que ya la tienen siguen pagando lo mismo.</>,
-          <>Recuerda: una clase de suelo gasta 1 crédito y una de máquinas (Reformer o Chair) gasta 2. La clase suelta cuesta {SINGLE_CLASS_PRICE} €.</>,
+          <>Recuerda: una clase de suelo gasta 1 crédito y una de máquinas (Reformer o Chair) gasta 2. La clase suelta cuesta {fmtEur(singleClassPrice())}.</>,
         ]}
       />
 
@@ -925,7 +925,7 @@ export default function PlanManagement() {
                       error={Boolean(errFor('price_eur'))}
                       helperText={errFor('price_eur') || (cp.type === 'sub' ? 'Lo que se cobra cada vez. Ej.: 76' : 'Lo que paga la clienta. Ej.: 50')}
                       inputProps={{ min: 0, step: 0.5, inputMode: 'decimal' }}
-                      slotProps={{ input: { endAdornment: <InputAdornment position="end">€</InputAdornment> } }}
+                      slotProps={{ input: { endAdornment: <InputAdornment position="end">{currencySymbol()}</InputAdornment> } }}
                     />
                   </Stack>
 
@@ -935,7 +935,7 @@ export default function PlanManagement() {
                         <Typography sx={{ fontWeight: 600, color: 'var(--studio-dark)' }}>¿Cada cuánto se cobra?</Typography>
                         <HelpTip title="Cada cuánto se cobra">
                           «Cada 2 meses» quiere decir que se cobra el precio completo una vez cada dos meses, y en ese
-                          momento la clienta recibe sus créditos. Por ejemplo, Pro: 180 € cada 2 meses = 90 € al mes.
+                          momento la clienta recibe sus créditos. Por ejemplo, Pro: {fmtEur(180)} cada 2 meses = {fmtEur(90)} al mes.
                         </HelpTip>
                       </Stack>
                       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>
@@ -991,7 +991,7 @@ export default function PlanManagement() {
                           {cpPerMonth !== null && <> (= {fmtEur(round2(cpPerMonth))} al mes)</>}.{' '}
                         </>
                       ) : null}
-                      Sale a <b>{fmtEur(cpPerCredit)}</b> por crédito (una clase suelta de suelo cuesta {SINGLE_CLASS_PRICE} €).
+                      Sale a <b>{fmtEur(cpPerCredit)}</b> por crédito (una clase suelta de suelo cuesta {fmtEur(singleClassPrice())}).
                     </Alert>
                   )}
 
@@ -1001,7 +1001,7 @@ export default function PlanManagement() {
                       Number(cp.interval_count) !== Number(originalPlan.interval_count)) && (
                       <Alert severity="warning">
                         <b>Ojo:</b> esta membresía tiene el precio guardado en el sistema de cobro con tarjeta. Si lo cambias
-                        aquí, la web mostrará el precio nuevo pero <b>se seguirá cobrando el de antes</b> hasta que Ulises lo
+                        aquí, la web mostrará el precio nuevo pero <b>se seguirá cobrando el de antes</b> hasta que soporte técnico lo
                         cambie también allí. Avísale.
                       </Alert>
                     )}
@@ -1057,7 +1057,7 @@ export default function PlanManagement() {
                     error={Boolean(errFor('saving'))}
                     helperText={errFor('saving') || 'En la web sale «Ahorras 20». Déjalo vacío para no mostrarlo.'}
                     inputProps={{ min: 0, step: 1, inputMode: 'decimal' }}
-                    slotProps={{ input: { endAdornment: <InputAdornment position="end">€</InputAdornment> } }}
+                    slotProps={{ input: { endAdornment: <InputAdornment position="end">{currencySymbol()}</InputAdornment> } }}
                   />
                   <TextField
                     fullWidth
@@ -1073,7 +1073,7 @@ export default function PlanManagement() {
                         : 'Si lo dejas vacío, la web lo calcula sola.')
                     }
                     inputProps={{ min: 0, step: 0.01, inputMode: 'decimal' }}
-                    slotProps={{ input: { endAdornment: <InputAdornment position="end">€</InputAdornment> } }}
+                    slotProps={{ input: { endAdornment: <InputAdornment position="end">{currencySymbol()}</InputAdornment> } }}
                   />
                 </Stack>
                 {priceCreditMismatch && (
@@ -1122,7 +1122,7 @@ export default function PlanManagement() {
                 </Button>
                 <Collapse in={showAdvanced} unmountOnExit>
                   <Paper variant="outlined" sx={{ p: 2, mt: 1, borderRadius: 3 }}>
-                    <Alert severity="warning" sx={{ mb: 2 }}>No toques esto salvo que te lo pida Ulises.</Alert>
+                    <Alert severity="warning" sx={{ mb: 2 }}>No toques esto salvo que te lo pida soporte técnico.</Alert>
                     {cp.type === 'sub' && (
                       <FormControlLabel
                         control={

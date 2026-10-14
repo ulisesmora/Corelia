@@ -22,6 +22,10 @@ export default function PaymentsSection({ value, onSaved }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [connected, setConnected] = useState('');
+  // Moneda en la que Stripe le paga al estudio, si no coincide con la del estudio
+  const [stripeCurrency, setStripeCurrency] = useState('');
+  const currency = (value.currency || 'EUR').toUpperCase();
+  const currencyName = value.locale_options?.currencies.find((c) => c.code === currency)?.name;
 
   const isHttps = value.api_url?.startsWith('https://');
   const ready = /^pk_(live|test)_/.test(pk.trim()) && /^(sk|rk)_(live|test)_/.test(sk.trim());
@@ -32,6 +36,8 @@ export default function PaymentsSection({ value, onSaved }: Props) {
     try {
       const r = await connectStripe(sk.trim(), pk.trim());
       setConnected(r.account_name);
+      const sc = (r.stripe_currency || '').toUpperCase();
+      setStripeCurrency(sc && sc !== currency ? sc : '');
       setSk('');
       setPk('');
       onSaved(await loadSettings());
@@ -82,6 +88,19 @@ export default function PaymentsSection({ value, onSaved }: Props) {
           </Typography>
         </Box>
       </Stack>
+
+      <Typography color="text.secondary">
+        Cobras en <b>{currencyName ? `${currencyName} (${currency})` : currency}</b>: todos los pagos con tarjeta van en
+        esta moneda. Se cambia en <b>Mi estudio → País y moneda</b>.
+      </Typography>
+
+      {stripeCurrency && (
+        <Alert severity="warning">
+          Tu cuenta de Stripe recibe el dinero en <b>{stripeCurrency}</b> y tu estudio cobra en <b>{currency}</b>.
+          Funciona, pero Stripe convertirá cada pago y cobra una comisión por el cambio. Si tu estudio cobra en{' '}
+          {stripeCurrency}, cámbialo en Mi estudio → País y moneda.
+        </Alert>
+      )}
 
       {value.has_stripe ? (
         <Alert severity="success" action={<Button color="inherit" onClick={disconnect}>Desconectar</Button>}>

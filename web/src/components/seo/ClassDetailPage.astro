@@ -14,7 +14,7 @@ import {
   metaDescription, niceTitle, type Lang,
   robotsContent,
 } from '../../seo/site';
-import { formatMoney, getSiteConfig, htmlThemeAttrs } from '../../lib/site';
+import { siteMoney, getSiteConfig, htmlThemeAttrs } from '../../lib/site';
 import {
   LEVELS, SCHEMA_DAYS, WEEKDAYS, currentWeeklySlots, getClassTypes, getSchedules, hhmm,
   offeredClasses, tr, type ApiClassType,
@@ -37,7 +37,7 @@ const T = {
     home: 'Inicio', classes: 'Clases', where: 'Dónde', schedule: 'Horario', level: 'Nivel', duration: 'Duración',
     price: 'Precio', teacher: 'Profesor/a', every: 'Cada', from: 'de', to: 'a', minutes: 'min',
     credit: (n: number) => (n === 1 ? '1 crédito' : `${n} créditos`),
-    dropIn: `clase suelta ${formatMoney(DROP_IN, site, 'es')}`,
+    dropIn: `clase suelta ${siteMoney(DROP_IN, site, 'es')}`,
     unavailable: 'No disponible por el momento. Mira otras clases o escríbenos.',
     place,
     book: 'Ver días y reservar', all: 'Ver todas las clases', whatsapp: 'Preguntar por WhatsApp',
@@ -49,7 +49,7 @@ const T = {
     home: 'Home', classes: 'Classes', where: 'Where', schedule: 'Schedule', level: 'Level', duration: 'Duration',
     price: 'Price', teacher: 'Teacher', every: 'Every', from: 'from', to: 'to', minutes: 'min',
     credit: (n: number) => (n === 1 ? '1 credit' : `${n} credits`),
-    dropIn: `${formatMoney(DROP_IN, site, 'en')} drop-in`,
+    dropIn: `${siteMoney(DROP_IN, site, 'en')} drop-in`,
     unavailable: 'Not available at the moment. Have a look at our other classes or get in touch.',
     place,
     book: 'See dates and book', all: 'See all classes', whatsapp: 'Ask on WhatsApp',

@@ -636,9 +636,10 @@ def _membership_message(user, a):
             else "tus clases fijas se reservan solas cada semana")
     if plan['price_per_class'] < a['current_price_per_class']:
         # Solo hablamos de precio si de verdad le sale más barato
-        price_line = (f"Con la membresía {plan['name']} cada clase te sale a {plan['price_per_class']:.2f} € "
-                      f"(ahora pagas {a['current_price_per_class']:.2f} €)").replace('.', ',')
-        saving = (f", unos {int(a['saving_per_month'])} € menos al mes" if a['saving_per_month'] >= 5 else '')
+        from api.utils.locale import money
+        price_line = (f"Con la membresía {plan['name']} cada clase te sale a {money(plan['price_per_class'])} "
+                      f"(ahora pagas {money(a['current_price_per_class'])})")
+        saving = (f", unos {money(int(a['saving_per_month']), trim=True)} menos al mes" if a['saving_per_month'] >= 5 else '')
         body = f"{price_line}{saving}, y {auto}."
     else:
         # Si no ahorra, el valor es la comodidad: no prometemos lo que no es

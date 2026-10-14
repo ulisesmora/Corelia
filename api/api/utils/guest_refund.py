@@ -17,7 +17,8 @@ from decimal import Decimal
 logger = logging.getLogger(__name__)
 
 
-def _booking_price_cents(booking):
+def _booking_price(booking):
+    """Precio actual de la reserva (en la moneda del estudio), o None."""
     price = None
     if booking.occurrence_id:
         schedule = booking.occurrence
@@ -29,13 +30,21 @@ def _booking_price_cents(booking):
     elif booking.event_id:
         price = booking.event.price_eur
     if not price or price <= 0:
-        return 0
-    return int(Decimal(price) * 100)
+        return None
+    return Decimal(price)
+
+
+def _booking_price_cents(booking, currency):
+    """Precio en la unidad mínima de Stripe de `currency` (céntimos; CLP tal cual)."""
+    from api.utils.payments import to_stripe_amount
+    price = _booking_price(booking)
+    return to_stripe_amount(price, currency) if price else 0
 
 
 def refund_guest_booking_stripe(booking, reason=''):
     """Devuelve a la tarjeta el precio de la reserva de una invitada.
-    Retorna los céntimos reembolsados (0 si no aplica). Nunca lanza."""
+    Retorna lo reembolsado en la unidad mínima de la moneda del pago
+    (céntimos; en CLP, pesos) o 0 si no aplica. Nunca lanza."""
     import stripe
 
     payment = booking.payment
@@ -50,7 +59,19 @@ def refund_guest_booking_stripe(booking, reason=''):
     if (booking.metadata or {}).get('no_charge'):
         return 0
 
-    price_cents = _booking_price_cents(booking)
+    # El reembolso va en la moneda en la que se COBRÓ. Si el estudio ha
+    # cambiado de moneda después, el precio actual de la clase está en otra
+    # moneda y no se puede comparar: mejor reembolso manual que uno erróneo.
+    from api.utils.locale import studio_currency
+    paid_currency = (payment.currency or 'EUR').upper()
+    if paid_currency != studio_currency():
+        logger.critical(
+            "guest_refund.currency_changed booking_id=%s payment_id=%s paid=%s studio=%s — "
+            "reembolsar a mano: el estudio cambió de moneda después del pago",
+            booking.id, payment.id, paid_currency, studio_currency(),
+        )
+        return 0
+    price_cents = _booking_price_cents(booking, paid_currency)
     if price_cents <= 0:
         return 0
 
@@ -81,8 +102,8 @@ def refund_guest_booking_stripe(booking, reason=''):
             metadata={'booking_id': str(booking.id), 'reason': reason or 'studio_cancellation'},
         )
         logger.info(
-            "guest_refund.issued booking_id=%s guest_id=%s amount_cents=%s intent=%s reason=%r",
-            booking.id, booking.guest_id, amount, intent_id, reason,
+            "guest_refund.issued booking_id=%s guest_id=%s amount_minor=%s currency=%s intent=%s reason=%r",
+            booking.id, booking.guest_id, amount, paid_currency, intent_id, reason,
         )
         return amount
     except Exception:

@@ -1,5 +1,6 @@
 # app/signals.py
 import uuid
+from api.utils.locale import money
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.conf import settings
@@ -114,7 +115,7 @@ def send_payment_confirmation_email(sender, instance: Payment, **kwargs):
             dynamic_data = {
                 "name": user.name or "",
                 "payment_id": str(instance.id),
-                "payment_total": f"€{instance.amount_eur:.2f}", 
+                "payment_total": money(instance.amount_eur, instance.currency), 
                 "payment_date": instance.created_at.strftime("%d/%m/%Y"), 
                 "bookings_list": bookings_data_for_email, 
                 "total_reservas": str(len(bookings_data_for_email)),
@@ -159,7 +160,7 @@ def send_plan_purchase_confirmation_email(sender, instance: Payment, **kwargs):
             "name": user.first_name or "Usuario", # Fallback por seguridad
             "payment_id": str(instance.id),
             "payment_date": instance.created_at.strftime("%d/%m/%Y"), # Ej: 25/10/2023
-            "payment_total": f"€{instance.amount_eur:.2f}",
+            "payment_total": money(instance.amount_eur, instance.currency),
         }
 
         # --- ID DEL TEMPLATE DE SENDGRID ---

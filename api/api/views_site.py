@@ -111,12 +111,31 @@ class SiteConfigSerializer(serializers.ModelSerializer):
     hero_image_url = serializers.CharField(required=False, allow_blank=True, max_length=2000)
     hero_video_url = serializers.CharField(required=False, allow_blank=True, max_length=2000)
     hero_video_id = serializers.SerializerMethodField()
+    # ── País y moneda (listas cerradas: api/utils/locale.py) ──
+    currency = serializers.CharField(required=False, max_length=10)
+    country = serializers.CharField(required=False, max_length=10)
 
     class Meta:
         model = SiteConfig
         exclude = ('id', 'stripe_secret_key', 'stripe_webhook_secret', 'stripe_webhook_id',
                    'vapid_private_key', 'vapid_public_key')
         read_only_fields = ('payments_enabled', 'stripe_publishable_key', 'updated_at', 'hero_video_poster_url')
+
+    # ── País y moneda ──
+    def validate_currency(self, value):
+        from api.utils.locale import CURRENCIES
+        code = (value or '').strip().upper()
+        if code not in CURRENCIES:
+            raise serializers.ValidationError(
+                'Elige una de las monedas de la lista (' + ', '.join(CURRENCIES) + ').')
+        return code
+
+    def validate_country(self, value):
+        from api.utils.locale import COUNTRIES
+        code = (value or '').strip().upper()
+        if code not in COUNTRIES:
+            raise serializers.ValidationError('Elige el país de tu estudio en la lista.')
+        return code
 
     # ── Portada ──
     def validate_hero_image_url(self, value):
@@ -253,6 +272,18 @@ class SiteConfigSerializer(serializers.ModelSerializer):
         return super().update(instance, validated_data)
 
 
+def _payment_currencies() -> list:
+    """[{currency, count}] de los pagos cobrados, por moneda (sin distinguir
+    mayúsculas: los pagos antiguos la guardaban en minúsculas)."""
+    from collections import Counter
+    from api.models import Payment
+    counts = Counter(
+        (c or 'EUR').upper()
+        for c in Payment.objects.filter(status__in=['succeeded', 'refunded']).values_list('currency', flat=True)
+    )
+    return [{'currency': c, 'count': n} for c, n in counts.most_common()]
+
+
 def _web_url():
     from api.utils.site import web_url
     return web_url()
@@ -272,6 +303,7 @@ def _hero_payload(cfg: SiteConfig) -> dict:
 
 
 def public_config_payload(cfg: SiteConfig) -> dict:
+    from api.utils.locale import normalize_country, normalize_currency
     from api.utils.payments import payments_enabled, stripe_keys
     vapid_public, _ = ensure_vapid_keys(cfg)
     return {
@@ -327,7 +359,8 @@ def public_config_payload(cfg: SiteConfig) -> dict:
             'style': cfg.style_preset,
             'icons': cfg.icon_style,
         },
-        'currency': cfg.currency,
+        'currency': normalize_currency(cfg.currency),
+        'country': normalize_country(cfg.country),
         'drop_in_price': str(cfg.drop_in_price),
         'timezone': settings.STUDIO_TIMEZONE,
         'cancel_min_hours': settings.BOOKING_CANCEL_MIN_HOURS,
@@ -378,6 +411,11 @@ class SiteConfigAdminView(APIView):
         subs = PushSubscription.objects.all()
         data['push_devices'] = subs.count()
         data['push_clients'] = subs.values('user_id').distinct().count()
+        # País y moneda: listas para los selectores y pagos ya cobrados en
+        # otras monedas (cambiar la moneda NO convierte importes).
+        from api.utils.locale import locale_options
+        data['locale_options'] = locale_options()
+        data['payment_currencies'] = _payment_currencies()
         return Response(data)
 
     def patch(self, request):
@@ -498,7 +536,13 @@ class SiteConfigStripeView(APIView):
         cfg.save()
         logger.info("site_config.stripe_connected account=%s live=%s admin_id=%s",
                     result['account_id'], result['live_mode'], request.user.id)
-        return Response({'ok': True, 'account_name': result['account_name'], 'live_mode': result['live_mode']})
+        from api.utils.locale import studio_currency
+        return Response({
+            'ok': True, 'account_name': result['account_name'], 'live_mode': result['live_mode'],
+            # Si no coinciden, el panel avisa: Stripe convierte cada cobro (con comisión)
+            'stripe_currency': result.get('default_currency', ''),
+            'studio_currency': studio_currency(),
+        })
 
     def delete(self, request):
         cfg = SiteConfig.load()

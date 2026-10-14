@@ -6,6 +6,7 @@ Las claves salen del panel (SiteConfig) o, como alternativa, de variables de
 entorno. Cada vista de pago llama a stripe_ready() antes de usar stripe.
 """
 import logging
+from decimal import ROUND_HALF_UP, Decimal
 
 import stripe
 from django.conf import settings
@@ -106,6 +107,60 @@ def connect_stripe(secret_key: str, webhook_url: str) -> dict:
         'account_id': account.id,
         'account_name': _account_name(account),
         'live_mode': secret_key.startswith(('sk_live_', 'rk_live_')),
+        # Moneda en la que Stripe le paga al estudio (para avisar si no coincide)
+        'default_currency': str(getattr(account, 'default_currency', '') or '').upper(),
         'webhook_id': endpoint.id,
         'webhook_secret': endpoint.secret,
     }
+
+
+# ─── Importes para Stripe ─────────────────────────────────────────────────────
+# Stripe recibe los importes como ENTEROS en la «unidad mínima» de la moneda:
+# 29,90 € → 2990 (céntimos). Pero las monedas «sin decimales» van tal cual:
+# 15.990 CLP → 15990 (no 1.599.000).
+#
+# Lista oficial de Stripe (https://docs.stripe.com/currencies#zero-decimal,
+# consultada el 14-10-2026): BIF, CLP, DJF, GNF, JPY, KMF, KRW, MGA, PYG, RWF,
+# UGX, VND, VUV, XAF, XOF, XPF.
+#   · De las monedas que admite Corelia, solo CLP es sin decimales.
+#   · COP NO lo es en Stripe: se multiplica por 100 como EUR o USD (Stripe
+#     admite hasta 10 cifras en COP para métodos que no son tarjeta).
+#   · Casos especiales («Special cases» de la misma página): ISK y UGX pasaron
+#     a ser sin decimales, pero por compatibilidad se mandan con dos decimales
+#     siempre «00» (5 UGX → 500). Aquí van en WHOLE_UNITS_TWO_DECIMAL.
+#   · HUF y TWD se cobran con dos decimales (solo las transferencias son
+#     enteras); las monedas de tres decimales (BHD, JOD, KWD, OMR, TND) no
+#     están admitidas.
+ZERO_DECIMAL = frozenset({
+    'BIF', 'CLP', 'DJF', 'GNF', 'JPY', 'KMF', 'KRW', 'MGA', 'PYG', 'RWF',
+    'VND', 'VUV', 'XAF', 'XOF', 'XPF',
+})
+WHOLE_UNITS_TWO_DECIMAL = frozenset({'ISK', 'UGX'})
+
+
+def stripe_currency(currency=None) -> str:
+    """Código de moneda para Stripe (en minúsculas): la del estudio por defecto."""
+    from api.utils.locale import normalize_currency, studio_currency
+    return (normalize_currency(currency) if currency else studio_currency()).lower()
+
+
+def to_stripe_amount(amount, currency) -> int:
+    """Decimal en la moneda → entero en la unidad mínima de Stripe.
+    29.90 EUR → 2990 · 15990 CLP → 15990 · 5 UGX → 500. Redondea al más cercano."""
+    code = str(currency or '').upper()
+    value = Decimal(str(amount if amount is not None else 0))
+    if code in ZERO_DECIMAL:
+        return int(value.quantize(Decimal(1), rounding=ROUND_HALF_UP))
+    if code in WHOLE_UNITS_TWO_DECIMAL:
+        return int(value.quantize(Decimal(1), rounding=ROUND_HALF_UP)) * 100
+    return int((value * 100).quantize(Decimal(1), rounding=ROUND_HALF_UP))
+
+
+def from_stripe_amount(amount, currency) -> Decimal:
+    """Entero de Stripe (unidad mínima) → Decimal en la moneda.
+    2990 EUR → 29.90 · 15990 CLP → 15990."""
+    code = str(currency or '').upper()
+    value = Decimal(int(amount or 0))
+    if code in ZERO_DECIMAL:
+        return value
+    return (value / 100).quantize(Decimal('0.01'))

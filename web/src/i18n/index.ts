@@ -1,3 +1,4 @@
+import { currencySymbol as moneySymbol, formatMoney, formatMoneyParts } from '../lib/money';
 import * as React from "react";
 import type { Dict, Params } from "./types";// o ruta relativa
 import { nav } from "./nav";
@@ -1537,34 +1538,27 @@ export function toLocale(lang: string): string {
 }
 
 /**
- * Precio en la moneda del estudio (config → currency) con el formato de cada
- * idioma. Con EUR: es → "12,50 €"   ·   en → "€12.50".
- * `decimals` = 'auto' quita los decimales si el número es entero.
+ * Precio en la moneda del estudio (config → currency) con el formato de su
+ * país y del idioma: EUR en España → es "12,50 €" · en "€12.50"; MXN en
+ * México → es "$549.00" · en "MX$549.00"; CLP en Chile → "$15.990".
+ * `decimals` = 'auto' quita los decimales si el número es entero (nunca se
+ * ponen más decimales de los que tiene la moneda: CLP no tiene).
  */
 export function formatPrice(value: number | string, lang: string, decimals: number | 'auto' = 2): string {
-  const n = Number(value) || 0;
-  const d = decimals === 'auto' ? (Number.isInteger(n) ? 0 : 2) : decimals;
-  const currency = getSiteClient().currency || 'EUR';
-  try {
-    return new Intl.NumberFormat(toLocale(lang), {
-      style: 'currency', currency, minimumFractionDigits: d, maximumFractionDigits: d,
-    }).format(n);
-  } catch {
-    const num = n.toFixed(d);
-    return lang === 'en' ? `€${num}` : `${num.replace('.', ',')} €`;
-  }
+  const site = getSiteClient();
+  return formatMoney(value, site.currency || 'EUR', lang, { country: site.country, decimals });
 }
 
-/** Símbolo de la moneda del estudio ("€", "$", "£"…) para textos sueltos. */
+/** Precio del estudio en trozos (símbolo y número) para pintarlos con distinto tamaño. */
+export function priceParts(value: number | string, lang: string) {
+  const site = getSiteClient();
+  return formatMoneyParts(value, site.currency || 'EUR', lang, { country: site.country, decimals: 'auto' });
+}
+
+/** Símbolo de la moneda del estudio ("€", "$", "S/"…) para textos sueltos. */
 export function currencySymbol(lang: string = 'es'): string {
-  const currency = getSiteClient().currency || 'EUR';
-  try {
-    const part = new Intl.NumberFormat(toLocale(lang), { style: 'currency', currency })
-      .formatToParts(0).find((p) => p.type === 'currency');
-    return part?.value || currency;
-  } catch {
-    return '€';
-  }
+  const site = getSiteClient();
+  return moneySymbol(site.currency || 'EUR', lang, site.country);
 }
 
 /**
