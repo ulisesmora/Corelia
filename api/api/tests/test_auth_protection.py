@@ -287,7 +287,9 @@ class TurnstileTests(StudioTestCase):
 
     @override_settings(**TURNSTILE_ON)
     def test_guest_checkout_requires_captcha(self):
-        with mock.patch('api.utils.payments.stripe_ready', return_value=True):
+        # el checkout pide antes el Stripe del estudio (stripe_client)
+        with mock.patch('api.utils.payments.stripe_ready', return_value=True), \
+                mock.patch('api.utils.payments.stripe_client', return_value=mock.MagicMock()):
             r = APIClient().post('/api/v1/checkout/create-session/', {'email': 'inv@test.local', 'cart_items': []},
                                  format='json')
         self.assertEqual(r.status_code, 400)

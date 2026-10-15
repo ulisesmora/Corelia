@@ -1170,8 +1170,9 @@ class SubscriptionViewSet(SoftDeleteModelViewSet):
         Marca la suscripción para cancelarse al final del período actual.
         Solo el propietario puede cancelar su propia suscripción.
         """
-        from api.utils.payments import payments_disabled_response, stripe_ready
-        if not stripe_ready():
+        from api.utils.payments import payments_disabled_response, stripe_client
+        client = stripe_client()
+        if client is None:
             return payments_disabled_response()
         subscription = self.get_object()
 
@@ -1196,11 +1197,11 @@ class SubscriptionViewSet(SoftDeleteModelViewSet):
         # Actualizar en Stripe (si existe stripe_subscription_id)
         if subscription.stripe_subscription_id:
             try:
-                stripe.Subscription.modify(
+                client.v1.subscriptions.update(
                     subscription.stripe_subscription_id,
-                    cancel_at_period_end=True,
+                    params={'cancel_at_period_end': True},
                 )
-            except stripe.error.StripeError as e:
+            except stripe.StripeError as e:
                 return Response(
                     {'error': f'Error de Stripe: {str(e)}'},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -1220,8 +1221,9 @@ class SubscriptionViewSet(SoftDeleteModelViewSet):
         """
         Reactiva una suscripción que estaba programada para cancelarse.
         """
-        from api.utils.payments import payments_disabled_response, stripe_ready
-        if not stripe_ready():
+        from api.utils.payments import payments_disabled_response, stripe_client
+        client = stripe_client()
+        if client is None:
             return payments_disabled_response()
         subscription = self.get_object()
 
@@ -1239,11 +1241,11 @@ class SubscriptionViewSet(SoftDeleteModelViewSet):
 
         if subscription.stripe_subscription_id:
             try:
-                stripe.Subscription.modify(
+                client.v1.subscriptions.update(
                     subscription.stripe_subscription_id,
-                    cancel_at_period_end=False,
+                    params={'cancel_at_period_end': False},
                 )
-            except stripe.error.StripeError as e:
+            except stripe.StripeError as e:
                 return Response(
                     {'error': f'Error de Stripe: {str(e)}'},
                     status=status.HTTP_400_BAD_REQUEST,
@@ -2184,8 +2186,9 @@ class CreateCheckoutSessionView(APIView):
     throttle_classes = [scoped('checkout')]
 
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import payments_disabled_response, stripe_ready
-        if not stripe_ready():
+        from api.utils.payments import payments_disabled_response, stripe_client
+        client = stripe_client()
+        if client is None:
             return payments_disabled_response()
         if not request.user.is_authenticated:
             captcha = check_captcha(request)
@@ -2369,7 +2372,7 @@ class CreateCheckoutSessionView(APIView):
                         final_payment_amount = total_price_eur - coupon_obj.value
 
                     # Crear cupón en Stripe
-                    stripe_coupon = stripe.Coupon.create(**stripe_coupon_params)
+                    stripe_coupon = client.v1.coupons.create(params=stripe_coupon_params)
                     stripe_discounts.append({'coupon': stripe_coupon.id})
 
                 except Exception as e:
@@ -2423,17 +2426,19 @@ class CreateCheckoutSessionView(APIView):
 
 
             # --- 7. Crear la Sesión de Checkout en Stripe ---
-            checkout_session = stripe.checkout.Session.create(
-                ui_mode='embedded',
-                line_items=line_items,
-                mode='payment',
-                customer_email=guest_email,
-                discounts=stripe_discounts if stripe_discounts else None,
-                tax_id_collection={'enabled': False},
-                invoice_creation={'enabled': True},
-                metadata={'local_payment_id': new_payment.id},
-                return_url=web_url('/checkout') + '/success?session_id={CHECKOUT_SESSION_ID}',
-                idempotency_key=f"checkout_{new_payment.id}_{uuid.uuid4().hex[:8]}",
+            checkout_session = client.v1.checkout.sessions.create(
+                params={
+                    'ui_mode': 'embedded',
+                    'line_items': line_items,
+                    'mode': 'payment',
+                    'customer_email': guest_email,
+                    'discounts': stripe_discounts if stripe_discounts else None,
+                    'tax_id_collection': {'enabled': False},
+                    'invoice_creation': {'enabled': True},
+                    'metadata': {'local_payment_id': new_payment.id},
+                    'return_url': web_url('/checkout') + '/success?session_id={CHECKOUT_SESSION_ID}',
+                },
+                options={'idempotency_key': f"checkout_{new_payment.id}_{uuid.uuid4().hex[:8]}"},
             )
             
             return Response({'clientSecret': checkout_session.client_secret}, status=status.HTTP_201_CREATED)
@@ -2476,15 +2481,16 @@ class VerifyCheckoutSessionView(APIView):
     permission_classes = [AllowAny] 
 
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import payments_disabled_response, stripe_ready
-        if not stripe_ready():
+        from api.utils.payments import payments_disabled_response, stripe_client
+        client = stripe_client()
+        if client is None:
             return payments_disabled_response()
         session_id = request.data.get('session_id')
         if not session_id:
             return Response({'error': 'No se proporcionó session_id.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            session = stripe.checkout.Session.retrieve(session_id)
+            session = client.v1.checkout.sessions.retrieve(session_id)
 
             if session.payment_status == 'paid':
                 return Response({
@@ -2514,8 +2520,9 @@ class CreatePlanCheckoutSessionView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import payments_disabled_response, stripe_ready
-        if not stripe_ready():
+        from api.utils.payments import payments_disabled_response, stripe_client
+        client = stripe_client()
+        if client is None:
             return payments_disabled_response()
         
         user = request.user
@@ -2608,7 +2615,7 @@ class CreatePlanCheckoutSessionView(APIView):
                         stripe_coupon_params['currency'] = currency
                         final_payment_amount = plan.price_eur - coupon_obj.value
 
-                    stripe_coupon = stripe.Coupon.create(**stripe_coupon_params)
+                    stripe_coupon = client.v1.coupons.create(params=stripe_coupon_params)
                     stripe_discounts.append({'coupon': stripe_coupon.id})
 
                 except Exception as e:
@@ -2657,8 +2664,10 @@ class CreatePlanCheckoutSessionView(APIView):
                 if stripe_discounts:
                     checkout_session_kwargs['discounts'] = stripe_discounts
 
-                checkout_session_kwargs['idempotency_key'] = f"plan_{plan.id}_{user.id}_{uuid.uuid4().hex[:8]}"
-                checkout_session = stripe.checkout.Session.create(**checkout_session_kwargs)
+                checkout_session = client.v1.checkout.sessions.create(
+                    params=checkout_session_kwargs,
+                    options={'idempotency_key': f"plan_{plan.id}_{user.id}_{uuid.uuid4().hex[:8]}"},
+                )
                 return Response({'clientSecret': checkout_session.client_secret}, status=status.HTTP_201_CREATED)
 
             else:
@@ -2698,8 +2707,10 @@ class CreatePlanCheckoutSessionView(APIView):
                 if stripe_discounts:
                     checkout_session_kwargs['discounts'] = stripe_discounts
 
-                checkout_session_kwargs['idempotency_key'] = f"plan_{plan.id}_{user.id}_{uuid.uuid4().hex[:8]}"
-                checkout_session = stripe.checkout.Session.create(**checkout_session_kwargs)
+                checkout_session = client.v1.checkout.sessions.create(
+                    params=checkout_session_kwargs,
+                    options={'idempotency_key': f"plan_{plan.id}_{user.id}_{uuid.uuid4().hex[:8]}"},
+                )
                 return Response({'clientSecret': checkout_session.client_secret}, status=status.HTTP_201_CREATED)
 
         except stripe.StripeError as e:
@@ -2716,27 +2727,76 @@ class CreatePlanCheckoutSessionView(APIView):
 
 
 
+# ─── Lectura de objetos de Stripe según la versión de la API ─────────────────
+# El SDK fija su versión de la API en cada llamada, pero los webhooks llegan con
+# la versión del endpoint (puede ser anterior). Se leen los dos formatos.
+
+def _stripe_field(obj, key):
+    """Campo de un objeto de Stripe (StripeObject es un dict) o de un dict."""
+    if obj is None or isinstance(obj, str):
+        return None
+    try:
+        return obj.get(key)
+    except AttributeError:
+        return getattr(obj, key, None)
+
+
+def _stripe_id(value):
+    """Id de un campo expandible: venga como texto o expandido."""
+    return value if isinstance(value, str) else (_stripe_field(value, 'id') or None)
+
+
+def _invoice_subscription_id(invoice):
+    """Suscripción de una factura: invoice.parent.subscription_details.subscription
+    (API 2025-03-31.basil en adelante) o invoice.subscription (API anterior)."""
+    details = _stripe_field(_stripe_field(invoice, 'parent'), 'subscription_details')
+    return _stripe_id(_stripe_field(details, 'subscription')) or _stripe_id(_stripe_field(invoice, 'subscription'))
+
+
+def _subscription_period(subscription):
+    """(inicio, fin) del período actual en timestamps: arriba en la suscripción
+    (API anterior) o en items.data[0] (API 2025-03-31.basil en adelante)."""
+    start = _stripe_field(subscription, 'current_period_start')
+    end = _stripe_field(subscription, 'current_period_end')
+    if not start or not end:
+        items = _stripe_field(_stripe_field(subscription, 'items'), 'data') or []
+        first = items[0] if items else None
+        start = start or _stripe_field(first, 'current_period_start')
+        end = end or _stripe_field(first, 'current_period_end')
+    return start, end
+
+
+def _subscription_client_secret(subscription):
+    """client_secret para confirmar el primer pago: latest_invoice.confirmation_secret
+    (API 2025-03-31.basil en adelante) o latest_invoice.payment_intent (API anterior)."""
+    invoice = _stripe_field(subscription, 'latest_invoice')
+    for key in ('confirmation_secret', 'payment_intent'):
+        secret = _stripe_field(_stripe_field(invoice, key), 'client_secret')
+        if secret:
+            return secret
+    return None
+
+
 class StripeWebhookView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import stripe_keys, stripe_ready
-        if not stripe_ready():
+        from api.utils.payments import stripe_client, stripe_keys
+        client = stripe_client()
+        if client is None:
             return HttpResponse("Payments disabled", status=503)
         wh_secret = stripe_keys()[2]
         payload = request.body
-        sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
+        sig_header = request.META.get('HTTP_STRIPE_SIGNATURE') or ''
         event = None
 
         # 1. VERIFICAR FIRMA
         try:
-            event = stripe.Webhook.construct_event(
-                payload, sig_header, wh_secret
-            )
+            event = client.construct_event(payload, sig_header, wh_secret)
         except ValueError:
             logger.warning("stripe.webhook.invalid_payload")
             return HttpResponse("Invalid payload", status=400)
-        except stripe.error.SignatureVerificationError:
+        except stripe.SignatureVerificationError:
             logger.warning("stripe.webhook.invalid_signature")
             return HttpResponse("Invalid signature", status=400)
 
@@ -3073,7 +3133,11 @@ class StripeWebhookView(APIView):
             )
             return
         try:
-            stripe.Refund.create(payment_intent=payment_intent_id, amount=amount_cents)
+            from api.utils.payments import stripe_client
+            client = stripe_client()
+            if client is None:
+                raise RuntimeError('Stripe ya no está conectado')
+            client.v1.refunds.create(params={'payment_intent': payment_intent_id, 'amount': amount_cents})
             logger.info(
                 "Refund de %s (unidad mínima de la moneda) emitido en Stripe para Payment %s (bookings sin plaza).",
                 amount_cents, payment_id,
@@ -3181,7 +3245,7 @@ class StripeWebhookView(APIView):
             logger.error("subscription.create.error session=%s error=%s", checkout_session_id, e)
 
     def _handle_invoice_paid(self, invoice):
-        subscription_stripe_id = invoice.get('subscription')
+        subscription_stripe_id = _invoice_subscription_id(invoice)
         if not subscription_stripe_id:
             return
 
@@ -3275,14 +3339,11 @@ class StripeWebhookView(APIView):
         subscription.status = new_status
         subscription.cancel_at_period_end = cancel_at_period_end
 
-        if stripe_subscription.get('current_period_start'):
-            subscription.current_period_start = datetime.fromtimestamp(
-                stripe_subscription['current_period_start'], tz=dt_timezone.utc
-            )
-        if stripe_subscription.get('current_period_end'):
-            subscription.current_period_end = datetime.fromtimestamp(
-                stripe_subscription['current_period_end'], tz=dt_timezone.utc
-            )
+        period_start, period_end = _subscription_period(stripe_subscription)
+        if period_start:
+            subscription.current_period_start = datetime.fromtimestamp(period_start, tz=dt_timezone.utc)
+        if period_end:
+            subscription.current_period_end = datetime.fromtimestamp(period_end, tz=dt_timezone.utc)
 
         subscription.save(update_fields=[
             'status', 'cancel_at_period_end',
@@ -3397,15 +3458,16 @@ class VerifyPlanPurchaseView(APIView):
     permission_classes = [IsAuthenticated]
 
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import payments_disabled_response, stripe_ready
-        if not stripe_ready():
+        from api.utils.payments import payments_disabled_response, stripe_client
+        client = stripe_client()
+        if client is None:
             return payments_disabled_response()
         session_id = request.data.get('session_id')
         if not session_id:
             return Response({'error': 'No se proporcionó session_id.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            session = stripe.checkout.Session.retrieve(session_id)
+            session = client.v1.checkout.sessions.retrieve(session_id)
 
             metadata = session.metadata or {}
             if str(request.user.id) != str(metadata.get('user_id', '')):
@@ -3736,8 +3798,9 @@ class CreateStripeSubscriptionView(APIView):
     permission_classes = [IsAdminUser]
 
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import payments_disabled_response, stripe_ready
-        if not stripe_ready():
+        from api.utils.payments import payments_disabled_response, stripe_client
+        client = stripe_client()
+        if client is None:
             return payments_disabled_response()
         user_id = request.data.get('user_id')
         plan_id = request.data.get('plan_id')
@@ -3770,10 +3833,10 @@ class CreateStripeSubscriptionView(APIView):
 
         try:
             if not user.stripe_customer_id:
-                customer = stripe.Customer.create(
-                    email=user.email,
-                    metadata={'user_id': user.id}
-                )
+                customer = client.v1.customers.create(params={
+                    'email': user.email,
+                    'metadata': {'user_id': user.id},
+                })
                 user.stripe_customer_id = customer.id
                 user.save(update_fields=['stripe_customer_id'])
         except stripe.StripeError as e:
@@ -3783,26 +3846,28 @@ class CreateStripeSubscriptionView(APIView):
             )
 
         try:
-            stripe_subscription = stripe.Subscription.create(
-                customer=user.stripe_customer_id,
-                items=[{'price': plan.stripe_price_id}],
-                metadata={
+            stripe_subscription = client.v1.subscriptions.create(params={
+                'customer': user.stripe_customer_id,
+                'items': [{'price': plan.stripe_price_id}],
+                'metadata': {
                     'user_id': user.id,
                     'plan_id': plan.id,
                 },
-                payment_behavior='default_incomplete',
-                expand=['latest_invoice.payment_intent'],
-            )
+                'payment_behavior': 'default_incomplete',
+                'expand': ['latest_invoice.confirmation_secret'],
+            })
+            period_start, period_end = _subscription_period(stripe_subscription)
 
             subscription = Subscription.objects.create(
                 user=user,
                 plan=plan,
                 status='active' if stripe_subscription.status == 'active' else stripe_subscription.status,
-                current_period_start=datetime.fromtimestamp(
-                    stripe_subscription.current_period_start, tz=dt_timezone.utc
+                current_period_start=(
+                    datetime.fromtimestamp(period_start, tz=dt_timezone.utc) if period_start else timezone.now()
                 ),
-                current_period_end=datetime.fromtimestamp(
-                    stripe_subscription.current_period_end, tz=dt_timezone.utc
+                current_period_end=(
+                    datetime.fromtimestamp(period_end, tz=dt_timezone.utc) if period_end
+                    else timezone.now() + timedelta(days=30)
                 ),
                 stripe_subscription_id=stripe_subscription.id,
                 cancel_at_period_end=False,
@@ -3812,9 +3877,7 @@ class CreateStripeSubscriptionView(APIView):
                 'status': 'success',
                 'subscription_id': subscription.id,
                 'stripe_subscription_id': stripe_subscription.id,
-                'client_secret': stripe_subscription.latest_invoice.payment_intent.client_secret
-                if stripe_subscription.latest_invoice and stripe_subscription.latest_invoice.payment_intent
-                else None,
+                'client_secret': _subscription_client_secret(stripe_subscription),
             }, status=status.HTTP_201_CREATED)
 
         except stripe.StripeError as e:

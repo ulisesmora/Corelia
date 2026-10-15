@@ -3,7 +3,9 @@ desactivados: la web oculta el pago con tarjeta y el estudio vende los
 créditos en persona (se añaden desde el panel → Créditos).
 
 Las claves salen del panel (SiteConfig) o, como alternativa, de variables de
-entorno. Cada vista de pago llama a stripe_ready() antes de usar stripe.
+entorno. Cada vista de pago pide stripe_client(): un StripeClient con la
+clave actual, o None si los pagos están desactivados. Nunca se toca
+`stripe.api_key` (global del proceso): cada llamada lleva su propia clave.
 """
 import logging
 from decimal import ROUND_HALF_UP, Decimal
@@ -37,13 +39,24 @@ def payments_enabled() -> bool:
     return bool(stripe_keys()[0])
 
 
-def stripe_ready() -> bool:
-    """Configura la librería con la clave actual. False = pagos desactivados."""
+def stripe_client():
+    """StripeClient con la clave actual, o None si los pagos están
+    desactivados. Úsalo así:
+
+        client = stripe_client()
+        if client is None:
+            return payments_disabled_response()
+        client.v1.checkout.sessions.create(params={...})
+    """
     secret = stripe_keys()[0]
     if not secret:
-        return False
-    stripe.api_key = secret
-    return True
+        return None
+    return stripe.StripeClient(secret)
+
+
+def stripe_ready() -> bool:
+    """Obsoleto: usa stripe_client(). Ya no configura nada global."""
+    return payments_enabled()
 
 
 def payments_disabled_response():

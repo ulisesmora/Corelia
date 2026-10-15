@@ -152,6 +152,14 @@ class SiteConfigLocaleTests(StudioTestCase):
         self.assertEqual(data['other_currency_payments'], 1)
 
 
+def _fake_stripe(session=None, pi=None):  # simula stripe_client()
+    client = mock.MagicMock()
+    client.v1.checkout.sessions.create.return_value = session
+    client.v1.coupons.create.return_value = SimpleNamespace(id='co_1')
+    client.v1.payment_intents.retrieve.return_value = pi
+    return client
+
+
 class CheckoutCurrencyTests(StudioTestCase):
     """El checkout de Stripe cobra en la moneda del estudio (Stripe simulado)."""
 
@@ -171,18 +179,18 @@ class CheckoutCurrencyTests(StudioTestCase):
 
     def _post(self, **extra):
         session = SimpleNamespace(client_secret='cs_secret_falso', id='cs_test_1')
-        with mock.patch('api.views.stripe.checkout.Session.create', return_value=session) as create, \
-                mock.patch('api.views.stripe.Coupon.create', return_value=SimpleNamespace(id='co_1')) as coupon:
+        fake = _fake_stripe(session)
+        with mock.patch('api.utils.payments.stripe_client', return_value=fake):
             r = APIClient().post('/api/v1/checkout/create-session/', {
                 'email': 'invitada@test.local', 'name': 'Inés', 'cart_items': self._cart(), **extra,
             }, format='json')
-        return r, create, coupon
+        return r, fake.v1.checkout.sessions.create, fake.v1.coupons.create
 
     def test_guest_checkout_uses_studio_currency(self):
         _set_studio(country='MX', currency='MXN')
         r, create, _ = self._post()
         self.assertEqual(r.status_code, 201, r.content)
-        item = create.call_args.kwargs['line_items'][0]['price_data']
+        item = create.call_args.kwargs['params']['line_items'][0]['price_data']
         self.assertEqual(item['currency'], 'mxn')
         self.assertEqual(item['unit_amount'], 54900)
         self.assertEqual(Payment.objects.get().currency, 'MXN')
@@ -193,7 +201,7 @@ class CheckoutCurrencyTests(StudioTestCase):
         self.sched.class_type.save()
         r, create, _ = self._post()
         self.assertEqual(r.status_code, 201, r.content)
-        item = create.call_args.kwargs['line_items'][0]['price_data']
+        item = create.call_args.kwargs['params']['line_items'][0]['price_data']
         self.assertEqual((item['currency'], item['unit_amount']), ('clp', 15990))
 
     def test_fixed_amount_coupon_in_studio_currency(self):
@@ -205,7 +213,7 @@ class CheckoutCurrencyTests(StudioTestCase):
                               valid_from=now - timedelta(days=1), valid_to=now + timedelta(days=30))
         r, _, coupon = self._post(couponCode='MENOS2000')
         self.assertEqual(r.status_code, 201, r.content)
-        params = coupon.call_args.kwargs
+        params = coupon.call_args.kwargs['params']
         self.assertEqual((params['amount_off'], params['currency']), (2000, 'clp'))
         self.assertEqual(Payment.objects.get().amount_eur, Decimal('13990'))
 
@@ -215,10 +223,12 @@ class CheckoutCurrencyTests(StudioTestCase):
         c = APIClient()
         c.force_authenticate(make_client(credits=0))
         session = SimpleNamespace(client_secret='cs_secret_falso', id='cs_test_2')
-        with mock.patch('api.views.stripe.checkout.Session.create', return_value=session) as create:
+        fake = _fake_stripe(session)
+        create = fake.v1.checkout.sessions.create
+        with mock.patch('api.utils.payments.stripe_client', return_value=fake):
             r = c.post('/api/v1/checkout/pay-plan/', {'plan_id': plan.id}, format='json')
         self.assertEqual(r.status_code, 201, r.content)
-        item = create.call_args.kwargs['line_items'][0]['price_data']
+        item = create.call_args.kwargs['params']['line_items'][0]['price_data']
         self.assertEqual((item['currency'], item['unit_amount']), ('usd', 12990))
         self.assertEqual(Payment.objects.get().currency, 'USD')
 
@@ -263,16 +273,16 @@ class GuestRefundCurrencyTests(StudioTestCase):
     def _refund(self):
         from api.utils.guest_refund import refund_guest_booking_stripe
         pi = {'amount_received': 15990, 'latest_charge': {'amount_refunded': 0}}
-        with mock.patch('stripe.PaymentIntent.retrieve', return_value=pi), \
-                mock.patch('stripe.Refund.create') as refund:
+        fake = _fake_stripe(pi=pi)
+        with mock.patch('api.utils.payments.stripe_client', return_value=fake):
             amount = refund_guest_booking_stripe(self.booking, reason='test')
-        return amount, refund
+        return amount, fake.v1.refunds.create
 
     def test_refund_in_zero_decimal_currency(self):
         _set_studio(country='CL', currency='CLP')
         amount, refund = self._refund()
         self.assertEqual(amount, 15990)
-        self.assertEqual(refund.call_args.kwargs['amount'], 15990)
+        self.assertEqual(refund.call_args.kwargs['params']['amount'], 15990)
 
     def test_no_automatic_refund_if_studio_changed_currency(self):
         _set_studio(country='MX', currency='MXN')  # el pago se cobró en CLP

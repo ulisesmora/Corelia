@@ -45,8 +45,6 @@ def refund_guest_booking_stripe(booking, reason=''):
     """Devuelve a la tarjeta el precio de la reserva de una invitada.
     Retorna lo reembolsado en la unidad mínima de la moneda del pago
     (céntimos; en CLP, pesos) o 0 si no aplica. Nunca lanza."""
-    import stripe
-
     payment = booking.payment
     if not booking.guest_id or not payment:
         return 0
@@ -75,14 +73,15 @@ def refund_guest_booking_stripe(booking, reason=''):
     if price_cents <= 0:
         return 0
 
-    from api.utils.payments import stripe_ready
-    if not stripe_ready():
+    from api.utils.payments import stripe_client
+    client = stripe_client()
+    if client is None:
         logger.critical("guest_refund.stripe_disconnected booking_id=%s payment_id=%s — "
                         "reembolsar a mano: Stripe ya no está conectado", booking.id, payment.id)
         return 0
 
     try:
-        pi = stripe.PaymentIntent.retrieve(intent_id, expand=['latest_charge'])
+        pi = client.v1.payment_intents.retrieve(intent_id, params={'expand': ['latest_charge']})
         received = pi.get('amount_received') or 0
         already = 0
         charge = pi.get('latest_charge')
@@ -96,11 +95,11 @@ def refund_guest_booking_stripe(booking, reason=''):
                 booking.id, intent_id, received, already,
             )
             return 0
-        stripe.Refund.create(
-            payment_intent=intent_id,
-            amount=amount,
-            metadata={'booking_id': str(booking.id), 'reason': reason or 'studio_cancellation'},
-        )
+        client.v1.refunds.create(params={
+            'payment_intent': intent_id,
+            'amount': amount,
+            'metadata': {'booking_id': str(booking.id), 'reason': reason or 'studio_cancellation'},
+        })
         logger.info(
             "guest_refund.issued booking_id=%s guest_id=%s amount_minor=%s currency=%s intent=%s reason=%r",
             booking.id, booking.guest_id, amount, paid_currency, intent_id, reason,
