@@ -15,6 +15,7 @@ import { PhotoPicker } from '../components/guide';
 import { authHeaders } from '../utils/auth';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { API_BASE_URL } from '../config';
+import { StepGuide } from '../onboarding';
 
 // ====================================================================
 // PANTALLA "FOTOS DE LA WEB"
@@ -214,6 +215,7 @@ export default function SiteImagesManagement() {
 
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      <StepGuide step="content" />
       <PageIntro
         pageKey="site-images"
         title="Fotos de la web"

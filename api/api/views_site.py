@@ -119,8 +119,9 @@ class SiteConfigSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SiteConfig
+        # setup_steps: se cambia con /api/v1/setup/… (api/setup_guide.py)
         exclude = ('id', 'stripe_secret_key', 'stripe_webhook_secret', 'stripe_webhook_id',
-                   'vapid_private_key', 'vapid_public_key')
+                   'vapid_private_key', 'vapid_public_key', 'setup_steps')
         # require_panel_2fa: se cambia en /api/v1/auth/2fa/policy/ (exige tenerla activada uno mismo)
         read_only_fields = ('payments_enabled', 'stripe_publishable_key', 'updated_at', 'hero_video_poster_url',
                             'require_panel_2fa')
@@ -293,6 +294,20 @@ def _web_url():
     return web_url()
 
 
+def _panel_origins(cfg: SiteConfig) -> list:
+    """Orígenes (esquema://host[:puerto]) desde los que se abre el panel: la
+    dirección que da el servidor y, si lo hay, el dominio propio del panel."""
+    from urllib.parse import urlsplit
+    origins = []
+    for url in (settings.API_URL, f'https://{cfg.panel_domain}' if cfg.panel_domain else ''):
+        parts = urlsplit((url or '').strip())
+        if parts.scheme in ('http', 'https') and parts.netloc:
+            origin = f'{parts.scheme}://{parts.netloc}'
+            if origin not in origins:
+                origins.append(origin)
+    return origins
+
+
 def _hero_payload(cfg: SiteConfig) -> dict:
     from api.utils.youtube import youtube_id
     modes = {m for m, _ in SiteConfig.HERO_MODES}
@@ -379,6 +394,9 @@ def public_config_payload(cfg: SiteConfig) -> dict:
         'vapid_public_key': vapid_public,
         'setup_completed': cfg.setup_completed,
         'site_url': _web_url(),
+        # Orígenes del panel: la web deja que el panel la enseñe dentro de un
+        # marco (vista previa de la guía de puesta en marcha) y a nadie más.
+        'preview_frame_origins': _panel_origins(cfg),
         # Google Business y redes (enlaces públicos)
         **{f: safe_public_url(getattr(cfg, f)) for f in SOCIAL_URL_FIELDS},
         # Verificación de buscadores y analítica/publicidad: IDs públicos que la

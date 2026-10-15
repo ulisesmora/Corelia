@@ -17,6 +17,7 @@ import { authHeaders } from '../utils/auth';
 import { PhotoPicker } from '../components/guide';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { API_BASE_URL } from '../config';
+import { StepGuide, useActionParam } from '../onboarding';
 
 // ====================================================================
 // UTILIDADES
@@ -329,8 +330,12 @@ export default function InstructorManagement() {
   const totalPages = Math.max(1, Math.ceil(filteredInstructors.length / pageSize));
   const ci = currentInstructor;
 
+  // Enlaces directos desde la guía de puesta en marcha (?accion=nueva)
+  useActionParam('nueva', handleOpenCreate);
+
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      <StepGuide step="instructors" />
       <PageIntro
         pageKey="instructors"
         title="Instructores"

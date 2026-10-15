@@ -1,4 +1,16 @@
 import type { SvgIconProps } from '@mui/material';
+import PaletteIcon from '@mui/icons-material/Palette';
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined';
+import PaletteRoundedIcon from '@mui/icons-material/PaletteRounded';
+import StorefrontIcon from '@mui/icons-material/Storefront';
+import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
+import StorefrontRoundedIcon from '@mui/icons-material/StorefrontRounded';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
+import RocketLaunchOutlinedIcon from '@mui/icons-material/RocketLaunchOutlined';
+import RocketLaunchRoundedIcon from '@mui/icons-material/RocketLaunchRounded';
+import TravelExploreIcon from '@mui/icons-material/TravelExplore';
+import TravelExploreOutlinedIcon from '@mui/icons-material/TravelExploreOutlined';
+import TravelExploreRoundedIcon from '@mui/icons-material/TravelExploreRounded';
 import ErrorOutlineRoundedIcon from '@mui/icons-material/ErrorOutlineRounded';
 import AddCircleOutlineRoundedIcon from '@mui/icons-material/AddCircleOutlineRounded';
 import HelpOutlineRoundedIcon from '@mui/icons-material/HelpOutlineRounded';
@@ -201,6 +213,11 @@ const ICONS = {
   stats: [InsightsIcon, InsightsOutlinedIcon, InsightsRoundedIcon, InsightsIcon],
   today: [TodayIcon, TodayOutlinedIcon, TodayRoundedIcon, TodayIcon],
   celebrate: [CelebrationOutlinedIcon, CelebrationOutlinedIcon, CelebrationRoundedIcon, CelebrationIcon],
+  // Guía de puesta en marcha
+  studio: [StorefrontIcon, StorefrontOutlinedIcon, StorefrontRoundedIcon, StorefrontIcon],
+  style: [PaletteIcon, PaletteOutlinedIcon, PaletteRoundedIcon, PaletteIcon],
+  google: [TravelExploreIcon, TravelExploreOutlinedIcon, TravelExploreRoundedIcon, TravelExploreIcon],
+  launch: [RocketLaunchIcon, RocketLaunchOutlinedIcon, RocketLaunchRoundedIcon, RocketLaunchIcon],
 } satisfies Record<string, [IconComp, IconComp, IconComp, IconComp]>;
 
 export type StudioIconName = keyof typeof ICONS;

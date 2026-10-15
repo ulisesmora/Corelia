@@ -397,6 +397,23 @@ export function isFallbackSite(cfg: SiteConfig): boolean {
   return cfg === DEFAULT_SITE;
 }
 
+// Orígenes del panel del estudio (preview_frame_origins del API): pueden
+// enseñar la web dentro de un marco (vista previa de la guía de puesta en
+// marcha). Van aparte de SiteConfig para no copiarlos en cada página
+// (window.__SITE__): solo los usa el middleware en la cabecera frame-ancestors.
+let frameOrigins: string[] = [];
+const ORIGIN = /^https?:\/\/[a-z0-9.-]+(?::\d{1,5})?$/i;
+
+function cleanOrigins(v: unknown): string[] {
+  return Array.isArray(v) ? v.filter((o): o is string => typeof o === 'string' && ORIGIN.test(o)).slice(0, 4) : [];
+}
+
+/** Orígenes del panel que pueden enmarcar la web (tras cargar la config). */
+export async function getPreviewFrameOrigins(): Promise<string[]> {
+  await getSiteConfig();
+  return frameOrigins;
+}
+
 /** Config del estudio para el servidor. Nunca lanza: si falla, valores por defecto. */
 export async function getSiteConfig(): Promise<SiteConfig> {
   if (cached && Date.now() - cached.at < cached.ttl) return cached.data;
@@ -411,7 +428,9 @@ export async function getSiteConfig(): Promise<SiteConfig> {
       });
       clearTimeout(timer);
       if (!res.ok) throw new Error(`site-config ${res.status}`);
-      const data = normalizeSite(await res.json());
+      const raw = await res.json();
+      frameOrigins = cleanOrigins(raw?.preview_frame_origins);
+      const data = normalizeSite(raw);
       cached = { at: Date.now(), ttl: TTL_MS, data };
       return data;
     } catch {

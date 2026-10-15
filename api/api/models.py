@@ -1179,8 +1179,17 @@ class SiteConfig(models.Model):
         default=False,
         help_text='Exigir la verificación en dos pasos (código del móvil) a todas las personas que entran en el panel.')
 
-    # ── Asistente de bienvenida ──
+    # ── Puesta en marcha ──
+    # setup_completed = «web publicada»: la web se deja indexar en buscadores
+    # (robots.txt y <meta robots> de la web). En los estudios nuevos se pone a
+    # True con «Publicar mi web» (POST /api/v1/setup/publish/), que exige los
+    # pasos mínimos de la guía (api/setup_guide.py). Los estudios que ya lo
+    # tenían en True siguen igual.
     setup_completed = models.BooleanField(default=False)
+    # Pasos de la guía que no se pueden deducir de los datos: el asistente de
+    # bienvenida terminado, «me gusta este estilo», pasos opcionales saltados…
+    # {"welcome": "done", "style": "done", "google": "skipped", …}
+    setup_steps = models.JSONField(default=dict, blank=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:

@@ -279,8 +279,9 @@ export function envNoindex(): boolean {
 }
 
 /**
- * El estudio todavía no debe salir en buscadores: no ha terminado el asistente
- * de bienvenida (la web aún tiene textos y datos de ejemplo) o NOINDEX=1.
+ * El estudio todavía no debe salir en buscadores: no ha publicado su web desde
+ * la guía de puesta en marcha (aún le faltan clases, horario o precios, o
+ * tiene textos de ejemplo) o NOINDEX=1.
  */
 export function siteNoindex(site: SiteConfig): boolean {
   return !site.setup_completed || envNoindex();

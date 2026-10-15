@@ -10,6 +10,7 @@ import StudioIcon from '../site/StudioIcon';
 import StudioStats, { amount, loadStudioStats, Stats } from '../components/StudioStats';
 import { API_BASE_URL } from '../config';
 import { STUDIO_TZ as TZ } from '../site/timezone';
+import { HomeProgressCard } from '../onboarding';
 
 interface Booking {
   id: number;
@@ -288,6 +289,9 @@ export default function Home() {
       <Typography sx={{ color: 'text.secondary', fontSize: '1.05rem', mb: 3 }}>
         Elige abajo lo que quieres hacer. Si te pierdes, pulsa <b>Ayuda</b> arriba a la derecha en cualquier pantalla.
       </Typography>
+
+      {/* Puesta en marcha: «N de 11 pasos» (desaparece cuando todo está hecho) */}
+      <HomeProgressCard />
 
       {/* Buscar clienta */}
       <Paper component="form" onSubmit={search} elevation={0} sx={{ p: { xs: 2, md: 2.5 }, mb: 3, borderRadius: 4, border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)' }}>

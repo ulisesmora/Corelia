@@ -11,7 +11,10 @@
 //    de Meta, Microsoft Clarity, YouTube sin cookies, OpenStreetMap, «Entrar
 //    con Google», Turnstile y Google Fonts. Cuando lleve tiempo sin avisos se
 //    puede pasar a Content-Security-Policy (bloqueante) con CSP_ENFORCE=1.
+//  - frame-ancestors (siempre aplicado): solo la propia web y el panel del
+//    estudio pueden enseñarla dentro de un marco (vista previa del panel).
 import { defineMiddleware } from 'astro:middleware';
+import { getPreviewFrameOrigins } from './lib/site';
 
 function env(name: string): string {
   const e = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
@@ -41,16 +44,26 @@ const CSP = [
   "form-action 'self' https://checkout.stripe.com",
   "base-uri 'self'",
   "object-src 'none'",
-  "frame-ancestors 'self'",
-].join('; ');
+];
 
-function securityHeaders(request: Request): Record<string, string> {
+/**
+ * Quién puede enseñar la web dentro de un marco: ella misma y el panel del
+ * estudio (vista previa de la guía de puesta en marcha). Va en una cabecera
+ * Content-Security-Policy que SÍ se aplica (también en modo informe), así
+ * que sustituye a X-Frame-Options sin perder la protección contra clickjacking.
+ */
+function frameAncestors(panelOrigins: string[]): string {
+  return ["frame-ancestors 'self'", ...panelOrigins].join(' ');
+}
+
+function securityHeaders(request: Request, panelOrigins: string[]): Record<string, string> {
   const h: Record<string, string> = {
     'X-Content-Type-Options': 'nosniff',
     'Referrer-Policy': 'strict-origin-when-cross-origin',
-    'X-Frame-Options': 'SAMEORIGIN',
     'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
   };
+  // Sin panel conocido (o fuera de páginas HTML): la cabecera clásica basta
+  if (!panelOrigins.length) h['X-Frame-Options'] = 'SAMEORIGIN';
   const proto = (request.headers.get('x-forwarded-proto') || new URL(request.url).protocol.replace(':', ''))
     .split(',')[0].trim();
   if (proto === 'https') {
@@ -61,9 +74,18 @@ function securityHeaders(request: Request): Record<string, string> {
 
 export const onRequest = defineMiddleware(async (context, next) => {
   let response = await next();
-  const headers = securityHeaders(context.request);
   const isHtml = (response.headers.get('content-type') || '').includes('text/html');
-  if (isHtml) headers[env('CSP_ENFORCE') === '1' ? 'Content-Security-Policy' : 'Content-Security-Policy-Report-Only'] = CSP;
+  const panelOrigins = isHtml ? await getPreviewFrameOrigins().catch(() => []) : [];
+  const headers = securityHeaders(context.request, panelOrigins);
+  if (isHtml) {
+    const ancestors = frameAncestors(panelOrigins);
+    if (env('CSP_ENFORCE') === '1') {
+      headers['Content-Security-Policy'] = [...CSP, ancestors].join('; ');
+    } else {
+      headers['Content-Security-Policy-Report-Only'] = CSP.join('; ');
+      if (panelOrigins.length) headers['Content-Security-Policy'] = ancestors;
+    }
+  }
   try {
     for (const [k, v] of Object.entries(headers)) response.headers.set(k, v);
   } catch {

@@ -6,6 +6,7 @@ export { default as FormStep } from './FormStep';
 export { ConfirmProvider, useConfirm } from './ConfirmProvider';
 export type { ConfirmOptions } from './ConfirmProvider';
 export { NotifyProvider, useNotify } from './NotifyProvider';
+export { NOTIFY_SUCCESS_EVENT } from './events';
 export { PhotoPicker } from './PhotoPicker';
 export { default as ResponsiveTable } from './ResponsiveTable';
 export { default as SectionTabs } from './SectionTabs';

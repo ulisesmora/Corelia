@@ -28,6 +28,7 @@ import { authHeaders } from '../utils/auth';
 import { useSite } from '../site/SiteProvider';
 import StudioLogo from '../site/StudioLogo';
 import StudioIcon from '../site/StudioIcon';
+import { GUIDE_PATH, GUIDE_UI, useSetupProgress } from '../onboarding';
 
 const DRAWER_WIDTH = 290;
 // Menú encogido (solo iconos) en ordenador
@@ -133,6 +134,19 @@ export default function MainLayout() {
   }, []);
   const mustSetup2fa = Boolean(user?.two_factor_setup_required) && location.pathname !== '/seguridad';
   const { config } = useSite();
+  const { progress } = useSetupProgress();
+
+  // «Puesta en marcha»: arriba del todo mientras la web no está publicada;
+  // después, en Ajustes (por si se quiere repasar algún paso opcional).
+  const guideItem: MenuItem = {
+    text: GUIDE_UI.guideTitle,
+    hint: progress ? GUIDE_UI.progress(progress.done_count, progress.total) : GUIDE_UI.menuHint,
+    icon: <StudioIcon name="launch" />,
+    path: GUIDE_PATH,
+  };
+  const menuSections = progress && !progress.published
+    ? [{ ...MENU_SECTIONS[0], items: [...MENU_SECTIONS[0].items, guideItem] }, ...MENU_SECTIONS.slice(1)]
+    : MENU_SECTIONS.map((sec, i) => (i === MENU_SECTIONS.length - 1 ? { ...sec, items: [guideItem, ...sec.items] } : sec));
 
   const drawerContent = (compact: boolean, showMiniToggle = false) => (
     <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
@@ -157,7 +171,7 @@ export default function MainLayout() {
       <Divider sx={{ mx: 2.5 }} />
 
       <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 1.5 }}>
-        {MENU_SECTIONS.map((section) => (
+        {menuSections.map((section) => (
           <Box key={section.title} sx={{ mb: 1 }}>
             {compact && section.title && <Divider sx={{ mx: 2, my: 1 }} />}
             {!compact && section.title && <Typography

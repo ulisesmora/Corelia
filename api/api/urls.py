@@ -15,6 +15,7 @@ from .views import (
     PlanViewSet, SubscriptionViewSet, CouponViewSet, CouponRedemptionViewSet,
     BookingViewSet, LeadViewSet, GoogleLoginView, ClassOccurrenceViewSet,
 )
+from .setup_guide import SetupClassTemplatesView, SetupProgressView, SetupPublishView, SetupStepView
 from .views_security import (
     TwoFactorConfirmView, TwoFactorDisableView, TwoFactorPolicyView, TwoFactorRecoveryCodesView,
     TwoFactorSetupView, TwoFactorStatusView, TwoFactorVerifyView,
@@ -53,6 +54,8 @@ router.register(r'faqs', FAQItemViewSet)
 router.register(r'testimonials', TestimonialViewSet)
 
 urlpatterns = [
+    # Antes que el router: si no, `subscriptions/<pk>/` captura «create-stripe» (405).
+    path('v1/subscriptions/create-stripe/', CreateStripeSubscriptionView.as_view(), name='create-stripe-subscription'),
     path('v1/', include(router.urls)),  # Namespace the router URLs under 'api/'
     path('signup/', SignUpView.as_view(), name='signup'),
     path('signin/', SignInView.as_view(), name='signin'),
@@ -85,6 +88,11 @@ urlpatterns = [
     path('v1/site-config/og.png', SiteOgImageView.as_view(), name='site-og-image'),
     path('v1/site-config/badge.png', SiteBadgeView.as_view(), name='site-badge'),
     path('v1/site-config/check-domain/', SiteConfigCheckDomainView.as_view(), name='site-config-check-domain'),
+    # Guía de puesta en marcha (api/setup_guide.py)
+    path('v1/setup/progress/', SetupProgressView.as_view(), name='setup-progress'),
+    path('v1/setup/steps/<slug:key>/', SetupStepView.as_view(), name='setup-step'),
+    path('v1/setup/publish/', SetupPublishView.as_view(), name='setup-publish'),
+    path('v1/setup/class-templates/', SetupClassTemplatesView.as_view(), name='setup-class-templates'),
     path('v1/me/membership-suggestion/', MembershipSuggestionView.as_view(), name='membership-suggestion'),
     path('v1/me/membership-suggestion/event/', MembershipNudgeEventView.as_view(), name='membership-suggestion-event'),
     path('v1/stats/dashboard/', DashboardStatsView.as_view(), name='dashboard-stats'),
@@ -100,7 +108,6 @@ urlpatterns = [
     path('v1/checkleads/check-email/', CheckLeadEmailView.as_view(), name='check-lead-email'),
     path('v1/checkleads/update-by-email/', UpdateLeadByEmailView.as_view(), name='update-lead-by-email'),
     path('v1/webhooks/listener/', StripeWebhookView.as_view(), name='webhook_listener'),
-    path('v1/subscriptions/create-stripe/', CreateStripeSubscriptionView.as_view(), name='create-stripe-subscription'),
     path('v1/my-class-preferences/', UserClassPreferenceViewSet.as_view({'get': 'list', 'post': 'create'}), name='my-class-preferences'),
     path('v1/my-class-preferences/<int:pk>/', UserClassPreferenceViewSet.as_view({'delete': 'destroy', 'patch': 'partial_update'}), name='my-class-preferences-detail'),
     path('v1/users/<int:user_id>/class-preferences/', UserClassPreferenceViewSet.as_view({'get': 'for_user', 'post': 'for_user', 'delete': 'for_user'}), name='user-class-preferences'),

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link as RouterLink } from 'react-router-dom';
 import {
   Alert, Box, Button, Chip, Divider, IconButton, InputAdornment, Link, Stack, TextField, Tooltip, Typography,
 } from '@mui/material';
@@ -128,8 +129,9 @@ export default function MarketingSection({ value, onChange }: Props) {
         {value.setup_completed ? (
           <>Tu web <b>ya se puede encontrar en Google</b> y en los asistentes de IA (ChatGPT, Gemini…).</>
         ) : (
-          <>Tu web <b>todavía no aparece en Google</b>: se activa sola cuando terminas el asistente de bienvenida,
-            para que no se indexen los textos de ejemplo.</>
+          <>Tu web <b>todavía no aparece en Google</b>: se activa cuando pulsas «Publicar mi web» al final de la{' '}
+            <Link component={RouterLink} to="/puesta-en-marcha?paso=launch">guía de puesta en marcha</Link>, para que no
+            se indexen datos a medio hacer.</>
         )}
       </Alert>
 

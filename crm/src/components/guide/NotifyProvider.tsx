@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useCallback, useContext, useState } from 'react';
 import { Alert, Snackbar } from '@mui/material';
+import { NOTIFY_SUCCESS_EVENT } from './events';
 
 type Severity = 'success' | 'error' | 'info' | 'warning';
 type NotifyFn = (message: ReactNode, severity?: Severity) => void;
@@ -18,6 +19,7 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
 
   const notify = useCallback<NotifyFn>((message, severity = 'success') => {
     setState({ open: true, message, severity });
+    if (severity === 'success') window.dispatchEvent(new Event(NOTIFY_SUCCESS_EVENT));
   }, []);
 
   const close = () => setState((s) => ({ ...s, open: false }));

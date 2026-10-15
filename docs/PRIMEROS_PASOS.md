@@ -16,22 +16,39 @@ que pusiste al desplegar.
 La primera vez se abre solo. Cinco pasos:
 
 1. **Tu estudio**: nombre, logo y cómo te contactan (teléfono, WhatsApp, Instagram, dirección).
-2. **Tu estilo**: elige una paleta de colores y una tipografía. Lo ves aplicado al momento.
+2. **Tu estilo**: el estilo de la web, la tipografía y la paleta de colores. Lo ves aplicado al momento.
 3. **Emails** *(opcional)*: para que tus clientas reciban confirmaciones y avisos.
    Con Gmail son 3 pasos y el panel te enseña dónde pulsar.
 4. **Pagos** *(opcional)*: conecta Stripe para cobrar con tarjeta. Si no, vendes los
    bonos en el estudio.
-5. **¡Listo!**
+5. **¡Listo!** Te lleva a la guía de puesta en marcha.
 
 Todo se puede cambiar después en **Ajustes**.
 
-## 3. Crea tus clases
+## 3. La guía de puesta en marcha (paso a paso, hasta publicar)
 
-Si cargaste los datos de ejemplo, ya verás unas clases en la web. Cámbialas por las tuyas:
+En el menú, **Puesta en marcha** (y en Inicio, la tarjeta «N de 11 pasos» con el botón
+**Siguiente paso**). Los pasos van en el orden en que se necesitan las cosas: así, cuando
+llegas al horario y a los precios, ya tienes todo lo que hace falta.
 
-1. **Horarios → Añadir una clase**: el tipo de clase (Pilates Mat, Yoga…), la sala, el día, la hora y las plazas.
-2. **Bonos y membresías**: tus precios. Cada clase gasta 1 crédito (puedes cambiarlo).
-3. **Instructores** y **Salas**: con su foto y descripción.
+1. **Tu estudio** y 2. **Tu estilo** (lo del asistente).
+3. **Salas**: ya te creamos «Sala principal» con 10 plazas; cámbiala si quieres.
+4. **Profesores**: quién da las clases (si eres tú, añádete).
+5. **Tipos de clase**: elige de una lista de plantillas (Reformer, Mat, Barre, Yoga, Hatha,
+   Vinyasa, Funcional…) con su descripción en español e inglés, y cámbialas a tu gusto.
+6. **Horario semanal**: qué clase se da cada día y a qué hora.
+7. **Bonos y cuotas**: tus precios.
+8. **Pagos y emails**, 9. **Contenido de la web** (fotos, textos, preguntas, opiniones) y
+   10. **Que te encuentren en Google** (ficha de Google Maps, Search Console, dominio): opcionales.
+11. **Prueba y lanzamiento**: haz una reserva de prueba, da de alta a tus clientas y pulsa
+    **Publicar mi web**.
+
+Cada pantalla del panel te enseña arriba su paso: qué es, por qué importa, un ejemplo y
+«Siguiente: …» cuando lo terminas. En el ordenador ves al lado cómo queda tu web.
+
+> **Tu web funciona desde el primer día** (puedes reservar y compartirla), pero **no sale
+> en Google hasta que la publicas**: así no se indexan datos a medio hacer. «Publicar mi
+> web» se activa cuando tienes lo imprescindible (pasos 1 a 7).
 
 ## 4. Tus clientas
 

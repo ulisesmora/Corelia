@@ -25,15 +25,18 @@ import Setup from './pages/Setup';
 import StudioSettings from './pages/StudioSettings';
 import Security from './pages/Security';
 import SetupGate from './components/setup/SetupGate';
+import { GuidePage, ProgressOutlet } from './onboarding';
 
 const App = () => (
   <AuthProvider>
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route element={<ProtectedRoute />}>
+        <Route element={<ProgressOutlet />}>
         <Route path="/bienvenida" element={<Setup />} />
         <Route element={<SetupGate><MainLayout /></SetupGate>}>
           <Route path="/" element={<Home />} />
+          <Route path="/puesta-en-marcha" element={<GuidePage />} />
           <Route path="/admins" element={<Users />} />
           <Route path="/classes" element={<ClassTypeManagement />} />
           <Route path="/calendar" element={<RecurringScheduleManagement />} />
@@ -53,6 +56,7 @@ const App = () => (
           <Route path="/categories" element={<CategoriesManagement />} />
           <Route path="/ajustes" element={<StudioSettings />} />
           <Route path="/seguridad" element={<Security />} />
+        </Route>
         </Route>
       </Route>
     </Routes>

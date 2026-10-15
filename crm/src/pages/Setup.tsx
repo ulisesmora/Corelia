@@ -12,19 +12,22 @@ import StyleSection from '../components/setup/StyleSection';
 import { loadSettings, saveSettings, type StudioSettings } from '../components/setup/api';
 import { useSite } from '../site/SiteProvider';
 import StudioIcon from '../site/StudioIcon';
+import { GUIDE_PATH, useSetupProgress } from '../onboarding';
 
 const STEPS = [
   { label: 'Tu estudio', title: 'Empecemos por tu estudio', subtitle: 'El nombre y cómo te pueden contactar.' },
   { label: 'Tu estilo', title: 'Elige el aspecto de tu web', subtitle: 'Estilo, iconos, colores y letra. Lo verás aplicado al momento.' },
   { label: 'Emails', title: 'Emails a tus clientas', subtitle: 'Opcional: puedes hacerlo ahora o más tarde desde Ajustes.' },
   { label: 'Pagos', title: 'Cobrar online', subtitle: 'Opcional: puedes empezar sin pagos online.' },
-  { label: '¡Listo!', title: '¡Tu estudio está listo!', subtitle: '' },
+  { label: '¡Listo!', title: '¡Lo básico ya está!', subtitle: '' },
 ];
 
 /**
  * Asistente de bienvenida: se abre solo la primera vez que el estudio entra
  * al panel (hasta completarlo). Cada paso se guarda al pulsar «Siguiente»,
- * así que se puede cerrar y seguir otro día.
+ * así que se puede cerrar y seguir otro día. Al terminar sigue la guía de
+ * puesta en marcha (salas, profesores, clases, horario, precios… y publicar
+ * la web); el asistente ya NO publica la web (setup_completed).
  */
 export default function Setup() {
   const theme = useTheme();
@@ -32,6 +35,7 @@ export default function Setup() {
   const navigate = useNavigate();
   const notify = useNotify();
   const site = useSite();
+  const guide = useSetupProgress();
   const [step, setStep] = useState(0);
   const [settings, setSettings] = useState<StudioSettings | null>(null);
   const [loadError, setLoadError] = useState('');
@@ -80,9 +84,12 @@ export default function Setup() {
     if (step === 1) {
       const { style_preset, icon_style, color_primary, color_secondary, color_dark, color_background, font_heading, font_body } = settings;
       if (!(await persist({ style_preset, icon_style, color_primary, color_secondary, color_dark, color_background, font_heading, font_body }))) return;
+      // «Tu estilo» queda hecho en la guía aunque se dejen los colores por defecto
+      await guide.setStatus('style', 'done').catch(() => {});
     }
     if (step === STEPS.length - 2) {
-      await persist({ setup_completed: true });
+      // Asistente terminado: la guía sigue desde aquí (y crea «Sala principal»)
+      await guide.setStatus('welcome', 'done').catch(() => {});
     }
     setStep((s) => Math.min(s + 1, STEPS.length - 1));
   };
@@ -117,7 +124,10 @@ export default function Setup() {
             <Stack direction="row" justifyContent="space-between" sx={{ mt: 5 }}>
               <Button onClick={back} disabled={step === 0 || saving} size="large">Atrás</Button>
               {last ? (
-                <Button variant="contained" size="large" onClick={() => navigate('/')}>Ir a mi panel</Button>
+                <Stack direction="row" spacing={1.5}>
+                  <Button size="large" onClick={() => navigate('/')}>Ir a mi panel</Button>
+                  <Button variant="contained" size="large" onClick={() => navigate(GUIDE_PATH)}>Seguir paso a paso</Button>
+                </Stack>
               ) : (
                 <Button variant="contained" size="large" onClick={next} disabled={saving || uploading}
                   startIcon={saving ? <CircularProgress size={18} color="inherit" /> : undefined}>
@@ -135,7 +145,7 @@ export default function Setup() {
           sx={{ pb: 'calc(8px + env(safe-area-inset-bottom))', borderTop: '1px solid', borderColor: 'divider' }}
           backButton={<Button onClick={back} disabled={step === 0 || saving}>Atrás</Button>}
           nextButton={last
-            ? <Button variant="contained" onClick={() => navigate('/')}>Ir al panel</Button>
+            ? <Button variant="contained" onClick={() => navigate(GUIDE_PATH)}>Seguir</Button>
             : <Button variant="contained" onClick={next} disabled={saving || uploading}>
                 {optional && !((step === 2 && settings.email_ready) || (step === 3 && settings.has_stripe)) ? 'Más tarde' : 'Siguiente'}
               </Button>}
@@ -148,32 +158,28 @@ export default function Setup() {
 function Done({ settings }: { settings: StudioSettings }) {
   const items = [
     { done: true, text: 'Tu estudio y tu estilo están guardados.' },
-    { done: settings.email_ready, text: settings.email_ready ? 'Los emails están activados.' : 'Emails: sin activar (Ajustes → Emails, cuando quieras).' },
-    { done: settings.has_stripe, text: settings.has_stripe ? 'Pagos online con Stripe activados.' : 'Pagos: vendes los bonos en el estudio (Ajustes → Pagos para activar Stripe).' },
-    { done: true, text: 'Avisos al móvil: ya funcionan. Imprime el cartel con QR en Ajustes → Avisos al móvil para que tus clientas instalen la app.' },
-    { done: Boolean(settings.web_domain), text: settings.web_domain ? `Tu web está en ${settings.web_domain}.` : 'Dominio propio (www.tuestudio.com): cuando quieras, en Ajustes → Tu dominio.' },
+    { done: settings.email_ready, text: settings.email_ready ? 'Los emails están activados.' : 'Emails: sin activar (lo verás en la guía, cuando quieras).' },
+    { done: settings.has_stripe, text: settings.has_stripe ? 'Pagos online con Stripe activados.' : 'Pagos: de momento vendes los bonos en el estudio (puedes activar Stripe más tarde).' },
   ];
   return (
     <Stack spacing={3}>
       <Stack direction="row" spacing={2} alignItems="center">
         <StudioIcon name="celebrate" color="primary" sx={{ fontSize: 48 }} />
-        <Typography>Ya puedes enseñar tu web a tus clientas.</Typography>
+        <Typography>Ahora vamos paso a paso con lo que tus clientas van a reservar.</Typography>
       </Stack>
       <Box component="ul" sx={{ pl: 3, m: 0, '& li': { mb: 1 } }}>
         {items.map((i) => <li key={i.text}>{i.done ? '✅ ' : '◻️ '}{i.text}</li>)}
       </Box>
       <Alert severity="info">
-        <b>Siguientes pasos:</b> en <b>Horarios</b> crea tus clases y su horario semanal, y en <b>Bonos y membresías</b>{' '}
-        tus precios. Si cargaste los datos de ejemplo, cámbialos por los tuyos.
+        <b>Siguientes pasos, en este orden:</b> tus <b>salas</b> (ya hemos creado «Sala principal»), quién da las clases,
+        tus <b>tipos de clase</b> (con plantillas listas), el <b>horario semanal</b> y tus <b>bonos y precios</b>. Cuando los
+        tengas, haces una reserva de prueba y <b>publicas tu web</b> para que salga en Google.
       </Alert>
       {settings.web_url && (
-        <Button variant="outlined" size="large" href={settings.web_url} target="_blank" rel="noopener" sx={{ alignSelf: 'flex-start' }}>
-          Ver mi web
-        </Button>
+        <Typography variant="body2" color="text.secondary">
+          Tu web (aún sin publicar en Google): <Link href={settings.web_url} target="_blank" rel="noopener">{settings.web_url}</Link>
+        </Typography>
       )}
-      <Typography variant="body2" color="text.secondary">
-        Dirección de tu web: <Link href={settings.web_url} target="_blank" rel="noopener">{settings.web_url}</Link>
-      </Typography>
     </Stack>
   );
 }

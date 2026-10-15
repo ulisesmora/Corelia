@@ -16,6 +16,7 @@ import { authHeaders } from '../utils/auth';
 import { PhotoPicker } from '../components/guide';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { API_BASE_URL } from '../config';
+import { StepGuide, useActionParam } from '../onboarding';
 
 interface Room {
   id: number;
@@ -201,8 +202,12 @@ export default function RoomsManagement() {
   const paginated = useMemo(() => { const s = (page - 1) * pageSize; return filtered.slice(s, s + pageSize); }, [filtered, page]);
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
 
+  // Enlaces directos desde la guía de puesta en marcha (?accion=nueva)
+  useActionParam('nueva', openCreate);
+
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      <StepGuide step="rooms" />
       <PageIntro
         pageKey="rooms"
         title="Salas"

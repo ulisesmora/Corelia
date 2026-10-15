@@ -17,6 +17,7 @@ import { authHeaders } from '../utils/auth';
 import { PhotoPicker } from '../components/guide';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { API_BASE_URL } from '../config';
+import { ClassTemplatesDialog, PREREQ, StepGuide, TEMPLATES_UI, useActionParam } from '../onboarding';
 import { useStudioWebUrl } from '../site/SiteProvider';
 import { currencySymbol, money } from '../site/money';
 
@@ -71,14 +72,10 @@ const LEVEL_CHOICES = [
 const LEVEL_ADV = { value: 'adv', label: 'Avanzado' };
 const levelLabel = (v: string) => [...LEVEL_CHOICES, LEVEL_ADV].find((l) => l.value === v)?.label || v;
 
-// La web pública pide las clases por número de categoría (fijo en su código)
-const WEB_TABS: Record<number, string> = {
-  2: 'Saldrá en la pestaña «Pilates» de la portada y de la página «Clases».',
-  1: 'Saldrá en la pestaña «Yoga» de la portada y de la página «Clases».',
-  3: 'Saldrá en la pestaña «Mindfulness» de la portada y de la página «Clases».',
-  4: 'Saldrá en el apartado de eventos de la página «Clases».',
-};
-const NO_TAB = 'Esta categoría no tiene pestaña en la web: la clase no saldrá en los carruseles de clases.';
+// La web agrupa las clases por categoría (web/src/utils/classCatalog.ts): cada
+// categoría es una pestaña de la portada y de la página «Clases».
+const categoryHint = (name?: string) =>
+  name ? `Saldrá en la pestaña «${name}» de la portada y de la página «Clases».` : '';
 
 const slugify = (text: string) =>
   text.toString().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -125,6 +122,7 @@ export default function ClassTypeManagement() {
   const webUrl = useStudioWebUrl();
   const confirm = useConfirm();
   const notify = useNotify();
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const [currentClassType, setCurrentClassType] = useState<Partial<EditableClassType> | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -386,8 +384,13 @@ export default function ClassTypeManagement() {
   const levelOptions = cur?.level === 'adv' ? [...LEVEL_CHOICES, LEVEL_ADV] : LEVEL_CHOICES;
   const slugPreview = cur?.slug || slugify(cur?.title || '');
 
+  // Enlaces directos desde la guía de puesta en marcha (?accion=nueva / ?accion=plantillas)
+  useActionParam('nueva', handleOpenCreate, !categoriesLoading);
+  useActionParam('plantillas', () => setTemplatesOpen(true));
+
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      <StepGuide step="class_types" />
       <PageIntro
         pageKey="class-types"
         title="Tipos de clase"
@@ -398,9 +401,14 @@ export default function ClassTypeManagement() {
           </>
         )}
         actions={(
-          <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
-            Añadir un tipo de clase
-          </Button>
+          <>
+            <Button variant="outlined" onClick={() => setTemplatesOpen(true)}>
+              {TEMPLATES_UI.fromTemplate}
+            </Button>
+            <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
+              Añadir un tipo de clase
+            </Button>
+          </>
         )}
         steps={[
           { title: 'Pulsa «Añadir un tipo de clase»', text: 'O «Editar» en una clase que ya exista para cambiar su foto, texto o precio.' },
@@ -443,8 +451,13 @@ export default function ClassTypeManagement() {
           <EmptyState
             icon={<ClassOutlinedIcon />}
             title="Todavía no hay tipos de clase"
-            text="Añade el primero (por ejemplo «Pilates Reformer») y después ponle días y horas en el horario."
-            action={<Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate} sx={{ minHeight: 48 }}>Añadir el primero</Button>}
+            text="Lo más rápido: elige tus clases de la lista de plantillas (Reformer, Mat, Barre, Yoga…) y cámbialas a tu gusto. Después les pones días y horas en el horario."
+            action={(
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
+                <Button variant="contained" onClick={() => setTemplatesOpen(true)} sx={{ minHeight: 48 }}>{TEMPLATES_UI.fromTemplate}</Button>
+                <Button variant="outlined" startIcon={<AddIcon />} onClick={handleOpenCreate} sx={{ minHeight: 48 }}>{TEMPLATES_UI.manual}</Button>
+              </Stack>
+            )}
           />
         </Paper>
       ) : filteredClassTypes.length === 0 ? (
@@ -569,7 +582,9 @@ export default function ClassTypeManagement() {
                       onChange={(id) => { if (id) update({ category_id: Number(id) }); }}
                       disabled={categoriesLoading}
                       helperText={categoriesError
-                        || (cur.category_id ? (WEB_TABS[cur.category_id] || NO_TAB) : 'Elige en qué grupo va: Pilates, Yoga, Mindfulness…')}
+                        || (cur.category_id
+                          ? categoryHint(categories.find((c) => c.id === cur.category_id)?.name)
+                          : categories.length ? 'Elige en qué grupo va: Pilates, Yoga, Mindfulness…' : PREREQ.needCategoryText)}
                     />
                     {errors.category && (
                       <Typography role="alert" sx={{ color: 'error.main', fontSize: '0.9rem', mt: 0.5, ml: 1.75 }}>
@@ -742,6 +757,7 @@ export default function ClassTypeManagement() {
           </Button>
         </DialogActions>
       </Dialog>
+      <ClassTemplatesDialog open={templatesOpen} onClose={() => setTemplatesOpen(false)} onCreated={() => reloadAll()} />
     </Box>
   );
 }

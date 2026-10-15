@@ -92,6 +92,7 @@ import { SectionTabs, PageIntro, HelpTip, EmptyState, FormStep, useConfirm, useN
 import { friendlyError } from '../utils/errors';
 import { authHeaders } from '../utils/auth';
 import { API_BASE_URL } from '../config';
+import { ClassTemplatesDialog, PREREQ, QuickRoomDialog, StepGuide } from '../onboarding';
 import { currencySymbol, money } from '../site/money';
 
 // ====================================================================
@@ -745,7 +746,33 @@ export default function RecurringScheduleManagement() {
   const classById = (id?: number | null) => classTypes.find((c) => c.id === id) || null;
   const roomById = (id?: number | null) => rooms.find((r) => r.id === id) || null;
 
+  // ── Lo que hace falta antes de poner una clase en el horario ──
+  // Sin tipos de clase o sin salas no se puede: se crean aquí mismo (ventana)
+  // y, al terminar, se abre la ventana de la clase nueva.
+  const [prereq, setPrereq] = useState<'room' | 'class' | null>(null);
+  const [resumeCreate, setResumeCreate] = useState(false);
+  const missingPrereq: 'room' | 'class' | null = !supportReady ? null
+    : classTypes.length === 0 ? 'class' : rooms.length === 0 ? 'room' : null;
+
   const handleOpenCreate = (preset: { start_date?: string } = {}) => {
+    if (missingPrereq) { setPrereq(missingPrereq); return; }
+    openCreateForm(preset);
+  };
+
+  useEffect(() => {
+    if (!resumeCreate || !supportReady) return;
+    setResumeCreate(false);
+    if (missingPrereq) setPrereq(missingPrereq);
+    else openCreateForm();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resumeCreate, classTypes, rooms]);
+
+  const afterPrereqCreated = async () => {
+    await fetchSupportData();
+    setResumeCreate(true);
+  };
+
+  const openCreateForm = (preset: { start_date?: string } = {}) => {
     const oneRoom = rooms.length === 1 ? rooms[0] : null;
     setCurrentSchedule({
       weekday: null,
@@ -1315,6 +1342,19 @@ export default function RecurringScheduleManagement() {
         >
           No se han podido cargar tus clases. {schedulesError}
         </Alert>
+      ) : schedules.length === 0 && missingPrereq ? (
+        <Paper variant="outlined" sx={{ borderRadius: 3 }}>
+          <EmptyState
+            icon={<EventNoteIcon />}
+            title={missingPrereq === 'class' ? PREREQ.needClassTypeTitle : PREREQ.needRoomTitle}
+            text={missingPrereq === 'class' ? PREREQ.needClassTypeText : PREREQ.needRoomText}
+            action={
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setPrereq(missingPrereq)} sx={{ minHeight: 48 }}>
+                {missingPrereq === 'class' ? PREREQ.needClassTypeCta : PREREQ.needRoomCta}
+              </Button>
+            }
+          />
+        </Paper>
       ) : schedules.length === 0 ? (
         <Paper variant="outlined" sx={{ borderRadius: 3 }}>
           <EmptyState
@@ -1454,6 +1494,7 @@ export default function RecurringScheduleManagement() {
 
   return (
     <Box sx={{ p: { xs: 0, sm: 1, md: 3 }, maxWidth: '100%', overflowX: 'hidden' }}>
+      <StepGuide step="schedule" />
       <PageIntro
         pageKey="horarios"
         title="Mis clases y horarios"
@@ -2454,6 +2495,8 @@ export default function RecurringScheduleManagement() {
           </>
         )}
       </Dialog>
+      <QuickRoomDialog open={prereq === 'room'} onClose={() => setPrereq(null)} onCreated={afterPrereqCreated} />
+      <ClassTemplatesDialog open={prereq === 'class'} onClose={() => setPrereq(null)} onCreated={afterPrereqCreated} />
     </Box>
   );
 }

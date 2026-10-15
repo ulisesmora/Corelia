@@ -23,6 +23,8 @@ import {
 interface Props {
   value: StudioSettings;
   onChange: (patch: Partial<StudioSettings>) => void;
+  /** Sin la maqueta «Así se verá» del final (la guía la enseña al lado) */
+  hidePreview?: boolean;
 }
 
 type ColorKey = 'color_primary' | 'color_secondary' | 'color_dark' | 'color_background';
@@ -38,7 +40,7 @@ const ICON_SAMPLES: Record<IconStyleId, IconComp[]> = {
 };
 
 /** Estilo, iconos, colores y tipografía de la web, con vista previa en vivo. */
-export default function StyleSection({ value, onChange }: Props) {
+export default function StyleSection({ value, onChange, hidePreview }: Props) {
   const [justPicked, setJustPicked] = useState<StylePreset | null>(null);
   const [baseColor, setBaseColor] = useState(value.color_primary);
   const [logoColors, setLogoColors] = useState<string[] | null>(null);
@@ -267,10 +269,12 @@ export default function StyleSection({ value, onChange }: Props) {
         </Stack>
       </Box>
 
-      <Box>
-        <Typography variant="h6" gutterBottom>Así se verá</Typography>
-        <StylePreview value={value} />
-      </Box>
+      {!hidePreview && (
+        <Box>
+          <Typography variant="h6" gutterBottom>Así se verá</Typography>
+          <StylePreview value={value} />
+        </Box>
+      )}
     </Stack>
   );
 }

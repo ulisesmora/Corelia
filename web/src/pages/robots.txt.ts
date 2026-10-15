@@ -1,6 +1,7 @@
 // /robots.txt — dinámico. Bloquea la indexación (Disallow: /) mientras el
-// estudio no haya terminado el asistente de bienvenida (setup_completed) o si
-// el servidor tiene NOINDEX=1 (entornos de prueba).
+// estudio no haya publicado su web (setup_completed: «Publicar mi web» en la
+// guía de puesta en marcha del panel, que exige los pasos mínimos) o si el
+// servidor tiene NOINDEX=1 (entornos de prueba).
 import { envNoindex, origin } from '../seo/site';
 import { getSiteConfig, isFallbackSite } from '../lib/site';
 

@@ -36,6 +36,7 @@ import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/E
 import { friendlyError } from '../utils/errors';
 import { currencySymbol, money, STUDIO_DROP_IN_PRICE } from '../site/money';
 import { API_BASE_URL } from '../config';
+import { StepGuide, useActionParam } from '../onboarding';
 
 // ====================================================================
 // 1. INTERFACES Y CONSTANTES
@@ -738,8 +739,12 @@ export default function PlanManagement() {
     </Box>
   );
 
+  // Enlaces directos desde la guía de puesta en marcha (?accion=nueva)
+  useActionParam('nueva', () => handleOpenCreate('pack'));
+
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      <StepGuide step="plans" />
       <PageIntro
         pageKey="plans"
         title="Bonos y precios"
