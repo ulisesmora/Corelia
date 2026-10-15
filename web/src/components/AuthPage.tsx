@@ -27,6 +27,7 @@ import { API_ROOT } from '../config';
 import BrandLogo from './BrandLogo';
 import { useSite } from '../lib/site';
 import { track } from '../lib/tracking';
+import Turnstile from './Turnstile';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constantes compartidas
@@ -134,6 +135,8 @@ const COPY = {
     errNetwork: "No hay conexión. Revisa tu internet e inténtalo de nuevo.",
     errServer: "Algo ha fallado por nuestra parte. Inténtalo en unos minutos.",
     errTooMany: "Demasiados intentos. Espera un momento y vuelve a probar.",
+    errLocked: "Por seguridad hemos bloqueado el acceso con este email unos minutos (la contraseña se ha escrito mal varias veces). Espera un poco o crea una contraseña nueva con «¿Has olvidado tu contraseña?».",
+    errCaptcha: "Marca la casilla de seguridad y vuelve a intentarlo.",
     errGeneric: "No hemos podido completarlo. Inténtalo de nuevo.",
     errFixFields: "Revisa los campos marcados.",
     // Panel de marca (página /login)
@@ -206,6 +209,8 @@ const COPY = {
     errNetwork: "No connection. Check your internet and try again.",
     errServer: "Something went wrong on our side. Please try again in a few minutes.",
     errTooMany: "Too many attempts. Please wait a moment and try again.",
+    errLocked: "For your security, sign-in with this email is blocked for a few minutes (the password was wrong several times). Please wait or create a new password with “Forgot your password?”.",
+    errCaptcha: "Please complete the security check and try again.",
     errGeneric: "We couldn't complete that. Please try again.",
     errFixFields: "Please check the highlighted fields.",
     brandClaim: "Transform your body. Transform your life.",
@@ -252,7 +257,9 @@ export async function postJson(path: string, body: unknown, headers: Record<stri
 /** Errores comunes a cualquier llamada (red, 429, 5xx). null si no aplica. */
 export function commonError(res: ApiResult, t: AuthCopy): string | null {
   if (res.network) return t.errNetwork;
-  if (res.status === 429) return t.errTooMany;
+  if (res.status === 429) return res.data?.code === "account_locked" ? t.errLocked : t.errTooMany;
+  // Casilla de seguridad (Turnstile) que falta o no ha valido
+  if (res.status === 400 && res.data?.captcha_required) return t.errCaptcha;
   if (res.status >= 500) return t.errServer;
   return null;
 }
@@ -569,6 +576,21 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
   const [submitted, setSubmitted] = useState(false);
   const [welcomeName, setWelcomeName] = useState<string | undefined>();
   const [sentTo, setSentTo] = useState("");
+  // Casilla de seguridad (Turnstile): al crear cuenta, al recuperar la
+  // contraseña y al entrar solo si el servidor la pide tras varios fallos.
+  const [captchaToken, setCaptchaToken] = useState("");
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const [loginCaptcha, setLoginCaptcha] = useState(false);
+  const captchaKey = site.turnstile_site_key;
+  const showCaptcha = !!captchaKey && (mode === "register" || mode === "reset" || (mode === "login" && loginCaptcha));
+  /** Cuerpo extra con el token (cada token vale una vez: se pide otro). */
+  const takeCaptchaToken = (): Record<string, string> => {
+    if (!showCaptcha || !captchaToken) return {};
+    const token = captchaToken;
+    setCaptchaToken("");
+    setCaptchaReset((n) => n + 1);
+    return { turnstile_token: token };
+  };
 
   const refs = {
     name: useRef<HTMLInputElement>(null),
@@ -628,6 +650,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
   };
 
   const switchMode = (next: Mode) => {
+    setCaptchaToken("");
     setFormError(null);
     setServerFieldErr({});
     setTouched({});
@@ -661,11 +684,16 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
       return;
     }
 
+    if (showCaptcha && !captchaToken) {
+      setFormError({ text: t.errCaptcha });
+      return;
+    }
+
     const cleanEmail = email.trim();
     setIsSubmitting(true);
     try {
       if (mode === "reset") {
-        const res = await postJson("request-reset-password/", { email: cleanEmail });
+        const res = await postJson("request-reset-password/", { email: cleanEmail, ...takeCaptchaToken() });
         const common = commonError(res, t);
         if (common) { setFormError({ text: common }); return; }
         // El backend responde igual exista o no la cuenta: mensaje genérico.
@@ -675,13 +703,16 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
       }
 
       if (mode === "login") {
-        let res = await postJson("signinClient/", { email: cleanEmail, password });
+        const withCaptcha = showCaptcha;
+        let res = await postJson("signinClient/", { email: cleanEmail, password, ...takeCaptchaToken() });
         // El backend compara el email distinguiendo mayúsculas: si el móvil puso
         // "Ana@…" y falla, reintentamos en minúsculas.
-        if (res.status === 401 && cleanEmail !== cleanEmail.toLowerCase()) {
+        if (res.status === 401 && !withCaptcha && cleanEmail !== cleanEmail.toLowerCase()) {
           res = await postJson("signinClient/", { email: cleanEmail.toLowerCase(), password });
         }
         if (res.ok) { finishLogin(res.data); return; }
+        // Tras varios fallos el servidor pide la casilla de seguridad
+        if (res.data?.captcha_required) setLoginCaptcha(true);
         const common = commonError(res, t);
         if (common) { setFormError({ text: common }); return; }
         if (res.status === 400) {
@@ -703,6 +734,7 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
         password,
         first_name: name.trim(),
         username: cleanEmail.toLowerCase(),
+        ...takeCaptchaToken(),
       });
       if (res.ok) {
         if (res.data?.access) saveSession(res.data);
@@ -969,6 +1001,10 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
                   </Box>
                 </Box>
               </>
+            )}
+
+            {showCaptcha && (
+              <Turnstile siteKey={captchaKey} lang={lang} onToken={setCaptchaToken} resetKey={captchaReset} />
             )}
 
             {formError && (

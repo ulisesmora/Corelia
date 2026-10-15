@@ -15,6 +15,10 @@ from .views import (
     PlanViewSet, SubscriptionViewSet, CouponViewSet, CouponRedemptionViewSet,
     BookingViewSet, LeadViewSet, GoogleLoginView, ClassOccurrenceViewSet,
 )
+from .views_security import (
+    TwoFactorConfirmView, TwoFactorDisableView, TwoFactorPolicyView, TwoFactorRecoveryCodesView,
+    TwoFactorSetupView, TwoFactorStatusView, TwoFactorVerifyView,
+)
 from .views_site import (
     FAQItemViewSet, SiteConfigAdminView, SiteConfigCheckDomainView, SiteConfigPublicView, SiteConfigStripeView,
     SiteBadgeView, SiteConfigTestEmailView, SiteIconView, SiteOgImageView, TestimonialViewSet,
@@ -57,6 +61,14 @@ urlpatterns = [
     path('verify-email/', EmailVerificationView.as_view(), name='verify-email'),
     path('v1/auth/verify-code/', VerifyEmailCodeView.as_view(), name='verify-code'),
     path('v1/auth/resend-verification/', ResendVerificationView.as_view(), name='resend-verification'),
+    # Verificación en dos pasos del panel (api/views_security.py)
+    path('v1/auth/2fa/', TwoFactorStatusView.as_view(), name='2fa-status'),
+    path('v1/auth/2fa/setup/', TwoFactorSetupView.as_view(), name='2fa-setup'),
+    path('v1/auth/2fa/confirm/', TwoFactorConfirmView.as_view(), name='2fa-confirm'),
+    path('v1/auth/2fa/disable/', TwoFactorDisableView.as_view(), name='2fa-disable'),
+    path('v1/auth/2fa/recovery-codes/', TwoFactorRecoveryCodesView.as_view(), name='2fa-recovery-codes'),
+    path('v1/auth/2fa/policy/', TwoFactorPolicyView.as_view(), name='2fa-policy'),
+    path('v1/auth/2fa/verify/', TwoFactorVerifyView.as_view(), name='2fa-verify'),
     path('v1/users/<int:user_id>/verify-email/', AdminVerifyUserView.as_view(), name='admin-verify-email'),
     path('request-reset-password/', RequestPasswordResetView.as_view(), name='request-reset-password'),
     path('reset-password/', ResetPasswordView.as_view(), name='reset-password'),

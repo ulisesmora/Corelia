@@ -355,3 +355,70 @@ class SiteImageAdmin(admin.ModelAdmin):
     list_filter = ('section', 'is_active')
     search_fields = ('title',)
     ordering = ('section', 'order')
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# ENTRADA AL ADMIN DE DJANGO (/django-admin/): mismo bloqueo por intentos
+# fallidos y misma verificación en dos pasos que el panel. Sin esto, quien
+# tuviera la contraseña podría saltarse el código entrando por aquí.
+# ─────────────────────────────────────────────────────────────────────────────
+from django.contrib.admin.forms import AdminAuthenticationForm  # noqa: E402
+from django.core.exceptions import ValidationError  # noqa: E402
+
+from .models import TwoFactorDevice  # noqa: E402
+
+
+class TwoFactorAdminAuthenticationForm(AdminAuthenticationForm):
+    otp_code = forms.CharField(
+        label='Código de verificación', required=False, max_length=16,
+        help_text='Solo si tienes activada la verificación en dos pasos: el código de 6 cifras de tu app '
+                  '(o un código de recuperación).',
+        widget=forms.TextInput(attrs={'autocomplete': 'one-time-code', 'inputmode': 'numeric'}),
+    )
+
+    def clean(self):
+        from api.utils import lockout, two_factor
+        email = (self.cleaned_data.get('username') or '').strip()
+        seconds = lockout.locked_for(email)
+        if seconds:
+            raise ValidationError(lockout.locked_message(seconds), code='locked')
+        try:
+            cleaned = super().clean()
+        except ValidationError:
+            lockout.register_failure(self.request, email, reason='django_admin')
+            raise
+        user = self.get_user()
+        if user and two_factor.is_enabled(user):
+            code = self.cleaned_data.get('otp_code') or ''
+            if not code:
+                raise ValidationError('Escribe también el código de 6 cifras de tu app de verificación.',
+                                      code='otp_required')
+            if not two_factor.check_code_or_recovery(user, code=code, recovery_code=code):
+                lockout.register_failure(self.request, email, reason='django_admin_2fa')
+                raise ValidationError('El código de verificación no es correcto.', code='otp_invalid')
+        lockout.clear_failures(email)
+        return cleaned
+
+
+admin.site.login_form = TwoFactorAdminAuthenticationForm
+admin.site.login_template = 'api/admin_login.html'
+
+
+@admin.register(TwoFactorDevice)
+class TwoFactorDeviceAdmin(admin.ModelAdmin):
+    """Solo para consultar y, si alguien pierde el móvil y sus códigos de
+    recuperación, borrar la fila (= desactivar). El secreto nunca se muestra."""
+    list_display = ('user', 'confirmed_at', 'codes_left', 'updated_at')
+    search_fields = ('user__email',)
+    fields = ('user', 'confirmed_at', 'updated_at')
+    readonly_fields = fields
+
+    @admin.display(description='Códigos de recuperación')
+    def codes_left(self, obj):
+        return len(obj.recovery_codes or [])
+
+    def has_add_permission(self, request):
+        return False
+
+    def has_change_permission(self, request, obj=None):
+        return False

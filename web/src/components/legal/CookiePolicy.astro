@@ -3,7 +3,9 @@
 // genera con lo que el estudio tiene configurado: las técnicas siempre; las
 // de Google Analytics, Google Ads, Meta y Microsoft Clarity solo si están
 // activas (panel → Ajustes, y PUBLIC_CLARITY_ID para Clarity), y las de YouTube
-// si la portada tiene un vídeo (Ajustes → Portada).
+// si la portada tiene un vídeo (Ajustes → Portada). La casilla de seguridad
+// (Cloudflare Turnstile) va entre las técnicas: es estrictamente necesaria
+// para proteger los formularios y no hace seguimiento.
 import LegalLayout from './LegalLayout.astro';
 import { clarityProjectId, getSiteConfig } from '../../lib/site';
 
@@ -24,6 +26,7 @@ const hasOptional = hasAnalytics || hasAds || hasVideos;
 const nAnalytics = 3;
 const nAds = hasAnalytics ? 4 : 3;
 const nVideos = 3 + (hasAnalytics ? 1 : 0) + (hasAds ? 1 : 0);
+const captcha = !!site.turnstile_site_key;
 const holder = site.legal.name || site.studio_name;
 const email = site.contact.email;
 const termsHref = es ? '/terminos-condiciones' : '/en/terms-conditions';
@@ -39,6 +42,7 @@ const technical: Row[] = es
       ...(hasOptional ? [{ name: 'cookie.consent', provider: own, purpose: 'Guardar tu elección sobre cookies (con la fecha).', duration: '12 meses' }] : []),
       ...(site.payments_enabled ? [{ name: '__stripe_mid, __stripe_sid', provider: 'Stripe', purpose: 'Pago seguro con tarjeta y prevención del fraude (solo en la página de pago).', duration: '1 año / 30 minutos' }] : []),
       ...(site.google_login_enabled ? [{ name: 'g_state', provider: 'Google', purpose: 'Funcionamiento del botón «Continuar con Google» (solo si lo usas).', duration: 'Hasta 6 meses' }] : []),
+      ...(captcha ? [{ name: 'Casilla de seguridad (Turnstile)', provider: 'Cloudflare, Inc.', purpose: 'Comprobar que quien crea una cuenta, pide una contraseña nueva, paga sin cuenta o se equivoca varias veces al entrar es una persona y no un programa automático. Solo se carga en esos formularios y no se usa para publicidad ni seguimiento.', duration: 'Lo que dura la comprobación' }] : []),
     ]
   : [
       { name: 'accessToken, refreshToken, iduser, username, sessionTimestamp', provider: own, purpose: 'Keep you signed in (browser local storage).', duration: 'Until you sign out' },
@@ -47,6 +51,7 @@ const technical: Row[] = es
       ...(hasOptional ? [{ name: 'cookie.consent', provider: own, purpose: 'Store your cookie choice (with its date).', duration: '12 months' }] : []),
       ...(site.payments_enabled ? [{ name: '__stripe_mid, __stripe_sid', provider: 'Stripe', purpose: 'Secure card payment and fraud prevention (payment page only).', duration: '1 year / 30 minutes' }] : []),
       ...(site.google_login_enabled ? [{ name: 'g_state', provider: 'Google', purpose: 'Make the "Continue with Google" button work (only if you use it).', duration: 'Up to 6 months' }] : []),
+      ...(captcha ? [{ name: 'Security check (Turnstile)', provider: 'Cloudflare, Inc.', purpose: 'Check that whoever creates an account, asks for a new password, pays without an account or mistypes their password several times is a person and not an automated program. Only loaded on those forms and never used for advertising or tracking.', duration: 'While the check lasts' }] : []),
     ];
 
 const analytics: Row[] = [
@@ -99,6 +104,12 @@ const H = es
     <thead><tr><th>{H.name}</th><th>{H.provider}</th><th>{H.purpose}</th><th>{H.duration}</th></tr></thead>
     <tbody>{technical.map((r) => <tr><td><code>{r.name}</code></td><td>{r.provider}</td><td>{r.purpose}</td><td>{r.duration}</td></tr>)}</tbody>
   </table></div>
+  {captcha && (
+    <p>{es
+      ? 'La casilla de seguridad de Cloudflare Turnstile es un servicio de seguridad estrictamente necesario (protege tus datos frente a programas que prueban contraseñas o crean cuentas falsas), por eso no depende de tu consentimiento. Para hacer la comprobación, Cloudflare recibe datos técnicos de tu navegador y tu dirección IP, que puede tratar fuera del Espacio Económico Europeo (está adherida al Marco de Privacidad de Datos UE-EE. UU.). Más información en la política de privacidad de Cloudflare: '
+      : 'The Cloudflare Turnstile security check is a strictly necessary security service (it protects your data from programs that guess passwords or create fake accounts), so it does not depend on your consent. To run the check, Cloudflare receives technical data from your browser and your IP address, which it may process outside the European Economic Area (it participates in the EU-U.S. Data Privacy Framework). More information in Cloudflare\'s privacy policy: '}
+      <a href="https://www.cloudflare.com/turnstile-privacy-policy/" target="_blank" rel="noopener">cloudflare.com/turnstile-privacy-policy</a>.</p>
+  )}
 
   {hasAnalytics && (
     <>

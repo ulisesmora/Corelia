@@ -86,6 +86,8 @@ export interface SiteConfig {
   /** Client ID de Google Identity Services ('' = sin botón de Google). */
   google_client_id: string;
   vapid_public_key: string;
+  /** Clave PÚBLICA del captcha Cloudflare Turnstile ('' = sin captcha). */
+  turnstile_site_key: string;
   setup_completed: boolean;
 
   // ── Google Business y redes (enlaces públicos http(s) o '') ──
@@ -179,6 +181,7 @@ export const DEFAULT_SITE: SiteConfig = {
   google_login_enabled: false,
   google_client_id: '',
   vapid_public_key: '',
+  turnstile_site_key: '',
   setup_completed: false,
   google_business_url: '',
   google_review_url: '',
@@ -355,6 +358,7 @@ export function normalizeSite(raw: unknown): SiteConfig {
     google_login_enabled: r.google_login_enabled === true && !!str(r.google_client_id),
     google_client_id: str(r.google_client_id),
     vapid_public_key: str(r.vapid_public_key),
+    turnstile_site_key: /^[\w-]{10,100}$/.test(str(r.turnstile_site_key)) ? str(r.turnstile_site_key) : '',
     setup_completed: r.setup_completed === true,
     google_business_url: publicUrl(r.google_business_url),
     google_review_url: publicUrl(r.google_review_url),

@@ -63,7 +63,7 @@ datos, los emails salen desde tu Gmail y los pagos online son opcionales.
 5. El dominio del servicio **web** es tu web de reservas. Puedes poner tu propio
    dominio (`www.tuestudio.com`) en Railway → servicio web → *Settings → Domains*.
 
-¿Te pierdes? Paso a paso en [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md) y, para el día a día, [docs/PRIMEROS_PASOS.md](docs/PRIMEROS_PASOS.md).
+¿Te pierdes? Paso a paso en [docs/DESPLIEGUE.md](docs/DESPLIEGUE.md) y, para el día a día, [docs/PRIMEROS_PASOS.md](docs/PRIMEROS_PASOS.md). Seguridad (verificación en dos pasos, límites de intentos, captcha opcional): [docs/SEGURIDAD.md](docs/SEGURIDAD.md).
 
 ### Lo opcional (desde el panel → Ajustes)
 

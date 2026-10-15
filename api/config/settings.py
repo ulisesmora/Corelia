@@ -75,6 +75,33 @@ CORS_ALLOW_HEADERS = ['*']
 # Detrás del proxy HTTPS de Railway/Render/Fly
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+# Cabeceras de seguridad (SecurityMiddleware y XFrameOptionsMiddleware).
+# El navegador no adivina tipos de archivo, no deja meter el panel en un
+# <iframe> de otra web y solo envía el dominio (no la ruta) a otras webs.
+SECURE_CONTENT_TYPE_NOSNIFF = True
+X_FRAME_OPTIONS = 'DENY'
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+SECURE_CROSS_ORIGIN_OPENER_POLICY = 'same-origin'
+if not DEBUG:
+    # HSTS: «este dominio solo por HTTPS» durante un año. Django solo la envía
+    # en respuestas HTTPS. includeSubDomains va APAGADO por defecto: si el
+    # estudio usa su dominio propio (panel.tuestudio.com), afectaría también a
+    # otros subdominios suyos que quizá no tengan HTTPS. Actívalo solo si sabes
+    # que todos tus subdominios tienen HTTPS.
+    SECURE_HSTS_SECONDS = int(env('SECURE_HSTS_SECONDS', str(365 * 24 * 3600)))
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = env_bool('SECURE_HSTS_INCLUDE_SUBDOMAINS', False)
+    SECURE_HSTS_PRELOAD = env_bool('SECURE_HSTS_PRELOAD', False)
+    # Cookies (admin de Django) solo por HTTPS. SECURE_COOKIES=0 para servirlo
+    # sin HTTPS en una red local.
+    SESSION_COOKIE_SECURE = env_bool('SECURE_COOKIES', True)
+    CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
+    # Railway, Render y Fly ya redirigen http → https en su proxy. Quien sirva
+    # el API directamente puede activarlo aquí (/healthz sigue por http).
+    SECURE_SSL_REDIRECT = env_bool('SECURE_SSL_REDIRECT', False)
+    SECURE_REDIRECT_EXEMPT = [r'^healthz$']
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = 'Lax'
+
 # Zona horaria del estudio: horarios, recordatorios y tareas nocturnas.
 STUDIO_TIMEZONE = env('STUDIO_TIMEZONE', 'Europe/Madrid')
 
@@ -106,6 +133,8 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     # Primero: mide la duración completa y asigna el request_id a todos los logs
     'api.logging_utils.RequestLogMiddleware',
+    # Rechaza (413) peticiones más grandes que MAX_REQUEST_MB antes de leerlas
+    'api.middleware.RequestSizeLimitMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -143,14 +172,67 @@ REST_FRAMEWORK = {
         'api.renderers.ORJSONRenderer',
         'rest_framework.renderers.BrowsableAPIRenderer',
     ),
+    # El JWT pasa además por la comprobación de «verificación en dos pasos
+    # obligatoria» del estudio (api/authentication.py).
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'api.authentication.PanelJWTAuthentication',
         'rest_framework.authentication.SessionAuthentication',
     ),
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
     'DEFAULT_FILTER_BACKENDS': ['django_filters.rest_framework.DjangoFilterBackend'],
     'DEFAULT_PERMISSION_CLASSES': ['rest_framework.permissions.IsAuthenticated'],
+    # 429 con un mensaje en español claro (ver api/throttling.py)
+    'EXCEPTION_HANDLER': 'api.throttling.exception_handler',
 }
+
+
+# ── Seguridad: límites de peticiones, bloqueo de cuentas y captcha ───────────
+# Todo funciona sin configurar nada; las variables solo ajustan los valores.
+# Ver docs/SEGURIDAD.md.
+#
+# Límites por IP y por email (formato «número/periodo»: 10/m, 5/15m, 20/h, 50/d).
+# Cada uno se cambia con THROTTLE_<NOMBRE>, p. ej. THROTTLE_LOGIN=20/m.
+# RATE_LIMITS_ENABLED=0 los apaga todos (no recomendado en producción).
+RATE_LIMITS_ENABLED = env_bool('RATE_LIMITS_ENABLED', True)
+_THROTTLE_DEFAULTS = {
+    'login': '10/m',                # entrar (panel, clientas, Google) por IP
+    'login_email': '30/h',          # entrar, por cuenta (además del bloqueo de abajo)
+    'two_factor': '10/m',           # segundo paso (código de 6 dígitos) por IP
+    'two_factor_manage': '20/h',    # activar/desactivar la verificación en dos pasos, por usuario
+    'signup': '20/h',               # crear cuenta de clienta, por IP
+    'password_reset': '10/h',       # pedir el enlace de nueva contraseña, por IP
+    'password_reset_email': '3/h',  # … y por email
+    'password_reset_confirm': '20/h',
+    'email_verify': '20/h',         # códigos/enlaces de verificación de email, por IP o usuario
+    'email_verify_email': '5/h',    # reenviar el código, por email
+    'checkout': '30/h',             # pago como invitada (crea ficha y sesión de Stripe), por IP
+    'public_form': '30/h',          # formularios públicos (contacto, preferencias, cupones)
+    'test_email': '10/h',           # email de prueba del panel, por usuario
+}
+THROTTLE_RATES = {scope: env(f'THROTTLE_{scope.upper()}', rate) for scope, rate in _THROTTLE_DEFAULTS.items()}
+REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = THROTTLE_RATES
+
+# Proxies de confianza para saber la IP real de quien llama (X-Forwarded-For).
+# Las direcciones privadas (redes internas de Railway, Docker…) ya se consideran
+# de confianza; aquí se pueden añadir rangos públicos (CIDR, separados por comas).
+TRUSTED_PROXY_CIDRS = env_list('TRUSTED_PROXY_CIDRS')
+
+# Bloqueo temporal de una cuenta tras N contraseñas (o códigos) fallidos seguidos.
+LOGIN_LOCKOUT_ATTEMPTS = int(env('LOGIN_LOCKOUT_ATTEMPTS', '5'))
+LOGIN_LOCKOUT_MINUTES = int(env('LOGIN_LOCKOUT_MINUTES', '15'))
+# Tras cuántos fallos (por IP o por email) se pide el captcha al entrar.
+LOGIN_CAPTCHA_AFTER = int(env('LOGIN_CAPTCHA_AFTER', '3'))
+
+# Captcha Cloudflare Turnstile (opcional, gratuito y sin cookies de seguimiento).
+# Vacías = desactivado. Claves en dash.cloudflare.com → Turnstile.
+TURNSTILE_SITE_KEY = env('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = env('TURNSTILE_SECRET_KEY', '')
+TURNSTILE_TIMEOUT = float(env('TURNSTILE_TIMEOUT', '5'))
+
+# Verificación en dos pasos (panel): cuánto dura el paso intermedio entre la
+# contraseña y el código de 6 dígitos.
+TWO_FACTOR_PENDING_SECONDS = int(env('TWO_FACTOR_PENDING_SECONDS', '300'))
+TWO_FACTOR_ISSUER = env('TWO_FACTOR_ISSUER', '')  # vacío = nombre del estudio
 
 SPECTACULAR_SETTINGS = {'TITLE': 'Corelia API', 'VERSION': '1.0.0'}
 
@@ -232,7 +314,11 @@ WHITENOISE_IMMUTABLE_FILE_TEST = _panel_asset_is_immutable
 # Las fotos que sube el estudio se guardan EN LA BASE DE DATOS (modelo
 # StoredFile), ya reducidas a tamaño web: no hace falta S3 ni volúmenes.
 MAX_UPLOAD_MB = int(env('MAX_UPLOAD_MB', '8'))
-DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_MB * 1024 * 1024
+# Tamaño máximo de una petición entera (foto + campos del formulario). Lo
+# comprueba api.middleware.RequestSizeLimitMiddleware antes de leer nada: 413.
+MAX_REQUEST_MB = int(env('MAX_REQUEST_MB', str(MAX_UPLOAD_MB + 1)))
+# Datos que NO son archivos (JSON, campos de formulario): con 2,5 MB sobra.
+DATA_UPLOAD_MAX_MEMORY_SIZE = int(float(env('MAX_JSON_MB', '2.5')) * 1024 * 1024)
 
 
 # ── Email ─────────────────────────────────────────────────────────────────────
@@ -284,6 +370,20 @@ CELERY_BROKER_URL = REDIS_URL or 'memory://'
 CELERY_RESULT_BACKEND = REDIS_URL or 'cache+memory://'
 CELERY_TASK_ALWAYS_EAGER = not REDIS_URL
 CELERY_TIMEZONE = STUDIO_TIMEZONE
+
+# Caché: contadores de los límites de peticiones y del bloqueo de cuentas.
+# Con Redis se comparten entre todos los procesos del servidor; sin él (desarrollo)
+# cada proceso lleva su propia cuenta en memoria.
+CACHES = {
+    'default': (
+        {'BACKEND': 'django.core.cache.backends.redis.RedisCache', 'LOCATION': REDIS_URL,
+         'KEY_PREFIX': 'corelia', 'TIMEOUT': 300}
+        if REDIS_URL else
+        {'BACKEND': 'django.core.cache.backends.locmem.LocMemCache', 'LOCATION': 'corelia'}
+    ),
+}
+# En los tests la caché se vacía antes de cada prueba (límites y bloqueos limpios).
+TEST_RUNNER = 'api.tests.runner.CleanCacheTestRunner'
 
 CELERY_BEAT_SCHEDULE = {
     # Cada 15 min — recordatorio push ~2h antes de cada clase

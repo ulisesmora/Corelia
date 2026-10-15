@@ -1,5 +1,5 @@
-import { useState, ReactNode } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect, useState, ReactNode } from 'react';
+import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Drawer,
@@ -40,6 +40,7 @@ import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import HomeIcon from '@mui/icons-material/Home';
 import TuneIcon from '@mui/icons-material/Tune';
+import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
 import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
 import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
@@ -48,6 +49,8 @@ import { OPEN_GUIDE_EVENT } from './guide';
 import InstallCrmApp, { canInstallCrm, openInstallHelp } from './InstallCrmApp';
 import InstallMobileIcon from '@mui/icons-material/InstallMobile';
 import { useAuth } from '../context/AuthContext';
+import { API_BASE_URL } from '../config';
+import { authHeaders } from '../utils/auth';
 import { useSite } from '../site/SiteProvider';
 import StudioLogo from '../site/StudioLogo';
 
@@ -123,6 +126,7 @@ const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
       { text: 'Categorías', hint: 'Grupos de clases en la web', icon: <CategoryIcon />, path: '/categories' },
       { text: 'Fotos de la web', hint: 'Imágenes de tu web', icon: <PhotoLibraryIcon />, path: '/site-images' },
       { text: 'Administradores', hint: 'Quién puede entrar aquí', icon: <AdminPanelSettingsIcon />, path: '/admins' },
+      { text: 'Seguridad', hint: 'Código del móvil al entrar', icon: <ShieldOutlinedIcon />, path: '/seguridad' },
     ],
   },
 ];
@@ -139,7 +143,20 @@ export default function MainLayout() {
   const drawerWidth = mini ? MINI_WIDTH : DRAWER_WIDTH;
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, logout } = useAuth();
+  const { user, logout, updateUser } = useAuth();
+  // ¿Exige el estudio la verificación en dos pasos y esta persona aún no la
+  // tiene? Entonces el API solo le deja activarla: se la lleva a Seguridad.
+  useEffect(() => {
+    let alive = true;
+    fetch(`${API_BASE_URL}v1/auth/2fa/`, { headers: authHeaders() })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((s) => { if (alive && s) updateUser({ two_factor_setup_required: Boolean(s.setup_required) }); })
+      .catch(() => { /* sin conexión: se comprobará en la próxima carga */ });
+    return () => { alive = false; };
+    // Solo al abrir el panel
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const mustSetup2fa = Boolean(user?.two_factor_setup_required) && location.pathname !== '/seguridad';
   const { config } = useSite();
 
   const drawerContent = (compact: boolean, showMiniToggle = false) => (
@@ -433,7 +450,7 @@ export default function MainLayout() {
       >
         <Toolbar />
         <Box sx={{ p: { xs: 2, md: 3.5 } }}>
-          <Outlet />
+          {mustSetup2fa ? <Navigate to="/seguridad" replace /> : <Outlet />}
         </Box>
       </Box>
 

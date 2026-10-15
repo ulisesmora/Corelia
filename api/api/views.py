@@ -86,6 +86,12 @@ from django.conf import settings
 from django.utils.dateparse import parse_datetime
 
 from django.db.models import Count, Q
+from api.throttling import check_throttles, scoped
+from api.utils import lockout
+from api.utils.turnstile import check_captcha
+from api.views_security import (
+    check_credentials, login_failed, login_gate, panel_session, two_factor_challenge,
+)
 
 
 from datetime import datetime, date, timedelta, timezone as dt_timezone 
@@ -225,6 +231,13 @@ class SignUpClientView(APIView):
             data._mutable = True
 
         is_admin = bool(getattr(request.user, 'is_authenticated', False) and request.user.is_staff)
+        if not is_admin:
+            # Registro público: límite por IP y captcha (si está configurado).
+            # Las altas desde el panel no tienen límite.
+            check_throttles(request, scoped('signup'))
+            captcha = check_captcha(request)
+            if captcha:
+                return captcha
         email = (data.get('email') or '').strip().lower()
         password = data.get('password') or ''
 
@@ -253,6 +266,8 @@ class SignUpClientView(APIView):
         data['email'] = email
         data['username'] = email
         data['password'] = password or uuid.uuid4().hex  # se sustituye abajo
+        for extra in ('turnstile_token', 'cf-turnstile-response'):
+            data.pop(extra, None)
 
         user_serializer = UserSerializer(data=data)
         if not user_serializer.is_valid():
@@ -290,88 +305,80 @@ class SignUpClientView(APIView):
 
 
 class SignInView(APIView):
+    """POST /api/signin/ {email, password[, turnstile_token]} — entrada al panel.
+
+    - Email bloqueado por intentos fallidos → 429 (code='account_locked').
+    - Tras varios fallos, si el captcha está configurado, hay que mandarlo.
+    - Con la verificación en dos pasos activada NO devuelve la sesión sino
+      {two_factor_required, two_factor_token}: el código va a /api/v1/auth/2fa/verify/.
+    """
     permission_classes = [AllowAny]
+    throttle_classes = [scoped('login'), scoped('login_email', 'email')]
 
     def post(self, request):
         serializer = SignInSerializer(data=request.data)
-        if serializer.is_valid():
-            user = User.objects.filter(email__iexact=serializer.validated_data['email'].strip()).first()
-            
-            if user and user.is_active and check_password(serializer.validated_data['password'], user.password) and user.is_staff == True and user.is_superuser:
-                # Genera el token personalizado
-                refresh = RefreshToken.for_user(user)
-                refresh['isAdmin'] = True  # Ya validamos en el IF que es admin
-                refresh['role'] = user.role.name if user.role else None
-
-                # 3. Obtenemos el access token derivado
-                access_token = refresh.access_token
-
-                # 4. IMPORTANTE: Forzamos la carga del payload en el access token también
-                access_token['isAdmin'] = True
-                
-                
-
-                return Response({
-                    "refresh": str(refresh),  # Mantén el refresh token estándar
-                    "access": str(access_token),  # Devuelve el token de acceso con claims personalizados
-                    "role": user.role.name if user.role else None,  # Opcional para respuesta directa
-                    "permissions": user.role.permissions if user.role else {},  # Opcional para respuesta directa
-                    "name": (user.first_name or '').strip(),
-                    "email": user.email,
-                })
-            return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    
-
-
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        email = serializer.validated_data['email'].strip()
+        blocked = login_gate(request, email)
+        if blocked:
+            return blocked
+        user = check_credentials(email, serializer.validated_data['password'])
+        if user and user.is_staff and user.is_superuser:
+            from api.utils import two_factor
+            lockout.clear_failures(email)
+            if two_factor.is_enabled(user):
+                return Response(two_factor_challenge(user))
+            logger.info("auth.panel_login user_id=%s two_factor=none", user.id)
+            return Response(panel_session(user))
+        return login_failed(request, email, "Invalid credentials")
 
 
 class SignInViewClient(APIView):
+    """POST /api/signinClient/ {email, password[, turnstile_token]} — entrada de clientas.
+    Mismos límites, bloqueo y captcha que el panel. Una cuenta del panel aquí
+    recibe la misma respuesta que una contraseña incorrecta (antes un mensaje
+    distinto delataba que la contraseña de un administrador era buena)."""
     permission_classes = [AllowAny]
-    
+    throttle_classes = [scoped('login'), scoped('login_email', 'email')]
+
     def post(self, request):
         serializer = SignInSerializer(data=request.data)
-        if serializer.is_valid():
-            user = User.objects.filter(email__iexact=serializer.validated_data['email'].strip()).first()
-            
-            # 1. Primero, verifica si el usuario existe y la contraseña es correcta
-            if user and check_password(serializer.validated_data['password'], user.password):
-                
-                # 2. Segundo, verifica si es un cliente (no staff/superuser)
-                if not user.is_staff and not user.is_superuser:
-                    
-                    # 3. Verificación suave: una cuenta sin confirmar también
-                    # entra (antes quedaba bloqueada para siempre si el email
-                    # se perdía, sin forma de reenviarlo). El front le pide el
-                    # código; solo la membresía exige email confirmado.
-                    refresh = RefreshToken.for_user(user)
-                    access_token = CustomTokenObtainPairSerializer.get_token(user).access_token
-                    return Response({
-                        "refresh": str(refresh),
-                        "access": str(access_token),
-                        "role": user.role.name if user.role else None,
-                        "permissions": user.role.permissions if user.role else {},
-                        "userid": user.id,
-                        "username": user.first_name,
-                        "is_verified": bool(user.is_verified),
-                    }, status=status.HTTP_200_OK)
-                
-                # Si es un admin (is_staff) o las credenciales son de otro tipo no-cliente
-                return Response({"error": "Invalid credentials"}, status=status.HTTP_401_UNAUTHORIZED)
-            
-            # Si el usuario no existe o la contraseña es incorrecta
-            return Response({"error": "Email o contraseña incorrectos."}, status=status.HTTP_401_UNAUTHORIZED)
-        
-        # Si los datos enviados no son válidos (ej. 'email' mal formateado)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if not serializer.is_valid():
+            # Si los datos enviados no son válidos (ej. 'email' mal formateado)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        email = serializer.validated_data['email'].strip()
+        blocked = login_gate(request, email)
+        if blocked:
+            return blocked
+        user = check_credentials(email, serializer.validated_data['password'])
 
- 
+        if user and not user.is_staff and not user.is_superuser:
+            lockout.clear_failures(email)
+            # Verificación suave: una cuenta sin confirmar también entra (antes
+            # quedaba bloqueada para siempre si el email se perdía, sin forma de
+            # reenviarlo). El front le pide el código; solo la membresía exige
+            # email confirmado.
+            refresh = RefreshToken.for_user(user)
+            access_token = CustomTokenObtainPairSerializer.get_token(user).access_token
+            return Response({
+                "refresh": str(refresh),
+                "access": str(access_token),
+                "role": user.role.name if user.role else None,
+                "permissions": user.role.permissions if user.role else {},
+                "userid": user.id,
+                "username": user.first_name,
+                "is_verified": bool(user.is_verified),
+            }, status=status.HTTP_200_OK)
+
+        # Email o contraseña incorrectos, o cuenta del panel
+        return login_failed(request, email, "Email o contraseña incorrectos.")
+
 
 class EmailVerificationView(APIView):
 
     permission_classes = [AllowAny]
+    throttle_classes = [scoped('email_verify')]
 
     def post(self, request):
         serializer = EmailVerificationSerializer(data=request.data)
@@ -393,10 +400,15 @@ class EmailVerificationView(APIView):
 class RequestPasswordResetView(APIView):
     """Envía el enlace de recuperación. Nunca devuelve el token (antes iba en
     la respuesta: cualquiera podía cambiar la contraseña de otra persona) y
-    responde lo mismo exista o no el email (no revela quién tiene cuenta)."""
+    responde lo mismo exista o no el email (no revela quién tiene cuenta).
+    Límite por IP y por email, y captcha si está configurado."""
     permission_classes = [AllowAny]
+    throttle_classes = [scoped('password_reset'), scoped('password_reset_email', 'email')]
 
     def post(self, request):
+        captcha = check_captcha(request)
+        if captcha:
+            return captcha
         email = (request.data.get("email") or '').strip()
         user = User.objects.filter(email__iexact=email).first() if email else None
         if user:
@@ -419,6 +431,7 @@ class RequestPasswordResetView(APIView):
 
 class ResetPasswordView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [scoped('password_reset_confirm')]
 
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
@@ -441,6 +454,8 @@ class ResetPasswordView(APIView):
             user.is_verified = True
             # Antes faltaba este save(): la contraseña nunca se cambiaba de verdad
             user.save(update_fields=['password', 'reset_token', 'reset_token_expires', 'is_verified'])
+            # Quien recibe el enlace en su correo puede desbloquear su cuenta
+            lockout.unlock(user.email)
             logger.info("auth.password_reset_done user_id=%s", user.id)
             return Response({"message": "Contraseña actualizada. Ya puedes iniciar sesión."}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -1282,6 +1297,8 @@ class CouponRedemptionViewSet(SoftDeleteModelViewSet):
 
     @action(detail=False, methods=['get'], url_path='check-usage')
     def check_usage(self, request):
+        if not request.user.is_authenticated:
+            check_throttles(request, scoped('public_form'))
         email = request.query_params.get('email')
         coupon_id = request.query_params.get('coupon_id')
         
@@ -1322,7 +1339,12 @@ class ContactUserViewSet(SoftDeleteModelViewSet):
         if self.action == 'create':
             return [AllowAny()]
         return super().get_permissions()
-    
+
+    def create(self, request, *args, **kwargs):
+        # Formulario público: límite por IP para que nadie llene la bandeja
+        if not (request.user and request.user.is_staff):
+            check_throttles(request, scoped('public_form'))
+        return super().create(request, *args, **kwargs)
 
 
 class BookingViewSet(SoftDeleteModelViewSet):
@@ -1692,6 +1714,7 @@ class LeadViewSet(SoftDeleteModelViewSet):
 
 class CheckLeadEmailView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [scoped('public_form')]
     """
     Checks if a Lead with the given email exists.
     Expects GET request with 'email' query parameter.
@@ -1716,6 +1739,7 @@ class CheckLeadEmailView(APIView):
 # --- NEW: View to update a Lead by email ---
 class UpdateLeadByEmailView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [scoped('public_form')]
     PREFERENCE_FIELDS = ('whatThinkFeel', 'experience_level', 'birth_date', 'desires',
                          'goal_primary', 'whatSee', 'whatListen', 'whatsay', 'frustated')
     """
@@ -1768,6 +1792,7 @@ class GoogleLoginView(APIView):
     """
     permission_classes = [permissions.AllowAny]
     authentication_classes = []
+    throttle_classes = [scoped('login')]
 
     def post(self, request, format=None):
         token = request.data.get('credential') or request.data.get('id_token')
@@ -1808,7 +1833,8 @@ class GoogleLoginView(APIView):
             created = True
         elif user.is_staff:
             # El panel tiene su propio acceso: una cuenta de administración
-            # no entra como clienta por la web.
+            # no entra como clienta por la web. Así Google tampoco puede
+            # saltarse la verificación en dos pasos del panel.
             return Response({"detail": "Esta cuenta es de administración: entra desde el panel."},
                             status=status.HTTP_403_FORBIDDEN)
         elif not user.is_verified:
@@ -2152,12 +2178,19 @@ class MyWalletBalanceView(APIView):
         return Response({"balance": current_balance})
         
 class CreateCheckoutSessionView(APIView):
+    """Pago como invitada (sin cuenta): crea su ficha y la sesión de Stripe.
+    Límite por IP y captcha (si está configurado) para quien no ha entrado."""
     permission_classes = [AllowAny]
-    
+    throttle_classes = [scoped('checkout')]
+
     def post(self, request, *args, **kwargs):
         from api.utils.payments import payments_disabled_response, stripe_ready
         if not stripe_ready():
             return payments_disabled_response()
+        if not request.user.is_authenticated:
+            captcha = check_captcha(request)
+            if captcha:
+                return captcha
         
         
         guest_email = request.data.get('email')
@@ -4542,6 +4575,7 @@ class MembershipCandidateContactedView(APIView):
 class VerifyEmailCodeView(APIView):
     """POST /v1/auth/verify-code/ {code} — confirma el email con el código."""
     permission_classes = [IsAuthenticated]
+    throttle_classes = [scoped('email_verify', 'user')]
 
     def post(self, request):
         from api.utils.verification import verify_code
@@ -4557,6 +4591,7 @@ class ResendVerificationView(APIView):
     Con sesión: a la propia cuenta. Sin sesión: {email}, con respuesta
     genérica para no revelar qué emails existen."""
     permission_classes = [AllowAny]
+    throttle_classes = [scoped('email_verify', 'user'), scoped('email_verify_email', 'email')]
 
     def post(self, request):
         from api.utils.verification import seconds_until_resend, send_verification

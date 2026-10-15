@@ -52,6 +52,8 @@ export interface SiteConfigPublic {
   timezone: string;
   /** Web pública del estudio, si el backend la incluye en la config pública */
   web_url?: string;
+  /** Clave pública del captcha Cloudflare Turnstile ('' = desactivado) */
+  turnstile_site_key: string;
 }
 
 export const DEFAULT_SITE_CONFIG: SiteConfigPublic = {
@@ -77,6 +79,7 @@ export const DEFAULT_SITE_CONFIG: SiteConfigPublic = {
   setup_completed: false,
   timezone: DEFAULT_STUDIO_TZ,
   web_url: '',
+  turnstile_site_key: '',
 };
 
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
@@ -114,6 +117,7 @@ export function normalizeSiteConfig(raw: unknown): SiteConfigPublic {
     setup_completed: Boolean(r.setup_completed),
     timezone: str(r.timezone, d.timezone),
     web_url: str(r.web_url, ''),
+    turnstile_site_key: str(r.turnstile_site_key, ''),
   };
 }
 

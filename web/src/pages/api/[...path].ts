@@ -58,11 +58,17 @@ const proxy: APIRoute = async ({ request, clientAddress }) => {
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }
-  // Datos del cliente real para los logs y límites de peticiones del backend
+  // Datos del cliente real para los logs y límites de peticiones del backend.
+  // OJO: el clientAddress de Astro es el PRIMER valor de X-Forwarded-For, que
+  // puede escribirlo el propio navegador. Si la cabecera ya viene (nos la puso
+  // el proxy HTTPS de entrada: Railway, Docker…), se reenvía tal cual: la
+  // última IP la añadió ese proxy y es la fiable (el backend la busca de
+  // derecha a izquierda). Solo sin cabecera se usa la IP de la conexión.
+  const prevFor = request.headers.get('x-forwarded-for');
   let ip = '';
   try { ip = clientAddress; } catch { /* sin IP disponible */ }
-  const prevFor = request.headers.get('x-forwarded-for');
-  if (ip || prevFor) headers.set('x-forwarded-for', [prevFor, ip].filter(Boolean).join(', '));
+  if (prevFor) headers.set('x-forwarded-for', prevFor);
+  else if (ip) headers.set('x-forwarded-for', ip);
   headers.set('x-forwarded-host', incoming.host);
   headers.set('x-forwarded-proto', request.headers.get('x-forwarded-proto') || incoming.protocol.replace(':', ''));
 

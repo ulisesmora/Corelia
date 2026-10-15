@@ -86,6 +86,18 @@ Las migraciones de la base de datos se aplican solas al arrancar.
 Railway → servicio **Postgres** → pestaña *Backups*: activa las copias automáticas. Como
 las fotos están en la base de datos, con eso se guarda todo.
 
+## 7. Seguridad
+
+Ya viene protegido: límite de intentos, bloqueo temporal tras 5 contraseñas
+incorrectas y cabeceras de seguridad. Dos cosas recomendadas (5 minutos):
+
+1. En el panel → **Seguridad**, activa la **verificación en dos pasos** (código del
+   móvil al entrar) y, si sois varias personas, «Exigirla a todo el equipo».
+2. Opcional: captcha gratuito de **Cloudflare Turnstile** contra registros falsos y
+   robots. Pon `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY` en el servicio **api**.
+
+Todo explicado, con las variables, en [SEGURIDAD.md](SEGURIDAD.md).
+
 ---
 
 ## Alternativa: la web en Vercel
@@ -102,3 +114,6 @@ con el API por internet en lugar de por la red privada. Si aun así lo prefieres
    panel → Ajustes → Tu dominio, como en el paso 4.
 
 La web detecta sola que está en Vercel y usa su adaptador.
+
+Ojo con los límites de intentos por IP: desde Vercel todas las visitas llegan al API
+desde las IP de Vercel. Lee «La IP real» en [SEGURIDAD.md](SEGURIDAD.md).

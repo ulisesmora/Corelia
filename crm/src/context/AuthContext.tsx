@@ -3,6 +3,8 @@ import { createContext, useContext, ReactNode, useState, useEffect } from 'react
 type User = {
   name: string;
   email: string;
+  /** El estudio exige la verificación en dos pasos y aún no está activada */
+  two_factor_setup_required?: boolean;
 };
 
 type AuthContextType = {
@@ -10,6 +12,8 @@ type AuthContextType = {
   user: User | null;
   login: (userData: User, token: string) => void;
   logout: () => void;
+  /** Cambia datos de la sesión guardada (p. ej. al activar la verificación en dos pasos) */
+  updateUser: (patch: Partial<User>) => void;
   isLoading: boolean; // Add loading state
 };
 
@@ -45,6 +49,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(userData);
   };
 
+  const updateUser = (patch: Partial<User>) => {
+    setUser((prev) => {
+      if (!prev) return prev;
+      const next = { ...prev, ...patch };
+      try {
+        const stored = JSON.parse(localStorage.getItem('user') || '{}');
+        localStorage.setItem('user', JSON.stringify({ ...stored, ...patch }));
+      } catch { /* sin almacenamiento */ }
+      return next;
+    });
+  };
+
   const logout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
@@ -59,6 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         login,
         logout,
+        updateUser,
         isLoading,
       }}
     >

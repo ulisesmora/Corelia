@@ -10,7 +10,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from api.models import SiteConfig
+from api.throttling import scoped
 from api.utils.site import ensure_vapid_keys, get_site_config
+from api.utils.turnstile import turnstile_site_key
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +121,9 @@ class SiteConfigSerializer(serializers.ModelSerializer):
         model = SiteConfig
         exclude = ('id', 'stripe_secret_key', 'stripe_webhook_secret', 'stripe_webhook_id',
                    'vapid_private_key', 'vapid_public_key')
-        read_only_fields = ('payments_enabled', 'stripe_publishable_key', 'updated_at', 'hero_video_poster_url')
+        # require_panel_2fa: se cambia en /api/v1/auth/2fa/policy/ (exige tenerla activada uno mismo)
+        read_only_fields = ('payments_enabled', 'stripe_publishable_key', 'updated_at', 'hero_video_poster_url',
+                            'require_panel_2fa')
 
     # ── País y moneda ──
     def validate_currency(self, value):
@@ -367,6 +371,8 @@ def public_config_payload(cfg: SiteConfig) -> dict:
         'payments_enabled': payments_enabled(),
         'stripe_publishable_key': stripe_keys()[1] if payments_enabled() else '',
         'google_login_enabled': bool(cfg.google_client_id),
+        # Captcha Cloudflare Turnstile (clave PÚBLICA; '' = desactivado)
+        'turnstile_site_key': turnstile_site_key(),
         'google_client_id': cfg.google_client_id,
         'vapid_public_key': vapid_public,
         'setup_completed': cfg.setup_completed,
@@ -454,6 +460,7 @@ class SiteConfigTestEmailView(APIView):
     Prueba la configuración SMTP. Si vienen campos smtp_* se prueban SIN
     guardar (para que el asistente valide antes de activar)."""
     permission_classes = [IsAdminUser]
+    throttle_classes = [scoped('test_email', 'user')]
 
     def post(self, request):
         from api.utils.emailing import send_test_email

@@ -23,6 +23,7 @@ import RoomsManagement from './pages/Rooms';
 import CategoriesManagement from './pages/Categories';
 import Setup from './pages/Setup';
 import StudioSettings from './pages/StudioSettings';
+import Security from './pages/Security';
 import SetupGate from './components/setup/SetupGate';
 
 const App = () => (
@@ -51,6 +52,7 @@ const App = () => (
           <Route path="/rooms" element={<RoomsManagement />} />
           <Route path="/categories" element={<CategoriesManagement />} />
           <Route path="/ajustes" element={<StudioSettings />} />
+          <Route path="/seguridad" element={<Security />} />
         </Route>
       </Route>
     </Routes>

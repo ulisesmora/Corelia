@@ -1167,6 +1167,11 @@ class SiteConfig(models.Model):
     panel_domain = models.CharField(max_length=253, blank=True, default='',
                                     help_text='Dominio del panel, p. ej. panel.tuestudio.com')
 
+    # ── Seguridad del panel ──
+    require_panel_2fa = models.BooleanField(
+        default=False,
+        help_text='Exigir la verificación en dos pasos (código del móvil) a todas las personas que entran en el panel.')
+
     # ── Asistente de bienvenida ──
     setup_completed = models.BooleanField(default=False)
     updated_at = models.DateTimeField(auto_now=True)
@@ -1191,6 +1196,39 @@ class SiteConfig(models.Model):
     def load(cls):
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class TwoFactorDevice(models.Model):
+    """Verificación en dos pasos (TOTP, RFC 6238) de una persona del panel: la
+    app del móvil (Google Authenticator, 1Password, Authy…) genera un código de
+    6 dígitos cada 30 s a partir de este secreto.
+
+    - secret: cifrado con la SECRET_KEY (api/crypto.py), como las claves de Stripe.
+    - confirmed_at: vacío mientras se está configurando (aún no ha escrito un
+      código bueno); con fecha, la verificación está activada.
+    - last_used_step: último intervalo de 30 s usado, para que un mismo código
+      no sirva dos veces.
+    - recovery_codes: códigos de un solo uso para cuando no se tiene el móvil,
+      guardados resumidos (nunca en claro).
+    """
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='two_factor')
+    secret = EncryptedTextField(blank=True, default='')
+    confirmed_at = models.DateTimeField(null=True, blank=True)
+    last_used_step = models.BigIntegerField(default=0)
+    recovery_codes = models.JSONField(default=list, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Verificación en dos pasos'
+        verbose_name_plural = 'Verificación en dos pasos'
+
+    def __str__(self):
+        return f"{self.user} ({'activada' if self.enabled else 'sin activar'})"
+
+    @property
+    def enabled(self) -> bool:
+        return self.confirmed_at is not None and bool(self.secret)
 
 
 class StoredFile(models.Model):
