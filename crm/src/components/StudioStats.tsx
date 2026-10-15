@@ -85,7 +85,7 @@ function Trend({ cur, prev, isMoney = false, compare }: { cur: number; prev: num
   const pct = prev ? Math.round((diff / prev) * 100) : null;
   const up = diff > 0;
   const same = diff === 0;
-  const color = same ? 'var(--studio-text-muted)' : up ? '#3D6B2E' : '#A0473A';
+  const color = same ? 'var(--studio-text-muted)' : up ? 'var(--studio-success-text, #3D6B2E)' : 'var(--studio-danger-text, #A0473A)';
   const Icon = same ? TrendingFlatIcon : up ? TrendingUpIcon : TrendingDownIcon;
   const delta = isMoney ? amount(Math.abs(diff)) : `${Math.abs(diff)}`;
   return (
@@ -326,7 +326,7 @@ export default function StudioStats() {
                 ? 'Ninguna nueva este mes. '
                 : ms.new_this_month === 1 ? '1 nueva este mes. ' : `${ms.new_this_month} nuevas este mes. `}
               {ms.past_due > 0 && (
-                <b style={{ color: '#A0473A' }}>
+                <b style={{ color: 'var(--studio-danger-text, #A0473A)' }}>
                   {ms.past_due === 1 ? '1 tiene el pago pendiente.' : `${ms.past_due} tienen el pago pendiente.`}
                 </b>
               )}
@@ -377,7 +377,7 @@ export default function StudioStats() {
             </Stack>
           )}
           {data.top_classes.some((c) => (c.fill_pct ?? 0) >= 90) && (
-            <Typography sx={{ mt: 1.5, fontSize: '0.9rem', color: '#3D6B2E' }}>
+            <Typography sx={{ mt: 1.5, fontSize: '0.9rem', color: 'var(--studio-success-text, #3D6B2E)' }}>
               💡 Las que están casi llenas son buena señal: podrías abrir otro horario de esa clase.
             </Typography>
           )}
@@ -428,7 +428,7 @@ export default function StudioStats() {
                 const link = waLink(c.phone, `¡Hola ${first}! Te echamos de menos en ${studioName} 💛 ¿Te guardo sitio en alguna clase esta semana?`);
                 return (
                   <Stack key={`${c.name}${c.last_visit}`} direction="row" alignItems="center" spacing={1.25}
-                    sx={{ p: 1.25, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.8)', border: '1px solid rgb(var(--studio-line-rgb) / 0.25)' }}>
+                    sx={{ p: 1.25, borderRadius: 3, backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.8)', border: '1px solid rgb(var(--studio-line-rgb) / 0.25)' }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
                       <Typography sx={{ fontWeight: 600 }} noWrap>{c.name}</Typography>
                       <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>

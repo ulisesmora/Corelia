@@ -23,7 +23,7 @@ export function englishStatus(pairs: EnglishPair[]): 'none' | 'ok' | 'missing' {
 
 const SOFT_WARN = {
   backgroundColor: 'rgba(212,165,116,0.18)',
-  color: '#7A4E24',
+  color: 'var(--studio-warning-text, #7A4E24)',
   border: '1px solid rgba(212,165,116,0.45)',
 };
 

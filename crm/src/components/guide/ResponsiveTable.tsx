@@ -69,9 +69,9 @@ const mobileCards: SxProps<Theme> = (theme) => ({
       px: 1.75,
       py: 1.25,
       borderRadius: 3,
-      backgroundColor: 'rgba(255,255,255,0.9)',
+      backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.9)',
       border: '1px solid rgb(var(--studio-line-rgb) / 0.3)',
-      boxShadow: '0 2px 10px rgb(var(--studio-dark-rgb) / 0.05)',
+      boxShadow: '0 2px 10px rgb(var(--studio-shadow-rgb) / 0.05)',
     },
     '& tbody tr[data-full]': {
       p: 0, mb: 1.5, backgroundColor: 'transparent', border: 'none', boxShadow: 'none',

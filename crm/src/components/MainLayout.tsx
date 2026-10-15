@@ -19,40 +19,15 @@ import {
   BottomNavigation,
   BottomNavigationAction,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
-import PeopleIcon from '@mui/icons-material/People';
-import NotificationsIcon from '@mui/icons-material/Notifications';
-import LogoutIcon from '@mui/icons-material/Logout';
-import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
-import CardMembershipIcon from '@mui/icons-material/CardMembership';
-import ClassIcon from '@mui/icons-material/Class';
-import InsertInvitationIcon from '@mui/icons-material/InsertInvitation';
-import PaymentsIcon from '@mui/icons-material/Payments';
-import MarkunreadMailboxIcon from '@mui/icons-material/MarkunreadMailbox';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import SchoolIcon from '@mui/icons-material/School';
-import MeetingRoomIcon from '@mui/icons-material/MeetingRoom';
-import CategoryIcon from '@mui/icons-material/Category';
-import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
-import SubscriptionsIcon from '@mui/icons-material/Subscriptions';
-import AssignmentIcon from '@mui/icons-material/Assignment';
-import PhotoLibraryIcon from '@mui/icons-material/PhotoLibrary';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import HomeIcon from '@mui/icons-material/Home';
-import TuneIcon from '@mui/icons-material/Tune';
-import ShieldOutlinedIcon from '@mui/icons-material/ShieldOutlined';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import KeyboardDoubleArrowLeftIcon from '@mui/icons-material/KeyboardDoubleArrowLeft';
-import KeyboardDoubleArrowRightIcon from '@mui/icons-material/KeyboardDoubleArrowRight';
 import Button from '@mui/material/Button';
 import { OPEN_GUIDE_EVENT } from './guide';
 import InstallCrmApp, { canInstallCrm, openInstallHelp } from './InstallCrmApp';
-import InstallMobileIcon from '@mui/icons-material/InstallMobile';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 import { authHeaders } from '../utils/auth';
 import { useSite } from '../site/SiteProvider';
 import StudioLogo from '../site/StudioLogo';
+import StudioIcon from '../site/StudioIcon';
 
 const DRAWER_WIDTH = 290;
 // Menú encogido (solo iconos) en ordenador
@@ -63,10 +38,10 @@ const BOTTOM_NAV_HEIGHT = 68;
 
 // Lo más usado, siempre a mano abajo en el móvil ("Más" abre el menú completo)
 const BOTTOM_ITEMS = [
-  { label: 'Inicio', icon: <HomeIcon />, path: '/' },
-  { label: 'Reservas', icon: <MenuBookIcon />, path: '/bookings' },
-  { label: 'Clientas', icon: <PeopleIcon />, path: '/clients' },
-  { label: 'Horarios', icon: <InsertInvitationIcon />, path: '/calendar' },
+  { label: 'Inicio', icon: <StudioIcon name="home" />, path: '/' },
+  { label: 'Reservas', icon: <StudioIcon name="bookings" />, path: '/bookings' },
+  { label: 'Clientas', icon: <StudioIcon name="clients" />, path: '/clients' },
+  { label: 'Horarios', icon: <StudioIcon name="schedule" />, path: '/calendar' },
 ];
 
 function readMini(): boolean {
@@ -88,45 +63,45 @@ interface MenuItem {
 const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
   {
     title: '',
-    items: [{ text: 'Inicio', hint: 'Lo más usado, en un clic', icon: <HomeIcon />, path: '/' }],
+    items: [{ text: 'Inicio', hint: 'Lo más usado, en un clic', icon: <StudioIcon name="home" />, path: '/' }],
   },
   {
     title: 'Día a día',
     items: [
-      { text: 'Reservas', hint: 'Quién viene a cada clase', icon: <MenuBookIcon />, path: '/bookings' },
-      { text: 'Clientas', hint: 'Buscar, dar de alta, ver fichas', icon: <PeopleIcon />, path: '/clients' },
-      { text: 'Créditos', hint: 'Añadir o quitar clases a alguien', icon: <AccountBalanceWalletIcon />, path: '/credits' },
-      { text: 'Avisos a clientas', hint: 'Enviar un mensaje a todas', icon: <NotificationsIcon />, path: '/mails' },
+      { text: 'Reservas', hint: 'Quién viene a cada clase', icon: <StudioIcon name="bookings" />, path: '/bookings' },
+      { text: 'Clientas', hint: 'Buscar, dar de alta, ver fichas', icon: <StudioIcon name="clients" />, path: '/clients' },
+      { text: 'Créditos', hint: 'Añadir o quitar clases a alguien', icon: <StudioIcon name="credits" />, path: '/credits' },
+      { text: 'Avisos a clientas', hint: 'Enviar un mensaje a todas', icon: <StudioIcon name="notices" />, path: '/mails' },
     ],
   },
   {
     title: 'Clases y horarios',
     items: [
-      { text: 'Mis clases y horarios', hint: 'Horario, cambios y cierres', icon: <InsertInvitationIcon />, path: '/calendar' },
-      { text: 'Clases fijas de clientas', hint: 'Plaza guardada cada semana', icon: <AssignmentIcon />, path: '/assign-classes' },
-      { text: 'Tipos de clase', hint: 'Pilates, yoga… y su descripción', icon: <ClassIcon />, path: '/classes' },
-      { text: 'Instructores', hint: 'Quién da las clases', icon: <SchoolIcon />, path: '/instructors' },
+      { text: 'Mis clases y horarios', hint: 'Horario, cambios y cierres', icon: <StudioIcon name="schedule" />, path: '/calendar' },
+      { text: 'Clases fijas de clientas', hint: 'Plaza guardada cada semana', icon: <StudioIcon name="fixedClasses" />, path: '/assign-classes' },
+      { text: 'Tipos de clase', hint: 'Pilates, yoga… y su descripción', icon: <StudioIcon name="classTypes" />, path: '/classes' },
+      { text: 'Instructores', hint: 'Quién da las clases', icon: <StudioIcon name="instructors" />, path: '/instructors' },
     ],
   },
   {
     title: 'Ventas y precios',
     items: [
-      { text: 'Pagos', hint: 'Lo que se ha cobrado', icon: <PaymentsIcon />, path: '/payments' },
-      { text: 'Membresías', hint: 'Quién paga cada mes', icon: <SubscriptionsIcon />, path: '/subscriptions' },
-      { text: 'Candidatas a membresía', hint: 'Vienen cada semana sin membresía', icon: <WorkspacePremiumIcon />, path: '/membership-candidates' },
-      { text: 'Bonos y precios', hint: 'Lo que se vende en la web', icon: <CardMembershipIcon />, path: '/plans' },
-      { text: 'Cupones de descuento', hint: 'Códigos con descuento', icon: <MarkunreadMailboxIcon />, path: '/cuopon' },
+      { text: 'Pagos', hint: 'Lo que se ha cobrado', icon: <StudioIcon name="payments" />, path: '/payments' },
+      { text: 'Membresías', hint: 'Quién paga cada mes', icon: <StudioIcon name="subscriptions" />, path: '/subscriptions' },
+      { text: 'Candidatas a membresía', hint: 'Vienen cada semana sin membresía', icon: <StudioIcon name="candidates" />, path: '/membership-candidates' },
+      { text: 'Bonos y precios', hint: 'Lo que se vende en la web', icon: <StudioIcon name="plans" />, path: '/plans' },
+      { text: 'Cupones de descuento', hint: 'Códigos con descuento', icon: <StudioIcon name="coupons" />, path: '/cuopon' },
     ],
   },
   {
     title: 'Ajustes (se usan poco)',
     items: [
-      { text: 'Mi estudio y mi web', hint: 'Nombre, aspecto, textos, Google y anuncios, emails y pagos', icon: <TuneIcon />, path: '/ajustes' },
-      { text: 'Salas', hint: 'Espacios del estudio', icon: <MeetingRoomIcon />, path: '/rooms' },
-      { text: 'Categorías', hint: 'Grupos de clases en la web', icon: <CategoryIcon />, path: '/categories' },
-      { text: 'Fotos de la web', hint: 'Imágenes de tu web', icon: <PhotoLibraryIcon />, path: '/site-images' },
-      { text: 'Administradores', hint: 'Quién puede entrar aquí', icon: <AdminPanelSettingsIcon />, path: '/admins' },
-      { text: 'Seguridad', hint: 'Código del móvil al entrar', icon: <ShieldOutlinedIcon />, path: '/seguridad' },
+      { text: 'Mi estudio y mi web', hint: 'Nombre, aspecto, textos, Google y anuncios, emails y pagos', icon: <StudioIcon name="settings" />, path: '/ajustes' },
+      { text: 'Salas', hint: 'Espacios del estudio', icon: <StudioIcon name="rooms" />, path: '/rooms' },
+      { text: 'Categorías', hint: 'Grupos de clases en la web', icon: <StudioIcon name="categories" />, path: '/categories' },
+      { text: 'Fotos de la web', hint: 'Imágenes de tu web', icon: <StudioIcon name="photos" />, path: '/site-images' },
+      { text: 'Administradores', hint: 'Quién puede entrar aquí', icon: <StudioIcon name="admins" />, path: '/admins' },
+      { text: 'Seguridad', hint: 'Código del móvil al entrar', icon: <StudioIcon name="security" />, path: '/seguridad' },
     ],
   },
 ];
@@ -169,7 +144,7 @@ export default function MainLayout() {
             fontFamily: 'var(--studio-font-body)',
             fontWeight: 300,
             fontSize: '0.7rem',
-            color: 'var(--studio-primary)',
+            color: 'var(--studio-primary-text)',
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
             mt: 0.6,
@@ -290,7 +265,7 @@ export default function MainLayout() {
               sx={{ mx: 0.5, borderRadius: 2.5, minHeight: 52, color: 'var(--studio-primary-dark)' }}
             >
               <ListItemIcon sx={{ minWidth: 36, color: 'var(--studio-primary)' }}>
-                <InstallMobileIcon />
+                <StudioIcon name="install" />
               </ListItemIcon>
               <ListItemText
                 primary="Instalar en el móvil"
@@ -312,7 +287,7 @@ export default function MainLayout() {
                 sx={{ mx: 0.5, borderRadius: 2.5, minHeight: 48, justifyContent: compact ? 'center' : 'flex-start', color: 'var(--studio-text-muted)' }}
               >
                 <ListItemIcon sx={{ minWidth: compact ? 0 : 36, color: 'var(--studio-text-hint)' }}>
-                  {compact ? <KeyboardDoubleArrowRightIcon /> : <KeyboardDoubleArrowLeftIcon />}
+                  {compact ? <StudioIcon name="expand" /> : <StudioIcon name="collapse" />}
                 </ListItemIcon>
                 {!compact && (
                   <ListItemText
@@ -333,12 +308,12 @@ export default function MainLayout() {
               justifyContent: compact ? 'center' : 'flex-start',
               mx: 0.5,
               borderRadius: 2.5,
-              color: '#C2857A',
+              color: 'var(--studio-danger-text, #C2857A)',
               '&:hover': { backgroundColor: 'rgba(194,133,122,0.08)' },
             }}
           >
-            <ListItemIcon sx={{ minWidth: compact ? 0 : 36, color: '#C2857A' }}>
-              <LogoutIcon />
+            <ListItemIcon sx={{ minWidth: compact ? 0 : 36, color: 'var(--studio-danger-text, #C2857A)' }}>
+              <StudioIcon name="logout" />
             </ListItemIcon>
             {!compact && <ListItemText
               primary="Salir del programa"
@@ -367,7 +342,7 @@ export default function MainLayout() {
         <Toolbar sx={{ px: { xs: 1.5, sm: 2, md: 4 }, minHeight: '64px !important', gap: 1 }}>
           <Button
             onClick={() => setMobileOpen(!mobileOpen)}
-            startIcon={<MenuIcon />}
+            startIcon={<StudioIcon name="menu" />}
             aria-label="Abrir el menú"
             sx={{ display: { md: 'none' }, color: 'var(--studio-dark)', minHeight: 44, px: 1.5 }}
           >
@@ -380,9 +355,9 @@ export default function MainLayout() {
           <Stack direction="row" spacing={{ xs: 1, sm: 2.5 }} alignItems="center">
             <Button
               variant="outlined"
-              startIcon={<HelpOutlineIcon />}
+              startIcon={<StudioIcon name="help" />}
               onClick={() => window.dispatchEvent(new Event(OPEN_GUIDE_EVENT))}
-              sx={{ minHeight: 44, px: 2, backgroundColor: 'rgba(255,255,255,0.7)' }}
+              sx={{ minHeight: 44, px: 2, backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.7)' }}
             >
               Ayuda
             </Button>
@@ -470,8 +445,8 @@ export default function MainLayout() {
           zIndex: (theme) => theme.zIndex.appBar,
           borderRadius: 0,
           borderTop: '1px solid rgb(var(--studio-line-rgb) / 0.35)',
-          backgroundColor: 'rgba(255,255,255,0.92)',
-          boxShadow: '0 -4px 20px rgb(var(--studio-dark-rgb) / 0.08)',
+          backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.92)',
+          boxShadow: '0 -4px 20px rgb(var(--studio-shadow-rgb) / 0.08)',
           pb: 'env(safe-area-inset-bottom)',
         }}
       >
@@ -494,7 +469,7 @@ export default function MainLayout() {
           {BOTTOM_ITEMS.map((b) => (
             <BottomNavigationAction key={b.path} value={b.path} label={b.label} icon={b.icon} />
           ))}
-          <BottomNavigationAction value="menu" label="Más" icon={<MenuIcon />} />
+          <BottomNavigationAction value="menu" label="Más" icon={<StudioIcon name="menu" />} />
         </BottomNavigation>
       </Paper>
     </Box>

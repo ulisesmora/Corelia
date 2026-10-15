@@ -89,6 +89,8 @@ export interface StudioSettings {
   font_body: string;
   style_preset: string;
   icon_style: string;
+  /** El panel usa también el estilo de la web (si no, su aspecto clásico) */
+  panel_follows_style: boolean;
   /** Moneda (ISO 4217). Cambiarla NO convierte los precios ya puestos. */
   currency: string;
   drop_in_price: string;

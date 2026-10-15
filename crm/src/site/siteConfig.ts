@@ -20,6 +20,15 @@ export interface SiteContact {
   maps_url?: string;
 }
 
+// Estilos visuales de la web (SiteConfig.STYLE_PRESETS del API). El panel
+// también los sigue (src/theme.ts) salvo que el estudio lo desactive.
+export const STYLE_IDS = ['natural', 'minimal', 'editorial', 'glass', 'brutalist', 'energy', 'pop', 'neon'] as const;
+export type StyleId = typeof STYLE_IDS[number];
+/** Estilos oscuros: el panel también se pone oscuro */
+export const DARK_STYLES: readonly StyleId[] = ['energy', 'neon'];
+export const ICON_STYLE_IDS = ['line', 'soft', 'solid'] as const;
+export type IconStyleId = typeof ICON_STYLE_IDS[number];
+
 export interface SiteThemeConfig {
   /** Colores "#RRGGBB" */
   primary: string;
@@ -29,6 +38,12 @@ export interface SiteThemeConfig {
   /** Nombres de Google Fonts */
   font_heading: string;
   font_body: string;
+  /** Estilo de la web (natural, minimal, editorial…) */
+  style: StyleId;
+  /** Familia de iconos: línea fina, suaves o rellenos */
+  icons: IconStyleId;
+  /** El panel usa también el estilo de la web (si no, su aspecto clásico) */
+  panel_follows_style: boolean;
 }
 
 export interface SiteConfigPublic {
@@ -70,6 +85,9 @@ export const DEFAULT_SITE_CONFIG: SiteConfigPublic = {
     background: '#F5F0EA',
     font_heading: 'Playfair Display',
     font_body: 'Jost',
+    style: 'natural',
+    icons: 'line',
+    panel_follows_style: true,
   },
   currency: 'EUR',
   country: 'ES',
@@ -85,6 +103,8 @@ export const DEFAULT_SITE_CONFIG: SiteConfigPublic = {
 const HEX = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
 const str = (v: unknown, fallback: string) => (typeof v === 'string' && v.trim() ? v.trim() : fallback);
 const color = (v: unknown, fallback: string) => (typeof v === 'string' && HEX.test(v.trim()) ? v.trim() : fallback);
+const oneOf = <T extends string>(v: unknown, list: readonly T[], fallback: T): T =>
+  (list as readonly unknown[]).includes(v) ? (v as T) : fallback;
 
 /** Mezcla lo que llega del backend con los valores por defecto (nada vacío ni inválido). */
 export function normalizeSiteConfig(raw: unknown): SiteConfigPublic {
@@ -108,6 +128,9 @@ export function normalizeSiteConfig(raw: unknown): SiteConfigPublic {
       background: color(t.background, d.theme.background),
       font_heading: cleanFontName(t.font_heading as string, d.theme.font_heading),
       font_body: cleanFontName(t.font_body as string, d.theme.font_body),
+      style: oneOf(t.style, STYLE_IDS, d.theme.style),
+      icons: oneOf(t.icons, ICON_STYLE_IDS, d.theme.icons),
+      panel_follows_style: t.panel_follows_style !== false,
     },
     currency: /^[A-Z]{3}$/.test(str(r.currency, '').toUpperCase()) ? str(r.currency, '').toUpperCase() : d.currency,
     country: [r.country, c.country].map((v) => str(v, '').toUpperCase()).find((v) => /^[A-Z]{2}$/.test(v)) || d.country,

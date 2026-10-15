@@ -113,7 +113,7 @@ export default function AppUpdater() {
             Actualizar
           </Button>
         }
-        sx={{ fontSize: '1rem', alignItems: 'center', boxShadow: '0 10px 30px rgb(var(--studio-dark-rgb) / 0.25)' }}
+        sx={{ fontSize: '1rem', alignItems: 'center', boxShadow: '0 10px 30px rgb(var(--studio-shadow-rgb) / 0.25)' }}
       >
         Hay una versión nueva del programa. Termina lo que estás haciendo y pulsa «Actualizar».
       </Alert>

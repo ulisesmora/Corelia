@@ -180,12 +180,14 @@ export default function PrintableSchedule({ schedules }: Props) {
       {/* ── La hoja ── */}
       <Box
         id="hoja-horario"
+        // Siempre clara (es una hoja de papel), también con un estilo oscuro del panel
+        className="studio-light"
         sx={{
           background: '#fff',
           borderRadius: '14px',
           border: `1px solid ${C.line}`,
           p: { xs: 2, md: 4 },
-          boxShadow: '0 4px 20px rgb(var(--studio-dark-rgb) / 0.08)',
+          boxShadow: '0 4px 20px rgb(var(--studio-shadow-rgb) / 0.08)',
         }}
       >
         {/* Cabecera de marca */}
@@ -239,7 +241,7 @@ export default function PrintableSchedule({ schedules }: Props) {
               <Box
                 sx={{
                   background: `linear-gradient(135deg, ${C.brand}, ${C.brandDark})`,
-                  color: '#fff',
+                  color: 'var(--studio-on-primary)',
                   textAlign: 'center',
                   borderRadius: '10px 10px 0 0',
                   py: 0.8,

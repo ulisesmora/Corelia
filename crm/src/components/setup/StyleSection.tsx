@@ -1,7 +1,16 @@
-import { useEffect, useState } from 'react';
-import { Alert, Box, Button, ButtonBase, Chip, CircularProgress, Stack, TextField, Typography } from '@mui/material';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  Alert, Box, Button, ButtonBase, Chip, CircularProgress, FormControlLabel, Paper, Stack, Switch, TextField,
+  ThemeProvider, Typography,
+} from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import { useNotify } from '../guide';
+import { useSite } from '../../site/SiteProvider';
+import { normalizeSiteConfig } from '../../site/siteConfig';
+import StudioIcon from '../../site/StudioIcon';
+import { buildTheme, panelTokens } from '../../theme';
+import { saveSettings } from './api';
 import { FaBell, FaCalendarAlt, FaHeart, FaMapMarkerAlt, FaUser } from 'react-icons/fa';
 import { LuBell, LuCalendar, LuHeart, LuMapPin, LuUser } from 'react-icons/lu';
 import { PiBellLight, PiCalendarBlankLight, PiHeartLight, PiMapPinLight, PiUserLight } from 'react-icons/pi';
@@ -136,6 +145,7 @@ export default function StyleSection({ value, onChange }: Props) {
             ¿Usar también los colores y la letra con los que mejor luce <b>{justPicked.name}</b>? Podrás cambiarlos después.
           </Alert>
         )}
+        <PanelStyleSwitch value={value} onChange={onChange} />
       </Box>
 
       {/* ── Iconos ── */}
@@ -387,5 +397,109 @@ export function StylePreview({ value }: { value: StudioSettings }) {
         </Box>
       </Box>
     </Box>
+  );
+}
+
+/**
+ * «Panel con el estilo de mi web»: se guarda al momento (como los demás
+ * interruptores) y el panel cambia sin recargar (SiteProvider.refresh()).
+ */
+function PanelStyleSwitch({ value, onChange }: Props) {
+  const site = useSite();
+  const notify = useNotify();
+  const [busy, setBusy] = useState(false);
+  const follows = value.panel_follows_style !== false;
+
+  const toggle = async (next: boolean) => {
+    setBusy(true);
+    onChange({ panel_follows_style: next });
+    try {
+      await saveSettings({ panel_follows_style: next });
+      await site.refresh();
+      notify(next ? 'Guardado ✓ El panel ya usa el estilo de tu web.' : 'Guardado ✓ El panel vuelve a su aspecto clásico.');
+    } catch (e) {
+      onChange({ panel_follows_style: !next });
+      notify(e instanceof Error ? e.message : String(e), 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Stack
+      direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}
+      sx={{ mt: 2, p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}
+    >
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <FormControlLabel
+          control={<Switch checked={follows} disabled={busy} onChange={(e) => toggle(e.target.checked)} />}
+          label={<Typography fontWeight={700}>Panel con el estilo de mi web</Typography>}
+        />
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Este panel de trabajo usa también el estilo y los iconos de tu web (y el modo oscuro si tu estilo es oscuro).
+          Apágalo para verlo con su aspecto clásico.
+        </Typography>
+      </Box>
+      <PanelPreview value={value} follows={follows} />
+    </Stack>
+  );
+}
+
+/** Maqueta pequeña del panel con el estilo, los colores y los iconos elegidos (aún sin guardar). */
+function PanelPreview({ value, follows }: { value: StudioSettings; follows: boolean }) {
+  const { config } = useSite();
+  const site = useMemo(() => normalizeSiteConfig({
+    ...config,
+    theme: {
+      primary: value.color_primary, secondary: value.color_secondary, dark: value.color_dark,
+      background: value.color_background, font_heading: value.font_heading, font_body: value.font_body,
+      style: value.style_preset, icons: value.icon_style, panel_follows_style: follows,
+    },
+  }), [config, value.color_primary, value.color_secondary, value.color_dark, value.color_background,
+    value.font_heading, value.font_body, value.style_preset, value.icon_style, follows]);
+  const theme = useMemo(() => buildTheme(site), [site]);
+  const { look, tones, tokens } = useMemo(() => panelTokens(site), [site]);
+
+  return (
+    <ThemeProvider theme={theme}>
+      <Box
+        role="img"
+        aria-label={follows ? 'Vista previa del panel con el estilo de tu web' : 'Vista previa del panel con su aspecto clásico'}
+        sx={{
+          width: { xs: '100%', sm: 280 }, height: 168, flexShrink: 0, display: 'flex', overflow: 'hidden',
+          borderRadius: 2, border: '1px solid', borderColor: 'divider', background: tokens.body,
+          backgroundColor: tones.bg, color: 'text.primary', fontFamily: 'var(--studio-font-body)',
+        }}
+      >
+        <Stack spacing={1.5} alignItems="center" sx={{
+          width: 44, py: 1.5, background: tokens.drawerBg, borderRight: tokens.drawerBorder, color: tones.textHint,
+        }}>
+          <StudioIcon name="home" iconStyle={look.icons} sx={{ fontSize: 18, color: tones.primaryText }} />
+          <StudioIcon name="bookings" iconStyle={look.icons} sx={{ fontSize: 18 }} />
+          <StudioIcon name="clients" iconStyle={look.icons} sx={{ fontSize: 18 }} />
+          <StudioIcon name="schedule" iconStyle={look.icons} sx={{ fontSize: 18 }} />
+        </Stack>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Box sx={{ height: 26, background: tokens.appBarBg, borderBottom: tokens.appBarBorder, ...(look.style === 'energy' && { borderImage: `linear-gradient(100deg, ${tones.primary}, ${tones.secondary}) 1` }) }} />
+          <Box sx={{ p: 1.25 }}>
+            <Typography variant="h1" sx={{ fontSize: '1rem !important', mb: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+              Reservas
+            </Typography>
+            <Paper elevation={1} sx={{ p: 1.25 }}>
+              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1 }}>
+                <StudioIcon name="today" iconStyle={look.icons} sx={{ fontSize: 16, color: tones.primaryText }} />
+                <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.2 }}>Pilates · 09:30</Typography>
+              </Stack>
+              <Stack direction="row" spacing={0.75} alignItems="center">
+                <Button variant="contained" size="small" tabIndex={-1} sx={{ px: 1.25, py: 0.25, minWidth: 0, fontSize: '0.68rem', pointerEvents: 'none' }}>
+                  Apuntar
+                </Button>
+                <Chip label="4 plazas" size="small" color="success" sx={{ height: 20, fontSize: '0.66rem' }} />
+              </Stack>
+            </Paper>
+          </Box>
+        </Box>
+      </Box>
+    </ThemeProvider>
   );
 }

@@ -572,7 +572,7 @@ export default function BroadcastManagement() {
                 <Paper
                   key={item.id}
                   elevation={0}
-                  sx={{ p: { xs: 2, md: 2.25 }, borderRadius: 4, border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)', backgroundColor: 'rgba(255,255,255,0.9)' }}
+                  sx={{ p: { xs: 2, md: 2.25 }, borderRadius: 4, border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)', backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.9)' }}
                 >
                   <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
                     <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -772,7 +772,7 @@ export default function BroadcastManagement() {
                       {formData.description || 'El mensaje completo aparecerá aquí.'}
                     </Typography>
                     {formData.highlighted_text && (
-                      <Box sx={{ mt: 1.5, p: 1.2, borderLeft: `4px solid ${C.brand}`, bgcolor: '#fff', borderRadius: 1 }}>
+                      <Box sx={{ mt: 1.5, p: 1.2, borderLeft: `4px solid ${C.brand}`, bgcolor: 'rgb(var(--studio-surface-rgb))', borderRadius: 1 }}>
                         <Typography fontWeight={700} color={C.brandDark} sx={{ fontSize: '0.95rem' }}>
                           {formData.highlighted_text}
                         </Typography>

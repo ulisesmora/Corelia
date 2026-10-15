@@ -310,7 +310,7 @@ export default function SiteImagesManagement() {
                       <Chip
                         label={img.is_active ? 'Visible' : 'Oculta'}
                         color={img.is_active ? 'success' : 'default'}
-                        sx={{ position: 'absolute', top: 10, left: 10, backgroundColor: img.is_active ? 'rgba(236,244,231,0.95)' : 'rgba(255,255,255,0.92)' }}
+                        sx={{ position: 'absolute', top: 10, left: 10, backgroundColor: img.is_active ? 'var(--studio-success-chip, rgba(236,244,231,0.95))' : 'rgb(var(--studio-surface-rgb) / 0.92)' }}
                       />
                     </Box>
                     <Box sx={{ p: 2, flex: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>

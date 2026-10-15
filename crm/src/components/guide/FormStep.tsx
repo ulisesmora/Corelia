@@ -21,7 +21,7 @@ export default function FormStep({ n, title, hint, children }: Props) {
           aria-hidden
           sx={{
             width: 28, height: 28, borderRadius: '50%', flexShrink: 0, display: 'grid', placeItems: 'center',
-            backgroundColor: 'var(--studio-primary)', color: '#fff', fontWeight: 600, fontSize: '0.9rem',
+            backgroundColor: 'var(--studio-primary-fill)', color: 'var(--studio-on-primary)', fontWeight: 600, fontSize: '0.9rem',
           }}
         >
           {n}

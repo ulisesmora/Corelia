@@ -875,10 +875,10 @@ export default function BookingViewer() {
               left: '50%',
               transform: 'translate(-50%, -50%)',
               zIndex: 10,
-              backgroundColor: 'rgba(255,255,255,0.92)',
+              backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.92)',
               borderRadius: 3,
               p: 2.5,
-              boxShadow: '0 6px 20px rgb(var(--studio-dark-rgb) / 0.12)',
+              boxShadow: '0 6px 20px rgb(var(--studio-shadow-rgb) / 0.12)',
             }}
           >
             <CircularProgress />

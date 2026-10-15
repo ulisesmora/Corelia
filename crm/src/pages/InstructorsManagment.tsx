@@ -417,7 +417,7 @@ export default function InstructorManagement() {
                   {inst.short_bio || 'Sin frase de presentación'}
                 </Typography>
                 {!inst.image && (
-                  <Typography sx={{ color: '#A86B5E', fontSize: '0.88rem' }}>Le falta la foto</Typography>
+                  <Typography sx={{ color: 'var(--studio-danger-text, #A86B5E)', fontSize: '0.88rem' }}>Le falta la foto</Typography>
                 )}
                 <Box sx={{ '&:empty': { display: 'none' } }}>
                   <EnglishChip

@@ -218,7 +218,7 @@ function StatCard({ label, value, sub, tone }: { label: string; value: string; s
       elevation={0}
       sx={{
         p: 2.25, borderRadius: 4, border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)',
-        backgroundColor: tone === 'main' ? 'rgb(var(--studio-primary-rgb) / 0.10)' : 'rgba(255,255,255,0.85)',
+        backgroundColor: tone === 'main' ? 'rgb(var(--studio-primary-rgb) / 0.10)' : 'rgb(var(--studio-surface-rgb) / 0.85)',
       }}
     >
       <Typography sx={{ color: 'var(--studio-text-strong)', fontSize: '0.95rem' }}>{label}</Typography>
@@ -552,7 +552,7 @@ export default function PaymentViewer() {
                 <Paper
                   key={p.id}
                   elevation={0}
-                  sx={{ p: 2, borderRadius: 3, border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)', backgroundColor: 'rgba(255,255,255,0.9)' }}
+                  sx={{ p: 2, borderRadius: 3, border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)', backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.9)' }}
                 >
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
                     <Box sx={{ minWidth: 0 }}>

@@ -5,6 +5,7 @@ import { loadStudioFonts } from './fonts';
 import { setStudioTz } from './timezone';
 import { setStudioMoney } from './money';
 import { DEFAULT_SITE_CONFIG, fetchPublicSiteConfig, type SiteConfigPublic } from './siteConfig';
+import { panelLook, panelThemeColor } from '../theme';
 
 // Proveedor de la configuración del estudio para todo el panel.
 // Los tipos y la descarga están en ./siteConfig.
@@ -106,7 +107,13 @@ export function SiteProvider({ children, initialConfig }: SiteProviderProps) {
     document.title = `${config.studio_name} · Panel`;
     setMeta('apple-mobile-web-app-title', config.studio_name);
     setMeta('application-name', config.studio_name);
-    setMeta('theme-color', config.theme.background);
+    // Estilo del panel: color de la barra del móvil y modo claro/oscuro (src/theme.ts)
+    const look = panelLook(config);
+    setMeta('theme-color', panelThemeColor(config));
+    setMeta('apple-mobile-web-app-status-bar-style', look.dark ? 'black' : 'default');
+    document.documentElement.dataset.panelStyle = look.style;
+    document.documentElement.dataset.panelMode = look.dark ? 'dark' : 'light';
+    document.documentElement.style.colorScheme = look.dark ? 'dark' : '';
     setFavicon(config.favicon_url || '/api/v1/site-config/icon/32.png?variant=panel');
     loadStudioFonts(config.theme.font_heading, config.theme.font_body);
     setStudioTz(config.timezone);

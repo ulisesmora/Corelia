@@ -37,7 +37,7 @@ export function NotifyProvider({ children }: { children: ReactNode }) {
           onClose={close}
           severity={state.severity}
           variant="filled"
-          sx={{ fontSize: '1rem', alignItems: 'center', minWidth: { sm: 380 }, boxShadow: '0 10px 30px rgb(var(--studio-dark-rgb) / 0.25)' }}
+          sx={{ fontSize: '1rem', alignItems: 'center', minWidth: { sm: 380 }, boxShadow: '0 10px 30px rgb(var(--studio-shadow-rgb) / 0.25)' }}
         >
           {state.message}
         </Alert>

@@ -266,7 +266,7 @@ export function OptionCard({
         width: '100%', textAlign: 'left', justifyContent: 'flex-start', alignItems: 'flex-start',
         gap: 1.25, p: 1.5, mb: 1, borderRadius: 3, minHeight: 56,
         border: selected ? '2px solid var(--studio-primary)' : '1.5px solid rgb(var(--studio-line-rgb) / 0.35)',
-        backgroundColor: selected ? 'rgb(var(--studio-primary-rgb) / 0.08)' : 'rgba(255,255,255,0.8)',
+        backgroundColor: selected ? 'rgb(var(--studio-primary-rgb) / 0.08)' : 'rgb(var(--studio-surface-rgb) / 0.8)',
         opacity: disabled ? 0.5 : 1,
         '&:focus-visible': { outline: '3px solid var(--studio-primary)', outlineOffset: 2 },
       }}
@@ -828,7 +828,7 @@ export default function BlackoutsManagement({ schedules, preset, onPresetConsume
             sx={{
               textAlign: 'left', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', gap: 1.5,
               p: 2, borderRadius: 4, width: '100%', minHeight: 110,
-              backgroundColor: 'rgba(255,255,255,0.8)', border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)',
+              backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.8)', border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)',
               '&:hover': { borderColor: 'var(--studio-primary)', boxShadow: '0 6px 18px rgb(var(--studio-primary-deep-rgb) / 0.12)' },
               '&:focus-visible': { outline: '3px solid var(--studio-primary)', outlineOffset: 2 },
             }}

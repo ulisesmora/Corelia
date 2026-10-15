@@ -1,8 +1,6 @@
 import { ReactNode, useEffect, useRef, useState } from 'react';
 import { Box, Button, Collapse, Paper, Stack, Typography } from '@mui/material';
-import LightbulbOutlinedIcon from '@mui/icons-material/LightbulbOutlined';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
-import CheckIcon from '@mui/icons-material/Check';
+import StudioIcon from '../../site/StudioIcon';
 
 export const OPEN_GUIDE_EVENT = 'crm-open-guide';
 
@@ -88,7 +86,7 @@ export default function PageIntro({
           sx={{ flexShrink: 0, '& .MuiButton-root': { minHeight: 48 } }}
         >
           {hasGuide && !open && (
-            <Button variant="text" startIcon={<HelpOutlineIcon />} onClick={() => setOpen(true)}>
+            <Button variant="text" startIcon={<StudioIcon name="help" />} onClick={() => setOpen(true)}>
               Ver cómo se usa
             </Button>
           )}
@@ -109,7 +107,7 @@ export default function PageIntro({
             }}
           >
             <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: { xs: 1.25, md: 2 } }}>
-              <LightbulbOutlinedIcon sx={{ color: '#B8883C' }} />
+              <StudioIcon name="tip" sx={{ color: '#B8883C' }} />
               <Typography sx={{ fontWeight: 600, fontSize: { xs: '1rem', md: '1.1rem' }, color: 'var(--studio-dark)' }}>
                 {guideTitle || 'Cómo se usa esta pantalla'}
               </Typography>
@@ -131,7 +129,7 @@ export default function PageIntro({
                     key={i}
                     sx={{
                       display: 'flex', gap: { xs: 1.25, md: 1.5 }, p: { xs: 1.25, md: 1.75 }, borderRadius: 3,
-                      backgroundColor: 'rgba(255,255,255,0.85)',
+                      backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.85)',
                       border: '1px solid rgb(var(--studio-line-rgb) / 0.25)',
                     }}
                   >
@@ -140,7 +138,7 @@ export default function PageIntro({
                       sx={{
                         flexShrink: 0, width: { xs: 28, md: 34 }, height: { xs: 28, md: 34 }, borderRadius: '50%',
                         display: 'grid', placeItems: 'center',
-                        backgroundColor: 'var(--studio-primary)', color: '#fff', fontWeight: 600, fontSize: { xs: '0.9rem', md: '1rem' },
+                        backgroundColor: 'var(--studio-primary-fill)', color: 'var(--studio-on-primary)', fontWeight: 600, fontSize: { xs: '0.9rem', md: '1rem' },
                       }}
                     >
                       {i + 1}
@@ -175,7 +173,7 @@ export default function PageIntro({
             )}
 
             <Stack direction="row" justifyContent="flex-end" sx={{ mt: { xs: 1.5, md: 2 } }}>
-              <Button variant="outlined" startIcon={<CheckIcon />} onClick={hide} sx={{ minHeight: 44, width: { xs: '100%', sm: 'auto' } }}>
+              <Button variant="outlined" startIcon={<StudioIcon name="done" />} onClick={hide} sx={{ minHeight: 44, width: { xs: '100%', sm: 'auto' } }}>
                 Entendido, ocultar guía
               </Button>
             </Stack>

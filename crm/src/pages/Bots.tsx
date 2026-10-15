@@ -480,7 +480,7 @@ export default function ClassTypeManagement() {
                       <Box component="img" src={ct.image} alt={ct.title} loading="lazy"
                         sx={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                     ) : (
-                      <Stack alignItems="center" spacing={0.5} sx={{ color: '#A86B5E', p: 1, textAlign: 'center' }}>
+                      <Stack alignItems="center" spacing={0.5} sx={{ color: 'var(--studio-danger-text, #A86B5E)', p: 1, textAlign: 'center' }}>
                         <ImageNotSupportedOutlinedIcon aria-hidden />
                         <Typography sx={{ fontSize: '0.85rem' }}>Sin foto</Typography>
                       </Stack>

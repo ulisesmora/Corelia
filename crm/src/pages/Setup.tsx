@@ -4,7 +4,6 @@ import {
   Alert, Box, Button, CircularProgress, Container, Link, MobileStepper, Paper, Stack, Step, StepLabel,
   Stepper, Typography, useMediaQuery, useTheme,
 } from '@mui/material';
-import CelebrationOutlinedIcon from '@mui/icons-material/CelebrationOutlined';
 import { useNotify } from '../components/guide';
 import EmailSection from '../components/setup/EmailSection';
 import PaymentsSection from '../components/setup/PaymentsSection';
@@ -12,6 +11,7 @@ import StudioSection from '../components/setup/StudioSection';
 import StyleSection from '../components/setup/StyleSection';
 import { loadSettings, saveSettings, type StudioSettings } from '../components/setup/api';
 import { useSite } from '../site/SiteProvider';
+import StudioIcon from '../site/StudioIcon';
 
 const STEPS = [
   { label: 'Tu estudio', title: 'Empecemos por tu estudio', subtitle: 'El nombre y cómo te pueden contactar.' },
@@ -156,7 +156,7 @@ function Done({ settings }: { settings: StudioSettings }) {
   return (
     <Stack spacing={3}>
       <Stack direction="row" spacing={2} alignItems="center">
-        <CelebrationOutlinedIcon color="primary" sx={{ fontSize: 48 }} />
+        <StudioIcon name="celebrate" color="primary" sx={{ fontSize: 48 }} />
         <Typography>Ya puedes enseñar tu web a tus clientas.</Typography>
       </Stack>
       <Box component="ul" sx={{ pl: 3, m: 0, '& li': { mb: 1 } }}>

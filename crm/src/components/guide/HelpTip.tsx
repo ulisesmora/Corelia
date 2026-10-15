@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Box, ButtonBase, Popover, Typography } from '@mui/material';
-import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
+import StudioIcon from '../../site/StudioIcon';
 
 interface Props {
   /** Explicación en lenguaje llano */
@@ -30,7 +30,7 @@ export default function HelpTip({ children, title, label }: Props) {
           '&:focus-visible': { outline: '2px solid var(--studio-primary)', outlineOffset: 2 },
         }}
       >
-        <HelpOutlineIcon sx={{ fontSize: 21 }} />
+        <StudioIcon name="help" sx={{ fontSize: 21 }} />
         {label && <Box component="span" sx={{ fontSize: '0.88rem', fontWeight: 500 }}>{label}</Box>}
       </ButtonBase>
       <Popover
@@ -43,7 +43,7 @@ export default function HelpTip({ children, title, label }: Props) {
             sx: {
               p: 2, maxWidth: 340, borderRadius: 3,
               backgroundColor: 'var(--studio-bg-light)', backdropFilter: 'none',
-              boxShadow: '0 10px 30px rgb(var(--studio-dark-rgb) / 0.18)',
+              boxShadow: '0 10px 30px rgb(var(--studio-shadow-rgb) / 0.18)',
             },
           },
         }}

@@ -1,3 +1,5 @@
+import type { IconStyleId, StyleId } from '../../site/siteConfig';
+
 /** Paletas y parejas de fuentes para elegir con un clic. Todas probadas para
  *  que el texto se lea bien sobre su fondo. */
 
@@ -54,8 +56,8 @@ export function loadGoogleFonts(families: string[]) {
 // esquinas, modo claro/oscuro) sin tocar su estructura. Sus tokens viven en
 // web/src/styles/presets.css. Para añadir uno: ver docs/ESTILOS.md.
 
-export type StyleId = 'natural' | 'minimal' | 'editorial' | 'glass' | 'brutalist' | 'energy' | 'pop' | 'neon';
-export type IconStyleId = 'line' | 'soft' | 'solid';
+// La lista de slugs vive en src/site/siteConfig.ts (también la usa el tema del panel)
+export type { IconStyleId, StyleId };
 
 export interface StylePreset {
   id: StyleId;

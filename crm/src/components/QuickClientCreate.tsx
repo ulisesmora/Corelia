@@ -77,7 +77,7 @@ function ChoiceCard({ selected, onClick, icon, title, text }: {
         flex: 1, textAlign: 'left', p: 1.75, borderRadius: 3, cursor: 'pointer', font: 'inherit',
         display: 'flex', gap: 1.5, alignItems: 'flex-start', minHeight: 72,
         border: selected ? '2px solid var(--studio-primary)' : '1.5px solid rgb(var(--studio-line-rgb) / 0.4)',
-        backgroundColor: selected ? 'rgb(var(--studio-primary-rgb) / 0.10)' : '#fff',
+        backgroundColor: selected ? 'rgb(var(--studio-primary-rgb) / 0.10)' : 'rgb(var(--studio-surface-rgb))',
         '&:focus-visible': { outline: '3px solid var(--studio-primary)', outlineOffset: 2 },
       }}
     >

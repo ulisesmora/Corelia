@@ -3,28 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import {
   Box, Button, ButtonBase, Chip, CircularProgress, InputAdornment, Paper, Stack, TextField, Typography,
 } from '@mui/material';
-import SearchIcon from '@mui/icons-material/Search';
-import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
-import EventRepeatIcon from '@mui/icons-material/EventRepeat';
-import MenuBookIcon from '@mui/icons-material/MenuBook';
-import BeachAccessIcon from '@mui/icons-material/BeachAccess';
-import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import PrintIcon from '@mui/icons-material/Print';
-import EventNoteIcon from '@mui/icons-material/EventNote';
-import CampaignIcon from '@mui/icons-material/Campaign';
-import CardMembershipIcon from '@mui/icons-material/CardMembership';
-import PaymentsIcon from '@mui/icons-material/Payments';
-import WorkspacePremiumIcon from '@mui/icons-material/WorkspacePremium';
-import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
-import WbSunnyOutlinedIcon from '@mui/icons-material/WbSunnyOutlined';
 import { useAuth } from '../context/AuthContext';
 import { authHeaders } from '../utils/auth';
 import { EmptyState } from '../components/guide';
+import StudioIcon from '../site/StudioIcon';
 import StudioStats, { amount, loadStudioStats, Stats } from '../components/StudioStats';
-import InsightsIcon from '@mui/icons-material/Insights';
-import TodayIcon from '@mui/icons-material/Today';
 import { API_BASE_URL } from '../config';
 import { STUDIO_TZ as TZ } from '../site/timezone';
 
@@ -50,25 +33,25 @@ const TASK_GROUPS: { title: string; tasks: Task[] }[] = [
     title: 'Con una clienta',
     tasks: [
       {
-        icon: <PersonAddAlt1Icon />,
+        icon: <StudioIcon name="addClient" />,
         title: 'Dar de alta a una clienta nueva',
         text: 'Crear su ficha y, si quieres, apuntarla ya a una clase.',
         to: '/clients?accion=nueva',
       },
       {
-        icon: <AccountBalanceWalletIcon />,
+        icon: <StudioIcon name="credits" />,
         title: 'Añadir o quitar créditos',
         text: 'Cuando paga en mano o hay que corregir su saldo de clases.',
         to: '/credits?accion=anadir',
       },
       {
-        icon: <EventRepeatIcon />,
+        icon: <StudioIcon name="repeat" />,
         title: 'Apuntarla a una clase fija',
         text: 'Para que tenga su plaza guardada todas las semanas.',
         to: '/assign-classes',
       },
       {
-        icon: <MenuBookIcon />,
+        icon: <StudioIcon name="bookings" />,
         title: 'Ver o cancelar una reserva',
         text: 'Quién viene a cada clase y anular una reserva.',
         to: '/bookings',
@@ -79,25 +62,25 @@ const TASK_GROUPS: { title: string; tasks: Task[] }[] = [
     title: 'Con el horario',
     tasks: [
       {
-        icon: <AddCircleOutlineIcon />,
+        icon: <StudioIcon name="add" />,
         title: 'Añadir una clase al horario',
         text: 'Una clase nueva que se repite cada semana, o un día suelto.',
         to: '/calendar?accion=nueva',
       },
       {
-        icon: <EventNoteIcon />,
+        icon: <StudioIcon name="agenda" />,
         title: 'Preparar el mes que viene',
         text: 'Cambiar horarios, terminar o añadir clases y cerrar días.',
         to: '/calendar?accion=preparar-mes',
       },
       {
-        icon: <BeachAccessIcon />,
+        icon: <StudioIcon name="holidays" />,
         title: 'Cerrar el estudio unos días',
         text: 'Vacaciones, festivos o un día que no se da una clase.',
         to: '/calendar?tab=cierres',
       },
       {
-        icon: <PrintIcon />,
+        icon: <StudioIcon name="print" />,
         title: 'Imprimir el horario',
         text: 'Una hoja con todas las clases de la semana.',
         to: '/calendar?tab=imprimir',
@@ -108,19 +91,19 @@ const TASK_GROUPS: { title: string; tasks: Task[] }[] = [
     title: 'Ventas y avisos',
     tasks: [
       {
-        icon: <CampaignIcon />,
+        icon: <StudioIcon name="announce" />,
         title: 'Enviar un aviso a las clientas',
         text: 'Un email y/o una notificación al móvil para todas.',
         to: '/mails?accion=nuevo',
       },
       {
-        icon: <CardMembershipIcon />,
+        icon: <StudioIcon name="plans" />,
         title: 'Ver las membresías',
         text: 'Quién paga cada mes y quién tiene un pago pendiente.',
         to: '/subscriptions',
       },
       {
-        icon: <PaymentsIcon />,
+        icon: <StudioIcon name="payments" />,
         title: 'Ver los pagos',
         text: 'Lo que se ha cobrado por la web.',
         to: '/payments',
@@ -149,7 +132,7 @@ function TaskCard({ task, onGo }: { task: Task; onGo: () => void }) {
       sx={{
         textAlign: 'left', display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start', gap: 1.75,
         p: 2.25, borderRadius: 4, width: '100%', minHeight: 96,
-        backgroundColor: 'rgba(255,255,255,0.8)', border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)',
+        backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.8)', border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)',
         transition: 'border-color .2s, box-shadow .2s, transform .2s',
         '&:hover': { borderColor: 'var(--studio-primary)', boxShadow: '0 6px 18px rgb(var(--studio-primary-deep-rgb) / 0.12)', transform: 'translateY(-1px)' },
         '&:focus-visible': { outline: '3px solid var(--studio-primary)', outlineOffset: 2 },
@@ -170,7 +153,7 @@ function TaskCard({ task, onGo }: { task: Task; onGo: () => void }) {
         </Typography>
         <Typography sx={{ mt: 0.4, color: 'var(--studio-text-body)', fontSize: '0.93rem', lineHeight: 1.5 }}>{task.text}</Typography>
       </Box>
-      <ArrowForwardIcon aria-hidden sx={{ color: 'var(--studio-text-faint)', alignSelf: 'center' }} />
+      <StudioIcon name="next" aria-hidden sx={{ color: 'var(--studio-text-faint)', alignSelf: 'center' }} />
     </ButtonBase>
   );
 }
@@ -183,8 +166,8 @@ function readView(): View {
 
 function ViewSwitch({ view, onChange }: { view: View; onChange: (v: View) => void }) {
   const opts: { v: View; icon: ReactNode; title: string; text: string }[] = [
-    { v: 'dia', icon: <TodayIcon />, title: 'Mi día', text: 'Tareas y clases de hoy' },
-    { v: 'estudio', icon: <InsightsIcon />, title: 'Cómo va el estudio', text: 'Ventas, clientas nuevas…' },
+    { v: 'dia', icon: <StudioIcon name="today" />, title: 'Mi día', text: 'Tareas y clases de hoy' },
+    { v: 'estudio', icon: <StudioIcon name="stats" />, title: 'Cómo va el estudio', text: 'Ventas, clientas nuevas…' },
   ];
   return (
     <Box role="tablist" aria-label="Qué ver en el inicio" sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.25, mb: 3 }}>
@@ -199,7 +182,7 @@ function ViewSwitch({ view, onChange }: { view: View; onChange: (v: View) => voi
             sx={{
               justifyContent: 'flex-start', gap: 1.5, p: { xs: 1.5, md: 2 }, borderRadius: 4, textAlign: 'left',
               border: on ? '2px solid var(--studio-primary)' : '1.5px solid rgb(var(--studio-line-rgb) / 0.35)',
-              backgroundColor: on ? 'rgb(var(--studio-primary-rgb) / 0.14)' : 'rgba(255,255,255,0.7)',
+              backgroundColor: on ? 'rgb(var(--studio-primary-rgb) / 0.14)' : 'rgb(var(--studio-surface-rgb) / 0.7)',
               '&:focus-visible': { outline: '3px solid var(--studio-primary)', outlineOffset: 2 },
             }}
           >
@@ -294,7 +277,7 @@ export default function Home() {
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
       {/* Saludo */}
       <Stack direction="row" spacing={1.25} alignItems="center" sx={{ mb: 0.5 }}>
-        <WbSunnyOutlinedIcon aria-hidden sx={{ color: '#D4A574' }} />
+        <StudioIcon name="sun" aria-hidden sx={{ color: '#D4A574' }} />
         <Typography sx={{ color: 'text.secondary', fontSize: '1rem', '&::first-letter': { textTransform: 'uppercase' } }}>
           {dateLabel}
         </Typography>
@@ -319,7 +302,7 @@ export default function Home() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             slotProps={{
-              input: { startAdornment: <InputAdornment position="start"><SearchIcon /></InputAdornment> },
+              input: { startAdornment: <InputAdornment position="start"><StudioIcon name="search" /></InputAdornment> },
             }}
           />
           <Button type="submit" variant="contained" size="large" sx={{ minHeight: 54, px: 4, flexShrink: 0 }}>
@@ -339,18 +322,18 @@ export default function Home() {
           onClick={() => setView('estudio')}
           sx={{
             width: '100%', justifyContent: 'flex-start', textAlign: 'left', gap: 2, mb: 3, p: 2, borderRadius: 4,
-            flexWrap: 'wrap', border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)', backgroundColor: 'rgba(255,255,255,0.75)',
+            flexWrap: 'wrap', border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)', backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.75)',
             '&:hover': { borderColor: 'var(--studio-primary)' }, '&:focus-visible': { outline: '3px solid var(--studio-primary)', outlineOffset: 2 },
           }}
         >
-          <InsightsIcon aria-hidden sx={{ color: 'var(--studio-primary-shade)' }} />
+          <StudioIcon name="stats" aria-hidden sx={{ color: 'var(--studio-primary-shade)' }} />
           <Typography sx={{ color: 'var(--studio-dark)', fontSize: '0.98rem', flex: 1, minWidth: 220 }}>
             Este mes: <b>{amount(stats.kpis.sales_eur)}</b> en ventas por la web ·{' '}
             <b>{stats.kpis.new_clients + stats.kpis.new_guests}</b> clientas nuevas ·{' '}
             <b>{stats.kpis.first_timers}</b> han venido por primera vez
           </Typography>
           <Typography sx={{ color: 'var(--studio-primary-deep)', fontWeight: 600, fontSize: '0.92rem', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-            Ver cómo va el estudio <ArrowForwardIcon sx={{ fontSize: 18 }} aria-hidden />
+            Ver cómo va el estudio <StudioIcon name="next" sx={{ fontSize: 18 }} aria-hidden />
           </Typography>
         </ButtonBase>
       )}
@@ -399,7 +382,7 @@ export default function Home() {
                       key={`${s.start.toISOString()}${s.what}`}
                       sx={{
                         p: 1.5, borderRadius: 3, display: 'flex', gap: 1.5, alignItems: 'center',
-                        backgroundColor: past ? 'rgb(var(--studio-line-rgb) / 0.08)' : 'rgba(255,255,255,0.85)',
+                        backgroundColor: past ? 'rgb(var(--studio-line-rgb) / 0.08)' : 'rgb(var(--studio-surface-rgb) / 0.85)',
                         border: '1px solid rgb(var(--studio-line-rgb) / 0.25)', opacity: past ? 0.7 : 1,
                       }}
                     >
@@ -417,7 +400,7 @@ export default function Home() {
                 })}
               </Stack>
             )}
-            <Button fullWidth variant="outlined" endIcon={<ArrowForwardIcon />} onClick={() => navigate('/bookings')} sx={{ mt: 2, minHeight: 46 }}>
+            <Button fullWidth variant="outlined" endIcon={<StudioIcon name="next" />} onClick={() => navigate('/bookings')} sx={{ mt: 2, minHeight: 46 }}>
               Ver quién viene a cada clase
             </Button>
           </Paper>
@@ -431,9 +414,9 @@ export default function Home() {
                 {pending.pastDue > 0 && (
                   <Button
                     variant="outlined"
-                    startIcon={<ErrorOutlineIcon />}
+                    startIcon={<StudioIcon name="warning" />}
                     onClick={() => navigate('/subscriptions?filtro=pendientes')}
-                    sx={{ justifyContent: 'flex-start', minHeight: 52, textAlign: 'left', backgroundColor: '#fff' }}
+                    sx={{ justifyContent: 'flex-start', minHeight: 52, textAlign: 'left', backgroundColor: 'rgb(var(--studio-surface-rgb))' }}
                   >
                     {pending.pastDue === 1
                       ? '1 membresía con el pago pendiente'
@@ -443,9 +426,9 @@ export default function Home() {
                 {pending.candidates > 0 && (
                   <Button
                     variant="outlined"
-                    startIcon={<WorkspacePremiumIcon />}
+                    startIcon={<StudioIcon name="candidates" />}
                     onClick={() => navigate('/membership-candidates')}
-                    sx={{ justifyContent: 'flex-start', minHeight: 52, textAlign: 'left', backgroundColor: '#fff' }}
+                    sx={{ justifyContent: 'flex-start', minHeight: 52, textAlign: 'left', backgroundColor: 'rgb(var(--studio-surface-rgb))' }}
                   >
                     {pending.candidates === 1
                       ? '1 clienta viene cada semana y aún no le has escrito'

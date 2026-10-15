@@ -187,7 +187,7 @@ function PlanCard({
       sx={{
         p: 2.25, borderRadius: 4, display: 'flex', flexDirection: 'column', gap: 1.25,
         border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)',
-        backgroundColor: plan.is_active ? 'rgba(255,255,255,0.9)' : 'rgb(var(--studio-bg-deep-rgb) / 0.6)',
+        backgroundColor: plan.is_active ? 'rgb(var(--studio-surface-rgb) / 0.9)' : 'rgb(var(--studio-bg-deep-rgb) / 0.6)',
       }}
     >
       <Stack direction="row" spacing={1} alignItems="flex-start" justifyContent="space-between">

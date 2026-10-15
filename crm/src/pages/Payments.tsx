@@ -1238,7 +1238,7 @@ export default function RecurringScheduleManagement() {
             sx={{
               textAlign: 'left', display: 'flex', alignItems: 'center', justifyContent: 'flex-start', gap: 1.5,
               p: 1.75, borderRadius: 3, width: '100%', minHeight: 76,
-              backgroundColor: 'rgba(255,255,255,0.8)', border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)',
+              backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.8)', border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)',
               '&:hover': { borderColor: 'var(--studio-primary)', boxShadow: '0 6px 18px rgb(var(--studio-primary-deep-rgb) / 0.12)' },
               '&:focus-visible': { outline: '3px solid var(--studio-primary)', outlineOffset: 2 },
             }}

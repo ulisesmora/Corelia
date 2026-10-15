@@ -250,10 +250,10 @@ const Login = () => {
       <Container maxWidth="xs">
         <Box
           sx={{
-            backgroundColor: '#fff',
+            backgroundColor: 'rgb(var(--studio-surface-rgb))',
             borderRadius: 4,
             p: { xs: 3, sm: 4 },
-            boxShadow: '0 20px 50px rgb(var(--studio-dark-rgb) / 0.15)',
+            boxShadow: '0 20px 50px rgb(var(--studio-shadow-rgb) / 0.15)',
           }}
         >
           <Box sx={{ textAlign: 'center', mb: 3 }}>
@@ -351,7 +351,7 @@ const Login = () => {
                 onKeyDown={checkCaps}
                 helperText={capsLock ? 'Ojo: tienes las MAYÚSCULAS activadas (tecla Bloq Mayús).' : ' '}
                 slotProps={{
-                  formHelperText: { sx: capsLock ? { color: '#8A5A00', fontWeight: 600 } : undefined },
+                  formHelperText: { sx: capsLock ? { color: 'var(--studio-warning-text, #8A5A00)', fontWeight: 600 } : undefined },
                   input: {
                     endAdornment: (
                       <InputAdornment position="end">

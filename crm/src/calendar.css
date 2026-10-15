@@ -1,11 +1,19 @@
 /* ════════════════════════════════════════
-   Calendario · colores y fuentes del estudio (variables --studio-* de src/theme.ts)
+   Calendario · colores, fuentes y estilo del estudio (variables --studio-* de
+   src/theme.ts). Estos son los valores del aspecto clásico (natural); cada
+   estilo del panel redefine las --cal-* que cambian (esquinas, bordes,
+   sombras) desde src/theme.ts → cssVariables(). En los estilos oscuros las
+   superficies salen solas de --studio-surface-rgb.
    ════════════════════════════════════════ */
 
 :root {
   --cal-bg: rgb(var(--studio-bg-light-rgb) / 0.6);
-  --cal-paper: rgba(255, 255, 255, 0.7);
-  --cal-elevated: rgba(255, 255, 255, 0.85);
+  --cal-paper: rgb(var(--studio-surface-rgb) / 0.7);
+  --cal-elevated: rgb(var(--studio-surface-rgb) / 0.85);
+  --cal-button-bg: rgb(var(--studio-surface-rgb) / 0.5);
+  --cal-overlay-bg: rgb(var(--studio-surface-rgb) / 0.9);
+  --cal-selected-bg: rgb(var(--studio-surface-rgb));
+  --cal-outer-border: 1px solid rgb(var(--studio-surface-rgb) / 0.5);
   --cal-primary: var(--studio-primary);
   --cal-primary-light: rgb(var(--studio-primary-rgb) / 0.08);
   --cal-primary-hover: rgb(var(--studio-primary-rgb) / 0.14);
@@ -13,11 +21,12 @@
   --cal-muted: var(--studio-text-hint);
   --cal-border: rgb(var(--studio-line-rgb) / 0.2);
   --cal-today: rgb(var(--studio-primary-rgb) / 0.05);
-  --cal-shadow-sm: 0 1px 2px rgb(var(--studio-dark-rgb) / 0.04);
-  --cal-shadow: 0 2px 8px rgb(var(--studio-dark-rgb) / 0.06);
-  --cal-shadow-lg: 0 8px 32px rgb(var(--studio-dark-rgb) / 0.1);
+  --cal-shadow-sm: 0 1px 2px rgb(var(--studio-shadow-rgb) / 0.04);
+  --cal-shadow: 0 2px 8px rgb(var(--studio-shadow-rgb) / 0.06);
+  --cal-shadow-lg: 0 8px 32px rgb(var(--studio-shadow-rgb) / 0.1);
   --cal-radius: 16px;
   --cal-radius-sm: 12px;
+  --cal-radius-xs: 10px;
   --cal-font: var(--studio-font-body, system-ui, sans-serif);
   --cal-heading: var(--studio-font-heading, Georgia, serif);
   --blur: blur(22px) saturate(160%);
@@ -33,7 +42,7 @@
   backdrop-filter: var(--blur);
   -webkit-backdrop-filter: var(--blur);
   border-radius: var(--cal-radius);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  border: var(--cal-outer-border);
   padding: 24px;
   box-shadow: var(--cal-shadow);
 }
@@ -69,9 +78,9 @@
   font-size: 0.82rem;
   font-weight: 500;
   color: var(--cal-muted);
-  background: rgba(255, 255, 255, 0.5);
+  background: var(--cal-button-bg);
   border: 1.5px solid var(--cal-border) !important;
-  border-radius: 10px !important;
+  border-radius: var(--cal-radius-xs) !important;
   padding: 7px 16px;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -84,18 +93,18 @@
 }
 
 .rbc-toolbar button.rbc-active {
-  background: var(--cal-primary) !important;
-  color: #fff !important;
-  border-color: var(--cal-primary) !important;
+  background: var(--studio-primary-fill) !important;
+  color: var(--studio-on-primary) !important;
+  border-color: var(--studio-primary-fill) !important;
   font-weight: 600;
   box-shadow: 0 2px 10px rgb(var(--studio-primary-rgb) / 0.25) !important;
 }
 
 .rbc-btn-group > button:first-child {
-  border-radius: 10px 0 0 10px !important;
+  border-radius: var(--cal-radius-xs) 0 0 var(--cal-radius-xs) !important;
 }
 .rbc-btn-group > button:last-child {
-  border-radius: 0 10px 10px 0 !important;
+  border-radius: 0 var(--cal-radius-xs) var(--cal-radius-xs) 0 !important;
 }
 .rbc-btn-group > button:not(:first-child) {
   margin-left: 0 !important;
@@ -207,7 +216,7 @@
   background: var(--cal-elevated) !important;
   color: var(--cal-text) !important;
   border: 1px solid rgb(var(--studio-primary-rgb) / 0.15) !important;
-  border-radius: 10px !important;
+  border-radius: var(--cal-radius-xs) !important;
   padding: 5px 12px 5px 16px !important;
   font-weight: 500 !important;
   font-size: 0.84rem !important;
@@ -227,8 +236,8 @@
 }
 
 .rbc-event.rbc-selected {
-  background: #fff !important;
-  box-shadow: 0 8px 32px rgb(var(--studio-dark-rgb) / 0.15) !important;
+  background: var(--cal-selected-bg) !important;
+  box-shadow: 0 8px 32px rgb(var(--studio-shadow-rgb) / 0.15) !important;
   border-color: var(--cal-primary) !important;
 }
 
@@ -261,7 +270,7 @@
 /* ═══ Overlay ═══ */
 .rbc-overlay {
   border: 1px solid var(--cal-border);
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--cal-overlay-bg);
   backdrop-filter: blur(28px) saturate(200%);
   -webkit-backdrop-filter: blur(28px) saturate(200%);
   box-shadow: var(--cal-shadow-lg);
@@ -298,7 +307,7 @@
 
 /* ═══ Responsive ═══ */
 @media (max-width: 768px) {
-  .rbc-calendar { padding: 12px; border-radius: 10px; }
+  .rbc-calendar { padding: 12px; border-radius: min(10px, var(--cal-radius)); }
   .rbc-toolbar { flex-direction: column; gap: 8px; align-items: stretch; }
   .rbc-toolbar-label { text-align: center; font-size: 1.1rem !important; }
   .rbc-time-gutter,

@@ -362,6 +362,8 @@ def public_config_payload(cfg: SiteConfig) -> dict:
             'font_body': cfg.font_body,
             'style': cfg.style_preset,
             'icons': cfg.icon_style,
+            # El panel también sigue el estilo (si no, su aspecto clásico)
+            'panel_follows_style': cfg.panel_follows_style,
         },
         'currency': normalize_currency(cfg.currency),
         'country': normalize_country(cfg.country),
@@ -703,6 +705,38 @@ def _ping_search_engines():
         logger.warning("indexnow.content_ping_failed", exc_info=True)
 
 
+def _rgb(hex_color: str) -> tuple:
+    h = (hex_color or '').lstrip('#')
+    if len(h) == 3:
+        h = ''.join(c * 2 for c in h)
+    try:
+        return tuple(int(h[i:i + 2], 16) for i in (0, 2, 4))
+    except ValueError:
+        return (0, 0, 0)
+
+
+def _luminance(hex_color: str) -> float:
+    def ch(v):
+        c = v / 255
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    r, g, b = (ch(v) for v in _rgb(hex_color))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
+def panel_theme_colors(cfg: SiteConfig) -> tuple:
+    """(fondo, color de la barra) del panel instalado en el móvil. Con un estilo
+    oscuro (y el panel siguiéndolo) el fondo es el oscuro garantizado, igual que
+    en la web y en crm/src/theme.ts: el del estudio si ya es oscuro o, si no,
+    casi negro teñido de él."""
+    if cfg.panel_follows_style and cfg.style_preset in SiteConfig.DARK_STYLES:
+        bg = cfg.color_background
+        if _luminance(bg) > 0.06:
+            a, b = _rgb(bg), _rgb('#0b0b10')
+            bg = '#' + ''.join(f'{round(x + (y - x) * 0.9):02x}' for x, y in zip(a, b))
+        return bg, bg
+    return cfg.color_background, cfg.color_dark
+
+
 def panel_manifest(request):
     """/panel.webmanifest — la app del panel en el móvil, con el nombre y el
     icono (variante oscura) del estudio."""
@@ -710,6 +744,7 @@ def panel_manifest(request):
     cfg = get_site_config()
     full = f'Panel {cfg.studio_name}'.strip()
     icon = '/api/v1/site-config/icon/{size}.png?variant=panel'
+    background, bar = panel_theme_colors(cfg)
     resp = JsonResponse({
         'id': '/',
         'name': f'{cfg.studio_name} · Panel',
@@ -720,8 +755,8 @@ def panel_manifest(request):
         'scope': '/',
         'display': 'standalone',
         'orientation': 'any',
-        'background_color': cfg.color_background,
-        'theme_color': cfg.color_dark,
+        'background_color': background,
+        'theme_color': bar,
         'lang': 'es',
         'icons': [
             {'src': icon.format(size=192), 'sizes': '192x192', 'type': 'image/png', 'purpose': 'any'},

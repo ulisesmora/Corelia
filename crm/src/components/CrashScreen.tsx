@@ -1,6 +1,5 @@
 import { Box, Button, Paper, Stack, Typography } from '@mui/material';
-import RefreshIcon from '@mui/icons-material/Refresh';
-import HomeIcon from '@mui/icons-material/Home';
+import StudioIcon from '../site/StudioIcon';
 
 /**
  * Pantalla que se ve si una página del CRM falla del todo, en lugar de una
@@ -21,7 +20,7 @@ export default function CrashScreen({ onRetry }: { onRetry: () => void }) {
           <Button
             variant="contained"
             size="large"
-            startIcon={<RefreshIcon />}
+            startIcon={<StudioIcon name="reload" />}
             onClick={() => {
               onRetry();
               window.location.reload();
@@ -32,7 +31,7 @@ export default function CrashScreen({ onRetry }: { onRetry: () => void }) {
           <Button
             variant="outlined"
             size="large"
-            startIcon={<HomeIcon />}
+            startIcon={<StudioIcon name="home" />}
             onClick={() => {
               window.location.href = '/';
             }}

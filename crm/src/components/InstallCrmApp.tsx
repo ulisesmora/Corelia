@@ -208,7 +208,7 @@ export default function InstallCrmApp() {
           backgroundColor: 'var(--studio-bg-light)',
           backdropFilter: 'none',
           border: '1px solid rgb(var(--studio-primary-rgb) / 0.3)',
-          boxShadow: '0 16px 48px rgb(var(--studio-dark-rgb) / 0.28)',
+          boxShadow: '0 16px 48px rgb(var(--studio-shadow-rgb) / 0.28)',
           '@keyframes crmSlideUp': { from: { transform: 'translateY(24px)', opacity: 0 }, to: { transform: 'none', opacity: 1 } },
           animation: 'crmSlideUp .3s cubic-bezier(.2,.8,.2,1)',
           '@media (prefers-reduced-motion: reduce)': { animation: 'none' },
@@ -219,7 +219,7 @@ export default function InstallCrmApp() {
             component="img"
             src="/api/v1/site-config/icon/192.png?variant=panel"
             alt=""
-            sx={{ width: 54, height: 54, borderRadius: 3.5, flexShrink: 0, boxShadow: '0 4px 12px rgb(var(--studio-dark-rgb) / 0.2)' }}
+            sx={{ width: 54, height: 54, borderRadius: 3.5, flexShrink: 0, boxShadow: '0 4px 12px rgb(var(--studio-shadow-rgb) / 0.2)' }}
           />
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography sx={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--studio-dark)', lineHeight: 1.3 }}>
@@ -268,7 +268,7 @@ export default function InstallCrmApp() {
                     aria-hidden
                     sx={{
                       flexShrink: 0, width: 28, height: 28, borderRadius: '50%', display: 'grid', placeItems: 'center',
-                      backgroundColor: 'var(--studio-primary)', color: '#fff', fontWeight: 600, fontSize: '0.9rem',
+                      backgroundColor: 'var(--studio-primary-fill)', color: 'var(--studio-on-primary)', fontWeight: 600, fontSize: '0.9rem',
                     }}
                   >
                     {i + 1}

@@ -1106,7 +1106,8 @@ class SiteConfig(models.Model):
     font_heading = models.CharField(max_length=60, default='Playfair Display')
     font_body = models.CharField(max_length=60, default='Jost')
     # Añadir un estilo: una entrada aquí + su bloque en web/src/styles/presets.css
-    # + su ficha en crm/src/components/setup/presets.ts (ver docs/ESTILOS.md)
+    # + su ficha en crm/src/components/setup/presets.ts + su versión del panel en
+    # crm/src/theme.ts (LOOKS) (ver docs/ESTILOS.md)
     STYLE_PRESETS = [
         ('natural', 'Natural — orgánico, cálido y suave'),
         ('minimal', 'Minimal — limpio, mucho aire'),
@@ -1125,6 +1126,12 @@ class SiteConfig(models.Model):
     style_preset = models.CharField(max_length=16, choices=STYLE_PRESETS, default='natural',
                                     help_text='Aspecto general de la web (no cambia la estructura).')
     icon_style = models.CharField(max_length=8, choices=ICON_STYLES, default='line')
+    # Estilos oscuros: si el panel sigue el estilo, también se pone oscuro
+    DARK_STYLES = ('energy', 'neon')
+    panel_follows_style = models.BooleanField(
+        default=True,
+        help_text='El panel usa también el estilo de la web (esquinas, bordes, sombras, claro u oscuro). '
+                  'Si no, el panel se ve con su aspecto clásico y los colores del estudio.')
 
     # ── Negocio ──
     # Moneda (ISO 4217) y país (ISO 3166-1, campo `country` de arriba): listas

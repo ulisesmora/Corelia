@@ -1,6 +1,6 @@
 import { ReactNode } from 'react';
 import { Box, Typography } from '@mui/material';
-import InboxOutlinedIcon from '@mui/icons-material/InboxOutlined';
+import StudioIcon from '../../site/StudioIcon';
 
 interface Props {
   title: string;
@@ -23,7 +23,7 @@ export default function EmptyState({ title, text, icon, action, compact }: Props
       }}
     >
       <Box aria-hidden sx={{ color: 'var(--studio-primary-light)', '& svg': { fontSize: compact ? 40 : 56 } }}>
-        {icon || <InboxOutlinedIcon />}
+        {icon || <StudioIcon name="empty" />}
       </Box>
       <Typography sx={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--studio-dark)' }}>{title}</Typography>
       {text && (

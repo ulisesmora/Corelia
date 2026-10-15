@@ -537,7 +537,7 @@ export default function AssignClassesManagement() {
         />
 
         {selectedUser && (
-          <Paper variant="outlined" sx={{ mt: 2, p: 2, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.8)' }}>
+          <Paper variant="outlined" sx={{ mt: 2, p: 2, borderRadius: 3, backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.8)' }}>
             <Typography sx={{ fontWeight: 600, fontSize: '1.05rem' }}>{userName(selectedUser)}</Typography>
             <Typography sx={{ fontSize: '0.92rem', color: 'text.secondary', wordBreak: 'break-word' }}>
               {[selectedUser.phone, selectedUser.email].filter(Boolean).join(' · ')}

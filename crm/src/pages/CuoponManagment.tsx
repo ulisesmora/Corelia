@@ -571,7 +571,7 @@ export default function CouponManagement() {
                 elevation={0}
                 sx={{
                   p: { xs: 2, md: 2.25 }, borderRadius: 4, border: '1.5px solid rgb(var(--studio-line-rgb) / 0.3)',
-                  backgroundColor: state.label === 'Funciona' ? 'rgba(255,255,255,0.9)' : 'rgb(var(--studio-bg-deep-rgb) / 0.6)',
+                  backgroundColor: state.label === 'Funciona' ? 'rgb(var(--studio-surface-rgb) / 0.9)' : 'rgb(var(--studio-bg-deep-rgb) / 0.6)',
                 }}
               >
                 <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems={{ md: 'center' }}>
