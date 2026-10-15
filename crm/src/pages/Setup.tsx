@@ -36,7 +36,8 @@ export default function Setup() {
   const notify = useNotify();
   const site = useSite();
   const guide = useSetupProgress();
-  const [step, setStep] = useState(0);
+  // Vuelta desde Stripe («Conectar pagos», ?stripe=…): directo al paso «Pagos»
+  const [step, setStep] = useState(() => (new URLSearchParams(window.location.search).has('stripe') ? 3 : 0));
   const [settings, setSettings] = useState<StudioSettings | null>(null);
   const [loadError, setLoadError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -117,7 +118,7 @@ export default function Setup() {
           {step === 0 && <StudioSection value={settings} onChange={update} onBusyChange={setUploading} />}
           {step === 1 && <StyleSection value={settings} onChange={update} />}
           {step === 2 && <EmailSection value={settings} onSaved={setSettings} />}
-          {step === 3 && <PaymentsSection value={settings} onSaved={setSettings} />}
+          {step === 3 && <PaymentsSection value={settings} onSaved={setSettings} returnTo="welcome" />}
           {last && <Done settings={settings} />}
 
           {!narrow && (

@@ -105,6 +105,9 @@ export interface StudioSettings {
   payments_enabled: boolean;
   stripe_publishable_key: string;
   setup_completed: boolean;
+  /** Solo lectura («Conectar pagos»): '' | 'keys' | 'connect' */
+  payments_provider: '' | 'keys' | 'connect';
+  stripe_account_id: string;
   // Solo lectura
   has_smtp_password: boolean;
   has_stripe: boolean;
@@ -128,6 +131,7 @@ export type StudioSettingsPatch = Partial<Omit<StudioSettings,
   'has_smtp_password' | 'has_stripe' | 'stripe_mode' | 'webhook_url' | 'api_url' | 'web_url' | 'email_ready'
   | 'default_web_url' | 'default_api_url' | 'push_devices' | 'push_clients'
   | 'payments_enabled' | 'stripe_publishable_key' | 'hero_video_poster_url' | 'hero_video_id'
+  | 'payments_provider' | 'stripe_account_id'
   | 'locale_options' | 'payment_currencies'>> & { smtp_password?: string };
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -167,6 +171,53 @@ export const connectStripe = (secret_key: string, publishable_key: string) =>
   });
 
 export const disconnectStripe = () => call<{ ok: boolean }>('v1/site-config/stripe/', { method: 'DELETE' });
+
+// ─── «Conectar pagos» (Stripe Connect; api/api/views_payments.py) ───────────
+
+/** Estado de la cuenta conectada (api/utils/payments.py → connect_state). */
+export type ConnectState = 'none' | 'onboarding' | 'pending' | 'restricted' | 'active' | 'mismatch';
+
+/** GET /api/v1/site-config/stripe/connect/status/ */
+export interface PaymentsStatus {
+  /** Con qué se cobra ahora: claves, cuenta conectada o nada */
+  provider: '' | 'keys' | 'connect';
+  /** Se puede cobrar online ahora mismo */
+  ready: boolean;
+  state: ConnectState;
+  /** La instalación ofrece «Conectar pagos» (si no, solo claves, como siempre) */
+  connect_available: boolean;
+  live: boolean;
+  requirements_due: string[];
+  account_id: string;
+  countries: { code: string; name: string }[];
+  default_country: string;
+  account_country: string;
+  display_name: string;
+  /** Moneda en la que Stripe paga a la cuenta conectada (ISO, '' si no se sabe) */
+  default_currency: string;
+  dashboard_url: string;
+  /** Hay claves pegadas en el panel (Avanzado) */
+  has_keys: boolean;
+  /** Las claves se eligieron como forma de cobro */
+  keys_provider: boolean;
+}
+
+/** A qué pantalla del panel se vuelve desde Stripe (lista cerrada en el API) */
+export type ConnectReturnTo = 'settings' | 'welcome';
+
+export const loadPaymentsStatus = () => call<PaymentsStatus>('v1/site-config/stripe/connect/status/');
+
+/** Crea la cuenta (una vez) y devuelve el enlace al alta en Stripe (null si ya está activa). */
+export const startConnect = (body: { country?: string; return_to: ConnectReturnTo }) =>
+  call<{ url: string | null; created?: boolean; status: PaymentsStatus }>('v1/site-config/stripe/connect/start/', {
+    method: 'POST', body: JSON.stringify({ ...body, origin: window.location.origin }),
+  });
+
+export const syncConnect = () =>
+  call<PaymentsStatus>('v1/site-config/stripe/connect/sync/', { method: 'POST' });
+
+export const disconnectConnect = () =>
+  call<PaymentsStatus>('v1/site-config/stripe/connect/disconnect/', { method: 'POST' });
 
 // ─── Preguntas frecuentes y opiniones ─────────────────────────────────────────
 

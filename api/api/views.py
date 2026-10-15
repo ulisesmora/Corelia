@@ -50,7 +50,7 @@ from .models import (
     Payment, CreditWallet, CreditLedgerEntry,
     Plan, Subscription, Coupon, CouponRedemption,
     Booking, Lead, ClassOccurrence, PushSubscription, ScheduleBlackout, UserClassPreference, SiteImage,
-    MembershipNudge,
+    MembershipNudge, SiteConfig,
 )
 from api.utils.availability import (
     MADRID_TZ, UNAVAILABLE_MESSAGES, blackouts_overlapping,
@@ -1171,10 +1171,11 @@ class SubscriptionViewSet(SoftDeleteModelViewSet):
         Solo el propietario puede cancelar su propia suscripción.
         """
         from api.utils.payments import payments_disabled_response, stripe_client
-        client = stripe_client()
+        subscription = self.get_object()
+        # En la cuenta de Stripe de la suscripción ('' = la de las claves)
+        client = stripe_client(account=subscription.stripe_account or '')
         if client is None:
             return payments_disabled_response()
-        subscription = self.get_object()
 
         if subscription.user != request.user:
             return Response(
@@ -1222,10 +1223,11 @@ class SubscriptionViewSet(SoftDeleteModelViewSet):
         Reactiva una suscripción que estaba programada para cancelarse.
         """
         from api.utils.payments import payments_disabled_response, stripe_client
-        client = stripe_client()
+        subscription = self.get_object()
+        # En la cuenta de Stripe de la suscripción ('' = la de las claves)
+        client = stripe_client(account=subscription.stripe_account or '')
         if client is None:
             return payments_disabled_response()
-        subscription = self.get_object()
 
         if subscription.user != request.user:
             return Response(
@@ -2186,10 +2188,11 @@ class CreateCheckoutSessionView(APIView):
     throttle_classes = [scoped('checkout')]
 
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import payments_disabled_response, stripe_client
+        from api.utils.payments import current_stripe_account, payments_disabled_response, stripe_client
         client = stripe_client()
         if client is None:
             return payments_disabled_response()
+        stripe_account = current_stripe_account() or ''
         if not request.user.is_authenticated:
             captcha = check_captcha(request)
             if captcha:
@@ -2388,7 +2391,8 @@ class CreateCheckoutSessionView(APIView):
                 amount_eur=final_payment_amount,
                 status='pending', # <-- ESTADO PENDIENTE
                 currency=currency.upper(),
-                method='stripe'
+                method='stripe',
+                stripe_account=stripe_account,
             )
             
             if coupon_obj:
@@ -2426,18 +2430,23 @@ class CreateCheckoutSessionView(APIView):
 
 
             # --- 7. Crear la Sesión de Checkout en Stripe ---
+            session_params = {
+                'ui_mode': 'embedded_page',
+                'line_items': line_items,
+                'mode': 'payment',
+                'customer_email': guest_email,
+                'discounts': stripe_discounts if stripe_discounts else None,
+                'tax_id_collection': {'enabled': False},
+                'invoice_creation': {'enabled': True},
+                'metadata': {'local_payment_id': new_payment.id},
+                'return_url': web_url('/checkout') + '/success?session_id={CHECKOUT_SESSION_ID}',
+            }
+            # Cuenta conectada: reservas sin métodos de pago asíncronos (OXXO,
+            # Multibanco…), que dejarían la plaza retenida días sin cobrar.
+            if stripe_account and settings.STRIPE_CONNECT_BOOKING_PMC:
+                session_params['payment_method_configuration'] = settings.STRIPE_CONNECT_BOOKING_PMC
             checkout_session = client.v1.checkout.sessions.create(
-                params={
-                    'ui_mode': 'embedded',
-                    'line_items': line_items,
-                    'mode': 'payment',
-                    'customer_email': guest_email,
-                    'discounts': stripe_discounts if stripe_discounts else None,
-                    'tax_id_collection': {'enabled': False},
-                    'invoice_creation': {'enabled': True},
-                    'metadata': {'local_payment_id': new_payment.id},
-                    'return_url': web_url('/checkout') + '/success?session_id={CHECKOUT_SESSION_ID}',
-                },
+                params=session_params,
                 options={'idempotency_key': f"checkout_{new_payment.id}_{uuid.uuid4().hex[:8]}"},
             )
             
@@ -2520,11 +2529,12 @@ class CreatePlanCheckoutSessionView(APIView):
     permission_classes = [IsAuthenticated]
     
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import payments_disabled_response, stripe_client
+        from api.utils.payments import current_stripe_account, payments_disabled_response, stripe_client
         client = stripe_client()
         if client is None:
             return payments_disabled_response()
-        
+        stripe_account = current_stripe_account() or ''
+
         user = request.user
         plan_id = request.data.get('plan_id')
 
@@ -2630,7 +2640,8 @@ class CreatePlanCheckoutSessionView(APIView):
             if plan.type == 'sub':
                 # Suscripción: el webhook crea el Payment vía get_or_create(stripe_checkout_session_id).
                 # No creamos un Payment aquí para evitar registros pending huérfanos.
-                if plan.stripe_price_id:
+                # El precio guardado solo vale en la cuenta de Stripe donde se creó
+                if plan.stripe_price_id and (plan.stripe_price_account or '') == stripe_account:
                     sub_line_items = [{'price': plan.stripe_price_id, 'quantity': 1}]
                 else:
                     interval = getattr(plan, 'interval', None) or 'month'
@@ -2651,7 +2662,7 @@ class CreatePlanCheckoutSessionView(APIView):
                         'quantity': 1,
                     }]
                 checkout_session_kwargs = {
-                    'ui_mode': 'embedded',
+                    'ui_mode': 'embedded_page',
                     'line_items': sub_line_items,
                     'mode': 'subscription',
                     'customer_email': user.email,
@@ -2677,7 +2688,8 @@ class CreatePlanCheckoutSessionView(APIView):
                     amount_eur=final_payment_amount,
                     status='pending',
                     currency=currency.upper(),
-                    method='stripe'
+                    method='stripe',
+                    stripe_account=stripe_account,
                 )
 
                 if coupon_obj:
@@ -2691,7 +2703,7 @@ class CreatePlanCheckoutSessionView(APIView):
                     )
 
                 checkout_session_kwargs = {
-                    'ui_mode': 'embedded',
+                    'ui_mode': 'embedded_page',
                     'line_items': line_items,
                     'mode': 'payment',
                     'customer_email': user.email,
@@ -2778,21 +2790,27 @@ def _subscription_client_secret(subscription):
 
 
 class StripeWebhookView(APIView):
+    """Avisos de Stripe de la cuenta de las CLAVES del estudio (el webhook que
+    crea connect_stripe). Los de la cuenta conectada llegan a
+    ConnectWebhookView, que usa la misma lógica (process_event)."""
     permission_classes = [AllowAny]
+    authentication_classes = []
+    # Cuenta de Stripe del evento que se procesa ('' = la de las claves;
+    # acct_… = la conectada). Se guarda en los pagos y suscripciones nuevos.
+    stripe_account = ''
 
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import stripe_client, stripe_keys
-        client = stripe_client()
-        if client is None:
+        from api.utils.payments import parse_webhook_event, stripe_keys
+        secret_key, _, wh_secret = stripe_keys()
+        # Aunque el estudio ya cobre con «Conectar pagos», mientras tenga sus
+        # claves este aviso sigue llegando (suscripciones de antes, reembolsos).
+        if not secret_key:
             return HttpResponse("Payments disabled", status=503)
-        wh_secret = stripe_keys()[2]
-        payload = request.body
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE') or ''
-        event = None
 
-        # 1. VERIFICAR FIRMA
+        # 1. VERIFICAR FIRMA (el evento queda como dict normal)
         try:
-            event = client.construct_event(payload, sig_header, wh_secret)
+            event = parse_webhook_event(request.body, sig_header, wh_secret)
         except ValueError:
             logger.warning("stripe.webhook.invalid_payload")
             return HttpResponse("Invalid payload", status=400)
@@ -2801,49 +2819,48 @@ class StripeWebhookView(APIView):
             return HttpResponse("Invalid signature", status=400)
 
         logger.info("stripe.webhook.received type=%s event_id=%s", event['type'], event.get('id'))
+        self.process_event(event, account='')
+        # Siempre responder 200 a Stripe
+        return HttpResponse(status=200)
 
-        # 2. ENRUTAR EVENTO
-        if event['type'] == 'checkout.session.completed':
-            session = event['data']['object']
+    def process_event(self, event, account=''):
+        """Enruta un evento ya verificado (dict). `account`: la cuenta de
+        Stripe de la que viene ('' = la de las claves)."""
+        self.stripe_account = account or ''
+        event_type = event.get('type')
+        obj = (event.get('data') or {}).get('object') or {}
 
-            if session.get('payment_status') == 'paid':
-                if session.get('mode') == 'subscription':
-                    self._fulfill_subscription_creation(session)
+        if event_type == 'checkout.session.completed':
+            if obj.get('payment_status') == 'paid':
+                if obj.get('mode') == 'subscription':
+                    self._fulfill_subscription_creation(obj)
                 else:
-                    self._route_payment_logic(session)
+                    self._route_payment_logic(obj)
             # Métodos asíncronos (Klarna, Afterpay…): el pago se confirmará más tarde
             # via checkout.session.async_payment_succeeded — no hacer nada aquí todavía.
 
-        elif event['type'] == 'checkout.session.async_payment_succeeded':
+        elif event_type == 'checkout.session.async_payment_succeeded':
             # Klarna, Afterpay, Sofort… el pago se ha confirmado asíncronamente
-            session = event['data']['object']
-            if session.get('mode') == 'subscription':
-                self._fulfill_subscription_creation(session)
+            if obj.get('mode') == 'subscription':
+                self._fulfill_subscription_creation(obj)
             else:
-                self._route_payment_logic(session)
+                self._route_payment_logic(obj)
 
-        elif event['type'] == 'checkout.session.async_payment_failed':
+        elif event_type == 'checkout.session.async_payment_failed':
             # El pago asíncrono ha fallado — registrar para depuración
-            session = event['data']['object']
             logger.warning(
-                "stripe.payment.async_failed session=%s methods=%s",
-                session.get('id'), session.get('payment_method_types'),
+                "stripe.payment.async_failed session=%s account=%s",
+                obj.get('id'), self.stripe_account or '-',
             )
 
-        elif event['type'] == 'invoice.paid':
-            invoice = event['data']['object']
-            self._handle_invoice_paid(invoice)
+        elif event_type == 'invoice.paid':
+            self._handle_invoice_paid(obj)
 
-        elif event['type'] == 'customer.subscription.updated':
-            subscription = event['data']['object']
-            self._handle_subscription_updated(subscription)
+        elif event_type == 'customer.subscription.updated':
+            self._handle_subscription_updated(obj)
 
-        elif event['type'] == 'customer.subscription.deleted':
-            subscription = event['data']['object']
-            self._handle_subscription_deleted(subscription)
-
-        # Siempre responder 200 a Stripe
-        return HttpResponse(status=200)
+        elif event_type == 'customer.subscription.deleted':
+            self._handle_subscription_deleted(obj)
 
     def _route_payment_logic(self, session):
         """
@@ -2905,6 +2922,7 @@ class StripeWebhookView(APIView):
                 amount_eur=amount_eur,
                 currency=session_currency.upper(),
                 method='stripe',
+                stripe_account=self.stripe_account,
                 raw_response=session,
             )
 
@@ -2941,6 +2959,7 @@ class StripeWebhookView(APIView):
         # 5. Marcar el pago como completado
         payment.status = 'succeeded'
         payment.stripe_payment_intent_id = payment_intent_id
+        payment.stripe_account = self.stripe_account
         payment.save()
 
         logger.info(
@@ -3019,6 +3038,7 @@ class StripeWebhookView(APIView):
             session_currency = session.get('currency') or payment.currency
             payment.amount_eur = from_stripe_amount(session.get('amount_total'), session_currency)
             payment.currency = session_currency.upper()
+            payment.stripe_account = self.stripe_account
             payment.raw_response = session
             payment.save()
 
@@ -3077,8 +3097,9 @@ class StripeWebhookView(APIView):
                 payment_intent_id = session.get('payment_intent')
                 amount_paid_cents = int(session.get('amount_total') or 0)
                 to_refund = min(refund_cents, amount_paid_cents)
+                account = self.stripe_account
                 transaction.on_commit(
-                    lambda: self._issue_stripe_refund(payment_intent_id, to_refund, payment.id)
+                    lambda: self._issue_stripe_refund(payment_intent_id, to_refund, payment.id, account)
                 )
 
             # Avisar a quien pagó pero se quedó sin plaza (antes: refund mudo —
@@ -3125,7 +3146,7 @@ class StripeWebhookView(APIView):
         return to_stripe_amount(price, currency)
 
     @staticmethod
-    def _issue_stripe_refund(payment_intent_id, amount_cents, payment_id):
+    def _issue_stripe_refund(payment_intent_id, amount_cents, payment_id, account=''):
         if not payment_intent_id or amount_cents <= 0:
             logger.error(
                 "No se pudo emitir refund para Payment %s: intent=%s amount=%s",
@@ -3134,7 +3155,8 @@ class StripeWebhookView(APIView):
             return
         try:
             from api.utils.payments import stripe_client
-            client = stripe_client()
+            # En la cuenta donde se cobró ('' = la de las claves)
+            client = stripe_client(account=account or '')
             if client is None:
                 raise RuntimeError('Stripe ya no está conectado')
             client.v1.refunds.create(params={'payment_intent': payment_intent_id, 'amount': amount_cents})
@@ -3182,6 +3204,7 @@ class StripeWebhookView(APIView):
                     current_period_start=timezone.now(),
                     current_period_end=timezone.now() + timedelta(days=30),
                     cancel_at_period_end=False,
+                    stripe_account=self.stripe_account,
                 ),
             )
 
@@ -3222,11 +3245,13 @@ class StripeWebhookView(APIView):
                     status='succeeded',
                     method='stripe',
                     stripe_payment_intent_id=session.get('payment_intent'),
+                    stripe_account=self.stripe_account,
                 ),
             )
 
             if session.get('customer'):
-                User.objects.filter(id=user_id).update(stripe_customer_id=session.get('customer'))
+                User.objects.filter(id=user_id).update(stripe_customer_id=session.get('customer'),
+                                                       stripe_customer_account=self.stripe_account)
 
             logger.info(
                 "subscription.created source=webhook user_id=%s plan=%s credits=%s stripe_sub=%s",
@@ -3450,6 +3475,54 @@ class StripeWebhookView(APIView):
                 except Exception:
                     logger.warning("subscription.deleted.email_failed user_id=%s", user.id, exc_info=True)
 
+class ConnectWebhookView(APIView):
+    """POST /api/v1/webhooks/connect/ — avisos del endpoint «Connect» de la
+    plataforma (STRIPE_CONNECT_WEBHOOK_SECRET). Llegan los de TODAS las
+    cuentas conectadas a la plataforma: solo se procesan los de la cuenta de
+    este estudio y del mismo modo (test/live); el resto, 200 sin hacer nada.
+
+    account.updated → se vuelve a leer la cuenta (sync_status);
+    account.application.deauthorized → se desenlaza;
+    el resto (pagos, suscripciones) → la misma lógica que el webhook de claves."""
+    permission_classes = [AllowAny]
+    authentication_classes = []
+
+    def post(self, request, *args, **kwargs):
+        from api.utils.payments import connect_configured, parse_webhook_event, platform_live
+        secret = settings.STRIPE_CONNECT_WEBHOOK_SECRET
+        if not secret or not connect_configured():
+            return HttpResponse("Connect disabled", status=503)
+        try:
+            event = parse_webhook_event(request.body, request.META.get('HTTP_STRIPE_SIGNATURE') or '', secret)
+        except ValueError:
+            logger.warning("stripe.connect_webhook.invalid_payload")
+            return HttpResponse("Invalid payload", status=400)
+        except stripe.SignatureVerificationError:
+            logger.warning("stripe.connect_webhook.invalid_signature")
+            return HttpResponse("Invalid signature", status=400)
+
+        event_type = event.get('type')
+        account = event.get('account') or ''
+        cfg = SiteConfig.load()
+        if bool(event.get('livemode')) != platform_live():
+            logger.info("stripe.connect_webhook.ignored reason=livemode type=%s event_id=%s", event_type, event.get('id'))
+            return HttpResponse(status=200)
+        if not account or account != cfg.stripe_account_id:
+            logger.info("stripe.connect_webhook.ignored reason=other_account account=%s type=%s event_id=%s",
+                        account or '-', event_type, event.get('id'))
+            return HttpResponse(status=200)
+
+        logger.info("stripe.connect_webhook.received type=%s account=%s event_id=%s", event_type, account, event.get('id'))
+        from api.utils.stripe_connect import sync_status, unlink
+        if event_type == 'account.updated':
+            sync_status(reason='webhook')  # siempre se relee la cuenta en Stripe
+        elif event_type == 'account.application.deauthorized':
+            unlink('deauthorized')
+        else:
+            StripeWebhookView().process_event(event, account=account)
+        return HttpResponse(status=200)
+
+
 class VerifyPlanPurchaseView(APIView):
     """
     Verifica el estado de una sesión de Stripe sin otorgar créditos.
@@ -3469,7 +3542,8 @@ class VerifyPlanPurchaseView(APIView):
         try:
             session = client.v1.checkout.sessions.retrieve(session_id)
 
-            metadata = session.metadata or {}
+            from api.utils.payments import to_dict
+            metadata = to_dict(getattr(session, 'metadata', None))
             if str(request.user.id) != str(metadata.get('user_id', '')):
                 return Response({'error': 'No autorizado para verificar esta sesión.'}, status=status.HTTP_403_FORBIDDEN)
 
@@ -3798,10 +3872,11 @@ class CreateStripeSubscriptionView(APIView):
     permission_classes = [IsAdminUser]
 
     def post(self, request, *args, **kwargs):
-        from api.utils.payments import payments_disabled_response, stripe_client
+        from api.utils.payments import current_stripe_account, payments_disabled_response, stripe_client
         client = stripe_client()
         if client is None:
             return payments_disabled_response()
+        stripe_account = current_stripe_account() or ''
         user_id = request.data.get('user_id')
         plan_id = request.data.get('plan_id')
 
@@ -3830,15 +3905,24 @@ class CreateStripeSubscriptionView(APIView):
                 {'error': 'El plan no tiene stripe_price_id configurado.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
+        # Un precio de Stripe solo existe en la cuenta donde se creó
+        if (plan.stripe_price_account or '') != stripe_account:
+            return Response(
+                {'error': 'El stripe_price_id del plan es de otra cuenta de Stripe (la de antes de conectar '
+                          'pagos). Crea el precio en tu cuenta actual o déjalo vacío.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
 
         try:
-            if not user.stripe_customer_id:
+            # El cliente de Stripe también es de una cuenta: si es de otra, se crea uno nuevo
+            if not user.stripe_customer_id or (user.stripe_customer_account or '') != stripe_account:
                 customer = client.v1.customers.create(params={
                     'email': user.email,
                     'metadata': {'user_id': user.id},
                 })
                 user.stripe_customer_id = customer.id
-                user.save(update_fields=['stripe_customer_id'])
+                user.stripe_customer_account = stripe_account
+                user.save(update_fields=['stripe_customer_id', 'stripe_customer_account'])
         except stripe.StripeError as e:
             return Response(
                 {'error': f'Error creando cliente Stripe: {str(e)}'},
@@ -3870,6 +3954,7 @@ class CreateStripeSubscriptionView(APIView):
                     else timezone.now() + timedelta(days=30)
                 ),
                 stripe_subscription_id=stripe_subscription.id,
+                stripe_account=stripe_account,
                 cancel_at_period_end=False,
             )
 

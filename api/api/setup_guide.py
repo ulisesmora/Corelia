@@ -264,7 +264,7 @@ def _style_changed(cfg: SiteConfig) -> bool:
 
 def compute_progress(cfg: SiteConfig | None = None) -> dict:
     from api.utils.emailing import email_enabled
-    from api.utils.payments import payments_enabled
+    from api.utils.payments import payments_status
 
     cfg = cfg or SiteConfig.load()
     today = date.today()
@@ -306,7 +306,12 @@ def compute_progress(cfg: SiteConfig | None = None) -> dict:
     )
     texts_ok = bool((cfg.hero_title or cfg.hero_subtitle) and cfg.about_text)
     email_ok = email_enabled()
-    stripe_ok = payments_enabled()
+    pay = payments_status(cfg)
+    stripe_ok = pay['ready']
+    # Estado de los pagos para la guía: 'active' si ya se cobra (con claves o
+    # con la cuenta conectada); si no, el de la cuenta conectada (none,
+    # onboarding, pending, restricted, mismatch). Textos: crm/src/onboarding/copy.ts
+    stripe_state = 'active' if stripe_ok else pay['state']
 
     state = {
         'studio': {'done': not studio_missing, 'missing': studio_missing,
@@ -318,7 +323,8 @@ def compute_progress(cfg: SiteConfig | None = None) -> dict:
         'schedule': {'done': counts['schedule'] > 0},
         'plans': {'done': counts['plans'] > 0},
         'payments': {'done': email_ok and stripe_ok,
-                     'items': [{'key': 'emails', 'done': email_ok}, {'key': 'stripe', 'done': stripe_ok}]},
+                     'items': [{'key': 'emails', 'done': email_ok},
+                               {'key': 'stripe', 'done': stripe_ok, 'state': stripe_state}]},
         'content': {'done': hero_ok and texts_ok,
                     'items': [{'key': 'hero', 'done': hero_ok}, {'key': 'texts', 'done': texts_ok},
                               {'key': 'faqs', 'done': counts['faqs'] > 0},

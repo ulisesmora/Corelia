@@ -343,6 +343,22 @@ class PlanSerializer(TimeStampedSerializerMixin):
         model = Plan
         fields = "__all__"
 
+    @staticmethod
+    def _stamp_price_account(validated_data, instance=None):
+        """Un stripe_price_id nuevo es de la cuenta de Stripe que cobra ahora
+        ('' = claves; acct_… = «Conectar pagos»), salvo que se diga otra."""
+        if 'stripe_price_id' in validated_data and 'stripe_price_account' not in validated_data \
+                and validated_data['stripe_price_id'] != getattr(instance, 'stripe_price_id', None):
+            from api.utils.payments import current_stripe_account
+            validated_data['stripe_price_account'] = current_stripe_account() or ''
+        return validated_data
+
+    def create(self, validated_data):
+        return super().create(self._stamp_price_account(validated_data))
+
+    def update(self, instance, validated_data):
+        return super().update(instance, self._stamp_price_account(validated_data, instance))
+
 
 class PlanMiniSerializer(serializers.ModelSerializer):
     """Lightweight plan snapshot embedded in SubscriptionSerializer."""

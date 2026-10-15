@@ -208,6 +208,7 @@ _THROTTLE_DEFAULTS = {
     'checkout': '30/h',             # pago como invitada (crea ficha y sesión de Stripe), por IP
     'public_form': '30/h',          # formularios públicos (contacto, preferencias, cupones)
     'test_email': '10/h',           # email de prueba del panel, por usuario
+    'stripe_connect': '30/h',       # «Conectar pagos»: enlaces de Stripe y comprobar estado, por usuario
 }
 THROTTLE_RATES = {scope: env(f'THROTTLE_{scope.upper()}', rate) for scope, rate in _THROTTLE_DEFAULTS.items()}
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = THROTTLE_RATES
@@ -341,6 +342,37 @@ EMAIL_TIMEOUT = 20
 STRIPE_SECRET_KEY = env('STRIPE_SECRET_KEY', '')
 STRIPE_PUBLISHABLE_KEY = env('STRIPE_PUBLISHABLE_KEY', '')
 STRIPE_WEBHOOK_SECRET = env('STRIPE_WEBHOOK_SECRET', '')
+
+# «Conectar pagos» (Stripe Connect, opcional). Quien gestiona la instalación
+# (una agencia, o Corelia Cloud) tiene una plataforma de Stripe Connect y el
+# estudio solo pulsa «Conectar pagos»: Stripe le crea su propia cuenta (con
+# su panel de Stripe completo), el dinero va a SU banco y la plataforma no
+# cobra comisión. Sin estas variables, todo sigue como siempre (claves en el
+# panel). Guía completa: docs/STRIPE_CONNECT.md.
+#   STRIPE_CONNECT_PLATFORM_KEY      clave secreta de la plataforma (sk_live_… / sk_test_…)
+#   STRIPE_CONNECT_PUBLISHABLE_KEY   clave publicable de la plataforma (pk_…, mismo modo)
+#   STRIPE_CONNECT_WEBHOOK_SECRET    whsec_… del endpoint «Connect» (…/api/v1/webhooks/connect/)
+#   STRIPE_CONNECT_AVAILABILITY_CHECK  opcional: ruta a una función f(site_config) -> bool que
+#                                    decide si se ofrece «Conectar pagos» (despliegue gradual)
+#   STRIPE_CONNECT_COUNTRIES         países donde se ofrece (ISO-2 separados por comas)
+#   STRIPE_CONNECT_BOOKING_PMC       opcional: configuración de métodos de pago (pmc_…, la
+#                                    «padre» de la plataforma) solo para reservas de clase:
+#                                    sin métodos asíncronos (OXXO, Multibanco…) que retendrían plazas
+STRIPE_CONNECT_PLATFORM_KEY = env('STRIPE_CONNECT_PLATFORM_KEY', '')
+STRIPE_CONNECT_PUBLISHABLE_KEY = env('STRIPE_CONNECT_PUBLISHABLE_KEY', '')
+STRIPE_CONNECT_WEBHOOK_SECRET = env('STRIPE_CONNECT_WEBHOOK_SECRET', '')
+STRIPE_CONNECT_AVAILABILITY_CHECK = env('STRIPE_CONNECT_AVAILABILITY_CHECK', '')
+# Países de Corelia (api/utils/locale.py) donde Stripe abre cuentas
+# (https://stripe.com/global, consultado el 15-10-2026). Fuera quedan, por
+# ahora, Andorra, Mónaco, Puerto Rico y Latinoamérica salvo México y Brasil.
+STRIPE_CONNECT_COUNTRIES = [c.upper() for c in env_list(
+    'STRIPE_CONNECT_COUNTRIES',
+    'ES,PT,FR,DE,IT,NL,BE,AT,LU,FI,GR,IE,GB,CH,LI,US,CA,MX,BR',
+)]
+STRIPE_CONNECT_BOOKING_PMC = env('STRIPE_CONNECT_BOOKING_PMC', '')
+# Dirección del panel a la que se vuelve desde Stripe (vacío = la del API, que
+# es donde se sirve el panel; en desarrollo con Vite: http://localhost:5173).
+PANEL_URL = (env('PANEL_URL') or API_URL).rstrip('/')
 
 # WhatsApp automático (servidor whatsmeow propio, avanzado). Sin él, el
 # panel usa enlaces wa.me para escribir a las clientas.

@@ -123,8 +123,10 @@ class SiteConfigSerializer(serializers.ModelSerializer):
         exclude = ('id', 'stripe_secret_key', 'stripe_webhook_secret', 'stripe_webhook_id',
                    'vapid_private_key', 'vapid_public_key', 'setup_steps')
         # require_panel_2fa: se cambia en /api/v1/auth/2fa/policy/ (exige tenerla activada uno mismo)
+        # «Conectar pagos»: solo se cambia con /api/v1/site-config/stripe/connect/… (api/views_payments.py)
         read_only_fields = ('payments_enabled', 'stripe_publishable_key', 'updated_at', 'hero_video_poster_url',
-                            'require_panel_2fa')
+                            'require_panel_2fa', 'payments_provider', 'stripe_account_id', 'stripe_connect_status',
+                            'stripe_connected_at')
 
     # ── País y moneda ──
     def validate_currency(self, value):
@@ -253,9 +255,17 @@ class SiteConfigSerializer(serializers.ModelSerializer):
         return bool(obj.smtp_password)
 
     def get_has_stripe(self, obj):
-        return bool(obj.payments_enabled and obj.stripe_secret_key)
+        # Claves pegadas en el panel, o la cuenta conectada ya cobrando. (Las
+        # claves del entorno no cuentan: el panel no puede desconectarlas.)
+        from api.utils.payments import _effective
+        provider, ready, _ = _effective(obj)
+        return bool(obj.payments_enabled and obj.stripe_secret_key) or (ready and provider == 'connect')
 
     def get_stripe_mode(self, obj):
+        from api.utils.payments import _effective
+        provider, ready, live = _effective(obj)
+        if ready and provider == 'connect':
+            return 'live' if live else 'test'
         key = obj.stripe_secret_key or ''
         if not key:
             return None
@@ -323,9 +333,10 @@ def _hero_payload(cfg: SiteConfig) -> dict:
 
 def public_config_payload(cfg: SiteConfig) -> dict:
     from api.utils.locale import normalize_country, normalize_currency
-    from api.utils.payments import payments_enabled, stripe_keys
+    from api.utils.payments import payments_enabled, publishable_key, stripe_account_for_js
     vapid_public, _ = ensure_vapid_keys(cfg)
-    return {
+    enabled = payments_enabled()
+    payload = {
         'studio_name': cfg.studio_name,
         'tagline': cfg.tagline,
         'description': cfg.description,
@@ -385,8 +396,9 @@ def public_config_payload(cfg: SiteConfig) -> dict:
         'drop_in_price': str(cfg.drop_in_price),
         'timezone': settings.STUDIO_TIMEZONE,
         'cancel_min_hours': settings.BOOKING_CANCEL_MIN_HOURS,
-        'payments_enabled': payments_enabled(),
-        'stripe_publishable_key': stripe_keys()[1] if payments_enabled() else '',
+        'payments_enabled': enabled,
+        # Con «Conectar pagos», la clave publicable de la plataforma (+ stripe_account abajo)
+        'stripe_publishable_key': publishable_key() if enabled else '',
         'google_login_enabled': bool(cfg.google_client_id),
         # Captcha Cloudflare Turnstile (clave PÚBLICA; '' = desactivado)
         'turnstile_site_key': turnstile_site_key(),
@@ -403,6 +415,12 @@ def public_config_payload(cfg: SiteConfig) -> dict:
         # web solo usa en <meta> o, con consentimiento, en gtag / píxel de Meta
         **{f: safe_tracking_value(f, getattr(cfg, f)) for f in TRACKING_PATTERNS},
     }
+    # Cuenta conectada: la web carga Stripe.js con loadStripe(pk, {stripeAccount}).
+    # Solo aparece con «Conectar pagos» (sin él, la respuesta es la de siempre).
+    account = stripe_account_for_js() if enabled else ''
+    if account:
+        payload['stripe_account'] = account
+    return payload
 
 
 class SiteConfigPublicView(APIView):
@@ -448,6 +466,7 @@ class SiteConfigAdminView(APIView):
         cfg = SiteConfig.load()
         before = (cfg.address, cfg.city, cfg.postal_code)
         panel_before = cfg.panel_domain
+        web_before = cfg.web_domain
         ser = SiteConfigSerializer(cfg, data=request.data, partial=True)
         ser.is_valid(raise_exception=True)
         cfg = ser.save()
@@ -469,6 +488,10 @@ class SiteConfigAdminView(APIView):
                 logger.info("site_config.stripe_webhook_moved domain=%s", cfg.panel_domain)
             except Exception:
                 logger.exception("site_config.stripe_webhook_move_failed")
+        # Dominio nuevo → registrarlo en la cuenta conectada (Apple Pay / Google Pay)
+        if (cfg.web_domain != web_before or cfg.panel_domain != panel_before) and cfg.stripe_account_id:
+            from api.utils.stripe_connect import register_payment_method_domains
+            register_payment_method_domains(cfg)
         logger.info("site_config.updated fields=%s admin_id=%s",
                     sorted(k for k in request.data.keys() if k != 'smtp_password'), request.user.id)
         _ping_search_engines()
@@ -560,6 +583,8 @@ class SiteConfigStripeView(APIView):
         cfg.stripe_webhook_secret = result['webhook_secret']
         cfg.stripe_webhook_id = result['webhook_id']
         cfg.payments_enabled = True
+        # Pegar claves es elegir cobrar con ellas (aunque haya una cuenta conectada)
+        cfg.payments_provider = 'keys'
         cfg.save()
         logger.info("site_config.stripe_connected account=%s live=%s admin_id=%s",
                     result['account_id'], result['live_mode'], request.user.id)
@@ -583,6 +608,8 @@ class SiteConfigStripeView(APIView):
         cfg.stripe_secret_key = ''
         cfg.stripe_webhook_secret = ''
         cfg.stripe_webhook_id = ''
+        if cfg.payments_provider == 'keys':
+            cfg.payments_provider = 'connect' if cfg.stripe_account_id else ''
         cfg.save()
         logger.info("site_config.stripe_disconnected admin_id=%s", request.user.id)
         return Response({'ok': True})

@@ -21,7 +21,7 @@ import { authHeaders } from '../utils/auth';
 import { friendlyError } from '../utils/errors';
 import type { StepState } from './api';
 import { ClassTemplatesDialog, ClassTemplatesPicker } from './ClassTemplates';
-import { ITEM_TEXT, MISSING_TEXT, STEP_COPY, UI, fill, type StepKey } from './copy';
+import { ITEM_TEXT, MISSING_TEXT, STEP_COPY, STRIPE_STATE_TEXT, UI, fill, type StepKey } from './copy';
 import { stepRoute, withGuide, nextPendingStep } from './guide';
 import { useSetupProgress } from './progressContext';
 import QuickRoomDialog from './QuickRoomDialog';
@@ -80,7 +80,7 @@ function Items({ s }: { s: StepState }) {
               ? <CheckCircleIcon fontSize="small" sx={{ color: 'success.main' }} aria-label="Hecho" />
               : <RadioButtonUncheckedIcon fontSize="small" sx={{ color: 'text.disabled' }} aria-label="Pendiente" />}
             <Link component={RouterLink} to={withGuide(text.route)} sx={{ py: 1, minHeight: 44, display: 'inline-flex', alignItems: 'center' }}>
-              {text.label}
+              {(it.key === 'stripe' && it.state && STRIPE_STATE_TEXT[it.state]) || text.label}
             </Link>
           </Stack>
         );

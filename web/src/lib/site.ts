@@ -82,6 +82,9 @@ export interface SiteConfig {
   cancel_min_hours: number;
   payments_enabled: boolean;
   stripe_publishable_key: string;
+  /** «Conectar pagos» (Stripe Connect): cuenta del estudio (acct_…) para
+   *  loadStripe(pk, {stripeAccount}). '' con las claves de siempre. */
+  stripe_account: string;
   google_login_enabled: boolean;
   /** Client ID de Google Identity Services ('' = sin botón de Google). */
   google_client_id: string;
@@ -178,6 +181,7 @@ export const DEFAULT_SITE: SiteConfig = {
   cancel_min_hours: 8,
   payments_enabled: false,
   stripe_publishable_key: '',
+  stripe_account: '',
   google_login_enabled: false,
   google_client_id: '',
   vapid_public_key: '',
@@ -355,6 +359,7 @@ export function normalizeSite(raw: unknown): SiteConfig {
     cancel_min_hours: Number.isFinite(hours) && hours >= 0 ? hours : d.cancel_min_hours,
     payments_enabled: r.payments_enabled === true,
     stripe_publishable_key: str(r.stripe_publishable_key),
+    stripe_account: /^acct_[A-Za-z0-9]+$/.test(str(r.stripe_account)) ? str(r.stripe_account) : '',
     google_login_enabled: r.google_login_enabled === true && !!str(r.google_client_id),
     google_client_id: str(r.google_client_id),
     vapid_public_key: str(r.vapid_public_key),

@@ -73,19 +73,20 @@ def refund_guest_booking_stripe(booking, reason=''):
     if price_cents <= 0:
         return 0
 
-    from api.utils.payments import stripe_client
-    client = stripe_client()
+    from api.utils.payments import stripe_client, to_dict
+    # En la cuenta donde se cobró ('' = la de las claves; acct_… = la conectada)
+    client = stripe_client(account=getattr(payment, 'stripe_account', '') or '')
     if client is None:
         logger.critical("guest_refund.stripe_disconnected booking_id=%s payment_id=%s — "
                         "reembolsar a mano: Stripe ya no está conectado", booking.id, payment.id)
         return 0
 
     try:
-        pi = client.v1.payment_intents.retrieve(intent_id, params={'expand': ['latest_charge']})
+        pi = to_dict(client.v1.payment_intents.retrieve(intent_id, params={'expand': ['latest_charge']}))
         received = pi.get('amount_received') or 0
         already = 0
         charge = pi.get('latest_charge')
-        if charge:
+        if isinstance(charge, dict):
             already = charge.get('amount_refunded') or 0
         refundable = max(0, received - already)
         amount = min(price_cents, refundable)

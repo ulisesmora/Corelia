@@ -87,6 +87,10 @@ class User(AbstractUser):
     birth_date = models.DateField(blank=True, null=True)
     role = models.ForeignKey(Role, on_delete=models.SET_NULL, null=True, blank=True)
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    # Cuenta de Stripe a la que pertenece stripe_customer_id ('' = la de las
+    # claves del panel; acct_… = la cuenta conectada con «Conectar pagos»).
+    # Si no coincide con la cuenta actual, el cliente se vuelve a crear.
+    stripe_customer_account = models.CharField(max_length=64, blank=True, default='')
     city = models.CharField(max_length=120, blank=True, null=True)
     whatThinkFeel = models.CharField(max_length=120, blank=True, null=True)
     whatSee = models.CharField(max_length=120, blank=True, null=True)
@@ -620,6 +624,9 @@ class Payment(TimeStampedSoftDelete):
     stripe_charge_id = models.CharField(max_length=255, blank=True, null=True)
     stripe_checkout_session_id = models.CharField(max_length=255, blank=True, null=True)
     stripe_customer_id = models.CharField(max_length=255, blank=True, null=True)
+    # Cuenta de Stripe donde se cobró ('' = la de las claves del panel;
+    # acct_… = la conectada con «Conectar pagos»). Los reembolsos van ahí.
+    stripe_account = models.CharField(max_length=64, blank=True, default='')
 
     status = models.CharField(max_length=20, choices=STATUS, default="pending")
     raw_response = models.JSONField(default=dict, blank=True)
@@ -701,6 +708,9 @@ class Plan(TimeStampedSoftDelete):
     auto_renew = models.BooleanField(default=False)
     stripe_product_id = models.CharField(max_length=255, blank=True, null=True)
     stripe_price_id = models.CharField(max_length=255, blank=True, null=True)
+    # Cuenta de Stripe del stripe_price_id ('' = la de las claves del panel).
+    # En otra cuenta el precio no existe: se cobra con el importe del plan.
+    stripe_price_account = models.CharField(max_length=64, blank=True, default='')
     credits_expire_days = models.PositiveIntegerField(blank=True, null=True, help_text="Días hasta caducidad de créditos otorgados")
     is_active = models.BooleanField(default=True)
     description = models.TextField(blank=True, null=True)
@@ -723,6 +733,9 @@ class Subscription(TimeStampedSoftDelete):
     current_period_end = models.DateTimeField()
     cancel_at_period_end = models.BooleanField(default=False)
     stripe_subscription_id = models.CharField(max_length=255, blank=True, null=True)
+    # Cuenta de Stripe de la suscripción ('' = la de las claves del panel;
+    # acct_… = la conectada). Cancelar/reactivar se hace en esa cuenta.
+    stripe_account = models.CharField(max_length=64, blank=True, default='')
 
     def __str__(self):
         return f"Sub({self.user_id} - {self.plan.name})"
@@ -1163,6 +1176,21 @@ class SiteConfig(models.Model):
     stripe_publishable_key = models.CharField(max_length=255, blank=True, default='')
     stripe_webhook_secret = EncryptedTextField(blank=True, default='')
     stripe_webhook_id = models.CharField(max_length=80, blank=True, default='')
+    # «Conectar pagos» (Stripe Connect, api/utils/stripe_connect.py). Solo si la
+    # instalación tiene una plataforma de Connect (STRIPE_CONNECT_* en el entorno).
+    #   payments_provider: con qué cobra el estudio: '' (nada), 'keys' (claves
+    #     pegadas en el panel o en el entorno) o 'connect' (su cuenta conectada).
+    #     Con 'connect', mientras la cuenta no está activa siguen valiendo las
+    #     claves si las hay.
+    #   stripe_account_id: acct_… de su cuenta conectada.
+    #   stripe_connect_status: lo último que dijo Stripe de esa cuenta
+    #     (charges_enabled, requisitos pendientes, modo…), se lee en
+    #     GET /v1/accounts/{id} con cada aviso account.updated.
+    PAYMENTS_PROVIDERS = [('', 'Sin pagos online'), ('keys', 'Claves de Stripe'), ('connect', 'Conectar pagos')]
+    payments_provider = models.CharField(max_length=10, choices=PAYMENTS_PROVIDERS, blank=True, default='')
+    stripe_account_id = models.CharField(max_length=64, blank=True, default='', db_index=True)
+    stripe_connect_status = models.JSONField(default=dict, blank=True)
+    stripe_connected_at = models.DateTimeField(null=True, blank=True)
 
     # ── Avisos push (VAPID): se generan solas la primera vez ──
     vapid_public_key = models.CharField(max_length=200, blank=True, default='')

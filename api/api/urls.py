@@ -1,7 +1,7 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from .views import (
-    BroadcastEmailViewSet, CheckLeadEmailView, ChooseReplacementView,     AssignRecurringClassesView, ContactUserViewSet, CreateBookingWithCreditsView, CreateCheckoutSessionView, CancelAllUserBookingsView, CreatePlanCheckoutSessionView, CreateStripeSubscriptionView, EmailVerificationView, FileUploadViewTwo, MyReplacementStatusView, MyWalletBalanceView, RequestPasswordResetView, ResetPasswordView, RoleViewSet, ScheduleViewSet, SignInView, SignInViewClient, SignUpClientView, SignUpView, StripeWebhookView, UpdateLeadByEmailView, UserClassPreferenceViewSet, UserViewSet, ValidateJWTView, VerifyCheckoutSessionView, VerifyPlanPurchaseView,
+    BroadcastEmailViewSet, CheckLeadEmailView, ChooseReplacementView,     AssignRecurringClassesView, ContactUserViewSet, CreateBookingWithCreditsView, CreateCheckoutSessionView, CancelAllUserBookingsView, CreatePlanCheckoutSessionView, CreateStripeSubscriptionView, EmailVerificationView, FileUploadViewTwo, MyReplacementStatusView, MyWalletBalanceView, RequestPasswordResetView, ResetPasswordView, RoleViewSet, ScheduleViewSet, SignInView, SignInViewClient, SignUpClientView, SignUpView, StripeWebhookView, ConnectWebhookView, UpdateLeadByEmailView, UserClassPreferenceViewSet, UserViewSet, ValidateJWTView, VerifyCheckoutSessionView, VerifyPlanPurchaseView,
 )
 from .views import (
     MeView, ScheduleBlackoutViewSet, VapidPublicKeyView, PushSubscribeView,
@@ -19,6 +19,9 @@ from .setup_guide import SetupClassTemplatesView, SetupProgressView, SetupPublis
 from .views_security import (
     TwoFactorConfirmView, TwoFactorDisableView, TwoFactorPolicyView, TwoFactorRecoveryCodesView,
     TwoFactorSetupView, TwoFactorStatusView, TwoFactorVerifyView,
+)
+from .views_payments import (
+    StripeConnectDisconnectView, StripeConnectStartView, StripeConnectStatusView, StripeConnectSyncView,
 )
 from .views_site import (
     FAQItemViewSet, SiteConfigAdminView, SiteConfigCheckDomainView, SiteConfigPublicView, SiteConfigStripeView,
@@ -84,6 +87,12 @@ urlpatterns = [
     path('v1/site-config/', SiteConfigAdminView.as_view(), name='site-config'),
     path('v1/site-config/test-email/', SiteConfigTestEmailView.as_view(), name='site-config-test-email'),
     path('v1/site-config/stripe/', SiteConfigStripeView.as_view(), name='site-config-stripe'),
+    # «Conectar pagos» (Stripe Connect; api/views_payments.py)
+    path('v1/site-config/stripe/connect/status/', StripeConnectStatusView.as_view(), name='stripe-connect-status'),
+    path('v1/site-config/stripe/connect/start/', StripeConnectStartView.as_view(), name='stripe-connect-start'),
+    path('v1/site-config/stripe/connect/sync/', StripeConnectSyncView.as_view(), name='stripe-connect-sync'),
+    path('v1/site-config/stripe/connect/disconnect/', StripeConnectDisconnectView.as_view(),
+         name='stripe-connect-disconnect'),
     path('v1/site-config/icon/<int:size>.png', SiteIconView.as_view(), name='site-icon'),
     path('v1/site-config/og.png', SiteOgImageView.as_view(), name='site-og-image'),
     path('v1/site-config/badge.png', SiteBadgeView.as_view(), name='site-badge'),
@@ -108,6 +117,7 @@ urlpatterns = [
     path('v1/checkleads/check-email/', CheckLeadEmailView.as_view(), name='check-lead-email'),
     path('v1/checkleads/update-by-email/', UpdateLeadByEmailView.as_view(), name='update-lead-by-email'),
     path('v1/webhooks/listener/', StripeWebhookView.as_view(), name='webhook_listener'),
+    path('v1/webhooks/connect/', ConnectWebhookView.as_view(), name='webhook_connect'),
     path('v1/my-class-preferences/', UserClassPreferenceViewSet.as_view({'get': 'list', 'post': 'create'}), name='my-class-preferences'),
     path('v1/my-class-preferences/<int:pk>/', UserClassPreferenceViewSet.as_view({'delete': 'destroy', 'patch': 'partial_update'}), name='my-class-preferences-detail'),
     path('v1/users/<int:user_id>/class-preferences/', UserClassPreferenceViewSet.as_view({'get': 'for_user', 'post': 'for_user', 'delete': 'for_user'}), name='user-class-preferences'),

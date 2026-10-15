@@ -12,12 +12,17 @@ export function paymentsEnabled(): boolean {
 
 let stripePromise: Promise<Stripe | null> | null = null;
 
-/** Stripe.js con la clave publicable del estudio (se carga una sola vez). */
+/**
+ * Stripe.js con la clave publicable del estudio (se carga una sola vez).
+ * Con «Conectar pagos» la clave es la de la plataforma y el cobro va a la
+ * cuenta del estudio (`stripe_account`, cargos directos).
+ */
 export function getStripe(): Promise<Stripe | null> {
-  const key = getSiteClient().stripe_publishable_key;
+  const { stripe_publishable_key: key, stripe_account: account } = getSiteClient();
   if (!key) return Promise.resolve(null);
   if (!stripePromise) {
-    stripePromise = import('@stripe/stripe-js').then(({ loadStripe }) => loadStripe(key));
+    stripePromise = import('@stripe/stripe-js').then(({ loadStripe }) =>
+      loadStripe(key, account ? { stripeAccount: account } : undefined));
     stripePromise.catch(() => { stripePromise = null; }); // permitir reintento
   }
   return stripePromise;

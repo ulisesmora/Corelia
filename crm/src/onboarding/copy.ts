@@ -177,6 +177,19 @@ export const ITEM_TEXT: Record<string, { label: string; route: string }> = {
   published: { label: 'Web publicada en Google', route: '/puesta-en-marcha?paso=launch' },
 };
 
+/**
+ * Sub-tarea «Pagos con tarjeta» según el estado de los pagos (`state` del
+ * API: api/setup_guide.py). Sin «Conectar pagos» solo se ven none y active.
+ */
+export const STRIPE_STATE_TEXT: Record<string, string> = {
+  none: 'Pagos con tarjeta (Stripe)',
+  active: 'Pagos con tarjeta (Stripe)',
+  onboarding: 'Pagos con tarjeta: termina tus datos en Stripe',
+  pending: 'Pagos con tarjeta: Stripe está revisando tus datos',
+  restricted: 'Pagos con tarjeta: Stripe necesita más datos',
+  mismatch: 'Pagos con tarjeta: vuelve a conectar tu cuenta de Stripe',
+};
+
 export const UI = {
   guideTitle: 'Puesta en marcha',
   guideSubtitle:

@@ -52,8 +52,37 @@ def api_url(path: str = '') -> str:
     return f"{base}/{path.lstrip('/')}"
 
 
+def panel_url(path: str = '') -> str:
+    """URL absoluta del panel: el dominio propio del panel si lo hay o, si no,
+    PANEL_URL (por defecto la del API, que es donde se sirve el panel)."""
+    domain = get_site_config().panel_domain
+    base = f"https://{domain}" if domain else settings.PANEL_URL.rstrip('/')
+    if not path:
+        return base
+    return f"{base}/{path.lstrip('/')}"
+
+
+def panel_origins() -> list:
+    """Orígenes (esquema://host[:puerto]) desde los que se puede abrir el
+    panel. Solo a estos se vuelve desde Stripe («Conectar pagos»)."""
+    from urllib.parse import urlsplit
+    domain = get_site_config().panel_domain
+    origins = []
+    for url in (panel_url(), settings.PANEL_URL, settings.API_URL, f'https://{domain}' if domain else ''):
+        parts = urlsplit((url or '').strip())
+        if parts.scheme in ('http', 'https') and parts.netloc:
+            origin = f'{parts.scheme}://{parts.netloc}'
+            if origin not in origins:
+                origins.append(origin)
+    return origins
+
+
 def stripe_webhook_url() -> str:
     return api_url('/api/v1/webhooks/listener/')
+
+
+def stripe_connect_webhook_url() -> str:
+    return api_url('/api/v1/webhooks/connect/')
 
 
 def studio_name() -> str:

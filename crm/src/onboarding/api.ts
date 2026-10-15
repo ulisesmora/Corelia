@@ -16,8 +16,9 @@ export interface StepState {
   count: number | null;
   /** «Tu estudio»: qué datos faltan (name, contact, address) */
   missing: string[];
-  /** Sub-tareas (logo, emails, stripe, hero…) */
-  items: { key: string; done: boolean }[];
+  /** Sub-tareas (logo, emails, stripe, hero…). `state`: solo en «stripe»
+   *  (active | none | onboarding | pending | restricted | mismatch). */
+  items: { key: string; done: boolean; state?: string }[];
   /** Hay datos de ejemplo (p. ej. la instructora de ejemplo) */
   sample: boolean;
   can_skip: boolean;

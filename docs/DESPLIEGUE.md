@@ -66,6 +66,9 @@ Desde ese momento los emails, el sitemap, Google y los avisos usan tu dominio. P
 panel, igual pero en el servicio **api** y con `panel.tuestudio.com`. Si tenías Stripe
 conectado, el aviso automático de pagos se mueve solo al dominio nuevo.
 
+> ¿Instalas Corelia para otros estudios y quieres que cobren con un solo botón, sin pegar
+> claves? Mira [«Conectar pagos» con Stripe Connect](STRIPE_CONNECT.md).
+
 > ¿Usas el acceso con Google? Añade también `https://www.tuestudio.com` en Google Cloud →
 > tu cliente OAuth → *Orígenes de JavaScript autorizados*.
 

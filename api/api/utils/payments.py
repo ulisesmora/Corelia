@@ -2,11 +2,25 @@
 desactivados: la web oculta el pago con tarjeta y el estudio vende los
 créditos en persona (se añaden desde el panel → Créditos).
 
-Las claves salen del panel (SiteConfig) o, como alternativa, de variables de
-entorno. Cada vista de pago pide stripe_client(): un StripeClient con la
-clave actual, o None si los pagos están desactivados. Nunca se toca
-`stripe.api_key` (global del proceso): cada llamada lleva su propia clave.
+Dos formas de cobrar (SiteConfig.payments_provider):
+
+- «keys»: el estudio pega sus claves de Stripe en el panel (o van en el
+  entorno: STRIPE_SECRET_KEY…). Es lo de siempre y lo que ve quien instala
+  Corelia por su cuenta.
+- «connect» («Conectar pagos»): la instalación tiene una plataforma de Stripe
+  Connect (STRIPE_CONNECT_* en el entorno) y el estudio solo pulsa un botón:
+  Stripe le crea su propia cuenta (api/utils/stripe_connect.py). Se cobra con
+  cargos directos en SU cuenta: el dinero va a su banco, la comisión de
+  Stripe la paga ella y la plataforma no se queda nada.
+
+Cada vista de pago pide stripe_client(): un StripeClient listo para la
+cuenta que cobra ahora, o None si los pagos están desactivados. Para operar
+sobre algo ya cobrado (reembolsos, cancelar una suscripción) se pide el de su
+cuenta: stripe_client(account=pago.stripe_account) ('' = la de las claves).
+Nunca se toca `stripe.api_key` (global del proceso): cada llamada lleva su
+propia clave.
 """
+import json
 import logging
 from decimal import ROUND_HALF_UP, Decimal
 
@@ -24,10 +38,17 @@ PAYMENTS_DISABLED_MESSAGE = (
     'Puedes comprar tus clases directamente en el estudio.'
 )
 
+# Estados de la cuenta conectada (payments_status()['state'])
+CONNECT_STATES = ('none', 'onboarding', 'pending', 'restricted', 'active', 'mismatch')
 
-def stripe_keys():
-    """(secreta, publicable, webhook) efectivas: panel > entorno."""
-    cfg = get_site_config()
+
+def _is_live_secret(key: str) -> bool:
+    return (key or '').startswith(('sk_live_', 'rk_live_'))
+
+
+def stripe_keys(cfg=None):
+    """(secreta, publicable, webhook) de las CLAVES del estudio: panel > entorno."""
+    cfg = cfg or get_site_config()
     if cfg.payments_enabled and cfg.stripe_secret_key:
         return cfg.stripe_secret_key, cfg.stripe_publishable_key, cfg.stripe_webhook_secret
     if settings.STRIPE_SECRET_KEY:
@@ -35,23 +56,184 @@ def stripe_keys():
     return '', '', ''
 
 
+# ─── «Conectar pagos» (Stripe Connect) ────────────────────────────────────────
+
+def connect_configured() -> bool:
+    """¿Tiene esta instalación una plataforma de Connect? Hacen falta la clave
+    secreta y la publicable de la plataforma, y las dos del mismo modo."""
+    secret = settings.STRIPE_CONNECT_PLATFORM_KEY or ''
+    publishable = settings.STRIPE_CONNECT_PUBLISHABLE_KEY or ''
+    if not secret or not publishable:
+        return False
+    return _is_live_secret(secret) == publishable.startswith('pk_live_')
+
+
+def platform_live() -> bool:
+    return _is_live_secret(settings.STRIPE_CONNECT_PLATFORM_KEY)
+
+
+def connect_available(cfg=None) -> bool:
+    """¿Se ofrece «Conectar pagos» a este estudio? Plataforma configurada y,
+    si se ha definido STRIPE_CONNECT_AVAILABILITY_CHECK (ruta a una función
+    f(site_config) -> bool), que esa función diga que sí. Solo decide si se
+    puede EMPEZAR: una cuenta ya conectada sigue funcionando."""
+    if not connect_configured():
+        return False
+    path = settings.STRIPE_CONNECT_AVAILABILITY_CHECK
+    if not path:
+        return True
+    try:
+        from django.utils.module_loading import import_string
+        return bool(import_string(path)(cfg or get_site_config()))
+    except Exception:
+        logger.exception("stripe_connect.availability_check_failed path=%s", path)
+        return False
+
+
+def connect_countries() -> list:
+    """Países (ISO-2) en los que se puede abrir la cuenta conectada."""
+    return list(settings.STRIPE_CONNECT_COUNTRIES)
+
+
+def connect_state(cfg=None) -> str:
+    """Estado de la cuenta conectada, a partir de lo último que dijo Stripe
+    (SiteConfig.stripe_connect_status, forma de GET /v1/accounts/{id}):
+
+    none        sin cuenta conectada
+    onboarding  cuenta creada, faltan sus datos en Stripe
+    pending     datos enviados, Stripe los está revisando
+    restricted  Stripe necesita más datos (o la ha limitado)
+    active      puede cobrar (charges_enabled)
+    mismatch    la cuenta no es de la plataforma actual (otro modo test/live,
+                o la instalación ya no tiene Connect configurado)
+    """
+    cfg = cfg or get_site_config()
+    if not cfg.stripe_account_id:
+        return 'none'
+    st = cfg.stripe_connect_status or {}
+    if not connect_configured() or bool(st.get('livemode', platform_live())) != platform_live():
+        return 'mismatch'
+    if st.get('charges_enabled'):
+        return 'active'
+    if not st.get('details_submitted'):
+        return 'onboarding'
+    disabled = str(st.get('disabled_reason') or '')
+    if st.get('past_due') or st.get('currently_due') or disabled.startswith(('rejected', 'requirements.past_due')):
+        return 'restricted'
+    return 'pending'
+
+
+def _requirements_due(st: dict) -> list:
+    due = []
+    for key in ('past_due', 'currently_due'):
+        for item in st.get(key) or []:
+            if item not in due:
+                due.append(item)
+    return due
+
+
+def _effective(cfg) -> tuple:
+    """(proveedor, listo, live) con el que se cobra ahora mismo.
+
+    Con 'connect' elegido y la cuenta activa → la cuenta conectada. Si no,
+    las claves (panel o entorno) si las hay: así un estudio que ya cobraba
+    con claves sigue cobrando mientras termina de conectar su cuenta."""
+    st = cfg.stripe_connect_status or {}
+    if cfg.payments_provider == 'connect' and connect_state(cfg) == 'active':
+        return 'connect', True, bool(st.get('livemode'))
+    secret = stripe_keys(cfg)[0]
+    if secret:
+        return 'keys', True, _is_live_secret(secret)
+    if cfg.stripe_account_id:
+        return 'connect', False, bool(st.get('livemode', platform_live()))
+    return '', False, False
+
+
+def payments_status(cfg=None) -> dict:
+    """Todo lo que el panel (y la guía) necesitan saber de los pagos online."""
+    cfg = cfg or get_site_config()
+    provider, ready, live = _effective(cfg)
+    st = cfg.stripe_connect_status or {}
+    return {
+        'provider': provider,
+        'ready': ready,
+        'state': connect_state(cfg),
+        'connect_available': connect_available(cfg),
+        'live': live,
+        'requirements_due': _requirements_due(st) if cfg.stripe_account_id else [],
+        'account_id': cfg.stripe_account_id,
+    }
+
+
 def payments_enabled() -> bool:
-    return bool(stripe_keys()[0])
+    """¿Se puede cobrar online ahora mismo (claves o cuenta conectada activa)?"""
+    return _effective(get_site_config())[1]
 
 
-def stripe_client():
-    """StripeClient con la clave actual, o None si los pagos están
-    desactivados. Úsalo así:
+def current_stripe_account(cfg=None):
+    """Cuenta con la que se cobra ahora: 'acct_…' (conectada), '' (claves) o
+    None si los pagos están desactivados. Es lo que se guarda en
+    Payment.stripe_account / Subscription.stripe_account."""
+    cfg = cfg or get_site_config()
+    provider, ready, _ = _effective(cfg)
+    if not ready:
+        return None
+    return cfg.stripe_account_id if provider == 'connect' else ''
+
+
+def platform_client():
+    """StripeClient de la plataforma de Connect (sin cuenta conectada), o None."""
+    if not settings.STRIPE_CONNECT_PLATFORM_KEY:
+        return None
+    return stripe.StripeClient(settings.STRIPE_CONNECT_PLATFORM_KEY)
+
+
+def stripe_client(account=None):
+    """StripeClient para cobrar, o None si no se puede. Úsalo así:
 
         client = stripe_client()
         if client is None:
             return payments_disabled_response()
         client.v1.checkout.sessions.create(params={...})
+
+    account=None  → la cuenta que cobra ahora (claves o cuenta conectada).
+    account=''    → la de las claves (pagos y suscripciones de antes de
+                    conectar, o de un estudio que nunca usó Connect).
+    account='acct_…' → esa cuenta conectada, con la clave de la plataforma
+                    (cabecera Stripe-Account: cargos directos).
     """
-    secret = stripe_keys()[0]
-    if not secret:
+    if account is None:
+        cfg = get_site_config()
+        provider, ready, _ = _effective(cfg)
+        if not ready:
+            return None
+        if provider == 'connect':
+            return stripe.StripeClient(settings.STRIPE_CONNECT_PLATFORM_KEY, stripe_account=cfg.stripe_account_id)
+        return stripe.StripeClient(stripe_keys()[0])
+    if account == '':
+        secret = stripe_keys()[0]
+        return stripe.StripeClient(secret) if secret else None
+    if not settings.STRIPE_CONNECT_PLATFORM_KEY:
         return None
-    return stripe.StripeClient(secret)
+    return stripe.StripeClient(settings.STRIPE_CONNECT_PLATFORM_KEY, stripe_account=account)
+
+
+def publishable_key() -> str:
+    """Clave publicable para Stripe.js: la de la plataforma con la cuenta
+    conectada, la del estudio con claves; '' sin pagos."""
+    provider, ready, _ = _effective(get_site_config())
+    if not ready:
+        return ''
+    if provider == 'connect':
+        return settings.STRIPE_CONNECT_PUBLISHABLE_KEY
+    return stripe_keys()[1]
+
+
+def stripe_account_for_js() -> str:
+    """acct_… para loadStripe(pk, {stripeAccount}) con la cuenta conectada; '' si no."""
+    cfg = get_site_config()
+    provider, ready, _ = _effective(cfg)
+    return cfg.stripe_account_id if (ready and provider == 'connect') else ''
 
 
 def stripe_ready() -> bool:
@@ -64,6 +246,30 @@ def payments_disabled_response():
                     status=status.HTTP_503_SERVICE_UNAVAILABLE)
 
 
+def to_dict(obj) -> dict:
+    """Objeto de Stripe → dict normal. Desde la versión 15 de la librería,
+    StripeObject ya no es un dict (no tiene .get()). Acepta también dicts."""
+    if obj is None:
+        return {}
+    if isinstance(obj, dict):
+        return obj
+    if hasattr(obj, 'to_dict'):
+        return obj.to_dict()
+    return dict(obj)
+
+
+def parse_webhook_event(payload, sig_header: str, secret: str) -> dict:
+    """Comprueba la firma de un aviso de Stripe y devuelve el evento como dict
+    normal (event['data']['object'].get(...) funciona como siempre).
+    Lanza stripe.SignatureVerificationError (firma) o ValueError (cuerpo)."""
+    text = payload.decode('utf-8') if isinstance(payload, (bytes, bytearray)) else (payload or '')
+    stripe.WebhookSignature.verify_header(text, sig_header, secret, stripe.Webhook.DEFAULT_TOLERANCE)
+    event = json.loads(text)
+    if not isinstance(event, dict) or not event.get('type') or not isinstance(event.get('data'), dict):
+        raise ValueError('Evento de Stripe sin tipo o sin datos')
+    return event
+
+
 # Exactamente los eventos que procesa StripeWebhookView
 WEBHOOK_EVENTS = [
     'checkout.session.completed',
@@ -72,6 +278,14 @@ WEBHOOK_EVENTS = [
     'invoice.paid',
     'customer.subscription.updated',
     'customer.subscription.deleted',
+]
+
+# Eventos del endpoint «Connect» de la plataforma (ConnectWebhookView): los de
+# pago de arriba, que llegan de la cuenta conectada (event.account), y los de
+# la propia cuenta. Lista para docs/STRIPE_CONNECT.md.
+CONNECT_WEBHOOK_EVENTS = WEBHOOK_EVENTS + [
+    'account.updated',
+    'account.application.deauthorized',
 ]
 
 
@@ -112,6 +326,9 @@ def connect_stripe(secret_key: str, webhook_url: str) -> dict:
             'url': webhook_url,
             'enabled_events': WEBHOOK_EVENTS,
             'description': f'Corelia — {cfg.studio_name}',
+            # Los avisos llegan con la misma versión de la API que usa la
+            # librería (si no, con la versión por defecto de la cuenta).
+            'api_version': stripe.api_version,
         })
     except stripe.StripeError as e:
         raise ValueError(f'No se pudo crear el aviso automático (webhook) en Stripe: {e.user_message or e}')
