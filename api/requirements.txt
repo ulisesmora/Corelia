@@ -170,7 +170,7 @@ typing-extensions==4.16.0
     #   psycopg
     #   referencing
     #   stripe
-tzdata==2025.3
+tzdata==2026.5
     # via
     #   corelia-api
     #   django
