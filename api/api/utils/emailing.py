@@ -55,6 +55,8 @@ def _smtp_settings() -> Optional[dict]:
             'use_ssl': cfg.smtp_use_ssl,
             'from_address': cfg.email_from_address or cfg.smtp_user,
             'from_name': cfg.email_from_name or cfg.studio_name,
+            'reply_to': cfg.email_from_address or cfg.smtp_user,
+            'source': 'studio',
         }
     if settings.EMAIL_HOST:
         return {
@@ -66,6 +68,10 @@ def _smtp_settings() -> Optional[dict]:
             'use_ssl': settings.EMAIL_USE_SSL,
             'from_address': settings.DEFAULT_FROM_EMAIL,
             'from_name': cfg.studio_name,
+            # La dirección de envío es la del servidor: las respuestas de las
+            # clientas tienen que llegar al estudio, no a ese buzón.
+            'reply_to': cfg.contact_email or settings.DEFAULT_FROM_EMAIL,
+            'source': 'server',
         }
     return None
 
@@ -75,6 +81,11 @@ def email_enabled() -> bool:
 
 
 def _connection(smtp: dict):
+    # Con el email del servidor se usa EMAIL_BACKEND (por defecto SMTP con los
+    # EMAIL_* del entorno, lo mismo de siempre): así un servicio de envío propio
+    # puede sustituirlo sin tocar este código. El SMTP del panel va siempre directo.
+    if smtp.get('source') == 'server':
+        return get_connection(timeout=settings.EMAIL_TIMEOUT)
     return get_connection(
         backend='django.core.mail.backends.smtp.EmailBackend',
         host=smtp['host'], port=smtp['port'],
@@ -97,14 +108,17 @@ def _render(template_id: str, context: dict) -> Optional[str]:
         return None
 
 
-def _build_message(smtp, to_email, subject, html, connection):
+def _build_message(smtp, to_email, subject, html, connection, kind='transactional'):
+    """kind: 'transactional' (reservas, avisos, códigos) o 'bulk' (comunicados a
+    muchas clientas). Va en la cabecera X-Email-Kind para el servicio de envío."""
     msg = EmailMultiAlternatives(
         subject=subject,
         body=strip_tags(html),
         from_email=formataddr((smtp['from_name'], smtp['from_address'])),
         to=[to_email],
-        reply_to=[smtp['from_address']],
+        reply_to=[smtp.get('reply_to') or smtp['from_address']],
         connection=connection,
+        headers={'X-Email-Kind': kind},
     )
     msg.attach_alternative(html, 'text/html')
     return msg
@@ -172,7 +186,7 @@ def send_bulk_templated_email(
         if html is None:
             continue
         email_subject = subject or data.get('subject') or f'Mensaje de {studio_name()}'
-        messages.append(_build_message(smtp, to_email, email_subject, html, conn))
+        messages.append(_build_message(smtp, to_email, email_subject, html, conn, kind='bulk'))
     if not messages:
         return True
     try:

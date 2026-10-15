@@ -4,6 +4,7 @@ from unittest import mock
 
 from django.core import mail
 from django.core.mail import get_connection
+from django.test import override_settings
 from rest_framework.test import APIClient
 
 from api.models import Lead, SiteConfig
@@ -104,3 +105,34 @@ class EmailTests(StudioTestCase):
         self.assertTrue(raw.startswith('enc:'))
         self.assertNotIn('secreta', raw)
         self.assertEqual(SiteConfig.load().smtp_password, 'secreta')
+
+
+class ServerEmailTests(StudioTestCase):
+    """Email del servidor (EMAIL_* del entorno, sin SMTP en el panel)."""
+
+    def _send(self):
+        from api.utils.emailing import send_templated_email
+        return send_templated_email('clienta@test.local', 'generic-notice', {
+            'name': 'Ana', 'headline': 'Hola', 'intro_copy': 'Prueba', 'cta_text': '', 'cta_url': '',
+        }, subject='Prueba')
+
+    @override_settings(EMAIL_HOST='smtp.servidor.test', DEFAULT_FROM_EMAIL='envios@servidor.test',
+                       EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_uses_email_backend_and_replies_go_to_the_studio(self):
+        cfg = SiteConfig.load()
+        cfg.studio_name, cfg.contact_email = 'Estudio Luna', 'hola@luna.test'
+        cfg.save()
+        mail.outbox = []
+        self.assertTrue(self._send())
+        msg = mail.outbox[0]  # salió por EMAIL_BACKEND, no por un SMTP fijo
+        self.assertIn('Estudio Luna', msg.from_email)
+        self.assertIn('envios@servidor.test', msg.from_email)
+        self.assertEqual(msg.reply_to, ['hola@luna.test'])
+        self.assertEqual(msg.extra_headers['X-Email-Kind'], 'transactional')
+
+    @override_settings(EMAIL_HOST='smtp.servidor.test', DEFAULT_FROM_EMAIL='envios@servidor.test',
+                       EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+    def test_without_contact_email_replies_go_to_the_sender(self):
+        mail.outbox = []
+        self.assertTrue(self._send())
+        self.assertEqual(mail.outbox[0].reply_to, ['envios@servidor.test'])
