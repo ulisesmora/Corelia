@@ -137,7 +137,7 @@ pywebpush==2.5.0
     # via corelia-api
 pyyaml==6.0.3
     # via drf-spectacular
-redis==7.1.0
+redis==8.1.0
     # via corelia-api
 referencing==0.37.0
     # via
