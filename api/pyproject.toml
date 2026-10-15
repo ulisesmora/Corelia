@@ -31,7 +31,7 @@ dependencies = [
     "granian==2.7.5",
     "uvloop==0.22.1",
     # Funcionalidad
-    "stripe==13.0.1",
+    "stripe==16.0.0",
     "pillow==12.3.0",
     "orjson==3.11.9",
     "pywebpush>=2.0",
