@@ -1740,6 +1740,10 @@ function CheckoutPageInner() {
                   {items.map(item => <CartItemRow key={item.id} item={item} />)}
                 </Box>
               )}
+              {/* Reservar es un toque en el horario: desde aquí se puede volver a por más */}
+              <a className="w-more" href="/calendar" style={{ marginTop: 4 }}>
+                + {lang === 'en' ? 'Add another class' : 'Añadir otra clase'}
+              </a>
 
               {/* Totals */}
               <Box my={4} h="1px" bg={C.border} />

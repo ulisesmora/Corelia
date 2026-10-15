@@ -9,9 +9,10 @@ Cada estudio elige en el panel (**Ajustes → Aspecto**) dos cosas:
   (Phosphor Duotone, redondeados) o `solid` (FontAwesome, rellenos). Los logos de
   marcas (WhatsApp, Instagram…) son siempre los de FontAwesome.
 
-Los colores y las tipografías también salen del panel. Cada estilo los combina con sus
-propios tokens: la fuente la decide el panel y el estilo solo pone el peso, las
-mayúsculas y el espaciado.
+Los colores y las tipografías también salen del panel. Cada estilo trae **10 paletas**
+y **3 parejas de letra** probadas (ver [Paletas y letra](#paletas-y-letra-fuente-única)),
+o el estudio pone las suyas. La fuente la decide el panel y el estilo solo pone el
+peso, las mayúsculas y el espaciado.
 
 El **panel** (lo que usa el estudio a diario) también sigue el estilo y los iconos de
 la web, en una versión «de trabajo»: se reconoce la marca, pero todo se lee bien y es
@@ -43,6 +44,87 @@ ilegible. `lib/site.ts → themeCss()` calcula unas variables que lo garantizan:
 - `--brand-bg-dark` / `--brand-bg-light`: el fondo garantizado oscuro o claro.
 - `--on-primary` / `--on-secondary`: texto legible sobre un relleno de ese color.
 - `--brand-primary-on-dark` / `--brand-primary-on-light`: el primario como texto legible sobre fondo oscuro o claro.
+
+## Paletas y letra (fuente única)
+
+Las paletas y las parejas de letra viven en **un solo sitio**, `design/tokens/`, y de
+ahí salen para el API, el panel y la web:
+
+| Archivo | Qué es |
+|---|---|
+| `design/tokens/tokens.py` | Las definiciones: por estilo, 10 paletas (primario, secundario, tinta, fondo y superficie) y 3 parejas de letra (títulos, texto, peso). **Se edita aquí.** |
+| `design/tokens/derive.py` | La matemática: deriva de cada paleta todos los tonos (texto atenuado, bordes, menú lateral, estados, tintes de las clases…), corrige el primario si no se lee y mide el contraste. |
+| `design/tokens/palettes.json` | Generado, legible y con la tabla de contraste de cada paleta. |
+| `api/api/design/palettes.json` + `api/api/design/derive.py` | Copias para el API (Docker solo ve `api/`). |
+| `crm/src/design/palettes.json` | Copia compacta para el panel (la importa `crm/src/design/tokens.ts`). |
+| `web/src/design/palettes.json` | Copia compacta para la web (la importa `web/src/lib/site.ts`). |
+| `crm/src/design/derive.ts` | Port 1:1 de `derive.py` (para los colores propios, en el navegador). |
+
+Las copias son archivos normales del repo (se versionan): así funcionan igual con
+`pnpm dev`, `pnpm build`, `astro build` y los `Dockerfile` (cada uno solo ve su
+carpeta). **Nunca se editan a mano.** Después de tocar una paleta:
+
+```bash
+python3 design/tokens/tokens.py            # regenera el JSON y las 3 copias (+ derive.py del API)
+python3 design/tokens/tokens.py --check    # contraste de las 80 paletas + copias al día (sale con 1 si algo falla)
+python3 design/tokens/tokens.py --report   # tabla con el contraste mínimo de cada paleta
+node design/tokens/check_ts.mjs            # derive.ts da exactamente los mismos colores que derive.py
+```
+
+Además, `api/api/tests/test_palettes.py` re-deriva las 80 paletas en los tests del
+API: si alguien cambia una copia a mano o rompe el contraste, los tests fallan.
+
+### La comprobación de contraste
+
+Una paleta solo se publica si pasa **todas** estas parejas (WCAG AA):
+
+- **Texto ≥ 4,5:1**: tinta sobre fondo, superficie y superficie 2; texto atenuado
+  sobre las tres; texto del botón sobre el primario; enlaces (primario como texto)
+  sobre fondo, superficie y su tinte; texto, texto atenuado, activo y hover del menú
+  lateral; tinta sobre los 5 tintes de las clases; los 4 estados sobre su fondo suave
+  y sobre la superficie.
+- **Interfaz ≥ 3:1**: primario contra el fondo y la superficie (en brutalista, el
+  borde de tinta), borde de los campos contra superficie y fondo, secundario,
+  color de los gráficos y punto de color de cada clase.
+
+Si el primario no llega, `derive.py` lo oscurece (o lo aclara, en los estilos
+oscuros) lo justo y lo apunta en el informe.
+
+### Lo que guarda el estudio
+
+`SiteConfig.palette` (slug de una paleta **de su estilo**, `''` = colores propios) y
+`SiteConfig.font_pair` (`''` = letra propia), migración `0008`. Los `color_*` y
+`font_*` de siempre siguen siendo los valores **efectivos** que leen la web y el
+panel: elegir una paleta escribe sus colores ahí (en los estilos oscuros, `dark` =
+lo más profundo y `background` = la superficie, como espera la web). La regla vive en
+`api/api/utils/palettes.py → resolve_theme()` (y su espejo en
+`crm/src/design/tokens.ts → pickStyle / pickPalette / pickCustomColors`):
+
+- Paleta elegida → se guardan sus colores (gana a los colores que vengan).
+- Colores propios → se corrigen para que se lean (`fix_custom`: primario ≥ 3:1
+  contra el fondo y texto encima legible, tinta ≥ 7:1, fondo claro u oscuro según el
+  estilo), **solo si cambian**: un estudio que guarda otra cosa conserva los suyos.
+- Cambio de estilo sin paleta → la misma paleta si existe en el nuevo estilo; si no,
+  la primera. Igual con la letra.
+- La config pública expone `theme.palette` y `theme.font_pair`.
+- La migración marca la paleta de un estudio existente solo si sus 4 colores
+  coinciden **exactamente** con los que escribiría una paleta de su estilo; si no,
+  quedan como propios. Nunca cambia sus colores.
+
+### En la web
+
+`web/src/lib/site.ts → themeCss()` sigue publicando los `--brand-*` de los 4
+colores efectivos. Si el estudio eligió una paleta, añade sus tonos comprobados
+`--pal-ink`, `--pal-muted`, `--pal-accent` y su `--on-primary`, y
+`presets.css` los usa antes que sus mezclas (`var(--pal-muted, color-mix(…))`). Con
+colores propios no existen y la web se ve exactamente como antes.
+
+### En el panel
+
+`crm/src/theme.ts` genera el tema de MUI desde los tokens (ver [El panel con el
+estilo de la web](#el-panel-con-el-estilo-de-la-web)). Los colores de los tipos de
+clase para el calendario: `crm/src/design/classColors.ts`
+(`classTypeColor(tokens, id)` o el hook `useClassTypeColor()`).
 
 ## Cómo añadir un estilo nuevo
 
@@ -80,25 +162,23 @@ ilegible. `lib/site.ts → themeCss()` calcula unas variables que lo garantizan:
    No hace falta tocar ningún componente: solo consumen tokens. Un slug sin bloque
    se ve como `natural`.
 
-3. **Selector del panel (CRM)**: añade su ficha (nombre, descripción y vista previa) en
-   `crm/src/components/setup/presets.ts` y el slug a `STYLE_IDS` en
-   `crm/src/site/siteConfig.ts`.
+3. **Paletas y letra**: añade el estilo a `STYLE_MODES` en `design/tokens/derive.py`
+   (y en `crm/src/design/derive.ts`), y sus 10 paletas y 3 parejas de letra a
+   `STYLES` / `FONTS` en `design/tokens/tokens.py`. Ejecuta
+   `python3 design/tokens/tokens.py` (y `--check`). El selector del panel lo saca
+   solo del JSON; añade también el slug a `STYLE_IDS` en `crm/src/site/siteConfig.ts`
+   (y su ficha en `crm/src/components/setup/presets.ts`, que usa la portada).
 
-4. **El panel con ese estilo**: añade su entrada a `LOOKS` en `crm/src/theme.ts`
-   (TypeScript no compila hasta que la tiene). Cópiala del estilo más parecido:
-   - `tokens(t)`: la ficha de forma (esquinas, bordes, superficies, sombras, barra
-     superior, menú lateral, campos y fondo de la página). `t` son los tonos del
-     estudio ya calculados (`t.primaryText` es el primario legible como texto,
-     `t.primaryFill`/`t.onPrimary` el relleno de los botones y su texto, `t.ink` el
-     oscuro de la marca, `t.uiBorder` un borde de campo con 3:1…).
-   - `extra(t)` (opcional): los detalles de MUI (botones, tablas, pestañas, títulos…).
-     Llama a `inputs()` para que los campos tengan un borde visible y añade
-     `MuiCssBaseline: { styleOverrides: workingCss(t) }` (foco visible y
-     `prefers-reduced-motion`).
-   - Si es **oscuro**, añade el slug a `DARK_STYLES` en `crm/src/site/siteConfig.ts` y
-     a `SiteConfig.DARK_STYLES` en `api/api/models.py` (el icono de la app instalada
-     y su color de barra salen de ahí). Los tonos oscuros (`darkTones`) y la paleta
-     oscura de MUI (`darkBase`) ya se aplican solos.
+4. **El panel con ese estilo**: añade su entrada a `STRUCTS` en `crm/src/theme.ts`
+   (TypeScript no compila hasta que la tiene): esquinas (`r.xl` diálogos y menú,
+   `r.lg` tarjetas, `r.md` campos, `r.sm` chips, `r.btn` botones), borde y fondo de
+   las tarjetas, sombras (`sh1` tarjeta, `sh2` flotante), sombra del botón, brillo,
+   mayúsculas de los títulos y fondo de la página. Los colores salen solos de los
+   tokens. Si necesita detalles propios de MUI, añádelos en `buildTheme()` igual que
+   `brutal` / `neon`.
+   - Si es **oscuro**, en `derive.py`/`derive.ts` su modo es `'dark'`; añade el slug a
+     `DARK_STYLES` en `crm/src/site/siteConfig.ts` y a `SiteConfig.DARK_STYLES` en
+     `api/api/models.py` (el icono de la app instalada y su color de barra salen de ahí).
    - Revísalo en `/`, `/bookings` (calendario), `/clients` (y su ventana «Dar de alta»),
    `/ajustes` → Aspecto y `/login`, en escritorio y en móvil.
 
@@ -229,81 +309,97 @@ No importes `react-icons` directamente en los componentes.
 
 ## El panel con el estilo de la web
 
-En **Ajustes → Aspecto** (y en el paso «Tu estilo» del asistente) hay un interruptor
-**«Panel con el estilo de mi web»**, encendido por defecto. Se guarda al momento
-(`SiteConfig.panel_follows_style`, migración `0005_panel_follows_style`) y el panel
-cambia sin recargar: `SiteProvider.refresh()` vuelve a pedir la config pública, que lo
-incluye en `theme.panel_follows_style` (el panel lo necesita ya en la pantalla de
-entrada, antes de iniciar sesión). Al lado se ve una maqueta pequeña del panel con lo
-que hay elegido en la pantalla, aunque aún no se haya guardado.
+El panel sigue el estilo, la paleta, la letra y los iconos de la web (rediseño,
+fase 1). En **Ajustes → Aspecto** (y en el paso «Tu estilo» del asistente y de la
+guía) está el selector nuevo: tarjetas de estilo con miniatura, las 10 paletas del
+estilo + «Mis colores» (color de marca, del logo o los 4 a mano, corregidos para que
+se lean), las 3 parejas de letra (+ otra de Google Fonts), los iconos y una vista
+previa en directo de la portada de la web y del panel.
 
-- **Encendido**: el panel usa el estilo (`theme.style`) y los iconos (`theme.icons`).
-- **Apagado**: el aspecto clásico del panel (el de `natural`) con los colores y la letra
-  del estudio y sus iconos de siempre. Es exactamente el panel de antes.
+El interruptor **«Panel con el estilo de mi web»** (`SiteConfig.panel_follows_style`)
+sigue ahí: apagado, el panel se ve con su **aspecto clásico** (claro, cristal blanco
+suave, barra lateral clara) con los colores del estudio.
 
-Todo vive en `crm/src/theme.ts` (`buildTheme`, `panelLook`, `LOOKS`). En `<html>`
-quedan `data-panel-style="…"` y `data-panel-mode="light|dark"` por si una pantalla
-necesita un detalle propio.
+Todo vive en `crm/src/theme.ts`:
+
+- `panelLook(config)` → estilo, si es clásico, modo claro/oscuro y tipo de barra lateral.
+- `panelPalette(config)` → los tokens de color: los de la paleta elegida o, con
+  colores propios, `fixCustom()` (misma corrección que el API).
+- `STRUCTS` → la forma de cada estilo (la del prototipo aprobado).
+- `buildTheme(config)` → el tema de MUI (paleta, tipografía con la pareja del
+  estudio y su peso de títulos, esquinas, sombras, bordes y los `styleOverrides` de
+  cada estilo) y las variables CSS.
+
+Las fuentes se cargan bajo demanda: solo las dos del estudio
+(`crm/src/site/fonts.ts → loadStudioFonts`), y en el selector las 3 parejas del estilo
+que se está viendo. En `<html>` quedan `data-panel-style`, `data-panel-mode`,
+`data-panel-side` y `data-panel-classic` (si es el aspecto clásico).
 
 ### Cómo se traduce cada estilo al panel
 
 | Estilo | En el panel |
 |---|---|
-| `natural` | El aspecto clásico, idéntico al de siempre: cristal suave, esquinas muy redondeadas, botón principal con degradado. Es la referencia: no se toca. |
-| `minimal` | Plano y aireado: blanco, bordes finos, sin sombras ni degradados, esquinas pequeñas (8–12 px), títulos finos, más aire en tablas y ventanas. |
-| `editorial` | Esquinas rectas y líneas finas entre zonas, títulos con serifa ligeros y grandes, botones en mayúsculas espaciadas (el principal relleno con el oscuro de la marca), cabeceras de tabla con una línea. |
-| `glass` | Cristal translúcido con blur y brillo interior en el borde sobre un degradado suave del primario y el secundario. Si el navegador no tiene `backdrop-filter`, las superficies pasan a ser casi opacas. |
-| `brutalist` | Bordes oscuros gruesos (2 px), sombras duras desplazadas, esquinas casi rectas, botones que «se hunden» al pasar el ratón, cabeceras de tabla en mono sobre un bloque de color. |
-| `energy` | **Oscuro**. Casi negro, títulos en mayúsculas y compactos, botón principal con degradado del primario, banda de color (primario → secundario) bajo la barra superior y en las pestañas. |
-| `pop` | Más redondo y alegre pero contenido: bordes de 2 px tintados, sombras de color, botones píldora con «suelo» oscuro, lunares muy suaves en el fondo. |
-| `neon` | **Oscuro**. Azul-negro con rejilla muy tenue, bordes con el primario y brillo **solo en los acentos** (botón principal, campo con el foco, pestaña activa, bordes de tarjeta). Nunca en el texto. Sin animaciones. |
+| `natural` | Tarjetas crema sin borde con sombra suave, esquinas muy redondeadas (22–28 px), botones píldora, menú lateral oscuro teñido del primario. |
+| `minimal` | Plano y limpio: bordes finos, sin sombras, esquinas pequeñas (10–16 px), menú lateral claro con borde. |
+| `editorial` | Casi recto (3–6 px), líneas finas, títulos con serifa de la pareja y etiquetas muy espaciadas, menú lateral claro. |
+| `glass` | Cristal translúcido con `backdrop-filter` sobre un degradado del primario y el secundario, menú lateral esmerilado. Sin `backdrop-filter` (o con `prefers-reduced-transparency`) las superficies pasan a ser opacas. |
+| `brutalist` | Esquinas rectas, bordes de tinta de 2 px, sombras duras (4 px / 8 px), botones con sombra que «se hunden», menú negro con el activo del color primario. |
+| `energy` | **Oscuro**, títulos en mayúsculas, esquinas medias (8–14 px), menú del modo oscuro. |
+| `pop` | Muy redondo (26–32 px), sombras teñidas del primario, botones píldora, menú oscuro teñido. |
+| `neon` | **Oscuro**, brillo del primario solo en los acentos (botón principal, menú activo, pestaña), menú del modo oscuro. |
 
-En todos los estilos salvo `natural` el panel garantiza contraste AA: el primario
-como texto (`--studio-primary-text`) se oscurece (o aclara, en oscuro) hasta 4,5:1, el
-botón principal usa `--studio-primary-fill` con `--studio-on-primary` encima (si el
-primario no llega a 4,5:1 ni con blanco ni con el oscuro, se usa su versión
-legible), los estados (avisos, chips) usan tonos más fuertes, los campos tienen un
-borde de al menos 3:1 y el foco se ve siempre. Con `prefers-reduced-motion` se quitan
-transiciones y desplazamientos.
+Todas las paletas pasan la comprobación de contraste; con colores propios el panel
+usa los mismos tokens corregidos. El foco se ve siempre (contorno con el primario
+legible) y con `prefers-reduced-motion` se quitan transiciones.
+
+### El armazón (menú, barra superior, móvil)
+
+`crm/src/components/MainLayout.tsx` + `crm/src/components/shell/`:
+
+- **Menú lateral** (≥ 1024 px): tarjeta redondeada con los colores `--studio-side-*`
+  de la paleta (oscura en natural/brutalista/pop, clara en minimal/editorial,
+  esmerilada en glass, superficie oscura en energy/neón); logo y nombre del estudio;
+  grupos **Día a día** (Hoy, Calendario, Reservas, Clientas) y **Negocio** (Ventas,
+  Mi web) y **Ajustes** abajo; «Puesta en marcha» arriba mientras la web no está
+  publicada; tarjeta de la persona con el botón **A/A** (tamaño del texto, guardado
+  por persona en `localStorage`).
+- **Barra superior**: buscador **⌘K / Ctrl+K** (`shell/CommandPalette.tsx`: ir a
+  cualquier pantalla, acciones rápidas y buscar clientas en el API; flechas, Intro y
+  Esc), «Ver como clienta» (abre la web), «?» (ayuda de la pantalla, buscador, guía,
+  instalar; la visita guiada se registra con `registerTour()` en la fase 2) y
+  **+ Nuevo** (Reserva, Clienta, Clase, Bono).
+- **Móvil** (< 1024 px): barra de abajo (Hoy, Calendario, Reservas, Clientas, Más) y
+  «+» arriba.
+- **Mapa de secciones**: `shell/navigation.ts`. Ventas, Mi web y Ajustes son páginas
+  índice (`crm/src/pages/SectionHub.tsx`, rutas `/ventas`, `/mi-web`,
+  `/configuracion`) que enlazan todas las pantallas de siempre.
+- **Punto de extensión** para otras distribuciones: `shell/extensions.tsx`
+  (`useShellExtensions()` devuelve enlaces extra de Ajustes y un aviso encima de cada
+  pantalla). Se sustituye ese archivo, no `MainLayout`.
 
 ### Estilos oscuros en el panel
 
-`energy` y `neon` ponen MUI en modo oscuro (`palette.mode = 'dark'`) y
-`color-scheme: dark` (los selectores de fecha y hora del navegador también salen
-oscuros). Como en la web:
-
-- El fondo es el del estudio si ya es oscuro; si no, una versión casi negra teñida de él.
-- El texto es claro y fijo; `--studio-dark` (que en el panel es «el color del texto
-  principal») pasa a ser ese texto claro, y las variables `--studio-text-*`,
-  `--studio-bg*` y los tonos fuertes del primario (`-shade`, `-dark`, `-deep`) se
-  calculan para fondo oscuro. Así las pantallas que ya usaban las variables se ven
-  bien sin tocarlas.
-- La barra superior y el menú lateral usan el oscuro del estudio (zona profunda).
-- El color de la barra del móvil (`meta theme-color`) y el manifiesto de la app
-  instalada (`/panel.webmanifest`: `background_color` y `theme_color`) usan el fondo
-  oscuro (`api/api/views_site.py → panel_theme_colors`).
-- Lo que debe seguir siendo claro (la hoja del horario para imprimir) lleva
-  `className="studio-light"`: dentro, las variables `--studio-*` vuelven a las claras.
+`energy` y `neon` ponen MUI en modo oscuro y `color-scheme: dark`. El color de la
+barra del móvil (`meta theme-color`) es el fondo de la paleta y el manifiesto de la
+app instalada sigue saliendo de `api/api/views_site.py → panel_theme_colors`. Lo que
+debe seguir siendo claro (la hoja del horario para imprimir) lleva
+`className="studio-light"`: dentro, las variables `--studio-*` vuelven a las claras.
 
 ### Variables CSS para lo que no es de MUI
 
-Además de las de color (ver cabecera de `crm/src/theme.ts`), cada estilo publica su forma:
-
-| Variable | Para qué |
-|---|---|
-| `--studio-radius` / `--studio-radius-sm` / `--studio-radius-chip` | Esquinas de tarjeta / botón / píldora. |
-| `--studio-border-width` / `--studio-border` | Grosor y borde completo de las tarjetas. |
-| `--studio-surface` / `--studio-surface-strong` | Fondo de tarjeta / de diálogo. |
-| `--studio-surface-rgb` | Canales de la superficie (blanco en claro, gris oscuro en oscuro): úsalo en lugar de `rgba(255,255,255,…)` → `rgb(var(--studio-surface-rgb) / 0.8)`. |
-| `--studio-shadow` / `--studio-shadow-float` / `--studio-shadow-rgb` | Sombra de tarjeta, de lo flotante y su color (negro en oscuro): `0 6px 20px rgb(var(--studio-shadow-rgb) / 0.12)`. |
-| `--studio-blur` | `backdrop-filter` de las superficies (`none` si el estilo no tiene cristal). |
-| `--studio-primary-text` / `--studio-primary-fill` / `--studio-on-primary` | Primario como texto legible / relleno de botón / texto encima. |
-| `--studio-danger-text` / `--studio-success-text` / `--studio-warning-text` | Textos de estado escritos a mano: `var(--studio-danger-text, #A0473A)` (el segundo valor es el de natural). |
-
-El calendario (`crm/src/calendar.css`) usa estas variables y sus `--cal-*`; cada
-estilo redefine las que cambian (esquinas, bordes, sombras) desde
-`cssVariables()` en `theme.ts`, y `calendarCss()` corrige los grises fijos del CSS de
-react-big-calendar en los estilos «de trabajo».
+La lista completa está en la cabecera de `crm/src/theme.ts`. Las de siempre
+(`--studio-primary`, `--studio-dark` = texto principal, `--studio-text-*`,
+`--studio-bg*`, `--studio-surface-rgb`, `--studio-shadow-rgb`, `--studio-radius*`,
+`--studio-border`, `--studio-primary-text` / `-fill`, `--studio-on-primary`,
+`--studio-danger-text`…) siguen existiendo, ahora calculadas desde los tokens. Las
+nuevas son las de los tokens: `--studio-ink`, `--studio-muted`, `--studio-surf`,
+`--studio-surf2`, `--studio-p-soft`, `--studio-border-color`,
+`--studio-border-strong`, `--studio-side-*`, `--studio-ok|warn|bad|info(-soft)`,
+`--studio-c-<clase>` / `--studio-c-<clase>-dot`, `--studio-radius-xl|lg|md|btn`,
+`--studio-shadow-1|2`, `--studio-card-bg`, `--studio-card-border`,
+`--studio-btn-shadow`, `--studio-glow`, `--studio-heading-weight|transform`.
+El calendario (`crm/src/calendar.css`) usa sus `--cal-*`, que también se calculan
+desde los tokens.
 
 ### Iconos del panel
 

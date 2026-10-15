@@ -41,12 +41,15 @@ def _booking_price_cents(booking, currency):
     return to_stripe_amount(price, currency) if price else 0
 
 
-def refund_guest_booking_stripe(booking, reason=''):
+def refund_guest_booking_stripe(booking, reason='', any_owner=False):
     """Devuelve a la tarjeta el precio de la reserva de una invitada.
     Retorna lo reembolsado en la unidad mínima de la moneda del pago
-    (céntimos; en CLP, pesos) o 0 si no aplica. Nunca lanza."""
+    (céntimos; en CLP, pesos) o 0 si no aplica. Nunca lanza.
+
+    any_owner=True: también para reservas de usuarias registradas que pagaron
+    esa clase con tarjeta («Devolver el dinero» del calendario del panel)."""
     payment = booking.payment
-    if not booking.guest_id or not payment:
+    if not payment or not (booking.guest_id or any_owner):
         return 0
     if (payment.method or '') != 'stripe':
         return 0
@@ -102,8 +105,8 @@ def refund_guest_booking_stripe(booking, reason=''):
             'metadata': {'booking_id': str(booking.id), 'reason': reason or 'studio_cancellation'},
         })
         logger.info(
-            "guest_refund.issued booking_id=%s guest_id=%s amount_minor=%s currency=%s intent=%s reason=%r",
-            booking.id, booking.guest_id, amount, paid_currency, intent_id, reason,
+            "guest_refund.issued booking_id=%s guest_id=%s user_id=%s amount_minor=%s currency=%s intent=%s reason=%r",
+            booking.id, booking.guest_id, booking.user_id, amount, paid_currency, intent_id, reason,
         )
         return amount
     except Exception:

@@ -113,6 +113,9 @@ export function SiteProvider({ children, initialConfig }: SiteProviderProps) {
     setMeta('apple-mobile-web-app-status-bar-style', look.dark ? 'black' : 'default');
     document.documentElement.dataset.panelStyle = look.style;
     document.documentElement.dataset.panelMode = look.dark ? 'dark' : 'light';
+    document.documentElement.dataset.panelSide = look.side;
+    if (look.classic) document.documentElement.dataset.panelClassic = '';
+    else delete document.documentElement.dataset.panelClassic;
     document.documentElement.style.colorScheme = look.dark ? 'dark' : '';
     setFavicon(config.favicon_url || '/api/v1/site-config/icon/32.png?variant=panel');
     loadStudioFonts(config.theme.font_heading, config.theme.font_body);

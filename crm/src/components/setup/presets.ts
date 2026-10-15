@@ -1,55 +1,8 @@
 import type { IconStyleId, StyleId } from '../../site/siteConfig';
 
-/** Paletas y parejas de fuentes para elegir con un clic. Todas probadas para
- *  que el texto se lea bien sobre su fondo. */
-
-export interface Palette {
-  name: string;
-  primary: string;
-  secondary: string;
-  dark: string;
-  background: string;
-}
-
-export const PALETTES: Palette[] = [
-  { name: 'Arena', primary: '#A0897C', secondary: '#85786B', dark: '#3D3228', background: '#F5F0EA' },
-  { name: 'Salvia', primary: '#8A9A7B', secondary: '#6B7D5C', dark: '#2F3A28', background: '#F2F4EE' },
-  { name: 'Océano', primary: '#5B8A9A', secondary: '#3F6E7D', dark: '#1F3540', background: '#EEF4F6' },
-  { name: 'Lavanda', primary: '#9C8AB4', secondary: '#7A6898', dark: '#352B45', background: '#F4F1F8' },
-  { name: 'Terracota', primary: '#C27C5C', secondary: '#A3603F', dark: '#3E2419', background: '#FAF2EC' },
-  { name: 'Rosa', primary: '#C98C99', secondary: '#A86B79', dark: '#3F2329', background: '#FBF1F3' },
-  { name: 'Carbón', primary: '#6B6B6B', secondary: '#4A4A4A', dark: '#1C1C1C', background: '#F4F4F2' },
-];
-
-export interface FontPair {
-  name: string;
-  heading: string;
-  body: string;
-  description: string;
-}
-
-export const FONT_PAIRS: FontPair[] = [
-  { name: 'Elegante', heading: 'Playfair Display', body: 'Jost', description: 'Títulos con serifa, cuerpo limpio' },
-  { name: 'Moderna', heading: 'Montserrat', body: 'Inter', description: 'Geométrica y muy legible' },
-  { name: 'Suave', heading: 'Quicksand', body: 'Nunito', description: 'Redondeada y cercana' },
-  { name: 'Clásica', heading: 'Lora', body: 'Source Sans 3', description: 'Cálida y tradicional' },
-  { name: 'Impacto', heading: 'Bebas Neue', body: 'Quicksand', description: 'Títulos altos y llamativos' },
-  { name: 'Serena', heading: 'Cormorant Garamond', body: 'Lato', description: 'Fina y delicada' },
-];
-
-/** Carga una o varias fuentes de Google en la página (para la vista previa). */
-export function loadGoogleFonts(families: string[]) {
-  const unique = [...new Set(families.filter(Boolean))];
-  unique.forEach((family) => {
-    const id = `gf-${family.replace(/\s+/g, '-').toLowerCase()}`;
-    if (document.getElementById(id)) return;
-    const link = document.createElement('link');
-    link.id = id;
-    link.rel = 'stylesheet';
-    link.href = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(family).replace(/%20/g, '+')}:wght@400;600;700&display=swap`;
-    document.head.appendChild(link);
-  });
-}
+/** Las paletas y las parejas de letra de cada estilo viven en design/tokens
+ *  (src/design/palettes.json + src/design/tokens.ts). Aquí quedan la ficha de
+ *  cada estilo (la usa la portada), los iconos y herramientas de color. */
 
 // ─── Estilos visuales de la web ───────────────────────────────────────────────
 // Cada estilo cambia el «acabado» de la web (superficies, bordes, sombras,
@@ -66,7 +19,7 @@ export interface StylePreset {
   description: string;
   dark: boolean;
   /** Colores y letra con los que mejor luce (se aplican solo si se pide) */
-  palette: Omit<Palette, 'name'>;
+  palette: { primary: string; secondary: string; dark: string; background: string };
   fonts: { heading: string; body: string };
   /** Cómo se dibuja la miniatura del selector */
   look: {
@@ -162,30 +115,6 @@ export function mixHex(a: string, b: string, t: number) {
   const [r1, g1, b1] = toRgb(a);
   const [r2, g2, b2] = toRgb(b);
   return toHex(r1 + (r2 - r1) * t, g1 + (g2 - g1) * t, b1 + (b2 - b1) * t);
-}
-
-/** Paleta completa a partir de UN color (el principal de su marca). */
-export function paletteFromColor(hex: string) {
-  return {
-    primary: hex.toUpperCase(),
-    secondary: mixHex(hex, '#000000', 0.22),
-    dark: mixHex(hex, '#141414', 0.78),
-    background: mixHex(hex, '#FFFFFF', 0.92),
-  };
-}
-
-const luminance = (hex: string) => {
-  const [r, g, b] = toRgb(hex).map((v) => {
-    const c = v / 255;
-    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
-  });
-  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
-};
-
-/** Contraste WCAG entre dos colores (4.5 = texto normal legible). */
-export function contrast(a: string, b: string) {
-  const [l1, l2] = [luminance(a), luminance(b)].sort((x, y) => y - x);
-  return (l1 + 0.05) / (l2 + 0.05);
 }
 
 /** Colores principales de una imagen (logo), del más al menos frecuente. */

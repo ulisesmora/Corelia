@@ -116,14 +116,6 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
     try { localStorage.setItem('coachmarkAvatarVisto', 'true'); } catch { /* noop */ }
   }, []);
 
-  const buttonHoverStyles = useMemo(() => ({
-    // Con scroll: hover del botón principal del estilo. Sin scroll (sobre el
-    // hero): fondo claro garantizado (--brand-bg-light) con texto oscuro.
-    bg: scrolled ? 'var(--button-hover-bg)' : 'var(--brand-bg-light)',
-    color: scrolled ? 'var(--button-hover-text)' : 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
-    borderColor: scrolled ? 'var(--accent)' : 'color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark))',
-    boxShadow: 'lg',
-  }), [scrolled]);
 
   // === Con sesión: menú de usuaria ===
   if (isAuthenticated) {
@@ -133,7 +125,7 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
         <chakra.div position="relative" display="inline-block">
           <Menu.Root>
             <Menu.Trigger asChild>
-              <Button variant="ghost" rounded="full" minW="44px" h="44px" p={0} marginLeft=".5rem" aria-label={tx.account}>
+              <Button variant="ghost" rounded="full" minW="44px" h="44px" p={0} aria-label={tx.account}>
                 <Avatar.Root className="avatar-bg" size="sm" bg={userAvatarBg} color={userAvatarColor}>
                   <Avatar.Fallback>{initial}</Avatar.Fallback>
                 </Avatar.Root>
@@ -143,13 +135,13 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
             <Menu.Positioner>
               <Menu.Content className="sk-panel" minW="220px" p={1.5}>
                 <Menu.Item value="calendar" asChild {...itemStyle}>
-                  <a href="/myCalendar">{tx.myCalendar}</a>
+                  <a href="/dashboard?tab=agenda">{tx.myCalendar}</a>
                 </Menu.Item>
                 <Menu.Item value="preferences" asChild {...itemStyle}>
-                  <a href="/myPreferences">{tx.preferences}</a>
+                  <a href="/dashboard?tab=clases">{tx.preferences}</a>
                 </Menu.Item>
                 <Menu.Item value="subscription" asChild {...itemStyle}>
-                  <a href="/mySubscription">{tx.subscription}</a>
+                  <a href="/dashboard?tab=suscripcion">{tx.subscription}</a>
                 </Menu.Item>
                 <Menu.Separator />
                 <Menu.Item value="logout" onClick={handleLogout} {...itemStyle} color="var(--danger)">
@@ -195,26 +187,23 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
         unmountOnExit
       >
         <Dialog.Trigger asChild>
+          {/* Botón discreto (contorno del estilo): la acción principal de la
+              cabecera es «Reservar clase» */}
           <Button
             aria-label={tx.triggerAria}
             fontSize="14px"
-            fontWeight="bolder"
+            fontWeight={600}
             fontFamily='var(--font-body)'
             minH="44px"
-            boxShadow="2xl"
-            marginRight="1.5rem"
-            marginLeft="1.5rem"
-            variant={scrolled ? 'solid' : 'outline'}
-            bg="color-mix(in srgb, color-mix(in srgb, var(--brand-primary) 48%, var(--brand-dark)) 80%, transparent)"
-            color="white"
-            borderColor="white"
-            _hover={buttonHoverStyles}
-            transition="all 0.3s ease-in-out"
+            px={{ base: 3, md: 4 }}
+            gap={2}
+            borderRadius="var(--radius-button)"
+            textTransform="none"
             translate="no"
-            className="notranslate"
+            className="sk-btn-ghost notranslate"
           >
             <Icon name="user" aria-hidden />
-            <span>{tx.trigger}</span>
+            <chakra.span display={{ base: 'none', sm: 'inline' }}>{tx.trigger}</chakra.span>
           </Button>
         </Dialog.Trigger>
 

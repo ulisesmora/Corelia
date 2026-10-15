@@ -307,10 +307,14 @@ class RecurringSchedule(TimeStampedSoftDelete):
             models.Index(fields=["weekday", "start_time"]),
         ]
         constraints = [
+            # Solo una regla ABIERTA (sin fecha de fin) por sala/día/hora. Las
+            # que ya tienen fecha de fin no cuentan: así «esta y las siguientes»
+            # (apply_from) puede cambiar solo la profesora o las plazas desde
+            # una fecha, dejando la regla vieja hasta la víspera.
             models.UniqueConstraint(
                 fields=['room', 'weekday', 'start_time'],
-                name='unique_active_alive_schedule',
-                condition=Q(deleted_at__isnull=True) & Q(is_active=True)
+                name='unique_active_open_schedule',
+                condition=Q(deleted_at__isnull=True) & Q(is_active=True) & Q(end_date__isnull=True)
             )
         ]
 
@@ -425,6 +429,12 @@ class ScheduleBlackout(TimeStampedSoftDelete):
         ("vacation", "Vacaciones / cierre"),
         ("closed", "Franja cerrada"),
         ("private", "Clase privada"),
+        # Los dos siguientes los crea el calendario del panel (api/views_calendar.py):
+        # «canceled» = esa sesión concreta se ha cancelado (se ve tachada y se
+        # puede reactivar); «moved» = esa sesión se ha movido a otra hora/día
+        # (el panel la oculta: se ve la sesión puntual nueva).
+        ("canceled", "Clase cancelada"),
+        ("moved", "Sesión movida"),
     ]
     schedule = models.ForeignKey(
         RecurringSchedule, on_delete=models.CASCADE, null=True, blank=True,
@@ -1118,9 +1128,9 @@ class SiteConfig(models.Model):
     color_background = models.CharField(max_length=9, default='#F5F0EA')
     font_heading = models.CharField(max_length=60, default='Playfair Display')
     font_body = models.CharField(max_length=60, default='Jost')
-    # Añadir un estilo: una entrada aquí + su bloque en web/src/styles/presets.css
-    # + su ficha en crm/src/components/setup/presets.ts + su versión del panel en
-    # crm/src/theme.ts (LOOKS) (ver docs/ESTILOS.md)
+    # Añadir un estilo: una entrada aquí + sus paletas y letras en
+    # design/tokens/tokens.py + su bloque en web/src/styles/presets.css + su
+    # versión del panel en crm/src/theme.ts (LOOKS) (ver docs/ESTILOS.md)
     STYLE_PRESETS = [
         ('natural', 'Natural — orgánico, cálido y suave'),
         ('minimal', 'Minimal — limpio, mucho aire'),
@@ -1139,6 +1149,15 @@ class SiteConfig(models.Model):
     style_preset = models.CharField(max_length=16, choices=STYLE_PRESETS, default='natural',
                                     help_text='Aspecto general de la web (no cambia la estructura).')
     icon_style = models.CharField(max_length=8, choices=ICON_STYLES, default='line')
+    # Paleta y pareja de letra del estilo (design/tokens → api/utils/palettes.py).
+    # Los color_* y font_* de arriba son SIEMPRE los valores efectivos (los que
+    # leen la web y el panel): elegir una paleta escribe sus colores ahí.
+    palette = models.CharField(
+        max_length=24, blank=True, default='',
+        help_text='Paleta de colores del estilo (slug). Vacío = colores propios del estudio.')
+    font_pair = models.CharField(
+        max_length=48, blank=True, default='',
+        help_text='Pareja de letra del estilo (slug). Vacío = letra propia.')
     # Estilos oscuros: si el panel sigue el estilo, también se pone oscuro
     DARK_STYLES = ('energy', 'neon')
     panel_follows_style = models.BooleanField(
@@ -1334,3 +1353,83 @@ class Testimonial(TimeStampedSoftDelete):
 
     def __str__(self):
         return f"{self.author}: {self.text[:40]}"
+
+
+# ===========
+# LISTA DE ESPERA (calendario del panel + reservas de la web)
+# ===========
+class WaitlistSettings(models.Model):
+    """Ajustes de la lista de espera (singleton, siempre id=1). Activada por
+    defecto: cuando una clase está llena, la clienta puede apuntarse a la
+    lista; si alguien cancela, se le ofrece la plaza a la primera por email y
+    push, con un plazo para aceptarla (claim_minutes)."""
+    enabled = models.BooleanField(default=True)
+    auto_offer = models.BooleanField(
+        default=True,
+        help_text='Al quedar una plaza libre, ofrecérsela sola a la primera de la lista.')
+    claim_minutes = models.PositiveIntegerField(
+        default=120, validators=[MinValueValidator(10), MaxValueValidator(60 * 48)],
+        help_text='Minutos que tiene para aceptar la plaza antes de pasar a la siguiente.')
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Lista de espera (ajustes)'
+        verbose_name_plural = 'Lista de espera (ajustes)'
+
+    def __str__(self):
+        return 'Lista de espera ' + ('activada' if self.enabled else 'desactivada')
+
+    def save(self, *args, **kwargs):
+        self.pk = 1
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def load(cls):
+        obj, _ = cls.objects.get_or_create(pk=1)
+        return obj
+
+
+class WaitlistEntry(TimeStampedSoftDelete):
+    """Una clienta esperando plaza en UNA sesión (regla + fecha/hora).
+
+    Igual que Booking, la sesión se identifica con la regla (RecurringSchedule)
+    y el instante de inicio. Estados:
+      waiting → offered (se le ofrece una plaza libre, con caducidad)
+              → claimed (la acepta: se crea su Booking)
+              → expired (no contestó a tiempo: pasa a la siguiente)
+      left (se borró ella) · removed (la quitó el estudio)
+    Una oferta activa (offered y sin caducar) RESERVA la plaza: nadie más
+    puede reservarla mientras tanto (api/utils/waitlist.py:seats_taken)."""
+    STATUS = [
+        ('waiting', 'En espera'),
+        ('offered', 'Plaza ofrecida'),
+        ('claimed', 'Plaza aceptada'),
+        ('expired', 'Oferta caducada'),
+        ('left', 'Se ha borrado'),
+        ('removed', 'Quitada por el estudio'),
+    ]
+    ACTIVE = ('waiting', 'offered')
+
+    schedule = models.ForeignKey(RecurringSchedule, on_delete=models.CASCADE, related_name='waitlist_entries')
+    start_datetime = models.DateTimeField(db_index=True)
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='waitlist_entries')
+    status = models.CharField(max_length=10, choices=STATUS, default='waiting')
+    offered_at = models.DateTimeField(null=True, blank=True)
+    offer_expires_at = models.DateTimeField(null=True, blank=True, db_index=True)
+    claim_token = models.UUIDField(default=uuid.uuid4, unique=True, editable=False)
+    booking = models.ForeignKey(Booking, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    metadata = models.JSONField(default=dict, blank=True)
+
+    class Meta:
+        ordering = ['created_at', 'id']
+        indexes = [models.Index(fields=['schedule', 'start_datetime', 'status'])]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['schedule', 'start_datetime', 'user'],
+                name='unique_active_waitlist_entry',
+                condition=Q(deleted_at__isnull=True) & Q(status__in=['waiting', 'offered']),
+            )
+        ]
+
+    def __str__(self):
+        return f"Waitlist({self.user_id} → {self.schedule_id} @ {self.start_datetime:%Y-%m-%d %H:%M} {self.status})"

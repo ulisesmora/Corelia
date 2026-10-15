@@ -453,6 +453,11 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'api.tasks.clean_expired_replacement_flags',
         'schedule': crontab(minute=0, hour=4),
     },
+    # Cada 10 min — lista de espera: plazas ofrecidas sin aceptar → a la siguiente
+    'lista-espera-ofertas-caducadas': {
+        'task': 'api.tasks.expire_waitlist_offers',
+        'schedule': crontab(minute='*/10'),
+    },
 }
 
 

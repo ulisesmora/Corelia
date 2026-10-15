@@ -1,0 +1,68 @@
+---
+// Contacto (/contacto y /en/contact): canales y formulario, cómo llegar y
+// preguntas frecuentes (acordeón). Antes estaba todo al final de la portada.
+import AppFixed from '../AppFixed';
+import Footer from '../Footer';
+import ContactSection from '../Contact';
+import OptimizedHead from '../OptimizedHead.astro';
+import JsonLd from '../seo/JsonLd.astro';
+import FaqList from '../sections/FaqList.astro';
+import Location from '../sections/Location.astro';
+import LangBoot from '../site/LangBoot.astro';
+import { BRAND_CACHE, breadcrumbJsonLd, businessJsonLd, faqJsonLd, type Lang } from '../../seo/site';
+import { getFaqs, getSchedules } from '../../seo/catalog';
+import { addressLine, getSiteConfig, htmlThemeAttrs } from '../../lib/site';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const es = lang === 'es';
+Astro.response.headers.set('Cache-Control', BRAND_CACHE);
+
+const [site, faqs, schedules] = await Promise.all([getSiteConfig(), getFaqs('home'), getSchedules()]);
+const path = es ? '/contacto' : '/en/contact';
+const address = addressLine(site);
+const lead = es
+  ? `Escríbenos, ven a vernos${address ? ` en ${address}` : ''} o resuelve tus dudas en un momento.`
+  : `Message us, come and see us${address ? ` at ${address}` : ''} or find quick answers.`;
+const links = [
+  { id: 'contact', label: es ? 'Escríbenos' : 'Message us', show: true },
+  { id: 'loc-title', label: es ? 'Cómo llegar' : 'How to find us', show: !!address || site.contact.latitude != null },
+  { id: 'faq', label: es ? 'Preguntas frecuentes' : 'FAQ', show: faqs.length > 0 },
+].filter((l) => l.show);
+const jsonLd = [
+  businessJsonLd(site, lang, { schedules }),
+  breadcrumbJsonLd([{ name: es ? 'Inicio' : 'Home', path: es ? '/' : '/en' }, { name: es ? 'Contacto' : 'Contact', path }]),
+  faqJsonLd(faqs, lang),
+].filter(Boolean);
+---
+<html lang={lang} {...htmlThemeAttrs(site)}>
+  <head>
+    <OptimizedHead
+      title={es ? 'Contacto y preguntas frecuentes' : 'Contact and FAQ'}
+      titleEn="Contact and FAQ"
+      description={lead}
+      canonicalPath={path}
+      alternates={{ es: '/contacto', en: '/en/contact' }}
+    />
+    {jsonLd.map((d) => <JsonLd data={d} />)}
+    <LangBoot lang={lang} />
+  </head>
+  <body class="format">
+    <AppFixed client:only="react" />
+    <main id="contenido">
+      <header class="w-wrap w-pagehead">
+        <h1 class="w-h1">{es ? 'Contacto' : 'Contact'}</h1>
+        <p class="w-lead">{lead}</p>
+      </header>
+      {links.length > 1 && (
+        <nav class="w-subnav" aria-label={es ? 'En esta página' : 'On this page'}>
+          <div class="w-wrap">{links.map((l) => <a href={`#${l.id}`}>{l.label}</a>)}</div>
+        </nav>
+      )}
+      <ContactSection client:visible={{ rootMargin: "400px" }} lang={lang} hideHeading />
+      <Location site={site} lang={lang} />
+      <FaqList faqs={faqs} lang={lang} />
+    </main>
+    <Footer client:visible={{ rootMargin: '600px' }} lang={lang} />
+  </body>
+</html>

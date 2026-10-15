@@ -40,6 +40,10 @@ export interface SiteThemeConfig {
   font_body: string;
   /** Estilo de la web (natural, minimal, editorial…) */
   style: StyleId;
+  /** Paleta del estilo (src/design/palettes.json); '' = colores propios */
+  palette: string;
+  /** Pareja de letra del estilo; '' = letra propia */
+  font_pair: string;
   /** Familia de iconos: línea fina, suaves o rellenos */
   icons: IconStyleId;
   /** El panel usa también el estilo de la web (si no, su aspecto clásico) */
@@ -86,6 +90,8 @@ export const DEFAULT_SITE_CONFIG: SiteConfigPublic = {
     font_heading: 'Playfair Display',
     font_body: 'Jost',
     style: 'natural',
+    palette: '',
+    font_pair: '',
     icons: 'line',
     panel_follows_style: true,
   },
@@ -129,6 +135,8 @@ export function normalizeSiteConfig(raw: unknown): SiteConfigPublic {
       font_heading: cleanFontName(t.font_heading as string, d.theme.font_heading),
       font_body: cleanFontName(t.font_body as string, d.theme.font_body),
       style: oneOf(t.style, STYLE_IDS, d.theme.style),
+      palette: typeof t.palette === 'string' && /^[a-z0-9-]{1,24}$/.test(t.palette) ? t.palette : '',
+      font_pair: typeof t.font_pair === 'string' && /^[a-z0-9-]{1,48}$/.test(t.font_pair) ? t.font_pair : '',
       icons: oneOf(t.icons, ICON_STYLE_IDS, d.theme.icons),
       panel_follows_style: t.panel_follows_style !== false,
     },

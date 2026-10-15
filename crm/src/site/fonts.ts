@@ -55,3 +55,23 @@ export function loadStudioFonts(heading: string, body: string): void {
   ensureFont(heading, 'heading');
   ensureFont(body, 'body');
 }
+
+/**
+ * Carga varias familias para las vistas previas (selector de letra). Las de un
+ * solo grosor se piden sin grosores (si no, Google responde con error).
+ */
+export function loadPreviewFonts(families: string[], singleWeight: Set<string> = new Set()): void {
+  if (typeof document === 'undefined') return;
+  preconnect();
+  for (const raw of new Set(families.filter(Boolean))) {
+    const family = cleanFontName(raw, '');
+    if (!family) continue;
+    const id = `preview-font-${family.replace(/\s+/g, '-').toLowerCase()}`;
+    if (document.getElementById(id)) continue;
+    const link = document.createElement('link');
+    link.id = id;
+    link.rel = 'stylesheet';
+    link.href = fontUrl(family, singleWeight.has(family) ? WEIGHT_STEPS.length - 1 : 1);
+    document.head.appendChild(link);
+  }
+}

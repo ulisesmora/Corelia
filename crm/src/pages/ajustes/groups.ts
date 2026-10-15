@@ -1,0 +1,101 @@
+// Mapa de Ajustes: cada pantalla de configuración del panel está en un grupo.
+// Si añades una pantalla de ajustes, ponla aquí (y sale en el buscador).
+import type { StudioIconName } from '../../site/StudioIcon';
+import type { Tint } from '../kit/api';
+
+export type SettingAction = 'waitlist' | 'cancellations';
+
+export interface SettingItem {
+  key: string;
+  label: string;
+  hint: string;
+  icon: StudioIconName;
+  /** Pantalla a la que lleva… */
+  path?: string;
+  /** …o diálogo que abre aquí mismo */
+  action?: SettingAction;
+  external?: boolean;
+  keywords?: string;
+}
+
+export interface SettingGroup {
+  key: string;
+  title: string;
+  icon: StudioIconName;
+  tint: Tint;
+  items: SettingItem[];
+}
+
+export const SETTING_GROUPS: SettingGroup[] = [
+  {
+    key: 'studio', title: 'Tu estudio', icon: 'studio', tint: 'reformer',
+    items: [
+      { key: 'datos', label: 'Datos y logo', hint: 'Nombre, contacto, dirección, logo y NIF', icon: 'studio', path: '/ajustes', keywords: 'nombre teléfono whatsapp dirección logo nif cif razón social iva factura recibos instagram' },
+      { key: 'moneda', label: 'Moneda y país', hint: 'En qué moneda cobras', icon: 'payments', path: '/ajustes', keywords: 'moneda divisa euro dólar país precios' },
+      { key: 'salas', label: 'Salas', hint: 'Espacios y aforo', icon: 'rooms', path: '/rooms', keywords: 'sala aforo capacidad' },
+      { key: 'profes', label: 'Profesoras', hint: 'Quién da las clases', icon: 'instructors', path: '/instructors', keywords: 'instructores profesores equipo monitoras' },
+      { key: 'tipos', label: 'Tipos de clase', hint: 'Pilates, yoga… y su descripción', icon: 'classTypes', path: '/classes', keywords: 'clases duración créditos precio' },
+      { key: 'categorias', label: 'Categorías', hint: 'Grupos de clases en la web', icon: 'categories', path: '/categories' },
+      { key: 'horario', label: 'Horario semanal', hint: 'Las clases de cada semana', icon: 'schedule', path: '/calendar/horarios', keywords: 'horario semana clases fijas recurrentes' },
+      { key: 'festivos', label: 'Festivos y cierres', hint: 'Vacaciones y días sin clase', icon: 'holidays', path: '/calendar/horarios?tab=cierres', keywords: 'vacaciones festivo cerrado cierre puente' },
+    ],
+  },
+  {
+    key: 'booking', title: 'Reservas y cobros', icon: 'payments', tint: 'mat',
+    items: [
+      { key: 'bonos', label: 'Bonos y cuotas', hint: 'Lo que se vende en la web', icon: 'plans', path: '/plans', keywords: 'bono cuota precio tarifa membresía plan' },
+      { key: 'pagos', label: 'Pagos online', hint: 'Cobrar con tarjeta al reservar', icon: 'payments', path: '/ajustes?tab=pagos', keywords: 'stripe tarjeta apple pay google pay cobrar' },
+      { key: 'espera', label: 'Lista de espera', hint: 'Cuando una clase está llena', icon: 'agenda', action: 'waitlist', keywords: 'espera llena plaza aviso' },
+      { key: 'cancelaciones', label: 'Cancelaciones', hint: 'Hasta cuándo se puede cancelar', icon: 'warning', action: 'cancellations', keywords: 'cancelar anular plazo horas devolver créditos' },
+      { key: 'cupones', label: 'Cupones de descuento', hint: 'Códigos con descuento', icon: 'coupons', path: '/cuopon', keywords: 'descuento promoción código' },
+      { key: 'creditos', label: 'Créditos de clientas', hint: 'Añadir o quitar clases a alguien', icon: 'credits', path: '/credits', keywords: 'saldo clases pago en mano efectivo' },
+      { key: 'fijas', label: 'Clases fijas', hint: 'Plaza guardada cada semana', icon: 'fixedClasses', path: '/assign-classes', keywords: 'apuntar reserva fija recurrente' },
+    ],
+  },
+  {
+    key: 'clients', title: 'Clientas', icon: 'clients', tint: 'barre',
+    items: [
+      { key: 'emails', label: 'Emails', hint: 'Desde qué cuenta salen los emails', icon: 'notices', path: '/ajustes?tab=emails', keywords: 'smtp gmail correo confirmaciones recordatorios' },
+      { key: 'avisos', label: 'Avisos a clientas', hint: 'Enviar un mensaje a todas', icon: 'announce', path: '/mails', keywords: 'email mensaje aviso newsletter' },
+      { key: 'push', label: 'Avisos al móvil', hint: 'Notificaciones de la app', icon: 'notices', path: '/ajustes?tab=avisos', keywords: 'push notificaciones app' },
+      { key: 'membresias', label: 'Membresías', hint: 'Quién paga cada mes', icon: 'subscriptions', path: '/subscriptions', keywords: 'cuotas mensual suscripción' },
+      { key: 'candidatas', label: 'Candidatas a membresía', hint: 'Vienen cada semana sin membresía', icon: 'candidates', path: '/membership-candidates' },
+    ],
+  },
+  {
+    key: 'web', title: 'Tu web y tu app', icon: 'web', tint: 'yoga',
+    items: [
+      { key: 'estilo', label: 'Estilo y colores', hint: 'Estilo, paleta, letra e iconos', icon: 'style', path: '/ajustes?tab=aspecto', keywords: 'paleta tema colores fuente letra iconos oscuro neón' },
+      { key: 'miweb', label: 'Mi web', hint: 'Secciones y vista previa', icon: 'web', path: '/mi-web', keywords: 'secciones web página' },
+      { key: 'portada', label: 'Portada', hint: 'Foto, vídeo o ilustración de inicio', icon: 'photos', path: '/ajustes?tab=portada', keywords: 'hero vídeo youtube imagen' },
+      { key: 'textos', label: 'Textos de la web', hint: 'Títulos, «sobre nosotras» e inglés', icon: 'announce', path: '/ajustes?tab=textos', keywords: 'contenido inglés idioma' },
+      { key: 'faq', label: 'Preguntas frecuentes', hint: 'Dudas típicas, respondidas', icon: 'help', path: '/ajustes?tab=preguntas', keywords: 'faq' },
+      { key: 'opiniones', label: 'Opiniones', hint: 'Lo que dicen tus clientas', icon: 'celebrate', path: '/ajustes?tab=opiniones', keywords: 'reseñas testimonios' },
+      { key: 'fotos', label: 'Fotos de la web', hint: 'Imágenes de cada sección', icon: 'photos', path: '/site-images', keywords: 'imágenes galería' },
+      { key: 'google', label: 'Google y anuncios', hint: 'Ficha de Google, Analytics y píxeles', icon: 'google', path: '/ajustes?tab=google', keywords: 'seo analytics meta ads facebook búsquedas' },
+      { key: 'dominio', label: 'Dominio', hint: 'tuestudio.com', icon: 'web', path: '/ajustes?tab=dominio', keywords: 'dominio url dirección dns' },
+    ],
+  },
+  {
+    key: 'account', title: 'Cuenta y seguridad', icon: 'security', tint: 'privada',
+    items: [
+      { key: 'admins', label: 'Administradoras', hint: 'Quién puede entrar en el panel', icon: 'admins', path: '/admins', keywords: 'usuarios equipo acceso permisos' },
+      { key: 'seguridad', label: 'Seguridad', hint: 'Código del móvil al entrar', icon: 'security', path: '/seguridad', keywords: '2fa contraseña código verificación' },
+      { key: 'google-login', label: 'Acceso con Google', hint: 'Entrar con la cuenta de Google', icon: 'google', path: '/ajustes?tab=acceso-google', keywords: 'login oauth' },
+    ],
+  },
+];
+
+const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+
+/** Ajustes que encajan con lo que se busca (todas las palabras). */
+export function searchSettings(groups: SettingGroup[], q: string) {
+  const words = fold(q).split(/\s+/).filter(Boolean);
+  if (!words.length) return [];
+  return groups.flatMap((g) => g.items
+    .filter((it) => {
+      const hay = fold(`${it.label} ${it.hint} ${it.keywords || ''} ${g.title}`);
+      return words.every((w) => hay.includes(w));
+    })
+    .map((it) => ({ ...it, group: g.title })));
+}

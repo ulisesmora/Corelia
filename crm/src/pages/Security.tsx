@@ -277,15 +277,7 @@ export default function Security() {
       <PageIntro
         pageKey="security"
         title="Seguridad"
-        subtitle="Protege la entrada al panel: además de la contraseña, se pedirá un código que cambia cada 30 segundos en tu móvil."
-        guideTitle="Cómo se activa"
-        steps={[
-          { title: 'Instala una app de códigos en tu móvil', text: 'Google Authenticator, Microsoft Authenticator, 1Password o Authy. Son gratis.' },
-          { title: 'Escanea el código QR con la app', text: 'La app añade tu cuenta del panel y empieza a mostrar números de 6 cifras.' },
-          { title: 'Escribe el número que ves en la app', text: 'Así comprobamos que está bien configurada.' },
-          { title: 'Guarda los códigos de recuperación', text: 'Sirven para entrar si pierdes o cambias de móvil. Descárgalos o imprímelos.' },
-        ]}
-        tips={['Si alguien averigua tu contraseña, sin tu móvil no podrá entrar en el panel.']}
+        subtitle="Un código del móvil además de la contraseña."
       />
 
       {status.setup_required && !codes && (

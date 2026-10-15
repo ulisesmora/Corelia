@@ -3,9 +3,9 @@
 import { useState, useEffect } from 'react';
 import { cachedFetch } from '../utils/fetchCache';
 import {
-  Box, Flex, Text, Spinner, SimpleGrid, Button, Center, VStack,
+  Box, Flex, Text, Spinner, SimpleGrid, Button, Center,
 } from '@chakra-ui/react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import Chakra from './ChakraProvider';
 import { Icon, type IconName } from './ui/Icon';
 import { useT, formatPrice, priceParts } from '../i18n';
@@ -21,7 +21,6 @@ import { cancelMinHours } from '../utils/cancelPolicy';
 import { useHydrated } from '../utils/useHydrated';
 
 const MotionBox = motion(Box as any);
-const MotionFlex = motion(Flex as any);
 
 const API_BASE_URL = `${API_ROOT}/`;
 
@@ -71,22 +70,6 @@ interface Plan {
   translations?: Record<string, { name?: string; description?: string }> | null;
 }
 
-const containerVariants = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.10 } },
-};
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 24 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: [0.25, 0.46, 0.45, 0.94] } },
-};
-
-const tabVariants = {
-  hidden: { opacity: 0, x: -10 },
-  visible: { opacity: 1, x: 0, transition: { duration: 0.3 } },
-  exit: { opacity: 0, x: 10, transition: { duration: 0.2 } },
-};
-
 // ── PackCard ──────────────────────────────────────────────────────────────────
 
 function PackCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; highlighted?: boolean }) {
@@ -99,7 +82,6 @@ function PackCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; h
   return (
     <MotionBox
       id={`plan-${plan.id}`}
-      variants={cardVariants}
       position="relative"
       whileHover={{ y: -5 }}
       transition={{ duration: 0.25 }}
@@ -250,7 +232,6 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
   return (
     <MotionBox
       id={`plan-${plan.id}`}
-      variants={cardVariants}
       position="relative"
       whileHover={{ y: -5 }}
       transition={{ duration: 0.25 }}
@@ -375,7 +356,7 @@ function CreditsExplainer({ dropIn }: { dropIn: number }) {
         { big: formatPrice(dropIn, 'en', 'auto'), unit: '', text: 'is a drop-in class — with a plan you pay less' },
       ];
   return (
-    <SimpleGrid columns={{ base: 1, md: 3 }} gap={3} maxW="900px" mx="auto" mb={10}>
+    <SimpleGrid columns={{ base: 1, md: 3 }} gap={3}>
       {items.map((it) => (
         <Flex key={it.text} className="sk-card" align="center" gap={3} p={4}>
           <Box textAlign="center" minW="64px" flexShrink={0}>
@@ -401,16 +382,16 @@ function PlansHelp() {
   const site = useSite();
   if (!whatsappUrl(site)) return null;
   return (
-    <Flex direction="column" align="center" mt={12} gap={3}>
-      <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} textAlign="center">
+    <Flex align="center" mt={12} gap={3} wrap="wrap">
+      <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
         {es ? '¿Sigues con dudas? Te ayudamos a elegir en un minuto.' : 'Still unsure? We’ll help you choose in a minute.'}
       </Text>
-      <Button as="a"
+      <Button as="a" className="sk-btn-ghost"
         href={whatsappUrl(site, es ? 'Hola, ¿qué plan me recomendáis?' : 'Hi, which plan would you recommend?')}
         target="_blank" rel="noopener"
-        minH="48px" px={6} borderRadius="var(--radius-button)" bg="#25D366" color="white"
-        fontFamily='var(--font-body)' fontWeight={800}
-        _hover={{ opacity: 0.9 }} gap={2}>
+        minH="44px" px={5} borderRadius="var(--radius-button)"
+        fontFamily='var(--font-body)' fontWeight={700} textTransform="none"
+        gap={2}>
         <Icon name="whatsapp" size={16} />
         {es ? 'Pregúntanos por WhatsApp' : 'Ask us on WhatsApp'}
       </Button>
@@ -420,222 +401,146 @@ function PlansHelp() {
 
 // ── Tab + Content wrapper ────────────────────────────────────────────────────
 
-type Tab = 'packs' | 'subs';
+type Tab = 'packs' | 'subs' | 'single';
 
+/**
+ * Precios con revelado progresivo: una línea de cabecera, pestañas
+ * (Mensualidades · Bonos · Clase suelta) y las tarjetas de la pestaña. El
+ * asistente «¿Cuál me conviene?» y la explicación de los créditos quedan
+ * plegados hasta que se piden.
+ */
 function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
   // La membresía es lo que queremos explicar primero (más barata y con reserva automática)
-  const [activeTab, setActiveTab] = useState<Tab>(subs.length > 0 ? 'subs' : 'packs');
+  const [activeTab, setActiveTab] = useState<Tab>(subs.length > 0 ? 'subs' : packs.length > 0 ? 'packs' : 'single');
   const [highlightId, setHighlightId] = useState<string | null>(null);
+  const [finderOpen, setFinderOpen] = useState(false);
   const hydrated = useHydrated();
   const t = useT();
   const lang = useLangStore(s => s.lang);
+  const es = lang !== 'en';
+  const site = useSite();
 
   const toFinder = (p: Plan): FinderPlan => ({
     id: p.id, name: planDisplayName(p, lang), credits: p.credits, price: p.price, type: p.type,
     validDays: p.type === 'pack' ? p.expireDays : p.renewalDays,
     months: p.months,
   });
-  const dropIn = dropInPrice(packs.map(toFinder));
+  const dropIn = dropInPrice(packs.map(toFinder)) || Number(site.drop_in_price) || 0;
 
-  const seeAll = (tab: Tab, planId?: string) => {
+  const seeAll = (tab: 'packs' | 'subs', planId?: string) => {
     setActiveTab(tab);
     setHighlightId(planId || null);
-    // Tras cambiar de pestaña, ir directo a la tarjeta recomendada (centrada)
     setTimeout(() => {
       const target = (planId && document.getElementById(`plan-${planId}`))
         || document.getElementById('todos-los-planes');
       target?.scrollIntoView({ behavior: 'smooth', block: planId ? 'center' : 'start' });
-    }, 350);
+    }, 150);
   };
 
+  const tabs = ([
+    { key: 'subs' as const, label: es ? 'Mensualidades' : 'Memberships', show: subs.length > 0 },
+    { key: 'packs' as const, label: es ? 'Bonos' : 'Class packs', show: packs.length > 0 },
+    { key: 'single' as const, label: es ? 'Clase suelta' : 'Drop-in', show: true },
+  ]).filter((x) => x.show);
+  const hasPlans = packs.length > 0 || subs.length > 0;
+
   return (
-    <Box py={{ base: 14, md: 24 }} px={{ base: 4, md: 6 }}
-      bg={C.sectionBg}
-      position="relative"
-      // clip (no hidden): las manchas decorativas sobresalen y con 'hidden' el
-      // contenedor sigue siendo desplazable — al enfocar un botón el navegador
-      // lo movía de lado y la página aparecía descuadrada en móvil.
-      css={{ overflow: 'hidden', '@supports (overflow: clip)': { overflow: 'clip' } }}
-    >
-      {/* Decorative blobs */}
-      <Box position="absolute" top="-80px" right="-80px" w="400px" h="400px"
-        borderRadius="full" bg="color-mix(in srgb, var(--brand-primary) 7%, transparent)" filter="blur(60px)" pointerEvents="none" />
-      <Box position="absolute" bottom="-60px" left="-60px" w="350px" h="350px"
-        borderRadius="full" bg="color-mix(in srgb, var(--brand-secondary) 6%, transparent)" filter="blur(50px)" pointerEvents="none" />
+    <div className="w-wrap" style={{ paddingBottom: 'var(--w-8)' }}>
+      <header className="w-pagehead">
+        <h1 className="w-h1">{es ? 'Precios' : 'Prices'}</h1>
+        <p className="w-lead">
+          {es
+            ? `Una clase suelta cuesta ${formatPrice(dropIn, 'es', 'auto')}. Con un bono o una mensualidad cada clase te sale más barata.`
+            : `A drop-in class is ${formatPrice(dropIn, 'en', 'auto')}. With a pack or a membership every class costs less.`}
+        </p>
+      </header>
 
-      <Box maxW="6xl" mx="auto" position="relative" zIndex={1}>
-
-        {/* Header */}
-        <MotionFlex
-          direction="column" align="center" mb={12}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <Box className="sk-eyebrow" px={4} py={1.5} mb={4}>
-            <Text fontSize="11px" fontWeight={700}
-              fontFamily='var(--font-body)' letterSpacing="0.10em" textTransform="uppercase">
-              {t('plans.badge')}
-            </Text>
-          </Box>
-          <Text
-            className="sk-section-title"
-            fontSize={{ base: '3xl', md: '5xl', lg: '6xl' }}
-            fontWeight="bold" color={C.heading} textAlign="center"
-            fontFamily='var(--font-heading)' letterSpacing="wide" lineHeight="1.1"
-          >
-            {t('plans.title')}
-          </Text>
-          <Text fontSize={{ base: 'md', md: 'lg' }} color={C.textMuted}
-            fontFamily='var(--font-body)' mt={3} maxW="480px" textAlign="center" lineHeight="1.7">
-            {t('plans.subtitle')}
-          </Text>
-        </MotionFlex>
-
-        {/* Sin pagos online: los precios se ven, pero la compra es en el estudio */}
-        {!paymentsEnabled() && (
-          <Box className="sk-card" maxW="640px" mx="auto" mb={10} p={{ base: 5, md: 6 }}
-            style={{ borderColor: 'var(--accent-border)' }}>
-            <PaymentsDisabledNotice />
-          </Box>
+      <div id="todos-los-planes" style={{ scrollMarginTop: 90 }} />
+      <Flex justify="space-between" align="center" gap={3} wrap="wrap" mb={8}>
+        <div className="w-tabs" role="tablist" aria-label={es ? 'Tipo de precio' : 'Price type'}>
+          {tabs.map(({ key, label }) => (
+            <button key={key} type="button" role="tab" className="w-tab" aria-selected={activeTab === key}
+              aria-controls={`plans-${key}`} onClick={() => setActiveTab(key)}>
+              {label}
+            </button>
+          ))}
+        </div>
+        {hasPlans && (
+          <button type="button" className="w-btn w-btn--sm sk-btn-ghost" aria-expanded={finderOpen}
+            onClick={() => setFinderOpen((v) => !v)}>
+            <Icon name="sparkle" size={14} aria-hidden />
+            {es ? '¿Cuál me conviene?' : 'Which one suits me?'}
+          </button>
         )}
+      </Flex>
 
-        {/* Asistente guiado: 3 preguntas → plan recomendado */}
-        {(packs.length > 0 || subs.length > 0) && (
-          <PlanFinder packs={packs.map(toFinder)} subs={subs.map(toFinder)} onSeeAll={seeAll} />
-        )}
+      {/* Asistente guiado (3 preguntas → plan recomendado): solo si se pide */}
+      {hasPlans && finderOpen && (
+        <Box mb={10}>
+          <PlanFinder packs={packs.map(toFinder)} subs={subs.map(toFinder)} onSeeAll={(tab, id) => { setFinderOpen(false); seeAll(tab as 'packs' | 'subs', id); }} />
+        </Box>
+      )}
 
-        <CreditsExplainer dropIn={dropIn} />
+      {activeTab === 'subs' && subs.length > 0 && (
+        <div id="plans-subs" role="tabpanel">
+          <SimpleGrid templateColumns="repeat(auto-fill, minmax(min(100%, 300px), 1fr))" gap={6} w="full" maxW={subs.length === 1 ? '460px' : subs.length === 2 ? '900px' : undefined}>
+            {subs.map(plan => <SubCard key={plan.id} plan={plan} dropIn={dropIn} highlighted={highlightId === plan.id} />)}
+          </SimpleGrid>
+          <p className="w-muted w-small" style={{ marginTop: 'var(--w-5)' }}>
+            {t('plans.subFooter')}{paymentsEnabled() ? ` ${t('plans.subFooterPay')}` : ''}
+          </p>
+        </div>
+      )}
 
-        <Box id="todos-los-planes" style={{ scrollMarginTop: '90px' }} />
+      {activeTab === 'packs' && packs.length > 0 && (
+        <div id="plans-packs" role="tabpanel">
+          <SimpleGrid templateColumns="repeat(auto-fill, minmax(min(100%, 260px), 1fr))" gap={6} w="full" maxW={packs.length === 1 ? '420px' : packs.length === 2 ? '820px' : undefined}>
+            {packs.map(plan => <PackCard key={plan.id} plan={plan} dropIn={dropIn} highlighted={highlightId === plan.id} />)}
+          </SimpleGrid>
+          <p className="w-muted w-small" style={{ marginTop: 'var(--w-5)' }}>{t('plans.packFooter')}</p>
+        </div>
+      )}
 
-        {/* Tab toggle */}
-        {packs.length > 0 && subs.length > 0 && (
-          <MotionFlex
-            justify="center" mb={12}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.15 }}
-          >
-            <Flex
-              bg="var(--surface)"
-              backdropFilter="var(--surface-blur)"
-              style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
-              borderRadius="var(--radius-button)" p={1.5}
-              border="var(--border-width) solid var(--surface-border)"
-              boxShadow="var(--shadow-card)"
-              gap={1}
-            >
-              {([
-                { key: 'subs' as const, labelKey: 'plans.tabSubs', icon: 'infinity' as IconName },
-                { key: 'packs' as const, labelKey: 'plans.tabPacks', icon: 'bolt' as IconName },
-              ]).map(({ key, labelKey, icon }) => (
-                // Pestaña activa = botón principal del estilo (sk-btn)
-                <Button
-                  key={key}
-                  className={activeTab === key ? 'sk-btn' : undefined}
-                  onClick={() => setActiveTab(key)}
-                  borderRadius="var(--radius-button)"
-                  px={{ base: 4, md: 6 }} py={2}
-                  fontSize={{ base: 'xs', md: 'sm' }}
-                  fontWeight={600}
-                  fontFamily='var(--font-body)'
-                  cursor="pointer"
-                  bg="transparent"
-                  color={C.textMuted}
-                  boxShadow="none"
-                  _hover={activeTab !== key ? { color: C.brown, bg: 'var(--accent-soft)' } : {}}
-                  transition="all 0.25s ease"
-                  gap={1.5}
-                  border="none"
-                  minH="40px"
-                >
-                  <Icon name={icon} size={12} />
-                  {t(labelKey)}
-                </Button>
-              ))}
-            </Flex>
-          </MotionFlex>
-        )}
-
-        {/* Content */}
-        <AnimatePresence mode="wait">
-          {activeTab === 'packs' && packs.length > 0 && (
-            <motion.div key="packs" variants={tabVariants} initial="hidden" animate="visible" exit="exit">
-              <SimpleGrid
-                as={motion.div}
-                variants={containerVariants}
-                initial="hidden"
-                animate="visible"
-                columns={{ base: 1, sm: 2, lg: 4 }}
-                gap={6}
-              >
-                {packs.map(plan => <PackCard key={plan.id} plan={plan} dropIn={dropIn} highlighted={highlightId === plan.id} />)}
-              </SimpleGrid>
-              <MotionFlex justify="center" mt={10}
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.4 }}>
-                <Box className="sk-card" px={5} py={3}>
-                  <Text fontSize="sm" color={C.textMuted}
-                    fontFamily='var(--font-body)' textAlign="center">
-                    {t('plans.packFooter')}
-                  </Text>
-                </Box>
-              </MotionFlex>
-            </motion.div>
-          )}
-
-          {activeTab === 'subs' && subs.length > 0 && (
-            <motion.div key="subs" variants={tabVariants} initial="hidden" animate="visible" exit="exit">
-              <Flex justify="center">
-                <SimpleGrid
-                  as={motion.div}
-                  variants={containerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  columns={{ base: 1, md: 2, xl: Math.min(subs.length, 4) }}
-                  gap={6}
-                  maxW="1200px"
-                  w="full"
-                >
-                  {subs.map(plan => <SubCard key={plan.id} plan={plan} dropIn={dropIn} highlighted={highlightId === plan.id} />)}
-                </SimpleGrid>
-              </Flex>
-              <MotionFlex justify="center" mt={10}
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                transition={{ delay: 0.5, duration: 0.4 }}>
-                <Box className="sk-card" px={5} py={3}>
-                  <Text fontSize="sm" color={C.textMuted}
-                    fontFamily='var(--font-body)' textAlign="center">
-                    {t('plans.subFooter')}{paymentsEnabled() ? ` ${t('plans.subFooterPay')}` : ''}
-                  </Text>
-                </Box>
-              </MotionFlex>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* HTML del servidor: la pestaña no activa también va en el HTML (oculta)
-            para que buscadores e IA vean todos los precios. Tras hidratar, solo
-            la pestaña activa (como siempre). */}
-        {!hydrated && (
-          <div hidden>
-            {activeTab !== 'packs' && packs.map(plan => <PackCard key={plan.id} plan={plan} dropIn={dropIn} />)}
-            {activeTab !== 'subs' && subs.map(plan => <SubCard key={plan.id} plan={plan} dropIn={dropIn} />)}
+      {activeTab === 'single' && (
+        <div id="plans-single" role="tabpanel">
+          <div className="w-card w-price" style={{ maxWidth: 420 }}>
+            <span className="w-price-kind">{es ? 'Clase suelta' : 'Drop-in class'}</span>
+            <span className="w-price-amount">{formatPrice(dropIn, lang, 'auto')}</span>
+            <p>{es ? 'Paga solo la clase que reservas, sin compromiso. Ideal para probar.' : 'Pay only for the class you book, no commitment. Ideal to try us.'}</p>
+            <a className="w-btn sk-btn" href="/calendar" style={{ marginTop: 'var(--w-3)' }}>{t('nav.cta.book')}</a>
           </div>
-        )}
+          <details className="w-card" style={{ marginTop: 'var(--w-5)', padding: 'var(--w-4) var(--w-5)', maxWidth: 900 }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 700, minHeight: 44, display: 'flex', alignItems: 'center' }}>
+              {es ? '¿Cómo funcionan los créditos?' : 'How do credits work?'}
+            </summary>
+            <Box pt={4}><CreditsExplainer dropIn={dropIn} /></Box>
+          </details>
+        </div>
+      )}
 
-        {packs.length === 0 && subs.length === 0 && (
-          <Center py={20}>
-            <Text color={C.textMuted} fontFamily='var(--font-body)' fontSize="lg">
-              {t('plans.noPlans')}
-            </Text>
-          </Center>
-        )}
+      {/* Sin pagos online: los precios se ven, pero la compra es en el estudio
+          (debajo de los precios: primero lo que cuesta, después cómo pagarlo) */}
+      {!paymentsEnabled() && hasPlans && (
+        <Box className="sk-card" maxW="720px" mt={10} p={{ base: 5, md: 6 }} style={{ borderColor: 'var(--accent-border)' }}>
+          <PaymentsDisabledNotice />
+        </Box>
+      )}
 
-        {(packs.length > 0 || subs.length > 0) && <PlansHelp />}
-      </Box>
-    </Box>
+      {/* HTML del servidor: las pestañas no activas también van en el HTML
+          (ocultas) para que buscadores e IA vean todos los precios. */}
+      {!hydrated && (
+        <div hidden>
+          {activeTab !== 'packs' && packs.map(plan => <PackCard key={plan.id} plan={plan} dropIn={dropIn} />)}
+          {activeTab !== 'subs' && subs.map(plan => <SubCard key={plan.id} plan={plan} dropIn={dropIn} />)}
+        </div>
+      )}
+
+      {!hasPlans && (
+        <p className="w-muted" style={{ marginTop: 'var(--w-5)' }}>{t('plans.noPlans')}</p>
+      )}
+
+      {hasPlans && <PlansHelp />}
+    </div>
   );
 }
 
@@ -695,8 +600,7 @@ function SuscriptionPlans({ initialPlans }: { initialPlans?: ApiPlan[] | null })
   return (
     <Chakra>
       {loading ? (
-        <Center minH="400px"
-          bg={C.sectionBg}>
+        <Center minH="400px">
           <Spinner size="xl" color={C.accent} borderWidth="3px" />
         </Center>
       ) : (

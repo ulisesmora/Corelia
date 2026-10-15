@@ -3,26 +3,20 @@
 // nombre, colores, logo y textos salen de la config del estudio y el catálogo
 // de la API, así que el build no necesita el backend y re-marcar la web no
 // requiere redesplegar.
-import WelcomeSection from '../WelcomeSection';
 import App from '../App';
-import HorizontalScrollText from '../HorizontalScrollText';
-import ContactSection from '../Contact';
 import HeroWithVideo from '../VideoComponent';
-import OurClasses from '../OurClasses';
-import Team from '../Team';
-import RoomsSection from '../RoomsSection';
-import SuscriptionPlans from '../SuscriptionPlans';
 import Footer from '../Footer';
 import SiteHead from '../SiteHead.astro';
 import { PhoneUpdateDialogDeferred, PushNotificationsDeferred } from '../Deferred';
 import JsonLd from '../seo/JsonLd.astro';
-import FaqList from '../sections/FaqList.astro';
-import Testimonials from '../sections/Testimonials.astro';
-import Location from '../sections/Location.astro';
-import { abs, business, businessJsonLd, classPath, faqJsonLd, niceTitle, origin, robotsContent, type Lang } from '../../seo/site';
+import UpcomingClasses, { pickUpcoming } from './UpcomingClasses';
+import HomeSections from './HomeSections.astro';
+import LangBoot from '../site/LangBoot.astro';
+import { sectionOn } from '../../lib/sections';
+import { abs, business, businessJsonLd, faqJsonLd, origin, robotsContent, type Lang } from '../../seo/site';
 import {
-  getClassTypes, getFaqs, getInstructors, getPlans, getRooms, getSchedules, getSiteImages,
-  getTestimonials, offeredClasses, tr,
+  getClassTypes, getFaqs, getInstructors, getPlans, getSchedules, getSiteImages,
+  getTestimonials, getUpcomingSessions, offeredClasses, studioNow,
 } from '../../seo/catalog';
 import { getSiteConfig, htmlThemeAttrs, lt } from '../../lib/site';
 import { HERO_CSS, HERO_LABELS, heroArtVars, heroView } from '../../lib/hero';
@@ -37,17 +31,22 @@ const es = lang === 'es';
 // fallos (cada función devuelve null/[] si la API no responde). Las islas de
 // React lo reciben como props: el HTML del servidor ya trae clases, equipo,
 // salas, precios, FAQs y opiniones (buscadores e IA) y no repiten el fetch.
-const [site, classes, schedules, instructors, rooms, plans, faqs, testimonials, gallery, heroImgs] = await Promise.all([
-  getSiteConfig(), getClassTypes(), getSchedules(), getInstructors(), getRooms(), getPlans(),
-  getFaqs('home'), getTestimonials(), getSiteImages('gallery'), getSiteImages('hero'),
+// Portada corta y fácil de recorrer: hero · próximas clases · lo que
+// ofrecemos · precios · estudio y opiniones · dónde estamos. El contenido
+// largo vive en su página (clases, precios, /estudio, /contacto) y aquí solo
+// hay un resumen con «Ver todo →». Las FAQ siguen en el JSON-LD de la portada.
+const [site, classes, schedules, instructors, plans, faqs, testimonials, heroImgs, sessions] = await Promise.all([
+  getSiteConfig(), getClassTypes(), getSchedules(), getInstructors(), getPlans(),
+  getFaqs('home'), getTestimonials(), getSiteImages('hero'), getUpcomingSessions(),
 ]);
+const now = studioNow();
+const upcoming = pickUpcoming(sessions, now, 6);
 const offered = offeredClasses(classes, schedules);
 const b = business(site);
 // Portada (Ajustes → Portada): foto, vídeo de YouTube o ilustración (lib/hero.ts)
 const heroImg = heroImgs[0] || null;
 const view = heroView(site, heroImg?.image || '');
 const art = view.mode === 'illustration';
-const heroLogo = art && !view.theme?.dark ? (site.logo_url || site.logo_light_url) : site.logo_light_url;
 const heroVars = Object.entries(heroArtVars(view.theme)).map(([k, v]) => `${k}:${v}`).join(';');
 const HL = HERO_LABELS[lang];
 const headline = (es ? site.tagline : site.tagline_en) || (es ? 'Pilates, Yoga y movimiento' : 'Pilates, Yoga and movement');
@@ -60,9 +59,6 @@ const imgTitle = heroImg
 const imgSubtitle = heroImg && !es ? trStrict(heroImg, 'subtitle', 'en') : '';
 const heroTitle = lt(site.content, 'hero_title', lang) || imgTitle;
 const heroSubtitle = lt(site.content, 'hero_subtitle', lang) || imgSubtitle;
-// Cinta de texto: nombres de las clases que se ofrecen (sin repetir)
-const classNames = [...new Set(offered.map(({ cls }) => niceTitle(tr(cls, 'title', lang))))].slice(0, 8);
-const activeRooms = (rooms || []).filter((r) => r.is_active !== false);
 const PAGE = {
   url: abs(es ? '/' : '/en'),
   title: `${site.studio_name} · ${headline}`,
@@ -82,16 +78,13 @@ const jsonLd = [
   },
   faqJsonLd(faqs, lang),
 ].filter(Boolean);
-const L = {
-  ...(es
-    ? { classes: 'Clases', team: 'Nuestro equipo', rooms: 'Nuestras salas', contact: 'Contacto y ubicación', allClasses: 'Todas las clases' }
-    : { classes: 'Classes', team: 'Our team', rooms: 'Our studios', contact: 'Contact and location', allClasses: 'All classes' }),
-  // Los mismos textos que la isla React del hero (diccionario i18n)
-  book: String(D.heroVideo.comingSoon).trim(), explore: D.heroVideo.exploreBtn, prices: D.heroVideo.pricesBtn,
-};
+const L = es
+  ? { book: 'Reservar clase', see: 'Ver horario', next: 'Próximas clases', nextLead: 'Plazas en tiempo real. Reserva en un toque.', all: 'Ver el horario completo' }
+  : { book: 'Book a class', see: 'See timetable', next: 'Upcoming classes', nextLead: 'Live availability. Book in one tap.', all: 'See the full timetable' };
+const heading = heroTitle || headline;
 ---
 
-<html lang={lang} {...htmlThemeAttrs(site)} data-hero={art && !view.theme?.dark ? 'light' : undefined}>
+<html lang={lang} {...htmlThemeAttrs(site)}>
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -120,7 +113,6 @@ const L = {
     <link rel="preconnect" href="https://js.stripe.com" crossorigin>
     <link rel="dns-prefetch" href="https://js.stripe.com">
     {view.preload && <link rel="preload" as="image" href={view.preload} fetchpriority="high" />}
-    {heroLogo && <link rel="preload" as="image" href={heroLogo} fetchpriority="high" />}
 
     {/* Hero: CSS común de la réplica del servidor y de la isla React (lib/hero.ts).
         La réplica se ve al instante y es lo que mide Google como carga principal (LCP). */}
@@ -172,105 +164,60 @@ const L = {
       }
     `}</style>
 
-    {/* Idioma: la URL /en es la versión inglesa. Fijamos "en" en el store
-        persistido (zustand · clave site.lang) ANTES de que hidraten las islas,
-        así todo lo que pinta React sale ya en inglés y sin parpadeo. */}
-    {!es && (
-      <script is:inline>
-        try {
-          localStorage.setItem('site.lang', JSON.stringify({ state: { lang: 'en' }, version: 1 }));
-          localStorage.setItem('language_setup_complete', 'true');
-        } catch (e) {}
-        document.documentElement.lang = 'en';
-      </script>
-    )}
+    {/* Idioma de la página para las islas de React (sin parpadeo) */}
+    <LangBoot lang={lang} />
   </head>
 
   <body class="format">
-    {/* ABOVE THE FOLD — eager (client:only):
-        Hidratan inmediatamente porque el usuario los ve al cargar.
-        App necesita auth state al mount. HeroWithVideo pinta el hero. */}
     <App client:only="react" />
-    <HeroWithVideo client:only="react" heroImage={heroImg}>
-      <div slot="fallback" class={`hero hero--${art ? 'art' : view.mode}`} style={heroVars || undefined}>
-        {art
-          ? <div class="hero-art" aria-hidden="true" set:html={view.art} />
-          : <><div class="hero-media" aria-hidden="true" style={`background:${view.background}`}></div><div class="hero-overlay"></div></>}
-        <div class="hero-content">
-          {heroLogo
-            ? <img class="hero-logo" src={heroLogo} width="280" alt={site.studio_name} fetchpriority="high" />
-            : <span class="hero-name" aria-hidden="true">{site.studio_name}</span>}
-          {heroTitle
-            ? <h1 class="hero-title">{heroTitle}</h1>
-            : <h1 class="hero-sr">{site.studio_name} · {headline}</h1>}
-          {heroSubtitle && <p class="hero-sub">{heroSubtitle}</p>}
-          <a class="hero-cta" href="/calendar">{L.book} <span aria-hidden="true">→</span></a>
-          <div class="hero-row">
-            <a class="hero-ghost" href={es ? '/classes' : '/en/classes'}>{L.explore}</a>
-            <a class="hero-ghost" href={es ? '/prices' : '/en/prices'}>{L.prices}</a>
+    <main id="contenido">
+      <HeroWithVideo client:only="react" heroImage={heroImg}>
+        <section slot="fallback" class={`hero hero--${art ? 'art' : view.mode}`} style={heroVars || undefined}>
+          <div class="hero-in">
+            <div class="hero-content">
+              <h1 class="hero-title">{heading}</h1>
+              {heroSubtitle && <p class="hero-sub">{heroSubtitle}</p>}
+              <div class="hero-row">
+                <a class="hero-cta sk-btn" href="/calendar">{L.book}</a>
+                <a class="hero-ghost sk-btn-ghost" href="#proximas">{L.see}</a>
+              </div>
+            </div>
+            {art
+              ? <div class="hero-art" aria-hidden="true" set:html={view.art} />
+              : (
+                <div class="hero-media" style={`background:${view.background}`}>
+                  {/* Vídeo: antes de hidratar, póster y botón (nada se pide a YouTube) */}
+                  {view.mode === 'video' && (
+                    <button type="button" class="hero-play"><span aria-hidden="true">▶</span> {HL.play} <small>· {HL.playHint}</small></button>
+                  )}
+                </div>
+              )}
           </div>
+        </section>
+      </HeroWithVideo>
+
+      {sectionOn(site, 'next') && <section class="w-sec w-sec--tight" id="proximas" aria-labelledby="next-title">
+        <div class="w-wrap">
+          <div class="w-head">
+            <div>
+              <h2 class="w-h2" id="next-title">{L.next}</h2>
+              <p class="w-lead">{L.nextLead}</p>
+            </div>
+            <a class="w-more" href="/calendar">{L.all} <span aria-hidden="true">→</span></a>
+          </div>
+          <UpcomingClasses client:visible={{ rootMargin: '400px' }} lang={lang} initial={upcoming} now={now} />
         </div>
-        {/* Vídeo: antes de hidratar, póster y botón (nada se pide a YouTube) */}
-        {view.mode === 'video' && (
-          <button type="button" class="hero-play"><span aria-hidden="true">▶</span> {HL.play} <small>· {HL.playHint}</small></button>
-        )}
-      </div>
-    </HeroWithVideo>
+      </section>}
 
-    {/* BELOW THE FOLD — lazy con client:visible (IntersectionObserver de Astro):
-        - Astro renderiza el HTML en el servidor.
-        - El JS NO se descarga hasta que el componente está cerca del viewport.
-        - Una vez hidratado se queda montado, NO se desmonta al scrollear fuera.
-        - Cada sección reserva min-height para evitar Cumulative Layout Shift. */}
-
-    {/* Contenido renderizado en el servidor (client:visible con datos
-        iniciales): el HTML ya trae el texto; el JS de cada sección se descarga
-        cuando se acerca a la pantalla y la hace interactiva. */}
-    <div class="white-gradient">
-      <WelcomeSection client:visible lang={lang} initialImages={gallery.map((g) => g.image)} />
-      <HorizontalScrollText client:visible={{ rootMargin: "600px" }} lang={lang} phrases={classNames} />
-    </div>
-
-    <section id="clases" aria-label={L.classes}>
-      <OurClasses client:visible={{ rootMargin: "600px" }} lang={lang} initialClasses={classes || []} />
-      {offered.length > 0 && (
-        <nav class="class-links" aria-label={L.allClasses}>
-          {offered.map(({ cls }) => <a href={classPath(cls.slug, lang)}>{niceTitle(tr(cls, 'title', lang))}</a>)}
-        </nav>
-      )}
-    </section>
-
-    <section id="team" aria-label={L.team}>
-      <Team client:visible={{ rootMargin: "600px" }} lang={lang} initialInstructors={instructors || []} />
-    </section>
-
-    <section id="salas" aria-label={L.rooms}>
-      <RoomsSection client:visible={{ rootMargin: "600px" }} lang={lang} initialRooms={activeRooms} />
-    </section>
-
-    <div class="white-gradient">
-      <section id="precios">
-        <SuscriptionPlans client:visible={{ rootMargin: "600px" }} lang={lang} initialPlans={plans} />
-      </section>
-
-      <Testimonials items={testimonials} lang={lang} reviewUrl={site.google_review_url} />
-      <FaqList faqs={faqs} lang={lang} />
-
-      <section id="contacto" aria-label={L.contact}>
-        <ContactSection client:visible={{ rootMargin: "600px" }} lang={lang} />
-        <Location site={site} lang={lang} />
-      </section>
-    </div>
+      {/* Cada sección respeta el interruptor del panel y se oculta si no tiene contenido */}
+      {sectionOn(site, 'classes') && <HomeSections kind="offer" lang={lang} site={site} offered={offered} />}
+      {sectionOn(site, 'prices') && <HomeSections kind="prices" lang={lang} site={site} plans={plans} />}
+      {sectionOn(site, 'team') && <HomeSections kind="trust" lang={lang} site={site} instructors={instructors || []} testimonials={testimonials} />}
+      {sectionOn(site, 'location') && <HomeSections kind="visit" lang={lang} site={site} schedules={schedules} />}
+    </main>
 
     <Footer client:visible={{ rootMargin: "600px" }} lang={lang} />
     <PhoneUpdateDialogDeferred client:idle />
     <PushNotificationsDeferred client:idle />
-
-    <style>
-      /* Todas las clases como enlaces (las fichas): el carrusel solo enseña unas pocas */
-      .class-links { max-width: 1100px; margin: -1rem auto 3rem; padding: 0 1.25rem; display: flex; flex-wrap: wrap; justify-content: center; gap: .5rem; }
-      .class-links a { font-family: var(--font-body); text-transform: none; font-size: .9rem; font-weight: 600; padding: .45rem .9rem; border-radius: var(--radius-chip); text-decoration: none; color: var(--page-text); background: var(--surface); border: var(--border-width) solid var(--surface-border); }
-      .class-links a:hover { border-color: var(--accent); }
-    </style>
   </body>
 </html>

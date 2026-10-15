@@ -1,0 +1,88 @@
+---
+// «El estudio» (/estudio y /en/studio): todo lo que antes alargaba la portada,
+// ordenado en una página con subnavegación: sobre nosotros (texto y fotos),
+// equipo, salas y opiniones. Cada bloque solo aparece si tiene contenido.
+import AppFixed from '../AppFixed';
+import Footer from '../Footer';
+import WelcomeSection from '../WelcomeSection';
+import HorizontalScrollText from '../HorizontalScrollText';
+import Team from '../Team';
+import RoomsSection from '../RoomsSection';
+import OptimizedHead from '../OptimizedHead.astro';
+import JsonLd from '../seo/JsonLd.astro';
+import Testimonials from '../sections/Testimonials.astro';
+import LangBoot from '../site/LangBoot.astro';
+import { BRAND_CACHE, breadcrumbJsonLd, businessJsonLd, niceTitle, type Lang } from '../../seo/site';
+import { getClassTypes, getInstructors, getRooms, getSchedules, getSiteImages, getTestimonials, offeredClasses, tr } from '../../seo/catalog';
+import { getSiteConfig, htmlThemeAttrs, lt } from '../../lib/site';
+
+interface Props { lang: Lang }
+const { lang } = Astro.props;
+const es = lang === 'es';
+Astro.response.headers.set('Cache-Control', BRAND_CACHE);
+
+const [site, instructors, rooms, testimonials, gallery, classes, schedules] = await Promise.all([
+  getSiteConfig(), getInstructors(), getRooms(), getTestimonials(), getSiteImages('gallery'), getClassTypes(), getSchedules(),
+]);
+const team = instructors || [];
+const activeRooms = (rooms || []).filter((r) => r.is_active !== false);
+const classNames = [...new Set(offeredClasses(classes, schedules).map(({ cls }) => niceTitle(tr(cls, 'title', lang))))].slice(0, 8);
+const path = es ? '/estudio' : '/en/studio';
+const title = lt(site.content, 'about_title', lang) || (es ? 'El estudio' : 'The studio');
+const lead = es
+  ? `Quiénes somos, el equipo que te acompaña y los espacios de ${site.studio_name}.`
+  : `Who we are, the team that guides you and the spaces at ${site.studio_name}.`;
+const links = [
+  { id: 'sobre', label: es ? 'Sobre nosotros' : 'About us', show: true },
+  { id: 'equipo', label: es ? 'Equipo' : 'Team', show: team.length > 0 },
+  { id: 'salas', label: es ? 'Salas' : 'Rooms', show: activeRooms.length > 0 },
+  { id: 'opiniones', label: es ? 'Opiniones' : 'Reviews', show: testimonials.length > 0 || !!site.google_review_url },
+].filter((l) => l.show);
+const jsonLd = [
+  businessJsonLd(site, lang, { instructors: team, schedules }),
+  breadcrumbJsonLd([{ name: es ? 'Inicio' : 'Home', path: es ? '/' : '/en' }, { name: es ? 'El estudio' : 'The studio', path }]),
+];
+---
+<html lang={lang} {...htmlThemeAttrs(site)}>
+  <head>
+    <OptimizedHead
+      title={es ? 'El estudio y el equipo' : 'The studio and the team'}
+      titleEn="The studio and the team"
+      description={lead}
+      canonicalPath={path}
+      alternates={{ es: '/estudio', en: '/en/studio' }}
+    />
+    {jsonLd.map((d) => <JsonLd data={d} />)}
+    <LangBoot lang={lang} />
+  </head>
+  <body class="format">
+    <AppFixed client:only="react" />
+    <main id="contenido">
+      <header class="w-wrap w-pagehead">
+        <h1 class="w-h1">{title}</h1>
+        <p class="w-lead">{lead}</p>
+      </header>
+      {links.length > 1 && (
+        <nav class="w-subnav" aria-label={es ? 'En esta página' : 'On this page'}>
+          <div class="w-wrap">{links.map((l) => <a href={`#${l.id}`}>{l.label}</a>)}</div>
+        </nav>
+      )}
+      <section id="sobre" aria-label={es ? 'Sobre nosotros' : 'About us'}>
+        <WelcomeSection client:visible lang={lang} initialImages={gallery.map((g) => g.image)} />
+        {classNames.length > 0 && <HorizontalScrollText client:visible={{ rootMargin: '400px' }} lang={lang} phrases={classNames} />}
+      </section>
+      {team.length > 0 && (
+        <section id="equipo" aria-label={es ? 'Equipo' : 'Team'}>
+          <Team client:visible={{ rootMargin: '600px' }} lang={lang} initialInstructors={team} />
+        </section>
+      )}
+      {activeRooms.length > 0 && (
+        <section id="salas" aria-label={es ? 'Salas' : 'Rooms'}>
+          <RoomsSection client:visible={{ rootMargin: '600px' }} lang={lang} initialRooms={activeRooms} />
+        </section>
+      )}
+      <Testimonials items={testimonials} lang={lang} reviewUrl={site.google_review_url} />
+    </main>
+    <Footer client:visible={{ rootMargin: '600px' }} lang={lang} />
+  </body>
+</html>

@@ -1,0 +1,23 @@
+---
+// Idioma de la página para las islas de React: en /en/* fija "en" en el store
+// persistido (zustand · clave site.lang) ANTES de que hidraten, sin parpadeo.
+// En las páginas en español no hace nada (respeta lo que eligió la visitante
+// solo en páginas sin versión propia).
+interface Props { lang: 'es' | 'en' }
+const { lang } = Astro.props;
+---
+{lang === 'en' ? (
+  <script is:inline>
+    try {
+      localStorage.setItem('site.lang', JSON.stringify({ state: { lang: 'en' }, version: 1 }));
+      localStorage.setItem('language_setup_complete', 'true');
+    } catch (e) {}
+    document.documentElement.lang = 'en';
+  </script>
+) : (
+  <script is:inline>
+    try {
+      localStorage.setItem('site.lang', JSON.stringify({ state: { lang: 'es' }, version: 1 }));
+    } catch (e) {}
+  </script>
+)}

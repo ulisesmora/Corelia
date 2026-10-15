@@ -36,7 +36,7 @@ import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/E
 import { friendlyError } from '../utils/errors';
 import { currencySymbol, money, STUDIO_DROP_IN_PRICE } from '../site/money';
 import { API_BASE_URL } from '../config';
-import { StepGuide, useActionParam } from '../onboarding';
+import { useActionParam } from '../onboarding';
 
 // ====================================================================
 // 1. INTERFACES Y CONSTANTES
@@ -723,7 +723,7 @@ export default function PlanManagement() {
           />
         </Paper>
       ) : (
-        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))' }}>
+        <Box data-tour="list" sx={{ display: 'grid', gap: 2, gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 320px), 1fr))' }}>
           {list.map((plan) => (
             <PlanCard
               key={plan.id}
@@ -744,32 +744,21 @@ export default function PlanManagement() {
 
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
-      <StepGuide step="plans" />
       <PageIntro
         pageKey="plans"
         title="Bonos y precios"
-        subtitle="Los bonos y las membresías que las clientas compran en la web. Lo que cambies aquí se ve en la web en unos minutos."
+        subtitle="Lo que tus clientas compran en la web."
         actions={
           <Button variant="contained" size="large" startIcon={<AddIcon />} onClick={() => handleOpenCreate('pack')}>
             Crear bono o membresía
           </Button>
         }
-        steps={[
-          { title: 'Busca el que quieres cambiar', text: 'Arriba están los bonos (se pagan una vez) y debajo las membresías (se cobran solas).' },
-          { title: 'Pulsa «Cambiar»', text: 'Se abre una ventana con los pasos: precio, créditos, cuándo caducan…' },
-          { title: 'Revisa el resumen y guarda', text: 'Abajo del todo verás en una frase cómo quedará. Si todo está bien, pulsa «Guardar».' },
-        ]}
-        tips={[
-          <>Si quieres dejar de vender uno, pulsa <b>«Ocultar de la web»</b> en lugar de borrarlo: así puedes volver a ponerlo cuando quieras.</>,
-          <>Cambiar el precio de una <b>membresía</b> solo afecta a las clientas nuevas: las que ya la tienen siguen pagando lo mismo.</>,
-          <>Recuerda: una clase de suelo gasta 1 crédito y una de máquinas (Reformer o Chair) gasta 2. La clase suelta cuesta {fmtEur(singleClassPrice())}.</>,
-        ]}
       />
 
       {plans.length > 6 && (
         <TextField
           fullWidth
-          label="Buscar un bono o membresía"
+          data-tour="search" label="Buscar un bono o membresía"
           placeholder="Ej.: 8 clases, Basic…"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}

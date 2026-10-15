@@ -88,6 +88,10 @@ export interface StudioSettings {
   font_heading: string;
   font_body: string;
   style_preset: string;
+  /** Paleta del estilo ('' = colores propios). Al elegirla, el API escribe sus colores en color_* */
+  palette: string;
+  /** Pareja de letra del estilo ('' = letra propia) */
+  font_pair: string;
   icon_style: string;
   /** El panel usa también el estilo de la web (si no, su aspecto clásico) */
   panel_follows_style: boolean;
@@ -125,6 +129,12 @@ export interface StudioSettings {
   /** Solo lectura: pagos cobrados por moneda (los antiguos guardan la suya) */
   payment_currencies: { currency: string; count: number }[];
 }
+
+/** Lo que se guarda en el paso «Tu estilo» (asistente, guía y Ajustes → Aspecto). */
+export const STYLE_FIELDS = [
+  'style_preset', 'palette', 'font_pair', 'icon_style', 'color_primary', 'color_secondary', 'color_dark',
+  'color_background', 'font_heading', 'font_body',
+] as const;
 
 /** Campos que se pueden escribir (más la contraseña SMTP, que nunca se lee). */
 export type StudioSettingsPatch = Partial<Omit<StudioSettings,

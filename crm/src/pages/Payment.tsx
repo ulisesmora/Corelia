@@ -369,22 +369,12 @@ export default function PaymentViewer() {
       <PageIntro
         pageKey="payments"
         title="Pagos"
-        subtitle="Lo que las clientas han pagado con tarjeta en la web: clases sueltas, bonos y membresías. Aquí solo se mira: no se cobra ni se devuelve nada."
+        subtitle="Lo que te han pagado con tarjeta. Aquí solo se mira."
         actions={
           <Button variant="outlined" size="large" startIcon={<RefreshIcon />} onClick={fetchPayments} disabled={loading}>
             {loading ? 'Actualizando…' : 'Actualizar'}
           </Button>
         }
-        steps={[
-          { title: 'Elige el periodo', text: 'Por ejemplo «Este mes». Arriba verás en grande cuánto se ha cobrado.' },
-          { title: 'Elige qué pagos ver', text: 'Normalmente «Cobrados». «Sin terminar» son pagos que alguien empezó y no acabó.' },
-          { title: 'Busca a una clienta', text: 'Escribe su nombre o su email para ver solo sus pagos.' },
-          { title: 'Pulsa «Ver» para el detalle', text: 'Verás quién pagó, cuánto, cuándo y qué significa su estado.' },
-        ]}
-        tips={[
-          <>Los <b>cobros automáticos de cada mes</b> de las membresías no salen en esta lista (solo el primer pago). Si necesitas verlos, pídeselo a soporte técnico.</>,
-          <>Los pagos <b>«Sin terminar»</b> no son dinero cobrado: suelen ser personas que abrieron la página de pago y la cerraron.</>,
-        ]}
       />
 
       {/* Periodo */}
@@ -516,7 +506,7 @@ export default function PaymentViewer() {
           </Stack>
           <TextField
             fullWidth
-            label="Buscar clienta"
+            data-tour="search" label="Buscar clienta"
             placeholder="Nombre, email o importe"
             helperText="Ej.: Marta, marta@gmail.com o 50"
             value={searchTerm}

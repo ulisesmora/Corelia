@@ -66,18 +66,28 @@ export default function HeroWithVideo({ heroImage = null }: Props) {
   }, [view.mode]);
 
   const art = view.mode === 'illustration';
-  // Logo: sobre la ilustración clara va el normal (oscuro); sobre foto u oscuro, el claro
-  const logo = art && !view.theme?.dark ? (site.logo_url || site.logo_light_url) : site.logo_light_url;
-  const homePrefix = lang === 'en' ? '/en' : '';
   const style = { ...heroArtVars(view.theme) } as CSSProperties;
+  // Sin título propio: el lema del estudio o su nombre (siempre hay un h1 visible)
+  const heading = title || (lang === 'en' ? site.tagline_en : site.tagline)
+    || (lang === 'en' ? 'Pilates, Yoga and movement' : 'Pilates, Yoga y movimiento');
+  const seeTimetable = lang === 'en' ? 'See timetable' : 'Ver horario';
 
   return (
-    <div id="menu" className={`hero hero--${art ? 'art' : view.mode}`} style={style}>
-      {art ? (
-        <div className="hero-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: view.art }} />
-      ) : (
-        <>
-          <div className="hero-media" aria-hidden="true" style={{ background: view.background }}>
+    <section id="menu" className={`hero hero--${art ? 'art' : view.mode}`} style={style}>
+      <div className="hero-in">
+        <div className="hero-content">
+          <h1 className="hero-title">{heading}</h1>
+          {subtitle && <p className="hero-sub">{subtitle}</p>}
+          <div className="hero-row">
+            <a className="hero-cta sk-btn" href="/calendar">{t('nav.cta.book')}</a>
+            <a className="hero-ghost sk-btn-ghost" href="#proximas">{seeTimetable}</a>
+          </div>
+        </div>
+
+        {art ? (
+          <div className="hero-art" aria-hidden="true" dangerouslySetInnerHTML={{ __html: view.art }} />
+        ) : (
+          <div className="hero-media" style={{ background: view.background }}>
             {view.mode === 'video' && playing && (
               <iframe
                 className={`hero-video${visible ? ' is-on' : ''}`}
@@ -89,37 +99,20 @@ export default function HeroWithVideo({ heroImage = null }: Props) {
                 onLoad={() => window.setTimeout(() => setVisible(true), 1200)}
               />
             )}
+            {view.mode === 'video' && (
+              playing ? (
+                <button type="button" className="hero-play" onClick={() => { setPlaying(false); setVisible(false); }}>
+                  <span aria-hidden="true">❚❚</span> {L.pause}
+                </button>
+              ) : (
+                <button type="button" className="hero-play" onClick={() => setPlaying(true)}>
+                  <span aria-hidden="true">▶</span> {L.play} <small>· {L.playHint}</small>
+                </button>
+              )
+            )}
           </div>
-          <div className="hero-overlay" />
-        </>
-      )}
-
-      <div className="hero-content">
-        {logo
-          ? <img className="hero-logo" src={logo} width={280} alt={site.studio_name} fetchPriority="high" />
-          : <span className="hero-name" aria-hidden="true">{site.studio_name}</span>}
-        {title
-          ? <h1 className="hero-title">{title}</h1>
-          : <h1 className="hero-sr">{[site.studio_name, lang === 'en' ? (site.tagline_en || site.tagline) : site.tagline].filter(Boolean).join(' · ')}</h1>}
-        {subtitle && <p className="hero-sub">{subtitle}</p>}
-        <a className="hero-cta" href="/calendar">{t('home.heroVideo.comingSoon').trim()} <span aria-hidden="true">→</span></a>
-        <div className="hero-row">
-          <a className="hero-ghost" href={`${homePrefix}/classes`}>{t('home.heroVideo.exploreBtn')}</a>
-          <a className="hero-ghost" href={`${homePrefix}/prices`}>{t('home.heroVideo.pricesBtn')}</a>
-        </div>
+        )}
       </div>
-
-      {view.mode === 'video' && (
-        playing ? (
-          <button type="button" className="hero-play" onClick={() => { setPlaying(false); setVisible(false); }}>
-            <span aria-hidden="true">❚❚</span> {L.pause}
-          </button>
-        ) : (
-          <button type="button" className="hero-play" onClick={() => setPlaying(true)}>
-            <span aria-hidden="true">▶</span> {L.play} <small>· {L.playHint}</small>
-          </button>
-        )
-      )}
-    </div>
+    </section>
   );
 }

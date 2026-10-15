@@ -17,7 +17,7 @@ import { authHeaders } from '../utils/auth';
 import { PhotoPicker } from '../components/guide';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { API_BASE_URL } from '../config';
-import { ClassTemplatesDialog, PREREQ, StepGuide, TEMPLATES_UI, useActionParam } from '../onboarding';
+import { ClassTemplatesDialog, PREREQ, TEMPLATES_UI, useActionParam } from '../onboarding';
 import { useStudioWebUrl } from '../site/SiteProvider';
 import { currencySymbol, money } from '../site/money';
 
@@ -390,16 +390,10 @@ export default function ClassTypeManagement() {
 
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
-      <StepGuide step="class_types" />
       <PageIntro
         pageKey="class-types"
         title="Tipos de clase"
-        subtitle={(
-          <>
-            Aquí decides <strong>qué clases ofreces</strong>: su nombre, foto, descripción y precio. Es lo que ven las
-            clientas en la web. <strong>Cuándo</strong> se dan (día y hora) se pone después en «Mis clases y horarios».
-          </>
-        )}
+        subtitle="Qué clases ofreces: nombre, foto, descripción y precio. El horario va en el Calendario."
         actions={(
           <>
             <Button variant="outlined" onClick={() => setTemplatesOpen(true)}>
@@ -410,21 +404,11 @@ export default function ClassTypeManagement() {
             </Button>
           </>
         )}
-        steps={[
-          { title: 'Pulsa «Añadir un tipo de clase»', text: 'O «Editar» en una clase que ya exista para cambiar su foto, texto o precio.' },
-          { title: 'Rellena los pasos de la ventana', text: 'Nombre, categoría, foto, descripción, duración y precio.' },
-          { title: 'Pulsa «Guardar»', text: 'Saldrá un aviso verde abajo. Con «Ver en la web» compruebas cómo ha quedado.' },
-          { title: 'Ponle días y horas', text: 'En «Mis clases y horarios», para que las clientas puedan reservarla.' },
-        ]}
-        tips={[
-          'Si cambias el precio, se aplica a las reservas nuevas. Las que ya están hechas no cambian.',
-          'Los cambios pueden tardar unos 5 minutos en verse en la portada de la web.',
-        ]}
       />
 
       <TextField
         fullWidth
-        label="Buscar una clase"
+        data-tour="search" label="Buscar una clase"
         placeholder="Nombre, categoría o instructor…"
         value={searchTerm}
         onChange={(e) => {
@@ -469,7 +453,7 @@ export default function ClassTypeManagement() {
         />
       ) : (
         <>
-          <Stack spacing={2}>
+          <Stack spacing={2} data-tour="list">
             {paginatedClassTypes.map((ct) => {
               const credits = Number(ct.default_price_credits);
               const eur = Number(ct.default_price_eur);

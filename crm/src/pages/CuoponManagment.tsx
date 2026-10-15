@@ -486,28 +486,18 @@ export default function CouponManagement() {
       <PageIntro
         pageKey="coupons"
         title="Cupones de descuento"
-        subtitle="Códigos que las clientas escriben al pagar en la web para tener un descuento. Ej.: VERANO10."
+        subtitle="Códigos de descuento para pagar en la web, como VERANO10."
         actions={
           <Button variant="contained" size="large" startIcon={<AddIcon />} onClick={handleOpenCreate}>
             Crear un cupón
           </Button>
         }
-        steps={[
-          { title: 'Pulsa «Crear un cupón»', text: 'Elige el código que escribirán las clientas, por ejemplo VERANO10.' },
-          { title: 'Di cuánto descuenta', text: `Un porcentaje (10 %) o una cantidad fija (${fmtEur(5)}).` },
-          { title: 'Elige las fechas y cuántas veces se puede usar', text: 'Antes de guardar verás un resumen en una frase.' },
-          { title: 'Compártelo', text: 'Pulsa «Copiar» y pégalo en un mensaje, en Instagram o en un aviso a clientas.' },
-        ]}
-        tips={[
-          <>Si quieres que un cupón deje de funcionar, pulsa <b>«Desactivar»</b>: puedes volver a activarlo más tarde. Si lo borras, ya no podrás reutilizar ese código.</>,
-          <>En las <b>membresías</b>, el descuento solo se aplica al <b>primer cobro</b>; los siguientes meses se cobra el precio normal.</>,
-        ]}
       />
 
       {coupons.length > 5 && (
         <TextField
           fullWidth
-          label="Buscar un cupón"
+          data-tour="search" label="Buscar un cupón"
           placeholder="Escribe parte del código. Ej.: VERANO"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}

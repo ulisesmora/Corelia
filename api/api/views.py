@@ -738,8 +738,9 @@ class RecurringScheduleViewSet(SoftDeleteModelViewSet):
         capacity_min, capacity_max, price_credits_override, price_eur_override,
         override_instructor, class_type.
 
-        Limitación: si el cambio NO altera sala/día/hora, la BD impide dos
-        reglas activas idénticas — en ese caso edita la regla directamente.
+        Si el cambio NO altera sala/día/hora (p. ej. solo la profesora o las
+        plazas), también vale: la regla vieja queda con fecha de fin y la BD
+        solo exige una regla ABIERTA por sala/día/hora.
         """
         schedule = self.get_object()
 
@@ -780,82 +781,21 @@ class RecurringScheduleViewSet(SoftDeleteModelViewSet):
                           'de la semana (y no estás terminándola). Usa "cancel" o "keep".'},
                 status=status.HTTP_400_BAD_REQUEST)
 
-        def _parse_time(v):
-            if isinstance(v, str):
-                return datetime.strptime(v[:5], '%H:%M').time()
-            return v
-
+        # La lógica vive en api/utils/calendar_ops.py (la usa también el
+        # calendario del panel: «Esta y las siguientes»).
+        from api.utils.calendar_ops import CalendarError, apply_schedule_from
         try:
-            with transaction.atomic():
-                schedule.end_date = effective_date - timedelta(days=1)
-                schedule.save(update_fields=['end_date', 'updated_at'])
-
-                new_schedule = None
-                if not end_only:
-                    new_schedule = RecurringSchedule(
-                        class_type_id=changes.get('class_type', schedule.class_type_id),
-                        room_id=changes.get('room', schedule.room_id),
-                        weekday=changes.get('weekday', schedule.weekday),
-                        start_time=_parse_time(changes.get('start_time', schedule.start_time)),
-                        end_time=_parse_time(changes.get('end_time', schedule.end_time)),
-                        capacity_min=changes.get('capacity_min', schedule.capacity_min),
-                        capacity_max=changes.get('capacity_max', schedule.capacity_max),
-                        price_credits_override=changes.get('price_credits_override', schedule.price_credits_override),
-                        price_eur_override=changes.get('price_eur_override', schedule.price_eur_override),
-                        override_instructor_id=changes.get('override_instructor', schedule.override_instructor_id),
-                        is_recurrent=schedule.is_recurrent,
-                        is_active=True,
-                        start_date=effective_date,
-                        end_date=None,
-                    )
-                    # Continuación de una clase existente, no una clase nueva:
-                    # suprime el email/push masivo de "nueva clase disponible".
-                    new_schedule._skip_broadcast = True
-                    new_schedule.save()
-
-                    # Migrar las preferencias de auto-reserva a la regla nueva
-                    UserClassPreference.objects.filter(
-                        schedule=schedule, is_active=True, deleted_at__isnull=True,
-                    ).update(schedule=new_schedule)
-        except IntegrityError:
-            return Response(
-                {'error': 'Ya existe una regla activa con esa sala, día y hora. '
-                          'Si el cambio no toca sala/día/hora, edita la regla directamente.'},
-                status=status.HTTP_400_BAD_REQUEST
+            result = apply_schedule_from(
+                schedule, effective_date, changes, end_only=end_only,
+                existing_mode=existing_mode, user=request.user,
             )
+        except CalendarError as e:
+            return Response({'error': e.message}, status=status.HTTP_400_BAD_REQUEST)
+        new_schedule = result['new_schedule']
+        moved = result['bookings_moved']
+        cancelled = result['bookings_cancelled']
+        refunded = result['bookings_refunded']
 
-        # Gestionar reservas existentes según lo pedido
-        moved = cancelled = refunded = 0
-        from api.utils.reschedule import move_bookings_to, cancel_future_bookings
-        if existing_mode == 'move' and new_schedule:
-            moved = move_bookings_to(
-                schedule, new_schedule,
-                new_schedule.start_time, new_schedule.end_time,
-                from_date=effective_date,
-            )
-        elif existing_mode == 'cancel':
-            cancelled, refunded = cancel_future_bookings(
-                schedule, effective_date,
-                reason='Cambio de horario' if not end_only else 'Clase finalizada',
-            )
-
-        # La clase TERMINA sin sustituta: las preferencias de auto-reserva se
-        # desactivan y cada suscriptora recibe alternativas por email+push
-        # (antes quedaban activas apuntando a una regla muerta y la
-        # auto-reserva las saltaba en silencio).
-        if end_only:
-            from api.utils.replacement import retire_schedule_preferences
-            retire_schedule_preferences(
-                schedule, f'termina el {effective_date:%d/%m/%Y}'
-            )
-
-        logger.info(
-            "schedule.apply_from schedule_id=%s effective=%s end_only=%s new_id=%s "
-            "existing=%s moved=%s cancelled=%s admin_id=%s",
-            schedule.id, effective_date, end_only,
-            new_schedule.id if new_schedule else None,
-            existing_mode, moved, cancelled, request.user.id,
-        )
         return Response({
             'status': 'success',
             'old_schedule': RecurringScheduleReadSerializer(schedule).data,
@@ -2414,9 +2354,15 @@ class CreateCheckoutSessionView(APIView):
                         start_datetime=booking_data['start_datetime'],
                         status__in=['reserved', 'attended'],
                     ).count()
+                    # Las plazas ofrecidas a la lista de espera también cuentan
+                    from api.utils.waitlist import full_class_payload, seats_taken, wall_date as _wl_date
+                    slot_day = _wl_date(booking_data['start_datetime'])
+                    if slot_day is not None:
+                        reserved_count = max(reserved_count, seats_taken(schedule_obj, slot_day))
                     if reserved_count >= schedule_obj.capacity_max:
                         return Response(
-                            {'error': f'La clase "{schedule_obj.class_type.title}" está completa para el horario seleccionado.'},
+                            {'error': f'La clase "{schedule_obj.class_type.title}" está completa para el horario seleccionado.',
+                             **full_class_payload(schedule_obj, booking_data['start_datetime'])},
                             status=status.HTTP_400_BAD_REQUEST,
                         )
                 Booking.objects.create(
@@ -3758,15 +3704,23 @@ class CreateBookingWithCreditsView(APIView):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Verificar capacidad máxima
+            # Verificar capacidad máxima. Las plazas ofrecidas a la lista de
+            # espera (y aún sin caducar) cuentan como ocupadas, salvo la suya.
             reserved_count = Booking.objects.filter(
                 occurrence_id=locked_schedule.id,
                 start_datetime=booking_data['start_datetime'],
                 status__in=['reserved', 'attended'],
             ).count()
+            from api.utils.waitlist import full_class_payload, seats_taken, wall_date as _wl_date
+            slot_day = _wl_date(booking_data['start_datetime'])
+            if slot_day is not None:
+                reserved_count = max(reserved_count, seats_taken(locked_schedule, slot_day, exclude_user_id=user.id))
             if reserved_count >= locked_schedule.capacity_max:
+                # code='class_full' + waitlist=True → la web puede ofrecer
+                # «Apuntarme a la lista de espera» (POST /api/v1/waitlist/).
                 return Response(
-                    {'error': f'La clase "{locked_schedule.class_type.title}" está completa.'},
+                    {'error': f'La clase "{locked_schedule.class_type.title}" está completa.',
+                     **full_class_payload(locked_schedule, booking_data['start_datetime'])},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 

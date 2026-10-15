@@ -394,7 +394,8 @@ interface Blackout {
   schedule_title: string | null;
   start_datetime: string;
   end_datetime: string;
-  kind: 'vacation' | 'closed' | 'private';
+  // 'canceled' y 'moved' los crea el Calendario (cancelar / mover una sola clase)
+  kind: 'vacation' | 'closed' | 'private' | 'canceled' | 'moved';
   reason: string | null;
   created_at: string;
 }
@@ -405,10 +406,12 @@ const KIND_META: Record<Kind, { label: string; color: 'warning' | 'default' | 's
   vacation: { label: 'Vacaciones o festivo', color: 'warning', icon: <BeachAccessIcon fontSize="small" /> },
   closed: { label: 'Cerrado', color: 'default', icon: <EventBusyIcon fontSize="small" /> },
   private: { label: 'Clase privada', color: 'secondary', icon: <LockIcon fontSize="small" /> },
+  canceled: { label: 'Clase cancelada', color: 'default', icon: <EventBusyIcon fontSize="small" /> },
+  moved: { label: 'Sesión movida', color: 'default', icon: <EventBusyIcon fontSize="small" /> },
 };
 
 /** Cierres que se crearon solos al usar "Mover solo un día" */
-const isMovedSession = (b: Blackout) => /^Sesi[oó]n movida/i.test(b.reason || '');
+const isMovedSession = (b: Blackout) => b.kind === 'moved' || /^Sesi[oó]n movida/i.test(b.reason || '');
 
 export type BlackoutCase = 'estudio' | 'clase-dia' | 'horas' | 'privada' | 'otro';
 

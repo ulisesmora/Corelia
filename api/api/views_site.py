@@ -166,7 +166,22 @@ class SiteConfigSerializer(serializers.ModelSerializer):
         if mode == 'video' and not video:
             raise serializers.ValidationError(
                 {'hero_video_url': 'Pega el enlace del vídeo de YouTube que quieres en la portada.'})
-        return attrs
+        return self._resolve_theme(attrs)
+
+    def _resolve_theme(self, attrs):
+        """Paleta y letra: elegir una paleta escribe sus colores en color_*;
+        los colores propios se corrigen para que se lean (api/utils/palettes.py)."""
+        from api.utils.palettes import THEME_FIELDS, ThemeError, resolve_theme
+        if not any(f in attrs for f in THEME_FIELDS):
+            return attrs
+        instance = self.instance or SiteConfig()
+        current = {f: getattr(instance, f) for f in THEME_FIELDS}
+        incoming = {f: attrs[f] for f in THEME_FIELDS if f in attrs}
+        try:
+            resolved = resolve_theme(current, incoming)
+        except ThemeError as e:
+            raise serializers.ValidationError({e.field: e.message})
+        return {**attrs, **resolved}
 
     def get_hero_video_id(self, obj):
         from api.utils.youtube import youtube_id
@@ -333,6 +348,7 @@ def _hero_payload(cfg: SiteConfig) -> dict:
 
 def public_config_payload(cfg: SiteConfig) -> dict:
     from api.utils.locale import normalize_country, normalize_currency
+    from api.utils.palettes import public_theme_slugs
     from api.utils.payments import payments_enabled, publishable_key, stripe_account_for_js
     vapid_public, _ = ensure_vapid_keys(cfg)
     enabled = payments_enabled()
@@ -387,6 +403,9 @@ def public_config_payload(cfg: SiteConfig) -> dict:
             'font_heading': cfg.font_heading,
             'font_body': cfg.font_body,
             'style': cfg.style_preset,
+            # Paleta y pareja de letra del estilo ('' = propias). Los colores y
+            # las fuentes de arriba son siempre los efectivos.
+            **public_theme_slugs(cfg.style_preset, cfg.palette, cfg.font_pair),
             'icons': cfg.icon_style,
             # El panel también sigue el estilo (si no, su aspecto clásico)
             'panel_follows_style': cfg.panel_follows_style,

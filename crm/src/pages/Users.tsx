@@ -356,27 +356,17 @@ export default function Admins() {
       <PageIntro
         pageKey="admins"
         title="Administradores"
-        subtitle="Las personas que pueden entrar en este programa (el CRM) con su email y su contraseña."
+        subtitle="Quién puede entrar en este panel."
         actions={
           <Button variant="contained" size="large" startIcon={<PersonAddIcon />} onClick={handleOpenCreate}>
             Añadir administrador
           </Button>
         }
-        steps={[
-          { title: 'Pulsa «Añadir administrador»', text: 'Arriba a la derecha.' },
-          { title: 'Escribe su email y una contraseña', text: `Mínimo ${MIN_PASSWORD} letras o números. Apúntala para dársela.` },
-          { title: 'Dale sus datos de acceso', text: <>Que entre en <b>{loginUrl}</b> con ese email y esa contraseña.</> },
-          { title: 'Para quitar el acceso', text: 'Pulsa «Quitar acceso» en su fila. Te pediremos confirmación.' },
-        ]}
-        tips={[
-          <>Da acceso solo a personas de confianza: <b>podrán ver y cambiar todo</b> (clientas, créditos, pagos y horario).</>,
-          <>Las clientas no aparecen aquí: están en «Clientas».</>,
-        ]}
       />
 
       <TextField
         fullWidth
-        label="Buscar"
+        data-tour="search" label="Buscar"
         placeholder="Email o nombre"
         value={searchTerm}
         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}

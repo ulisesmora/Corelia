@@ -1,235 +1,103 @@
 'use client';
-
-import { Box, Flex, Text, SimpleGrid } from '@chakra-ui/react';
-import { motion } from 'framer-motion';
-import Chakra from './ChakraProvider';
-import { Icon as SiteIcon, type IconName } from './ui/Icon';
+// Pie de la web (todas las páginas): marca y redes · Explora (los 5 enlaces
+// principales) · Visítanos (dirección y contacto) · Más (FAQ, promociones,
+// cuenta, legales). Zona profunda del estilo (.sk-deep) y estilos .w-ft en
+// styles/site.css. Lo que el estudio no ha rellenado no se pinta.
 import { useMemo } from 'react';
+import { Icon, type IconName } from './ui/Icon';
 import { useT } from '../i18n';
-import BrandLogo from './BrandLogo';
 import { useLangStore, withSsrLang } from './stores/lang.store';
-import { addressLine, instagramHandle, instagramUrl, mapsUrl, phoneHref, socialProfiles, useSite, whatsappUrl, type SocialNetwork } from '../lib/site';
-
-// Zona profunda: tokens --deep-* del estilo visual (presets.css)
-const C = {
-  accent: 'var(--brand-primary-on-dark)', border: 'var(--deep-border)',
-  textMuted: 'var(--deep-muted)', textLight: 'color-mix(in srgb, var(--deep-text) 40%, transparent)',
-  text: 'var(--deep-text)',
-};
-
-// Color del logo de cada red sobre la zona profunda (tonos claros, legibles en oscuro)
-const SOCIAL_COLOR: Record<SocialNetwork, string> = {
-  instagram: '#F472B6', facebook: '#60A5FA', tiktok: 'var(--deep-text)', youtube: '#F87171',
-  'google-business': 'var(--deep-text)',
-};
-const SOCIAL_LABEL_ES: Partial<Record<SocialNetwork, string>> = { 'google-business': 'Ficha de Google' };
-const SOCIAL_LABEL_EN: Partial<Record<SocialNetwork, string>> = { 'google-business': 'Google Business Profile' };
+import {
+  addressLine, instagramHandle, instagramUrl, mapsUrl, phoneHref, socialProfiles, useSite, whatsappUrl,
+} from '../lib/site';
 
 function FooterInner() {
   const t = useT();
   const site = useSite();
   const lang = useLangStore((st) => st.lang);
+  const en = lang === 'en';
   const year = useMemo(() => new Date().getFullYear(), []);
-  const homeHref = t('nav.items.home.href') || '/';
-  const classesHref = t('nav.items.classes.href') || '/classes';
 
-  // Contacto y redes desde la config del estudio: lo que esté vacío no se muestra
   const wa = whatsappUrl(site);
-  const ig = instagramUrl(site);
   const tel = phoneHref(site);
+  const ig = instagramUrl(site);
   const address = addressLine(site);
-  const socialLinks = [
-    ...socialProfiles(site).map((p) => ({
-      icon: p.network as IconName, href: p.url, color: SOCIAL_COLOR[p.network],
-      label: (lang === 'en' ? SOCIAL_LABEL_EN : SOCIAL_LABEL_ES)[p.network] || p.label,
-    })),
-    wa && { icon: 'whatsapp' as IconName, href: wa, label: 'WhatsApp', color: '#4ADE80' },
-  ].filter(Boolean) as { icon: IconName; href: string; label: string; color: string }[];
-  const contactItems = [
+  const social = [
+    ...socialProfiles(site).map((p) => ({ icon: p.network as IconName, href: p.url, label: p.label })),
+    wa ? { icon: 'whatsapp' as IconName, href: wa, label: 'WhatsApp' } : null,
+  ].filter(Boolean) as { icon: IconName; href: string; label: string }[];
+
+  const explore = (['classes', 'calendar', 'prices', 'studio', 'contact'] as const)
+    .map((k) => ({ label: t(`nav.items.${k}.label`), href: t(`nav.items.${k}.href`) }));
+  const more = [
+    { label: t('nav.items.faq.label'), href: t('nav.items.faq.href') },
+    { label: t('nav.items.promos.label'), href: t('nav.items.promos.href') },
+    { label: t('nav.cta.account'), href: '/dashboard' },
+    { label: t('nav.items.terms.label'), href: t('nav.items.terms.href') },
+  ];
+  const contact = [
+    address && { icon: 'map-pin' as IconName, text: address, href: mapsUrl(site) },
+    (wa || tel) && site.contact.phone && { icon: (wa ? 'whatsapp' : 'phone') as IconName, text: site.contact.phone, href: wa || tel },
     site.contact.email && { icon: 'mail' as IconName, text: site.contact.email, href: `mailto:${site.contact.email}` },
-    wa && { icon: 'whatsapp' as IconName, text: site.contact.phone || 'WhatsApp', href: wa },
-    !wa && tel && { icon: 'phone' as IconName, text: site.contact.phone, href: tel },
-    ig && !wa && { icon: 'instagram' as IconName, text: `@${instagramHandle(site)}`, href: ig },
-    address && { icon: 'map-pin' as IconName, text: address, href: mapsUrl(site) || '#' },
+    ig && !social.some((s) => s.icon === 'instagram') && { icon: 'instagram' as IconName, text: `@${instagramHandle(site)}`, href: ig },
   ].filter(Boolean) as { icon: IconName; text: string; href: string }[];
-  const tagline = site.tagline || site.contact.city;
+  const tagline = (en ? site.tagline_en || site.tagline : site.tagline) || site.contact.city;
 
   return (
-    <Box
-      as="footer"
-      // Fondo y texto de la zona profunda (--deep-bg / --deep-text)
-      className="sk-deep"
-      position="relative"
-      w="100%"
-      borderTop={`1px solid ${C.border}`}
-      overflow="hidden"
-    >
-      {/* Grain texture */}
-      <Box position="absolute" inset={0} pointerEvents="none" opacity={0.030}
-        style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg viewBox='0 0 512 512' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E")`,
-          backgroundSize: '200px',
-        }} />
+    <footer className="sk-deep">
+      <div className="w-wrap w-ft">
+        <div className="w-ft-top">
+          <div className="w-ft-brand">
+            <p className="w-ft-name">{site.studio_name}</p>
+            {tagline && <p>{tagline}</p>}
+            {social.length > 0 && (
+              <div className="w-ft-social">
+                {social.map((s) => (
+                  <a key={s.href} href={s.href} target="_blank" rel="noopener noreferrer" aria-label={s.label}>
+                    <Icon name={s.icon} aria-hidden />
+                  </a>
+                ))}
+              </div>
+            )}
+          </div>
 
-      {/* Warm ambient glow */}
-      <Box position="absolute" top="-30%" left="20%" w="400px" h="300px"
-        borderRadius="full" bg="color-mix(in srgb, var(--brand-primary-on-dark) 5%, transparent)" filter="blur(100px)" pointerEvents="none" />
+          <nav aria-label={en ? 'Explore' : 'Explora'}>
+            <h3>{en ? 'Explore' : 'Explora'}</h3>
+            <ul>{explore.map((l) => <li key={l.href}><a href={l.href}>{l.label}</a></li>)}</ul>
+          </nav>
 
-      {/* ── Main content ── */}
-      <Box maxW="6xl" mx="auto" px={{ base: 6, md: 12 }} pt={{ base: 14, md: 20 }} pb={{ base: 10, md: 14 }}
-        position="relative" zIndex={1}>
-
-        {/* Big logo / brand statement */}
-        <Box mb={14} pb={10} borderBottom={`1px solid ${C.border}`}>
-          <Flex direction={{ base: 'column', md: 'row' }} align={{ base: 'flex-start', md: 'flex-end' }}
-            justify="space-between" gap={6}>
-            <Box>
-              {(site.logo_light_url || site.logo_url) && (
-                <BrandLogo variant="light" width={120} maxHeight={80} alt={site.studio_name}
-                  style={{ marginBottom: '16px', opacity: 0.90 }} />
-              )}
-              <Text
-                fontFamily='var(--font-heading)'
-                fontSize={{ base: '3xl', md: '5xl' }}
-                color={C.text} letterSpacing="0.04em" lineHeight="1"
-              >
-                {site.studio_name}
-              </Text>
-              <Text fontFamily='var(--font-body)'
-                fontSize="md" color={C.textMuted} mt={2} maxW="340px" lineHeight="1.65">
-                {t('home.footer.brandBlurb')}
-              </Text>
-            </Box>
-
-            {/* Redes (solo las que tenga el estudio) */}
-            <Flex gap={3} flexWrap="wrap" display={socialLinks.length ? 'flex' : 'none'}>
-              {socialLinks.map(({ icon, href, label, color }) => (
-                <Box
-                  key={label}
-                  as="a" href={href} target="_blank" rel="noopener noreferrer"
-                  w="48px" h="48px" borderRadius="var(--radius-button)"
-                  display="flex" alignItems="center" justifyContent="center"
-                  bg="color-mix(in srgb, var(--deep-text) 5%, transparent)" border={`1px solid ${C.border}`}
-                  cursor="pointer" transition="all 0.22s"
-                  _hover={{ bg: 'color-mix(in srgb, var(--deep-text) 10%, transparent)', borderColor: 'color-mix(in srgb, var(--deep-text) 18%, transparent)' }}
-                  title={label}
-                  aria-label={label}
-                >
-                  <SiteIcon name={icon} size={18} color={color} />
-                </Box>
-              ))}
-            </Flex>
-          </Flex>
-        </Box>
-
-        {/* Columns */}
-        <SimpleGrid columns={{ base: 1, sm: 2, md: 3 }} gap={10} mb={14}>
-
-          {/* Navigation */}
-          <Box>
-            <Text fontFamily='var(--font-body)' fontSize="11px" fontWeight={700}
-              color={C.accent} letterSpacing="0.12em" textTransform="uppercase" mb={5}>
-              {t('home.footer.navTitle') || 'Navegación'}
-            </Text>
-            <Flex direction="column" gap={3}>
-              {[
-                { label: t('home.footer.nav.home') || 'Inicio', href: homeHref },
-                { label: t('nav.items.calendar.label') || 'Horario', href: '/calendar' },
-                { label: t('nav.items.prices.label') || 'Precios', href: lang === 'en' ? '/en/prices' : '/prices' },
-                { label: t('home.footer.nav.contact') || 'Contacto', href: `${homeHref}#contacto` },
-                { label: lang === 'en' ? 'Terms & conditions' : 'Términos y condiciones', href: t('links.terms') || '/terminos-condiciones' },
-                // «Cookies»: abre las preferencias si el estudio usa analítica o
-                // publicidad (lib/cookie-consent.ts); si no, la política de cookies
-                { label: 'Cookies', href: lang === 'en' ? '/en/cookies' : '/cookies', cookies: true },
-              ].map(({ label, href, cookies }) => (
-                <Box as="a" key={label} href={href}
-                  {...(cookies ? { 'data-cookie-settings': '' } : {})}
-                  fontFamily='var(--font-body)'
-                  fontSize="md" color={C.textMuted} fontWeight={500}
-                  transition="color 0.18s"
-                  _hover={{ color: C.text }}
-                  display="block"
-                >
-                  {label}
-                </Box>
-              ))}
-            </Flex>
-          </Box>
-
-          {/* Classes */}
-          <Box>
-            <Text fontFamily='var(--font-body)' fontSize="11px" fontWeight={700}
-              color={C.accent} letterSpacing="0.12em" textTransform="uppercase" mb={5}>
-              {t('home.footer.classesTitle')}
-            </Text>
-            <Flex direction="column" gap={3}>
-              {['pilates', 'yoga', 'meditation', 'dance'].map(k => t(`home.footer.classList.${k}`)).map(c => (
-                <Box as="a" key={c} href={classesHref}
-                  fontFamily='var(--font-body)'
-                  fontSize="md" color={C.textMuted} fontWeight={500}
-                  transition="color 0.18s"
-                  _hover={{ color: C.text }}
-                  display="block"
-                >
-                  {c}
-                </Box>
-              ))}
-            </Flex>
-          </Box>
-
-          {/* Contact */}
-          <Box>
-            <Text fontFamily='var(--font-body)' fontSize="11px" fontWeight={700}
-              color={C.accent} letterSpacing="0.12em" textTransform="uppercase" mb={5}>
-              {t('home.footer.contactTitle') || 'Contacto'}
-            </Text>
-            <Flex direction="column" gap={3}>
-              {contactItems.map(({ icon, text, href }) => (
-                <Box as="a" key={text} href={href}
-                  target={href.startsWith('http') ? '_blank' : undefined}
-                  rel="noopener noreferrer"
-                  display="flex" alignItems="center" gap={2.5}
-                  fontFamily='var(--font-body)'
-                  fontSize="md" color={C.textMuted}
-                  transition="color 0.18s" _hover={{ color: C.text }}
-                  cursor="pointer"
-                >
-                  <SiteIcon name={icon} size={13} color={C.accent} />
-                  {text}
-                </Box>
-              ))}
-            </Flex>
-          </Box>
-        </SimpleGrid>
-
-        {/* Bottom bar */}
-        <Flex
-          direction={{ base: 'column', sm: 'row' }}
-          align="center" justify="space-between"
-          pt={6} borderTop={`1px solid ${C.border}`}
-          gap={3}
-        >
-          <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textLight}>
-            © {year} {site.legal.name || site.studio_name}. {t('home.footer.copyright')}
-          </Text>
-          {tagline && (
-            <Flex align="center" gap={2}>
-              <Box w="6px" h="6px" borderRadius="full" bg={C.accent}
-                boxShadow={`0 0 8px ${C.accent}`} />
-              <Text fontFamily='var(--font-heading)' textTransform="uppercase"
-                fontSize="sm" color="color-mix(in srgb, var(--brand-primary-on-dark) 35%, transparent)" letterSpacing="0.12em">
-                {[site.studio_name, tagline].join(' · ')}
-              </Text>
-            </Flex>
+          {contact.length > 0 && (
+            <div>
+              <h3>{en ? 'Visit us' : 'Visítanos'}</h3>
+              <ul>
+                {contact.map((c) => (
+                  <li key={c.text}>
+                    <a href={c.href} target={c.href.startsWith('http') ? '_blank' : undefined} rel={c.href.startsWith('http') ? 'noopener noreferrer' : undefined}>
+                      <Icon name={c.icon} aria-hidden size={14} />{c.text}
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
           )}
-        </Flex>
-      </Box>
-    </Box>
+
+          <nav aria-label={en ? 'More' : 'Más'}>
+            <h3>{en ? 'More' : 'Más'}</h3>
+            <ul>
+              {more.map((l) => <li key={l.href}><a href={l.href}>{l.label}</a></li>)}
+              {/* «Cookies»: abre las preferencias si el estudio usa analítica (lib/cookie-consent.ts) */}
+              <li><a href={t('nav.items.cookies.href')} data-cookie-settings="">{t('nav.items.cookies.label')}</a></li>
+            </ul>
+          </nav>
+        </div>
+
+        <div className="w-ft-bottom">
+          <span>© {year} {site.legal.name || site.studio_name}. {en ? 'All rights reserved.' : 'Todos los derechos reservados.'}</span>
+          <a href={t('nav.items.calendar.href')}>{t('nav.cta.book')} →</a>
+        </div>
+      </div>
+    </footer>
   );
 }
 
-function Footer() {
-  return <Chakra><FooterInner /></Chakra>;
-}
-
-export default withSsrLang(Footer);
+export default withSsrLang(FooterInner);

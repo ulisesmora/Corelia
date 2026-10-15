@@ -5,6 +5,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import MainLayout from './components/MainLayout';
 import Users from './pages/Users';
 import RecurringScheduleManagement from './pages/Payments';
+import CalendarPage from './pages/CalendarPage';
 import CustomerViewer from './pages/Clients';
 import { AuthProvider } from './context/AuthContext';
 import ClassTypeManagement from './pages/Bots';
@@ -24,8 +25,11 @@ import CategoriesManagement from './pages/Categories';
 import Setup from './pages/Setup';
 import StudioSettings from './pages/StudioSettings';
 import Security from './pages/Security';
+import SalesPage from './pages/ventas/SalesPage';
+import MyWebPage from './pages/miweb/MyWebPage';
+import SettingsHub from './pages/ajustes/SettingsHub';
 import SetupGate from './components/setup/SetupGate';
-import { GuidePage, ProgressOutlet } from './onboarding';
+import { GuideRedirect, ProgressOutlet } from './onboarding';
 
 const App = () => (
   <AuthProvider>
@@ -36,10 +40,12 @@ const App = () => (
         <Route path="/bienvenida" element={<Setup />} />
         <Route element={<SetupGate><MainLayout /></SetupGate>}>
           <Route path="/" element={<Home />} />
-          <Route path="/puesta-en-marcha" element={<GuidePage />} />
+          {/* Antes: guía de 11 pasos. Ahora: la puesta en marcha obligatoria (o Ajustes si ya está publicada) */}
+          <Route path="/puesta-en-marcha" element={<GuideRedirect />} />
           <Route path="/admins" element={<Users />} />
           <Route path="/classes" element={<ClassTypeManagement />} />
-          <Route path="/calendar" element={<RecurringScheduleManagement />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/calendar/horarios" element={<RecurringScheduleManagement />} />
           <Route path="/plans" element={<PlanManagement />} />
           <Route path="/payments" element={<PaymentViewer />} />
           <Route path="/clients" element={<CustomerViewer />} />
@@ -56,6 +62,10 @@ const App = () => (
           <Route path="/categories" element={<CategoriesManagement />} />
           <Route path="/ajustes" element={<StudioSettings />} />
           <Route path="/seguridad" element={<Security />} />
+          {/* Ventas, Mi web y Ajustes (pages/ventas, pages/miweb, pages/ajustes) */}
+          <Route path="/ventas" element={<SalesPage />} />
+          <Route path="/mi-web" element={<MyWebPage />} />
+          <Route path="/configuracion" element={<SettingsHub />} />
         </Route>
         </Route>
       </Route>

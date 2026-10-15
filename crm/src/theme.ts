@@ -1,380 +1,346 @@
+import { createTheme, type Theme, type ThemeOptions } from '@mui/material/styles';
+import { cr, mix } from './design/derive';
 import {
-  createTheme, darken, getContrastRatio, getLuminance, hexToRgb, lighten, decomposeColor,
-  type Theme, type ThemeOptions,
-} from '@mui/material/styles';
+  classicTokens, fontPairBySlug, headingWeight, isDarkStyle, sideOf, themeTokens,
+  type PaletteTokens, type Side,
+} from './design/tokens';
 import {
-  DARK_STYLES, DEFAULT_SITE_CONFIG, type IconStyleId, type SiteConfigPublic, type StyleId,
+  DEFAULT_SITE_CONFIG, type IconStyleId, type SiteConfigPublic, type StyleId,
 } from './site/siteConfig';
 
 // ====================================================================
-// Tema del panel construido con los colores, las fuentes y el ESTILO del
-// estudio (el mismo que eligió para su web: natural, minimal, editorial…).
-// Cada estilo tiene aquí su versión «de trabajo»: se reconoce la marca, pero
-// todo se lee bien y es cómodo para usarlo a diario. Los estilos oscuros de la
-// web (energy, neon) ponen el panel en modo oscuro. Si el estudio desactiva
-// «Panel con el estilo de mi web», el panel se ve con su aspecto clásico
-// (el de `natural`) y los colores del estudio. Ver docs/ESTILOS.md.
+// Tema del panel: se genera de los TOKENS del estilo y la paleta del estudio
+// (src/design/palettes.json, el mismo origen que la web; docs/ESTILOS.md).
 //
-// Además del tema de MUI, publica unas variables CSS en :root para usarlas en
-// cualquier sitio (sx, style, gradientes, CSS de react-big-calendar…):
+//   colores      → la paleta elegida o, con colores propios, derivados de
+//                  ellos con la misma corrección de contraste que el API
+//   forma        → STRUCT de cada estilo (esquinas, bordes, sombras, cristal,
+//                  mayúsculas…), igual que el prototipo aprobado
+//   letra        → la pareja del estudio (font_heading / font_body) y el peso
+//                  de títulos de su pareja
 //
-//   var(--studio-primary)          color principal (rellenos, iconos, detalles)
-//   rgb(var(--studio-primary-rgb) / 0.1)   el mismo con transparencia
-//   --studio-primary-light / -pale   tonos suaves del principal
-//   --studio-primary-shade / -dark / -deep   tonos fuertes (texto e iconos)
+// Si el estudio apaga «Panel con el estilo de mi web», el panel se ve con su
+// aspecto CLÁSICO: claro, neutro y con los colores del estudio.
+//
+// Además del tema de MUI publica variables CSS en :root para el resto del
+// panel (sx, style, calendar.css, el menú lateral…). Las de siempre:
+//
+//   --studio-primary(-rgb) / -light / -pale / -shade / -dark / -deep
 //   --studio-primary-text           el principal como TEXTO, siempre legible
 //   --studio-primary-fill / --studio-on-primary   relleno de botones y su texto
 //   --studio-secondary, --studio-dark (texto principal), --studio-bg (fondo)
-//   --studio-text-strong / -body / -muted / -hint / -faint   tonos de texto
-//   --studio-bg-light / --studio-bg-deep   fondo más claro / más hundido
-//   --studio-line-rgb                bordes y separadores (con alpha)
-//   --studio-surface-rgb             superficies: blanco en claro, gris en oscuro
-//   --studio-shadow-rgb              color de las sombras (con alpha)
-//   --studio-font-heading / --studio-font-body   familias tipográficas
+//   --studio-text-strong / -body / -muted / -hint / -faint
+//   --studio-bg-light / --studio-bg-deep, --studio-line-rgb, --studio-surface-rgb,
+//   --studio-shadow-rgb, --studio-font-heading / --studio-font-body
+//   --studio-radius / -radius-sm / -radius-chip, --studio-border(-width),
+//   --studio-surface / -surface-strong, --studio-shadow / -shadow-float, --studio-blur
 //
-//   Forma del estilo (para lo que no es de MUI):
-//   --studio-radius / -radius-sm / -radius-chip   esquinas (tarjeta, botón, píldora)
-//   --studio-border-width / --studio-border   borde de las tarjetas
-//   --studio-surface / --studio-surface-strong   fondo de tarjeta / de diálogo
-//   --studio-shadow / --studio-shadow-float   sombra de tarjeta / de lo flotante
-//   --studio-blur                    backdrop-filter de las superficies
+// Y las de los tokens (shell nuevo, mismas que el prototipo):
 //
-// Todas las variables de color tienen su versión `-rgb` ("r g b").
-// En <html> quedan data-panel-style="…" y data-panel-mode="light|dark".
+//   --studio-ink --studio-muted --studio-surf --studio-surf2 --studio-p-soft
+//   --studio-border-color --studio-border-strong --studio-s-soft
+//   --studio-side-bg / -side-text / -side-muted / -side-active / -side-active-text / -side-hover
+//   --studio-ok / -ok-soft · -warn · -bad · -info (+ -soft)
+//   --studio-c-reformer / --studio-c-reformer-dot (… mat, barre, yoga, privada)
+//   --studio-radius-xl / -lg / -md / -btn, --studio-shadow-1 / -2, --studio-card-bg,
+//   --studio-card-border, --studio-btn-shadow, --studio-glow, --studio-scrim,
+//   --studio-heading-weight / -transform / -spacing
+//
+// Todas las de color tienen su versión `-rgb` ("r g b").
+// En <html>: data-panel-style, data-panel-mode="light|dark" y data-panel-side.
 // ====================================================================
 
-/** Mezcla dos colores: t=0 → a, t=1 → b. Devuelve "#rrggbb". */
-export function mix(a: string, b: string, t: number): string {
-  const ca = decomposeColor(a.startsWith('#') ? hexToRgb(a) : a).values;
-  const cb = decomposeColor(b.startsWith('#') ? hexToRgb(b) : b).values;
-  const ch = (i: number) => Math.round(ca[i] + (cb[i] - ca[i]) * t).toString(16).padStart(2, '0');
-  return `#${ch(0)}${ch(1)}${ch(2)}`;
-}
-
-/** "r g b" de un color, para `rgb(var(--x-rgb) / alpha)`. */
-function channels(c: string): string {
-  const { values } = decomposeColor(c.startsWith('#') ? hexToRgb(c) : c);
-  return values.slice(0, 3).map((v) => Math.round(v)).join(' ');
-}
-
-const toHex = (c: string) => mix(c, c, 0);
-const rgb = (c: string, a: number) => `rgb(${channels(c)} / ${a})`;
-
-/** Texto legible encima de un color: blanco si contrasta, si no el oscuro. */
-const onColor = (bg: string, dark: string) => (getContrastRatio(bg, '#fff') >= 3 ? '#fff' : dark);
-
-/** El más legible de dos colores de texto sobre un fondo. */
-const bestOn = (bg: string, a: string, b: string) => (getContrastRatio(bg, a) >= getContrastRatio(bg, b) ? a : b);
-
-/** Acerca `color` a `towards` hasta tener `min` de contraste contra `against`. */
-function ensureContrast(color: string, against: string, min: number, towards: string): string {
-  for (let t = 0; t <= 1.0001; t += 0.05) {
-    const c = mix(color, towards, t);
-    if (getContrastRatio(c, against) >= min) return c;
-  }
-  return toHex(towards);
-}
-
-const NEAR_BLACK = '#0b0b10';
+export { mix };
 
 /** Pila de fuentes con alternativas del sistema. */
 export const headingStack = (font: string) => `"${font}", Georgia, serif`;
 export const bodyStack = (font: string) => `"${font}", system-ui, -apple-system, sans-serif`;
 const MONO = 'ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace';
 
-// ── Qué estilo usa el panel ──────────────────────────────────────────────
+const hexRgb = (h: string) => {
+  const s = h.replace('#', '');
+  return [0, 2, 4].map((i) => parseInt(s.slice(i, i + 2), 16)).join(' ');
+};
+/** "r g b" de un color hex. */
+const channels = (c: string) => hexRgb(c.length === 4 ? `#${c[1]}${c[1]}${c[2]}${c[2]}${c[3]}${c[3]}` : c);
+const rgb = (c: string, a: number) => `rgb(${channels(c)} / ${a})`;
+
+// ── Qué aspecto usa el panel ─────────────────────────────────────────────
 
 export interface PanelLook {
-  /** Estilo con el que se dibuja el panel ('natural' = aspecto clásico) */
+  /** Estilo de la web (aunque el panel no lo siga) */
   style: StyleId;
+  /** El panel se ve con su aspecto clásico (no sigue el estilo de la web) */
+  classic: boolean;
   /** Familia de iconos ('classic' = los de siempre del panel) */
   icons: IconStyleId | 'classic';
   dark: boolean;
+  /** Cómo es la barra lateral: oscura, clara, de cristal o del modo oscuro */
+  side: Side;
 }
 
 /** Estilo e iconos del panel según la config (y el interruptor «Panel con el estilo de mi web»). */
 export function panelLook(site: SiteConfigPublic = DEFAULT_SITE_CONFIG): PanelLook {
   const follows = site.theme.panel_follows_style !== false;
-  const style: StyleId = follows ? site.theme.style || 'natural' : 'natural';
-  return { style, icons: follows ? site.theme.icons || 'line' : 'classic', dark: DARK_STYLES.includes(style) };
-}
-
-// ── Tonos ────────────────────────────────────────────────────────────────
-
-/** Todos los tonos derivados de los 4 colores del estudio para un estilo del panel. */
-export function studioTones(site: SiteConfigPublic = DEFAULT_SITE_CONFIG, look: PanelLook = panelLook(site)) {
-  const { primary, secondary, dark, background } = site.theme;
-  const S = toHex(secondary);
-  // Un fondo oscuro con un estilo claro (o al revés) no deja el panel ilegible:
-  // igual que la web, se usa una versión garantizada clara u oscura.
-  const raw = toHex(background);
-  if (look.dark) return darkTones(toHex(primary), S, toHex(dark), raw, look.style);
-  const B = getLuminance(raw) >= 0.6 ? raw : mix(raw, '#ffffff', 0.88);
-  const D = getContrastRatio(dark, B) >= 4.5 ? toHex(dark) : ensureContrast(dark, B, 7, NEAR_BLACK);
-  const natural = look.style === 'natural';
-  // Paleta pensada para un estilo oscuro (fondo oscuro) vista en claro: el
-  // primario se oscurece hasta leerse (un lima o un rosa neón no se leen sobre
-  // claro). Con una paleta clara normal no cambia nada.
-  const P = raw === B ? toHex(primary) : ensureContrast(primary, mix(B, primary, 0.12), 4.6, D);
-
-  const base = {
-    primary: P,
-    primaryLight: lighten(P, 0.3),
-    primaryPale: lighten(P, 0.55),
-    primaryHover: lighten(P, 0.1),
-    primaryShade: darken(P, 0.12),
-    primaryDark: darken(P, 0.22),
-    primaryDeep: darken(P, 0.32),
-    secondary: S,
-    dark: D,
-    textStrong: mix(D, B, 0.15),
-    textBody: mix(D, B, 0.25),
-    textMuted: mix(D, B, 0.35),
-    textHint: mix(D, B, 0.45),
-    textFaint: mix(D, B, 0.6),
-    bg: B,
-    bgLight: mix(B, '#ffffff', 0.5),
-    bgMid: mix(B, P, 0.07),
-    bgDeep: mix(B, P, 0.12),
-    line: mix(P, B, 0.25),
-    // Nuevos (en natural no cambian nada de lo que ya se veía)
-    ink: D,
-    surface: '#ffffff',
-    shadow: D,
-    primaryText: P,
-    primaryFill: P,
-    onPrimary: onColor(P, D),
-    secondaryText: S,
-    uiBorder: mix(P, B, 0.25),
-  };
-  if (natural) return base;
-
-  // Estilos claros «de trabajo»: textos y primario con contraste AA
-  // (4,5:1) contra el fondo más hundido del panel.
-  const against = base.bgDeep;
-  const fillOk = Math.max(getContrastRatio(P, '#fff'), getContrastRatio(P, D)) >= 4.5;
-  const primaryText = ensureContrast(P, against, 5, D);
-  const primaryFill = fillOk ? P : primaryText;
+  const style: StyleId = site.theme.style || 'natural';
   return {
-    ...base,
-    textStrong: mix(D, B, 0.1),
-    textBody: mix(D, B, 0.18),
-    textMuted: ensureContrast(mix(D, B, 0.3), against, 4.8, D),
-    textHint: ensureContrast(mix(D, B, 0.4), against, 4.6, D),
-    textFaint: ensureContrast(mix(D, B, 0.5), against, 3.2, D),
-    primaryText,
-    primaryFill,
-    onPrimary: bestOn(primaryFill, '#ffffff', D),
-    primaryShade: ensureContrast(darken(P, 0.12), against, 4.6, D),
-    primaryDark: ensureContrast(darken(P, 0.22), against, 4.6, D),
-    primaryDeep: ensureContrast(darken(P, 0.32), against, 4.6, D),
-    secondaryText: ensureContrast(S, against, 4.6, D),
-    uiBorder: ensureContrast(mix(D, '#ffffff', 0.6), '#ffffff', 3.1, D),
-    // Bordes y separadores: neutros (del oscuro) en los estilos sobrios; en
-    // brutalista, el oscuro tal cual (bordes marcados)
-    line: look.style === 'brutalist' ? D : ['minimal', 'editorial'].includes(look.style) ? mix(D, B, 0.3) : base.line,
+    style,
+    classic: !follows,
+    icons: follows ? site.theme.icons || 'line' : 'classic',
+    dark: follows && isDarkStyle(style),
+    side: follows ? sideOf(style) : 'light',
   };
 }
 
-/** Tonos de los estilos oscuros: fondo oscuro garantizado y texto claro fijo. */
-function darkTones(P: string, S: string, D: string, raw: string, style: StyleId) {
-  const neon = style === 'neon';
-  const bg = getLuminance(raw) <= 0.06 ? raw : mix(raw, NEAR_BLACK, 0.9);
-  const text = neon ? '#f1f0ff' : '#f3f3f3';
-  const surface = neon ? mix(bg, P, 0.08) : mix(bg, '#ffffff', 0.06);
-  const strong = neon ? mix(bg, P, 0.13) : mix(bg, '#ffffff', 0.1);
-  // Zonas más profundas (barra lateral y superior): el oscuro del estudio si lo es
-  const deep = getLuminance(D) <= 0.03 && getContrastRatio(D, text) >= 12 ? D : mix(bg, '#000000', 0.35);
-  const primaryText = ensureContrast(P, strong, 5.2, '#ffffff');
-  const ink = getContrastRatio(D, '#fff') >= 12 ? D : NEAR_BLACK;
-  const fillOk = Math.max(getContrastRatio(P, '#fff'), getContrastRatio(P, ink)) >= 4.5;
-  const primaryFill = fillOk ? P : primaryText;
-  const t = (k: number) => mix(text, bg, k);
+/** Colores efectivos del panel (tokens de la paleta o derivados de los colores propios). */
+export function panelPalette(site: SiteConfigPublic = DEFAULT_SITE_CONFIG, look: PanelLook = panelLook(site)): PaletteTokens {
+  const t = site.theme;
+  const input = { style: t.style, palette: t.palette, primary: t.primary, secondary: t.secondary, dark: t.dark, background: t.background };
+  return look.classic ? classicTokens(input) : themeTokens(input).tokens;
+}
+
+// ── Tonos con los nombres de siempre (los usan muchas pantallas vía CSS) ──
+
+function tonesFrom(pt: PaletteTokens, dark: boolean) {
+  const toward = dark ? '#FFFFFF' : pt.ink;
+  const deep = dark ? '#000000' : pt.p;
   return {
-    primary: P,
-    primaryLight: mix(primaryText, bg, 0.35),
-    primaryPale: mix(P, bg, 0.78),
-    primaryHover: mix(P, '#ffffff', 0.12),
-    primaryShade: mix(primaryText, '#ffffff', 0.12),
-    primaryDark: mix(primaryText, '#ffffff', 0.25),
-    primaryDeep: mix(primaryText, '#ffffff', 0.35),
-    secondary: S,
-    dark: text,
-    textStrong: t(0.06),
-    textBody: t(0.12),
-    textMuted: t(0.24),
-    textHint: t(0.34),
-    textFaint: t(0.44),
-    bg,
-    bgLight: surface,
-    bgMid: mix(bg, P, 0.05),
-    bgDeep: mix(bg, '#000000', 0.3),
-    line: mix(P, text, 0.55),
-    ink,
-    surface,
-    surfaceStrong: strong,
-    deep,
-    shadow: '#000000',
-    primaryText,
-    primaryFill,
-    onPrimary: bestOn(primaryFill, '#ffffff', ink),
-    secondaryText: ensureContrast(S, strong, 4.6, '#ffffff'),
-    uiBorder: ensureContrast(mix(text, surface, 0.6), surface, 3.1, text),
+    pt,
+    primary: pt.p,
+    primaryLight: mix(pt.p, pt.surf, 0.45),
+    primaryPale: pt.pSoft,
+    primaryHover: mix(pt.p, toward, 0.9),
+    primaryShade: pt.pText,
+    primaryDark: mix(pt.pText, toward, 0.85),
+    primaryDeep: mix(pt.pText, toward, 0.7),
+    secondary: pt.s,
+    secondaryText: cr(pt.sUI, pt.surf) >= 4.6 ? pt.sUI : mix(pt.s, toward, 0.45),
+    dark: pt.ink,
+    textStrong: mix(pt.ink, pt.surf, 0.94),
+    textBody: mix(pt.ink, pt.muted, 0.6),
+    textMuted: pt.muted,
+    textHint: pt.muted,
+    textFaint: mix(pt.muted, pt.surf, 0.7),
+    bg: pt.bg,
+    bgLight: dark ? pt.surf : pt.surf2,
+    bgMid: mix(pt.bg, deep, 0.95),
+    bgDeep: mix(pt.bg, deep, dark ? 0.7 : 0.9),
+    line: pt.borderStrong,
+    /** Tinta para bordes marcados y texto sobre rellenos claros (en oscuro: lo más profundo) */
+    ink: dark ? pt.bg : pt.ink,
+    surface: pt.surf,
+    surfaceStrong: dark ? mix(pt.surf, '#FFFFFF', 0.96) : pt.surf,
+    deep: pt.sideBg,
+    shadow: dark ? '#000000' : pt.ink,
+    primaryText: pt.pText,
+    primaryFill: pt.p,
+    onPrimary: pt.onP,
+    uiBorder: pt.borderStrong,
   };
 }
 
-export type StudioTones = ReturnType<typeof studioTones> & { surfaceStrong?: string; deep?: string };
+export type StudioTones = ReturnType<typeof tonesFrom>;
 
-// ── Fichas de forma de cada estilo ──────────────────────────────────────
+/** Tonos del panel (los mismos que publican las variables --studio-*). */
+export function studioTones(site: SiteConfigPublic = DEFAULT_SITE_CONFIG, look: PanelLook = panelLook(site)): StudioTones {
+  return tonesFrom(panelPalette(site, look), look.dark);
+}
 
-/** Lo que cambia de forma entre estilos. `natural` = el aspecto de siempre. */
-interface LookTokens {
-  /** theme.shape.borderRadius: escala de `borderRadius: n` en sx (n × este valor) */
-  shape: number;
-  radius: {
-    paper: number; dialog: number; button: number; buttonSmall: number; input: number; chip: number;
-    item: number; tooltip: number; alert: number; pagination: number; table: number;
-  };
-  borderWidth: number;
-  /** Tarjetas (Paper) */
-  paperBg: string;
-  paperBorder: string;
+// ── Forma de cada estilo (prototipo: app.css → [data-style="…"]) ─────────
+
+interface Struct {
+  /** Esquinas: diálogos y menú lateral (xl), tarjetas (lg), campos (md), chips (sm), botones (btn) */
+  r: { xl: number; lg: number; md: number; sm: number; btn: number };
+  /** Grosor del borde de tarjetas y campos marcados */
+  bw: number;
+  cardBorder: (t: StudioTones) => string;
+  cardBg: (t: StudioTones) => string;
   blur: string;
-  shadows: [string, string, string];
-  /** Tablas */
-  tableBg: string;
-  tableBorder: string;
-  /** Diálogos */
-  dialogBg: string;
-  dialogBorder: string;
-  dialogBlur: string;
-  dialogShadow: string;
-  /** Barra superior y menú lateral */
-  appBarBg: string;
-  appBarBorder: string;
-  appBarShadow: string;
-  appBarBlur: string;
-  drawerBg: string;
-  drawerBorder: string;
-  drawerBlur: string;
-  /** Campos de formulario */
-  inputBg: string;
-  /** Fondo de la página (`background` del body) */
-  body: string;
+  sh1: (t: StudioTones) => string;
+  sh2: (t: StudioTones) => string;
+  btnShadow: (t: StudioTones) => string;
+  glow: (t: StudioTones) => string;
+  headingTransform: 'none' | 'uppercase';
+  headingSpacing: string;
+  /** Espaciado de las etiquetas en mayúsculas (overline, cabeceras de tabla) */
+  labelSpacing: string;
+  body: (t: StudioTones) => string;
 }
 
-type Tones = StudioTones;
-type Look = { tokens: (t: Tones) => LookTokens; extra?: (t: Tones, tk: LookTokens, fonts: { heading: string; body: string }) => ThemeOptions };
+const softShadow = (t: StudioTones) => `0 1px 2px ${rgb(t.shadow, 0.04)}, 0 6px 20px ${rgb(t.shadow, 0.05)}`;
+const floatShadow = (t: StudioTones) => `0 18px 50px ${rgb(t.shadow, 0.16)}`;
+const darkFloat = () => '0 24px 60px rgb(0 0 0 / 0.6)';
+const none = () => 'none';
 
-const GLASS_BORDER = '1px solid rgba(255,255,255,0.6)';
-
-/** Natural: el aspecto clásico del panel (también cuando el panel no sigue el estilo). */
-const naturalTokens = (t: Tones): LookTokens => {
-  const D = (a: number) => rgb(t.shadow, a);
-  return {
-    shape: 16,
-    radius: { paper: 18, dialog: 22, button: 12, buttonSmall: 10, input: 13, chip: 9, item: 14, tooltip: 10, alert: 14, pagination: 10, table: 18 },
-    borderWidth: 1,
-    paperBg: 'rgba(255,255,255,0.55)',
-    paperBorder: GLASS_BORDER,
-    blur: 'blur(20px) saturate(180%)',
-    shadows: [
-      `0 1px 4px ${D(0.04)}, 0 1px 2px ${D(0.03)}`,
-      `0 3px 12px ${D(0.05)}, 0 1px 4px ${D(0.03)}`,
-      `0 6px 24px ${D(0.06)}, 0 2px 6px ${D(0.03)}`,
-    ],
-    tableBg: 'rgba(255,255,255,0.55)',
-    tableBorder: '1px solid rgba(255,255,255,0.5)',
-    dialogBg: 'rgba(255,255,255,0.7)',
-    dialogBorder: GLASS_BORDER,
-    dialogBlur: 'blur(28px) saturate(200%)',
-    dialogShadow: `0 16px 60px ${D(0.12)}`,
-    appBarBg: 'rgba(255,255,255,0.55)',
-    appBarBorder: GLASS_BORDER,
-    appBarShadow: `0 1px 3px ${D(0.05)}`,
-    appBarBlur: 'blur(20px) saturate(180%)',
-    drawerBg: `linear-gradient(180deg, rgba(255,255,255,0.7) 0%, ${rgb(t.bgLight, 0.8)} 100%)`,
-    drawerBorder: GLASS_BORDER,
-    drawerBlur: 'blur(24px) saturate(180%)',
-    inputBg: 'rgba(255,255,255,0.5)',
-    body: `linear-gradient(135deg, ${t.bg} 0%, ${t.bgDeep} 40%, ${t.bgMid} 100%)`,
-  };
+const BASE: Struct = {
+  r: { xl: 26, lg: 20, md: 14, sm: 10, btn: 999 },
+  bw: 1,
+  cardBorder: (t) => `1px solid ${t.pt.border}`,
+  cardBg: (t) => t.pt.surf,
+  blur: 'none',
+  sh1: softShadow,
+  sh2: floatShadow,
+  btnShadow: none,
+  glow: none,
+  headingTransform: 'none',
+  headingSpacing: '-0.02em',
+  labelSpacing: '0.08em',
+  body: (t) => t.pt.bg,
 };
 
-/** Botón principal sin degradado ni elevación (base de varios estilos). */
-const flatButtons = (t: Tones, extra: Record<string, unknown> = {}) => ({
-  contained: {
-    background: t.primaryFill,
-    color: t.onPrimary,
-    boxShadow: 'none',
-    '&:hover': { background: mix(t.primaryFill, t.onPrimary, 0.12), boxShadow: 'none', transform: 'none' },
-    ...extra,
+const STRUCTS: Record<StyleId | 'classic', Struct> = {
+  natural: { ...BASE, r: { xl: 28, lg: 22, md: 14, sm: 10, btn: 999 }, cardBorder: () => '1px solid transparent' },
+  minimal: { ...BASE, r: { xl: 16, lg: 12, md: 10, sm: 8, btn: 10 }, sh1: none, headingSpacing: '-0.025em' },
+  editorial: {
+    ...BASE, r: { xl: 6, lg: 4, md: 4, sm: 3, btn: 3 }, sh1: none, headingSpacing: '-0.01em', labelSpacing: '0.14em',
   },
-});
+  glass: {
+    ...BASE,
+    r: { xl: 28, lg: 24, md: 16, sm: 12, btn: 999 },
+    cardBorder: () => '1px solid rgb(255 255 255 / 0.7)',
+    cardBg: (t) => rgb(t.pt.surf, 0.66),
+    blur: 'blur(18px) saturate(1.3)',
+    sh1: (t) => `0 8px 32px ${rgb(t.shadow, 0.08)}`,
+    body: (t) => `radial-gradient(60vw 50vw at 0% 0%, ${rgb(t.pt.p, 0.16)}, transparent 60%), `
+      + `radial-gradient(50vw 50vw at 100% 20%, ${rgb(t.pt.s, 0.22)}, transparent 60%), `
+      + `radial-gradient(60vw 40vw at 50% 110%, ${rgb(t.pt.p, 0.1)}, transparent 60%), ${t.pt.bg} fixed`,
+  },
+  brutalist: {
+    ...BASE,
+    r: { xl: 0, lg: 0, md: 0, sm: 0, btn: 0 },
+    bw: 2,
+    cardBorder: (t) => `2px solid ${t.pt.ink}`,
+    sh1: (t) => `4px 4px 0 ${t.pt.ink}`,
+    sh2: (t) => `8px 8px 0 ${t.pt.ink}`,
+    btnShadow: (t) => `3px 3px 0 ${t.pt.ink}`,
+    headingSpacing: '-0.03em',
+  },
+  energy: {
+    ...BASE, r: { xl: 14, lg: 12, md: 8, sm: 6, btn: 8 }, sh1: none, sh2: darkFloat, headingTransform: 'uppercase', headingSpacing: '0.01em',
+  },
+  pop: {
+    ...BASE,
+    r: { xl: 32, lg: 26, md: 18, sm: 14, btn: 999 },
+    cardBorder: () => '1px solid transparent',
+    sh1: (t) => `0 2px 0 ${rgb(t.pt.p, 0.08)}, 0 10px 30px ${rgb(t.pt.p, 0.1)}`,
+  },
+  neon: {
+    ...BASE,
+    r: { xl: 20, lg: 16, md: 12, sm: 10, btn: 999 },
+    sh1: (t) => `0 0 0 1px ${rgb(t.pt.p, 0.1)}`,
+    sh2: darkFloat,
+    glow: (t) => `0 0 0 1px ${rgb(t.pt.p, 0.5)}, 0 0 22px ${rgb(t.pt.p, 0.35)}`,
+    body: (t) => `radial-gradient(70vw 40vw at 100% -10%, ${rgb(t.pt.p, 0.12)}, transparent 60%), `
+      + `radial-gradient(50vw 40vw at -10% 100%, ${rgb(t.pt.s, 0.08)}, transparent 60%), ${t.pt.bg} fixed`,
+  },
+  // Aspecto clásico del panel (no sigue el estilo de la web): cristal blanco suave
+  classic: {
+    ...BASE,
+    r: { xl: 22, lg: 18, md: 13, sm: 9, btn: 12 },
+    cardBorder: () => '1px solid rgb(255 255 255 / 0.6)',
+    cardBg: () => 'rgb(255 255 255 / 0.6)',
+    blur: 'blur(20px) saturate(1.8)',
+    sh1: (t) => `0 3px 12px ${rgb(t.shadow, 0.05)}, 0 1px 4px ${rgb(t.shadow, 0.03)}`,
+    headingSpacing: '-0.01em',
+    body: (t) => `linear-gradient(135deg, ${t.pt.bg} 0%, ${t.bgDeep} 40%, ${t.bgMid} 100%) fixed`,
+  },
+};
 
-/** Estados (avisos, chips) con contraste AA en los estilos claros «de trabajo». */
-const strongStatus = (): ThemeOptions => ({
-  palette: {
-    error: { main: '#A0473A', light: '#DBA89D' },
-    warning: { main: '#8A5A00', light: '#E8CCAE' },
-    success: { main: '#3D6B2E', light: '#A3BD95' },
-    info: { main: '#3D5A63', light: '#B3C5C7' },
-  },
-  components: {
-    MuiChip: {
-      styleOverrides: {
-        colorSuccess: { color: '#2F5A22' },
-        colorError: { color: '#A0473A' },
-        colorWarning: { color: '#7A4F00' },
-        colorInfo: { color: '#3D5A63' },
-      },
-    },
-    MuiAlert: {
-      styleOverrides: {
-        filledSuccess: { backgroundColor: '#3D6B2E', color: '#fff' },
-        filledError: { backgroundColor: '#A0473A', color: '#fff' },
-        filledWarning: { backgroundColor: '#8A5A00', color: '#fff' },
-        filledInfo: { backgroundColor: '#3D5A63', color: '#fff' },
-      },
-    },
-  },
-});
+const structOf = (look: PanelLook) => STRUCTS[look.classic ? 'classic' : look.style] || STRUCTS.natural;
 
-/** Inputs con borde visible (3:1) en los estilos «de trabajo». */
-const inputs = (t: Tones, radius: number, width = 1, focus = t.primaryText, extraFocus: Record<string, unknown> = {}) => ({
-  MuiTextField: {
-    styleOverrides: {
-      root: {
-        '& .MuiOutlinedInput-root': {
-          borderRadius: radius,
-          '& fieldset': { borderColor: t.uiBorder, borderWidth: width },
-          '&:hover fieldset': { borderColor: t.dark },
-          '&.Mui-focused fieldset': { borderColor: focus, borderWidth: Math.max(2, width) },
-          '&.Mui-focused': extraFocus,
-        },
-      },
-    },
-  },
-  MuiOutlinedInput: {
-    styleOverrides: {
-      notchedOutline: { borderColor: t.uiBorder, borderWidth: width },
-    },
-  },
-});
+/** Forma de un estilo (esquinas, borde, mayúsculas) para las miniaturas y vistas previas. */
+export function styleShape(style: StyleId | 'classic') {
+  const st = STRUCTS[style] || STRUCTS.natural;
+  return { r: st.r, bw: st.bw, headingTransform: st.headingTransform, headingSpacing: st.headingSpacing, glass: st.blur !== 'none' };
+}
 
-/**
- * Calendario (react-big-calendar) en los estilos «de trabajo»: su CSS de
- * serie (colores grises fijos) se carga después del nuestro, así que aquí va
- * con más especificidad. En natural no se toca nada.
- */
+/** Estilo, tonos y forma del panel (vistas previas de Ajustes → Estilo). */
+export function panelTokens(site: SiteConfigPublic = DEFAULT_SITE_CONFIG) {
+  const look = panelLook(site);
+  const tones = studioTones(site, look);
+  const st = structOf(look);
+  return {
+    look,
+    tones,
+    tokens: {
+      radius: st.r,
+      cardBg: st.cardBg(tones),
+      cardBorder: st.cardBorder(tones),
+      shadow: st.sh1(tones),
+      blur: st.blur,
+      body: st.body(tones),
+      headingTransform: st.headingTransform,
+    },
+  };
+}
+
+/** Color de la barra del navegador / app instalada (meta theme-color). */
+export function panelThemeColor(site: SiteConfigPublic = DEFAULT_SITE_CONFIG): string {
+  return panelPalette(site).bg;
+}
+
+// ── Variables CSS ────────────────────────────────────────────────────────
+
+function cssVariables(t: StudioTones, st: Struct, look: PanelLook, heading: string, body: string, hw: number): string {
+  const pt = t.pt;
+  const colors: [string, string][] = [
+    ['primary', t.primary], ['primary-light', t.primaryLight], ['primary-pale', t.primaryPale],
+    ['primary-shade', t.primaryShade], ['primary-dark', t.primaryDark], ['primary-deep', t.primaryDeep],
+    ['secondary', t.secondary], ['dark', t.dark], ['text-strong', t.textStrong], ['text-body', t.textBody],
+    ['text-muted', t.textMuted], ['text-hint', t.textHint], ['text-faint', t.textFaint],
+    ['bg', t.bg], ['bg-light', t.bgLight], ['bg-deep', t.bgDeep], ['line', t.line],
+    // tokens
+    ['ink', pt.ink], ['muted', pt.muted], ['surf', pt.surf], ['surf2', pt.surf2], ['p-soft', pt.pSoft],
+    ['s-soft', pt.sSoft], ['border-color', pt.border], ['border-strong', pt.borderStrong],
+    ['side-bg', pt.sideBg], ['side-text', pt.sideText], ['side-muted', pt.sideMuted],
+    ['side-active', pt.sideActive], ['side-active-text', pt.sideActiveText], ['side-hover', pt.sideHover],
+    ['ok', pt.ok], ['ok-soft', pt.okSoft], ['warn', pt.warn], ['warn-soft', pt.warnSoft],
+    ['bad', pt.bad], ['bad-soft', pt.badSoft], ['info', pt.info], ['info-soft', pt.infoSoft],
+    ...Object.entries(pt.cls).flatMap(([k, v]) => [[`c-${k}`, v.tint], [`c-${k}-dot`, v.dot]] as [string, string][]),
+  ];
+  const lines = colors.flatMap(([n, v]) => [`--studio-${n}: ${v};`, `--studio-${n}-rgb: ${channels(v)};`]);
+  const sh1 = st.sh1(t);
+  const sh2 = st.sh2(t);
+  lines.push(
+    `--studio-font-heading: ${heading};`, `--studio-font-body: ${body};`,
+    `--studio-heading-weight: ${hw};`, `--studio-heading-transform: ${st.headingTransform};`,
+    `--studio-heading-spacing: ${st.headingSpacing};`, `--studio-label-spacing: ${st.labelSpacing};`,
+    `--studio-primary-text: ${t.primaryText};`, `--studio-primary-fill: ${t.primaryFill};`,
+    `--studio-on-primary: ${t.onPrimary};`, `--studio-on-primary-rgb: ${channels(t.onPrimary)};`,
+    `--studio-secondary-text: ${t.secondaryText};`,
+    `--studio-surface-rgb: ${channels(t.surface)};`, `--studio-shadow-rgb: ${channels(t.shadow)};`,
+    `--studio-radius-xl: ${st.r.xl}px;`, `--studio-radius-lg: ${st.r.lg}px;`, `--studio-radius-md: ${st.r.md}px;`,
+    `--studio-radius-btn: ${st.r.btn}px;`,
+    `--studio-radius: ${st.r.lg}px;`, `--studio-radius-sm: ${Math.min(st.r.btn, 14)}px;`, `--studio-radius-chip: ${st.r.btn ? 999 : 0}px;`,
+    `--studio-border-width: ${st.bw}px;`, `--studio-border: ${st.cardBorder(t)};`, `--studio-card-border: ${st.cardBorder(t)};`,
+    `--studio-surface: ${st.cardBg(t)};`, `--studio-card-bg: ${st.cardBg(t)};`, `--studio-surface-strong: ${t.surfaceStrong};`,
+    `--studio-shadow: ${sh1};`, `--studio-shadow-1: ${sh1};`, `--studio-shadow-float: ${sh2};`, `--studio-shadow-2: ${sh2};`,
+    `--studio-btn-shadow: ${st.btnShadow(t)};`, `--studio-glow: ${st.glow(t)};`, `--studio-blur: ${st.blur};`,
+    `--studio-scrim: ${look.dark ? 'rgb(0 0 0 / 0.66)' : rgb(pt.ink, 0.48)};`,
+    // Textos de estado escritos a mano en algunas pantallas
+    `--studio-danger-text: ${pt.bad};`, `--studio-success-text: ${pt.ok};`, `--studio-warning-text: ${pt.warn};`,
+    `--studio-success-chip: ${pt.okSoft};`,
+    // Calendario (calendar.css)
+    `--cal-bg: ${look.classic ? rgb(t.bgLight, 0.6) : st.cardBg(t)};`, `--cal-paper: ${pt.surf};`, `--cal-elevated: ${pt.surf};`,
+    `--cal-button-bg: ${pt.surf2};`, `--cal-overlay-bg: ${pt.surf};`, `--cal-selected-bg: ${pt.surf};`,
+    `--cal-outer-border: ${st.cardBorder(t)};`, `--cal-primary: ${t.primaryText};`, `--cal-primary-light: ${pt.pSoft};`,
+    `--cal-primary-hover: ${rgb(pt.p, 0.14)};`, `--cal-text: ${pt.ink};`, `--cal-muted: ${pt.muted};`,
+    `--cal-border: ${pt.border};`, `--cal-today: ${rgb(pt.p, 0.05)};`,
+    `--cal-shadow-sm: none;`, `--cal-shadow: ${sh1};`, `--cal-shadow-lg: ${sh2};`,
+    `--cal-radius: ${st.r.lg}px;`, `--cal-radius-sm: ${Math.min(st.r.lg, st.r.md)}px;`, `--cal-radius-xs: ${Math.min(st.r.btn, 12)}px;`,
+    `--blur: ${st.blur};`,
+  );
+  return `:root:root { ${lines.join(' ')} }`;
+}
+
+/** react-big-calendar trae grises fijos: aquí se pintan con los tokens. */
 const calendarCss = (dark: boolean) => `
   :root:root .rbc-toolbar button { color: var(--cal-muted); background-color: var(--cal-button-bg); }
   :root:root .rbc-toolbar button:hover, :root:root .rbc-toolbar button:focus { color: var(--cal-primary); background-color: var(--cal-primary-light); }
   :root:root .rbc-toolbar button.rbc-active, :root:root .rbc-toolbar button.rbc-active:hover, :root:root .rbc-toolbar button.rbc-active:focus { color: var(--studio-on-primary); background-color: var(--studio-primary-fill); }
-  :root:root .rbc-off-range-bg { background: rgb(var(--studio-bg-deep-rgb) / 0.35); }
+  :root:root .rbc-off-range-bg { background: var(--studio-surf2); }
   :root:root .rbc-off-range { color: var(--studio-text-faint); }
   :root:root .rbc-selected-cell { background-color: var(--cal-primary-hover); }
-  :root:root .rbc-event-label { opacity: 0.85 !important; }
   ${dark ? `
   :root:root .rbc-calendar * { border-color: var(--cal-border); }
   :root:root .rbc-day-slot .rbc-time-slot { border-top-color: rgba(255,255,255,0.04); }
@@ -384,1166 +350,274 @@ const calendarCss = (dark: boolean) => `
   ` : ''}
 `;
 
-/** Reglas comunes de los estilos «de trabajo» (no se aplican a natural). */
-const workingCss = (t: Tones) => `
-  @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
-    .MuiButton-root:hover, .rbc-event:hover { transform: none !important; }
-  }
-  :focus-visible { outline: 2px solid ${t.primaryText}; outline-offset: 2px; }
-`;
-
-const LOOKS: Record<StyleId, Look> = {
-  natural: { tokens: naturalTokens },
-
-  // ── MINIMAL: plano, bordes finos, mucho aire ───────────────────────────
-  minimal: {
-    tokens: (t) => {
-      const line = rgb(t.ink, 0.1);
-      const page = mix(t.bg, '#ffffff', 0.7);
-      return {
-        shape: 3,
-        radius: { paper: 10, dialog: 12, button: 8, buttonSmall: 6, input: 8, chip: 6, item: 8, tooltip: 6, alert: 8, pagination: 6, table: 10 },
-        borderWidth: 1,
-        paperBg: '#ffffff',
-        paperBorder: `1px solid ${line}`,
-        blur: 'none',
-        shadows: ['none', '0 1px 2px rgba(0,0,0,0.04)', '0 1px 2px rgba(0,0,0,0.05), 0 8px 24px -12px rgba(0,0,0,0.12)'],
-        tableBg: '#ffffff',
-        tableBorder: `1px solid ${line}`,
-        dialogBg: '#ffffff',
-        dialogBorder: `1px solid ${rgb(t.ink, 0.08)}`,
-        dialogBlur: 'none',
-        dialogShadow: '0 1px 2px rgba(0,0,0,0.05), 0 16px 40px -16px rgba(0,0,0,0.22)',
-        appBarBg: '#ffffff',
-        appBarBorder: `1px solid ${rgb(t.ink, 0.08)}`,
-        appBarShadow: 'none',
-        appBarBlur: 'none',
-        drawerBg: '#ffffff',
-        drawerBorder: `1px solid ${rgb(t.ink, 0.08)}`,
-        drawerBlur: 'none',
-        inputBg: '#ffffff',
-        body: page,
-      };
-    },
-    extra: (t) => ({
-      ...strongStatus(),
-      typography: {
-        h1: { fontWeight: 400, letterSpacing: '-0.015em' },
-        h2: { fontWeight: 400, letterSpacing: '-0.01em' },
-        h3: { fontWeight: 400 },
-        h4: { fontWeight: 500 },
-      },
-      components: {
-        MuiButton: {
-          styleOverrides: {
-            root: { fontWeight: 500, letterSpacing: '0.01em', transition: 'background-color 0.2s ease, border-color 0.2s ease' },
-            ...flatButtons(t),
-            outlined: {
-              borderWidth: 1, borderColor: t.uiBorder, color: t.textStrong,
-              '&:hover': { borderWidth: 1, borderColor: t.dark, backgroundColor: rgb(t.ink, 0.03) },
-            },
-            text: { color: t.primaryText, '&:hover': { backgroundColor: rgb(t.ink, 0.04) } },
-          },
-        },
-        MuiTableCell: {
-          styleOverrides: {
-            root: { borderBottom: `1px solid ${rgb(t.ink, 0.07)}`, padding: '16px 24px' },
-            head: { color: t.textMuted, backgroundColor: 'transparent', borderBottom: `1px solid ${rgb(t.ink, 0.12)}`, letterSpacing: '0.06em', padding: '16px 24px' },
-          },
-        },
-        MuiTableRow: { styleOverrides: { root: { '&:hover': { backgroundColor: rgb(t.ink, 0.025) } } } },
-        MuiTabs: { styleOverrides: { root: { borderBottom: `1px solid ${rgb(t.ink, 0.08)}` }, indicator: { height: 2, borderRadius: 0, backgroundColor: t.dark } } },
-        MuiTab: { styleOverrides: { root: { color: t.textMuted, '&.Mui-selected': { color: t.dark } } } },
-        MuiDivider: { styleOverrides: { root: { borderColor: rgb(t.ink, 0.08) } } },
-        MuiDialogContent: { styleOverrides: { root: { padding: '8px 36px 28px' } } },
-        MuiChip: { styleOverrides: { root: { fontWeight: 500 } } },
-        ...inputs(t, 8),
-        MuiCssBaseline: { styleOverrides: workingCss(t) },
-      },
-    }),
-  },
-
-  // ── EDITORIAL: de revista, esquinas rectas, líneas finas ───────────────
-  editorial: {
-    tokens: (t) => {
-      const rule = `1px solid ${rgb(t.ink, 0.22)}`;
-      const page = mix(t.bg, '#ffffff', 0.55);
-      return {
-        shape: 1,
-        radius: { paper: 2, dialog: 2, button: 0, buttonSmall: 0, input: 2, chip: 2, item: 2, tooltip: 2, alert: 2, pagination: 0, table: 2 },
-        borderWidth: 1,
-        paperBg: mix(t.bg, '#ffffff', 0.8),
-        paperBorder: rule,
-        blur: 'none',
-        shadows: ['none', 'none', `0 18px 40px -24px ${rgb(t.shadow, 0.4)}`],
-        tableBg: mix(t.bg, '#ffffff', 0.8),
-        tableBorder: rule,
-        dialogBg: mix(t.bg, '#ffffff', 0.9),
-        dialogBorder: `1px solid ${rgb(t.ink, 0.35)}`,
-        dialogBlur: 'none',
-        dialogShadow: `0 18px 40px -24px ${rgb(t.shadow, 0.45)}`,
-        appBarBg: page,
-        appBarBorder: rule,
-        appBarShadow: 'none',
-        appBarBlur: 'none',
-        drawerBg: page,
-        drawerBorder: rule,
-        drawerBlur: 'none',
-        inputBg: rgb('#ffffff', 0.6),
-        body: page,
-      };
-    },
-    extra: (t) => {
-      const spaced = { textTransform: 'uppercase' as const, letterSpacing: '0.12em', fontSize: '0.8rem' };
-      return {
-        ...strongStatus(),
-        typography: {
-          h1: { fontWeight: 400, letterSpacing: '-0.015em', lineHeight: 1.1 },
-          h2: { fontWeight: 400, letterSpacing: '-0.01em' },
-          h3: { fontWeight: 400 },
-          h4: { fontWeight: 400 },
-          h5: { fontWeight: 500 },
-          overline: { letterSpacing: '0.22em' },
-        },
-        components: {
-          MuiButton: {
-            styleOverrides: {
-              root: { fontWeight: 500, ...spaced, transition: 'background-color 0.2s ease, color 0.2s ease' },
-              contained: {
-                background: t.ink, color: bestOn(t.ink, '#ffffff', t.bg), boxShadow: 'none',
-                '&:hover': { background: t.primaryText, color: bestOn(t.primaryText, '#ffffff', t.ink), boxShadow: 'none', transform: 'none' },
-              },
-              outlined: {
-                borderWidth: 1, borderColor: t.ink, color: t.ink,
-                '&:hover': { borderWidth: 1, borderColor: t.ink, backgroundColor: t.ink, color: bestOn(t.ink, '#ffffff', t.bg) },
-              },
-              text: { color: t.ink, '&:hover': { backgroundColor: 'transparent', textDecoration: 'underline', textUnderlineOffset: '0.3em' } },
-              sizeSmall: { fontSize: '0.74rem' },
-            },
-          },
-          MuiTableCell: {
-            styleOverrides: {
-              root: { borderBottom: `1px solid ${rgb(t.ink, 0.14)}` },
-              head: { color: t.ink, backgroundColor: 'transparent', borderBottom: `1px solid ${t.ink}`, letterSpacing: '0.16em', fontSize: '0.72rem' },
-            },
-          },
-          MuiTabs: { styleOverrides: { root: { borderBottom: `1px solid ${rgb(t.ink, 0.22)}` }, indicator: { height: 2, borderRadius: 0, backgroundColor: t.ink } } },
-          MuiTab: { styleOverrides: { root: { color: t.textMuted, '&.Mui-selected': { color: t.ink } } } },
-          MuiDivider: { styleOverrides: { root: { borderColor: rgb(t.ink, 0.2) } } },
-          MuiDialogTitle: { styleOverrides: { root: { fontWeight: 400, fontSize: '1.6rem' } } },
-          MuiChip: { styleOverrides: { root: { border: `1px solid ${rgb(t.ink, 0.25)}`, letterSpacing: '0.04em' } } },
-          MuiLinearProgress: { styleOverrides: { root: { height: 3 } } },
-          ...inputs(t, 2, 1, t.ink),
-          MuiCssBaseline: { styleOverrides: workingCss(t) },
-        },
-      };
-    },
-  },
-
-  // ── LIQUID GLASS: cristal translúcido con blur y degradado de fondo ────
-  glass: {
-    tokens: (t) => ({
-      shape: 8,
-      radius: { paper: 22, dialog: 26, button: 14, buttonSmall: 12, input: 14, chip: 12, item: 14, tooltip: 12, alert: 16, pagination: 12, table: 22 },
-      borderWidth: 1,
-      paperBg: 'rgba(255,255,255,0.5)',
-      paperBorder: '1px solid rgba(255,255,255,0.72)',
-      blur: 'blur(24px) saturate(180%)',
-      shadows: [
-        `inset 0 1px 0 rgba(255,255,255,0.6), 0 4px 16px ${rgb(t.shadow, 0.06)}`,
-        `inset 0 1px 0 rgba(255,255,255,0.6), inset 0 -1px 0 rgba(255,255,255,0.16), 0 8px 32px ${rgb(t.shadow, 0.1)}`,
-        `inset 0 1px 0 rgba(255,255,255,0.7), 0 18px 48px ${rgb(t.shadow, 0.16)}`,
-      ],
-      tableBg: 'rgba(255,255,255,0.5)',
-      tableBorder: '1px solid rgba(255,255,255,0.72)',
-      dialogBg: 'rgba(255,255,255,0.74)',
-      dialogBorder: '1px solid rgba(255,255,255,0.8)',
-      dialogBlur: 'blur(32px) saturate(200%)',
-      dialogShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 16px 48px ${rgb(t.shadow, 0.2)}`,
-      appBarBg: 'rgba(255,255,255,0.45)',
-      appBarBorder: '1px solid rgba(255,255,255,0.7)',
-      appBarShadow: `inset 0 -1px 0 rgba(255,255,255,0.4), 0 4px 24px ${rgb(t.shadow, 0.06)}`,
-      appBarBlur: 'blur(24px) saturate(180%)',
-      drawerBg: 'linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.38) 100%)',
-      drawerBorder: '1px solid rgba(255,255,255,0.7)',
-      drawerBlur: 'blur(28px) saturate(180%)',
-      inputBg: 'rgba(255,255,255,0.62)',
-      body: `radial-gradient(ellipse at 8% 0%, ${rgb(t.primary, 0.22)}, transparent 55%), `
-        + `radial-gradient(ellipse at 95% 100%, ${rgb(t.secondary, 0.2)}, transparent 55%), `
-        + `linear-gradient(150deg, ${mix(t.primary, '#ffffff', 0.84)} 0%, ${t.bg} 50%, ${mix(t.primary, '#ffffff', 0.8)} 100%) fixed`,
-    }),
-    extra: (t) => {
-      // Sin backdrop-filter (navegadores antiguos): cristal casi opaco
-      const noBlur = '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))';
-      const opaque = { [noBlur]: { backgroundColor: 'rgba(255,255,255,0.92)' } };
-      return {
-        ...strongStatus(),
-        typography: { h1: { fontWeight: 600 }, h2: { fontWeight: 600 } },
-        components: {
-          MuiPaper: { styleOverrides: { root: { WebkitBackdropFilter: 'blur(24px) saturate(180%)', ...opaque } } },
-          MuiTableContainer: { styleOverrides: { root: { WebkitBackdropFilter: 'blur(24px) saturate(180%)', ...opaque } } },
-          MuiDialog: { styleOverrides: { paper: { WebkitBackdropFilter: 'blur(32px) saturate(200%)', [noBlur]: { backgroundColor: 'rgba(255,255,255,0.97)' } } } },
-          MuiAppBar: { styleOverrides: { root: opaque } },
-          MuiDrawer: { styleOverrides: { paper: { [noBlur]: { background: 'rgba(255,255,255,0.95)' } } } },
-          MuiButton: {
-            styleOverrides: {
-              contained: {
-                background: `linear-gradient(135deg, ${t.primaryFill}, ${mix(t.primaryFill, t.ink, 0.18)})`,
-                color: t.onPrimary,
-                border: '1px solid rgba(255,255,255,0.35)',
-                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.4), 0 8px 24px ${rgb(t.primaryFill, 0.3)}`,
-                '&:hover': {
-                  background: `linear-gradient(135deg, ${mix(t.primaryFill, '#ffffff', 0.08)}, ${t.primaryFill})`,
-                  boxShadow: `inset 0 1px 0 rgba(255,255,255,0.5), 0 12px 32px ${rgb(t.primaryFill, 0.4)}`,
-                },
-              },
-              outlined: {
-                backgroundColor: 'rgba(255,255,255,0.42)', borderColor: 'rgba(255,255,255,0.85)', color: t.primaryText,
-                boxShadow: `inset 0 1px 0 rgba(255,255,255,0.6), 0 2px 10px ${rgb(t.shadow, 0.06)}`,
-                '&:hover': { backgroundColor: 'rgba(255,255,255,0.65)', borderColor: '#ffffff' },
-              },
-              text: { color: t.primaryText },
-            },
-          },
-          MuiTableCell: { styleOverrides: { head: { color: t.primaryText, backgroundColor: 'rgba(255,255,255,0.35)' } } },
-          MuiTab: { styleOverrides: { root: { color: t.textMuted, '&.Mui-selected': { color: t.primaryText } } } },
-          ...inputs(t, 14),
-          MuiCssBaseline: { styleOverrides: workingCss(t) },
-        },
-      };
-    },
-  },
-
-  // ── BRUTALISTA: bordes gruesos oscuros y sombras duras ─────────────────
-  brutalist: {
-    tokens: (t) => ({
-      shape: 2,
-      radius: { paper: 6, dialog: 8, button: 6, buttonSmall: 4, input: 4, chip: 4, item: 6, tooltip: 4, alert: 6, pagination: 4, table: 6 },
-      borderWidth: 2,
-      paperBg: '#ffffff',
-      paperBorder: `2px solid ${t.ink}`,
-      blur: 'none',
-      shadows: [`2px 2px 0 ${t.ink}`, `4px 4px 0 ${t.ink}`, `6px 6px 0 ${t.ink}`],
-      tableBg: '#ffffff',
-      tableBorder: `2px solid ${t.ink}`,
-      dialogBg: '#ffffff',
-      dialogBorder: `2.5px solid ${t.ink}`,
-      dialogBlur: 'none',
-      dialogShadow: `6px 6px 0 ${t.ink}`,
-      appBarBg: '#ffffff',
-      appBarBorder: `2.5px solid ${t.ink}`,
-      appBarShadow: 'none',
-      appBarBlur: 'none',
-      drawerBg: '#ffffff',
-      drawerBorder: `2.5px solid ${t.ink}`,
-      drawerBlur: 'none',
-      inputBg: '#ffffff',
-      body: mix(t.bg, t.secondary, 0.06),
-    }),
-    extra: (t) => {
-      const ink = t.ink;
-      const press = { transform: 'translate(2px, 2px)', boxShadow: `1px 1px 0 ${ink}` };
-      return {
-        ...strongStatus(),
-        typography: {
-          h1: { fontWeight: 700, letterSpacing: '-0.02em' },
-          h2: { fontWeight: 700, letterSpacing: '-0.02em' },
-          h3: { fontWeight: 700 },
-          h4: { fontWeight: 700 },
-          h5: { fontWeight: 700 },
-          overline: { fontFamily: MONO, letterSpacing: '0.06em', fontWeight: 700 },
-        },
-        components: {
-          MuiPaper: { styleOverrides: { elevation8: { boxShadow: `4px 4px 0 ${ink}` } } },
-          MuiButton: {
-            styleOverrides: {
-              root: { fontWeight: 700, transition: 'transform 0.12s ease, box-shadow 0.12s ease, background-color 0.12s ease' },
-              contained: {
-                background: t.primaryFill, color: t.onPrimary, border: `2px solid ${ink}`, boxShadow: `3px 3px 0 ${ink}`,
-                '&:hover': { background: t.primaryFill, ...press },
-                '&.Mui-disabled': { borderColor: rgb(ink, 0.3), boxShadow: 'none' },
-              },
-              outlined: {
-                borderWidth: 2, borderColor: ink, color: ink, backgroundColor: '#ffffff', boxShadow: `3px 3px 0 ${ink}`,
-                '&:hover': { borderWidth: 2, borderColor: ink, backgroundColor: mix(t.primary, '#ffffff', 0.8), ...press },
-              },
-              text: { color: ink, '&:hover': { backgroundColor: mix(t.primary, '#ffffff', 0.75) } },
-            },
-          },
-          MuiTableCell: {
-            styleOverrides: {
-              root: { borderBottom: `1.5px solid ${rgb(ink, 0.18)}` },
-              head: { fontFamily: MONO, fontWeight: 700, color: bestOn(mix(t.primary, '#ffffff', 0.65), ink, '#ffffff'), backgroundColor: mix(t.primary, '#ffffff', 0.65), borderBottom: `2px solid ${ink}`, letterSpacing: '0.04em' },
-            },
-          },
-          MuiTableRow: { styleOverrides: { root: { '&:hover': { backgroundColor: mix(t.primary, '#ffffff', 0.88) } } } },
-          MuiChip: { styleOverrides: { root: { border: `1.5px solid ${ink}`, fontWeight: 700 } } },
-          MuiTabs: { styleOverrides: { root: { borderBottom: `2px solid ${ink}` }, indicator: { height: 4, borderRadius: 0, backgroundColor: ink } } },
-          MuiTab: { styleOverrides: { root: { fontWeight: 600, color: t.textMuted, '&.Mui-selected': { color: ink, fontWeight: 700 } } } },
-          MuiDivider: { styleOverrides: { root: { borderColor: rgb(ink, 0.3) } } },
-          MuiTooltip: { styleOverrides: { tooltip: { backgroundColor: ink, border: `2px solid ${ink}` } } },
-          MuiAlert: { styleOverrides: { root: { border: `2px solid ${ink}` } } },
-          MuiDialogTitle: { styleOverrides: { root: { fontWeight: 700 } } },
-          MuiLinearProgress: { styleOverrides: { root: { border: `1.5px solid ${ink}`, height: 10 }, bar: { backgroundColor: t.primaryFill } } },
-          ...inputs(t, 4, 2, ink, { boxShadow: `3px 3px 0 ${ink}` }),
-          MuiCssBaseline: { styleOverrides: workingCss(t) },
-        },
-      };
-    },
-  },
-
-  // ── ENERGÍA (oscuro): deportivo, acentos saturados, mayúsculas ─────────
-  energy: {
-    tokens: (t) => ({
-      shape: 3,
-      radius: { paper: 8, dialog: 10, button: 4, buttonSmall: 4, input: 6, chip: 3, item: 6, tooltip: 4, alert: 6, pagination: 4, table: 8 },
-      borderWidth: 1,
-      paperBg: t.surface,
-      paperBorder: '1px solid rgba(255,255,255,0.1)',
-      blur: 'none',
-      shadows: [
-        '0 0 0 1px rgba(255,255,255,0.03), 0 4px 12px -6px rgba(0,0,0,0.7)',
-        '0 0 0 1px rgba(255,255,255,0.04), 0 18px 40px -20px rgba(0,0,0,0.8)',
-        '0 24px 60px -20px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.06)',
-      ],
-      tableBg: t.surface,
-      tableBorder: '1px solid rgba(255,255,255,0.1)',
-      dialogBg: t.surfaceStrong || t.surface,
-      dialogBorder: '1px solid rgba(255,255,255,0.12)',
-      dialogBlur: 'none',
-      dialogShadow: '0 24px 60px -20px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.06)',
-      appBarBg: t.deep || t.bg,
-      appBarBorder: '3px solid transparent',
-      appBarShadow: 'none',
-      appBarBlur: 'none',
-      drawerBg: t.deep || t.bg,
-      drawerBorder: '1px solid rgba(255,255,255,0.08)',
-      drawerBlur: 'none',
-      inputBg: 'rgba(255,255,255,0.05)',
-      body: `linear-gradient(165deg, ${mix(t.bg, t.primary, 0.06)} 0%, ${t.bg} 45%, ${mix(t.bg, t.secondary, 0.06)} 100%) fixed`,
-    }),
-    extra: (t) => {
-      const band = `linear-gradient(100deg, ${t.primary}, ${t.secondary})`;
-      const upper = { textTransform: 'uppercase' as const, letterSpacing: '0.01em', fontStretch: 'condensed' };
-      return {
-        typography: {
-          h1: { fontWeight: 700, lineHeight: 1.1, ...upper },
-          h2: { fontWeight: 700, lineHeight: 1.15, ...upper },
-          h3: { fontWeight: 700, ...upper },
-          h4: { fontWeight: 700 },
-        },
-        components: {
-          MuiAppBar: { styleOverrides: { root: { borderImage: `${band} 1` } } },
-          MuiPaper: { styleOverrides: { elevation8: { boxShadow: '0 24px 60px -20px rgba(0,0,0,0.9), 0 0 0 1px rgba(255,255,255,0.08)' } } },
-          MuiButton: {
-            styleOverrides: {
-              root: { fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase', fontSize: '0.84rem' },
-              contained: {
-                background: `linear-gradient(105deg, ${t.primaryFill} 0%, ${mix(t.primaryFill, '#ffffff', 0.18)} 100%)`,
-                color: t.onPrimary,
-                boxShadow: `0 12px 30px -14px ${rgb(t.primaryFill, 0.75)}`,
-                '&:hover': { background: t.primaryFill, boxShadow: `0 16px 36px -12px ${rgb(t.primaryFill, 0.85)}`, transform: 'translateY(-1px)' },
-                '&.Mui-disabled': { background: 'rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.45)' },
-              },
-              outlined: {
-                borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', color: t.dark,
-                '&:hover': { borderWidth: 2, borderColor: t.primaryText, backgroundColor: 'rgba(255,255,255,0.06)' },
-              },
-              text: { color: t.primaryText, '&:hover': { backgroundColor: 'rgba(255,255,255,0.06)' } },
-              sizeSmall: { fontSize: '0.76rem' },
-            },
-          },
-          MuiTableCell: { styleOverrides: { head: { color: t.primaryText, backgroundColor: 'rgba(255,255,255,0.04)', fontWeight: 700 } } },
-          MuiTabs: { styleOverrides: { indicator: { height: 3, borderRadius: 0, background: band } } },
-          MuiTab: { styleOverrides: { root: { textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600, fontSize: '0.84rem' } } },
-          MuiDialogTitle: { styleOverrides: { root: { textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.01em' } } },
-          MuiCssBaseline: { styleOverrides: workingCss(t) },
-        },
-      };
-    },
-  },
-
-  // ── POP: redondo y alegre, pero contenido ──────────────────────────────
-  pop: {
-    tokens: (t) => {
-      const soft = mix(t.primary, '#ffffff', 0.7);
-      return {
-        shape: 18,
-        radius: { paper: 26, dialog: 30, button: 999, buttonSmall: 999, input: 18, chip: 999, item: 18, tooltip: 14, alert: 18, pagination: 999, table: 26 },
-        borderWidth: 2,
-        paperBg: '#ffffff',
-        paperBorder: `2px solid ${soft}`,
-        blur: 'none',
-        shadows: [
-          `0 6px 16px -10px ${rgb(t.primary, 0.4)}`,
-          `0 14px 30px -14px ${rgb(t.primary, 0.45)}`,
-          `0 22px 40px -16px ${rgb(t.secondary, 0.5)}`,
-        ],
-        tableBg: '#ffffff',
-        tableBorder: `2px solid ${soft}`,
-        dialogBg: '#ffffff',
-        dialogBorder: `2px solid ${mix(t.primary, '#ffffff', 0.6)}`,
-        dialogBlur: 'none',
-        dialogShadow: `0 24px 50px -18px ${rgb(t.secondary, 0.5)}`,
-        appBarBg: 'rgba(255,255,255,0.92)',
-        appBarBorder: `2px solid ${mix(t.primary, '#ffffff', 0.75)}`,
-        appBarShadow: 'none',
-        appBarBlur: 'blur(8px)',
-        drawerBg: '#ffffff',
-        drawerBorder: `2px solid ${mix(t.primary, '#ffffff', 0.75)}`,
-        drawerBlur: 'none',
-        inputBg: '#ffffff',
-        body: `radial-gradient(${rgb(t.primary, 0.13)} 1.5px, transparent 1.7px) 0 0 / 22px 22px, `
-          + `linear-gradient(160deg, ${mix(t.primary, '#ffffff', 0.88)} 0%, ${t.bg} 50%, ${mix(t.secondary, '#ffffff', 0.88)} 100%) fixed`,
-      };
-    },
-    extra: (t) => {
-      const ink = t.ink;
-      return {
-        ...strongStatus(),
-        typography: {
-          h1: { fontWeight: 700, letterSpacing: '-0.02em' },
-          h2: { fontWeight: 700, letterSpacing: '-0.02em' },
-          h3: { fontWeight: 700 },
-          h4: { fontWeight: 700 },
-        },
-        components: {
-          MuiButton: {
-            styleOverrides: {
-              root: { fontWeight: 700, transition: 'transform 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease' },
-              contained: {
-                background: t.primaryFill, color: t.onPrimary, border: `2px solid ${ink}`, boxShadow: `0 4px 0 ${ink}`,
-                '&:hover': { background: t.primaryFill, transform: 'translateY(2px)', boxShadow: `0 2px 0 ${ink}` },
-                '&.Mui-disabled': { borderColor: rgb(ink, 0.3), boxShadow: 'none' },
-              },
-              outlined: {
-                borderWidth: 2, borderColor: mix(t.primaryText, '#ffffff', 0.35), color: t.primaryText, backgroundColor: '#ffffff',
-                '&:hover': { borderWidth: 2, borderColor: t.primaryText, backgroundColor: mix(t.primary, '#ffffff', 0.88) },
-              },
-              text: { color: t.primaryText },
-            },
-          },
-          MuiTableCell: {
-            styleOverrides: {
-              head: { color: ink, backgroundColor: mix(t.secondary, '#ffffff', 0.86), borderBottom: `2px solid ${mix(t.primary, '#ffffff', 0.6)}`, fontWeight: 700 },
-            },
-          },
-          MuiChip: { styleOverrides: { root: { fontWeight: 600, border: `1.5px solid ${mix(t.primary, '#ffffff', 0.55)}` } } },
-          MuiTabs: { styleOverrides: { indicator: { height: 4, borderRadius: 4, backgroundColor: t.primaryFill } } },
-          MuiTab: { styleOverrides: { root: { fontWeight: 600, color: t.textMuted, '&.Mui-selected': { color: t.primaryText } } } },
-          ...inputs(t, 18, 2),
-          MuiCssBaseline: { styleOverrides: workingCss(t) },
-        },
-      };
-    },
-  },
-
-  // ── NEÓN (oscuro): azul-negro, brillo SOLO en los acentos ──────────────
-  neon: {
-    tokens: (t) => ({
-      shape: 2,
-      radius: { paper: 6, dialog: 8, button: 4, buttonSmall: 4, input: 4, chip: 3, item: 6, tooltip: 4, alert: 6, pagination: 4, table: 6 },
-      borderWidth: 1,
-      paperBg: t.surface,
-      paperBorder: `1px solid ${rgb(t.primary, 0.32)}`,
-      blur: 'none',
-      shadows: [
-        `0 0 0 1px ${rgb(t.primary, 0.1)}, 0 0 16px -10px ${rgb(t.primary, 0.45)}`,
-        `0 0 0 1px ${rgb(t.primary, 0.14)}, 0 0 24px -10px ${rgb(t.primary, 0.5)}`,
-        `0 0 0 1px ${rgb(t.secondary, 0.3)}, 0 0 40px -12px ${rgb(t.secondary, 0.4)}, 0 30px 60px -20px rgba(0,0,0,0.85)`,
-      ],
-      tableBg: t.surface,
-      tableBorder: `1px solid ${rgb(t.primary, 0.32)}`,
-      dialogBg: t.surfaceStrong || t.surface,
-      dialogBorder: `1px solid ${rgb(t.secondary, 0.45)}`,
-      dialogBlur: 'none',
-      dialogShadow: `0 0 0 1px ${rgb(t.secondary, 0.2)}, 0 0 40px -12px ${rgb(t.secondary, 0.45)}, 0 30px 60px -20px rgba(0,0,0,0.85)`,
-      appBarBg: t.deep || t.bg,
-      appBarBorder: `1px solid ${rgb(t.primary, 0.45)}`,
-      appBarShadow: `0 0 20px -6px ${rgb(t.primary, 0.5)}`,
-      appBarBlur: 'none',
-      drawerBg: t.deep || t.bg,
-      drawerBorder: `1px solid ${rgb(t.primary, 0.3)}`,
-      drawerBlur: 'none',
-      inputBg: 'rgba(255,255,255,0.04)',
-      body: `linear-gradient(${rgb(t.secondary, 0.05)} 1px, transparent 1px) 0 0 / 44px 44px, `
-        + `linear-gradient(90deg, ${rgb(t.secondary, 0.05)} 1px, transparent 1px) 0 0 / 44px 44px, `
-        + `radial-gradient(ellipse at 12% 0%, ${rgb(t.primary, 0.14)}, transparent 55%), `
-        + `radial-gradient(ellipse at 92% 100%, ${rgb(t.secondary, 0.12)}, transparent 55%), ${t.bg}`,
-    }),
-    extra: (t) => {
-      const glow = (c: string, a = 0.6) => `0 0 16px -2px ${rgb(c, a)}`;
-      const btnText = mix(t.primaryText, '#ffffff', 0.45);
-      return {
-        typography: {
-          h1: { fontWeight: 700, letterSpacing: '0.02em' },
-          h2: { fontWeight: 700, letterSpacing: '0.02em' },
-          h3: { fontWeight: 700 },
-          overline: { fontFamily: MONO, letterSpacing: '0.2em' },
-        },
-        components: {
-          MuiPaper: { styleOverrides: { elevation8: { boxShadow: `0 0 0 1px ${rgb(t.secondary, 0.35)}, 0 0 30px -10px ${rgb(t.secondary, 0.45)}, 0 24px 50px -20px rgba(0,0,0,0.85)` } } },
-          MuiButton: {
-            styleOverrides: {
-              root: { fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', fontSize: '0.82rem' },
-              contained: {
-                background: mix(t.surface, t.primary, 0.2), color: btnText, border: `1px solid ${t.primary}`,
-                boxShadow: `${glow(t.primary)}, inset 0 0 12px -4px ${rgb(t.primary, 0.55)}`,
-                '&:hover': { background: t.primaryFill, color: t.onPrimary, boxShadow: `0 0 28px 0 ${rgb(t.primary, 0.7)}`, transform: 'none' },
-                '&.Mui-disabled': { background: 'rgba(255,255,255,0.06)', borderColor: 'rgba(255,255,255,0.2)', boxShadow: 'none', color: 'rgba(255,255,255,0.45)' },
-              },
-              outlined: {
-                borderColor: rgb(t.secondary, 0.6), color: t.secondaryText,
-                '&:hover': { borderColor: t.secondary, backgroundColor: rgb(t.secondary, 0.12), boxShadow: glow(t.secondary, 0.45) },
-              },
-              text: { color: t.secondaryText, '&:hover': { backgroundColor: rgb(t.secondary, 0.1) } },
-              sizeSmall: { fontSize: '0.74rem' },
-            },
-          },
-          MuiTableCell: {
-            styleOverrides: {
-              head: { fontFamily: MONO, color: t.secondaryText, backgroundColor: rgb(t.primary, 0.06), borderBottom: `1px solid ${rgb(t.primary, 0.45)}`, letterSpacing: '0.14em' },
-            },
-          },
-          MuiTabs: { styleOverrides: { indicator: { height: 2, borderRadius: 0, backgroundColor: t.primary, boxShadow: glow(t.primary, 0.9) } } },
-          MuiTab: { styleOverrides: { root: { textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: '0.82rem' } } },
-          ...inputs(t, 4, 1, t.secondary, { boxShadow: `0 0 0 3px ${rgb(t.secondary, 0.18)}, 0 0 14px ${rgb(t.secondary, 0.35)}` }),
-          MuiChip: { styleOverrides: { root: { border: `1px solid ${rgb(t.secondary, 0.35)}` } } },
-          MuiDialogTitle: { styleOverrides: { root: { letterSpacing: '0.02em' } } },
-          MuiCssBaseline: { styleOverrides: workingCss(t) },
-        },
-      };
-    },
-  },
-};
-
-/** Paleta y componentes comunes a los estilos oscuros (energy, neon). */
-function darkBase(t: Tones, neon: boolean): ThemeOptions {
-  const st = neon
-    ? { error: '#FB7185', warning: '#FCD34D', success: '#4ADE80', info: '#67E8F9' }
-    : { error: '#F87171', warning: '#FBBF24', success: '#4ADE80', info: '#7DD3FC' };
-  const strong = t.surfaceStrong || t.surface;
-  const tint = (c: string, a: number) => mix(strong, c, a);
-  const soft = (c: string) => mix(c, '#ffffff', 0.45);
-  const status = (['error', 'warning', 'success', 'info'] as const);
-  const chip = Object.fromEntries(status.map((k) => [`color${k[0].toUpperCase()}${k.slice(1)}`, { backgroundColor: rgb(st[k], 0.16), color: soft(st[k]) }]));
-  const alert = Object.fromEntries(status.flatMap((k) => {
-    const K = `${k[0].toUpperCase()}${k.slice(1)}`;
-    return [
-      [`standard${K}`, { backgroundColor: tint(st[k], 0.14), color: soft(st[k]), border: `1px solid ${rgb(st[k], 0.45)}`, '& .MuiAlert-icon': { color: st[k] } }],
-      [`filled${K}`, { backgroundColor: st[k], color: NEAR_BLACK }],
-      [`outlined${K}`, { color: soft(st[k]), borderColor: rgb(st[k], 0.6) }],
-    ];
-  }));
-  return {
-    palette: {
-      mode: 'dark',
-      error: { main: st.error },
-      warning: { main: st.warning },
-      success: { main: st.success },
-      info: { main: st.info },
-      action: { hover: 'rgba(255,255,255,0.06)', selected: rgb(t.primary, 0.16), focus: 'rgba(255,255,255,0.12)' },
-    },
-    components: {
-      MuiChip: { styleOverrides: chip },
-      MuiAlert: { styleOverrides: alert },
-      MuiTooltip: {
-        styleOverrides: { tooltip: { backgroundColor: mix(strong, '#ffffff', 0.14), color: t.dark, border: '1px solid rgba(255,255,255,0.12)' } },
-      },
-      MuiSwitch: {
-        styleOverrides: { root: { '& .MuiSwitch-switchBase.Mui-checked': { color: t.primaryText } } },
-      },
-      MuiCheckbox: { styleOverrides: { root: { color: t.textHint, '&.Mui-checked': { color: t.primaryText } } } },
-      MuiRadio: { styleOverrides: { root: { color: t.textHint, '&.Mui-checked': { color: t.primaryText } } } },
-      MuiTab: { styleOverrides: { root: { color: t.textMuted, '&.Mui-selected': { color: t.primaryText } } } },
-      MuiPagination: {
-        styleOverrides: { root: { '& .MuiPaginationItem-root.Mui-selected': { backgroundColor: t.primaryFill, color: t.onPrimary } } },
-      },
-      MuiLinearProgress: { styleOverrides: { root: { backgroundColor: 'rgba(255,255,255,0.12)' } } },
-      MuiBackdrop: { styleOverrides: { root: { '&:not(.MuiBackdrop-invisible)': { backgroundColor: neon ? 'rgba(3,3,12,0.78)' : 'rgba(0,0,0,0.72)' } } } },
-      MuiTextField: {
-        styleOverrides: {
-          root: {
-            '& .MuiOutlinedInput-root': {
-              '& fieldset': { borderColor: t.uiBorder, borderWidth: 1 },
-              '&:hover fieldset': { borderColor: t.dark },
-              '&.Mui-focused fieldset': { borderColor: neon ? t.secondary : t.primaryText, borderWidth: 2 },
-            },
-            '& .MuiInputLabel-root.Mui-focused': { color: neon ? t.secondaryText : t.primaryText },
-          },
-        },
-      },
-      MuiOutlinedInput: { styleOverrides: { notchedOutline: { borderColor: t.uiBorder } } },
-      MuiTableCell: { styleOverrides: { root: { borderBottom: '1px solid rgba(255,255,255,0.08)' } } },
-      MuiTableRow: { styleOverrides: { root: { '&:hover': { backgroundColor: 'rgba(255,255,255,0.04)' } } } },
-      MuiDivider: { styleOverrides: { root: { borderColor: 'rgba(255,255,255,0.1)' } } },
-      MuiTabs: { styleOverrides: { root: { borderBottom: '1px solid rgba(255,255,255,0.1)' } } },
-      MuiMenuItem: { styleOverrides: { root: { '&.Mui-selected': { backgroundColor: rgb(t.primary, 0.18) } } } },
-    },
-  };
-}
-
-/** Bloque `:root { --studio-…: … }` con los tonos, las fuentes y la forma del estilo. */
-function cssVariables(t: Tones, heading: string, body: string, tk?: LookTokens, look?: PanelLook): string {
-  const names: [string, string][] = [
-    ['primary', t.primary],
-    ['primary-light', t.primaryLight],
-    ['primary-pale', t.primaryPale],
-    ['primary-shade', t.primaryShade],
-    ['primary-dark', t.primaryDark],
-    ['primary-deep', t.primaryDeep],
-    ['secondary', t.secondary],
-    ['dark', t.dark],
-    ['text-strong', t.textStrong],
-    ['text-body', t.textBody],
-    ['text-muted', t.textMuted],
-    ['text-hint', t.textHint],
-    ['text-faint', t.textFaint],
-    ['bg', t.bg],
-    ['bg-light', t.bgLight],
-    ['bg-deep', t.bgDeep],
-    ['line', t.line],
-  ];
-  const lines = names.flatMap(([n, v]) => [`--studio-${n}: ${v};`, `--studio-${n}-rgb: ${channels(v)};`]);
-  lines.push(`--studio-font-heading: ${heading};`, `--studio-font-body: ${body};`);
-  if (!tk || !look) return `:root { ${lines.join(' ')} }`;
-  // Variables nuevas: en natural reproducen exactamente lo que ya se veía
-  const extra: [string, string][] = [
-    ['primary-text', t.primaryText],
-    ['primary-fill', t.primaryFill],
-    ['on-primary', t.onPrimary],
-    ['secondary-text', t.secondaryText],
-    ['surface-rgb', channels(t.surface)],
-    ['shadow-rgb', channels(t.shadow)],
-    ['radius', `${tk.radius.paper}px`],
-    ['radius-sm', `${tk.radius.button}px`],
-    ['radius-chip', `${tk.radius.chip}px`],
-    ['border-width', `${tk.borderWidth}px`],
-    ['border', tk.paperBorder],
-    ['surface', tk.paperBg],
-    ['surface-strong', tk.dialogBg],
-    ['shadow', tk.shadows[1]],
-    ['shadow-float', tk.dialogShadow],
-    ['blur', tk.blur],
-  ];
-  lines.push(...extra.map(([n, v]) => `--studio-${n}: ${v};`));
-  if (look.style !== 'natural') {
-    // Calendario (calendar.css): esquinas y bordes del estilo
-    const r = tk.radius;
-    lines.push(
-      `--cal-radius: ${r.paper}px;`, `--cal-radius-sm: ${Math.min(r.paper, r.input)}px;`, `--cal-radius-xs: ${r.button === 999 ? 12 : r.button}px;`,
-      `--cal-outer-border: ${tk.tableBorder};`, `--blur: ${tk.blur};`,
-    );
-    if (look.dark) {
-      lines.push(
-        '--cal-border: rgba(255,255,255,0.1);', '--cal-shadow-sm: none;', `--cal-shadow: ${tk.shadows[0]};`,
-        `--cal-shadow-lg: ${tk.shadows[2]};`, `--cal-muted: ${t.textHint};`, `--cal-primary: ${t.primaryText};`,
-      );
-    } else {
-      lines.push(`--cal-primary: ${t.primaryText};`);
-    }
-    // Textos de estado escritos a mano en algunas pantallas (var(--studio-danger-text, #A0473A)…)
-    const status = look.dark
-      ? { danger: '#FCA5A5', success: '#86EFAC', warning: '#FCD34D', chip: mix(t.surface, '#4ade80', 0.22) }
-      : { danger: '#A0473A', success: '#3D6B2E', warning: '#7A4F00', chip: 'rgba(236,244,231,0.95)' };
-    lines.push(
-      `--studio-danger-text: ${status.danger};`, `--studio-success-text: ${status.success};`,
-      `--studio-warning-text: ${status.warning};`, `--studio-success-chip: ${status.chip};`,
-    );
-    if (look.style === 'brutalist') {
-      lines.push(`--cal-border: ${rgb(t.ink, 0.35)};`, `--cal-shadow: ${tk.shadows[1]};`, '--cal-shadow-sm: none;', `--cal-shadow-lg: ${tk.shadows[1]};`);
-    }
-  }
-  // :root:root para ganar a los valores por defecto de calendar.css (mismo selector)
-  return `:root${look.style === 'natural' ? '' : ':root'} { ${lines.join(' ')} }`;
-}
-
-/** Estilo, tonos y ficha de forma del panel (vista previa en Ajustes → Aspecto). */
-export function panelTokens(site: SiteConfigPublic = DEFAULT_SITE_CONFIG) {
-  const look = panelLook(site);
-  const tones: Tones = studioTones(site, look);
-  return { look, tones, tokens: (LOOKS[look.style] || LOOKS.natural).tokens(tones) };
-}
-
-/** Color de la barra del navegador / app instalada (meta theme-color). */
-export function panelThemeColor(site: SiteConfigPublic = DEFAULT_SITE_CONFIG): string {
-  const look = panelLook(site);
-  if (!look.dark) return site.theme.background;
-  const t: Tones = studioTones(site, look);
-  return t.deep || t.bg;
-}
+// ── Tema MUI ─────────────────────────────────────────────────────────────
 
 export function buildTheme(site: SiteConfigPublic = DEFAULT_SITE_CONFIG): Theme {
   const look = panelLook(site);
-  const t: Tones = studioTones(site, look);
-  const spec = LOOKS[look.style] || LOOKS.natural;
-  const tk = spec.tokens(t);
+  const t = studioTones(site, look);
+  const pt = t.pt;
+  const st = structOf(look);
+  const R = st.r;
+  const dark = look.dark;
+  const S = look.classic ? 'classic' : look.style;
   const heading = headingStack(site.theme.font_heading);
   const body = bodyStack(site.theme.font_body);
-  const P = (a: number) => rgb(t.primary, a);
-  const D = (a: number) => rgb(t.shadow, a);
-  const L = (a: number) => rgb(t.line, a);
-  const R = tk.radius;
-  const natural = look.style === 'natural';
+  const pair = fontPairBySlug(site.theme.style, site.theme.font_pair);
+  const hw = look.classic ? 600 : pair ? pair.weight : headingWeight(site.theme.style);
+  const ink = pt.ink;
+  const sh1 = st.sh1(t);
+  const sh2 = st.sh2(t);
+  const cardBg = st.cardBg(t);
+  const cardBorder = st.cardBorder(t);
+  const brutal = S === 'brutalist';
+  const neon = S === 'neon';
+  const glass = st.blur !== 'none';
+  const headings = { fontFamily: heading, fontWeight: hw, textTransform: st.headingTransform, letterSpacing: st.headingSpacing, color: ink };
+  const fieldBorder = brutal ? ink : pt.borderStrong;
+  const noBlur = '@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)))';
+  const opaque = glass ? { [noBlur]: { backgroundColor: pt.surf }, '@media (prefers-reduced-transparency: reduce)': { backgroundColor: pt.surf, backdropFilter: 'none' } } : {};
+  const semMain = (c: string, soft: string) => ({ main: c, light: soft, dark: c, contrastText: cr('#FFFFFF', c) >= 4.5 ? '#FFFFFF' : (dark ? pt.bg : '#111111') });
+  const sem = ['ok', 'bad', 'warn', 'info'] as const;
+  const semName = { ok: 'Success', bad: 'Error', warn: 'Warning', info: 'Info' } as const;
+  const semColor = (k: typeof sem[number]) => pt[k];
+  const semSoft = (k: typeof sem[number]) => pt[`${k}Soft` as const];
 
-  const base: ThemeOptions = {
+  const css = `
+    ${cssVariables(t, st, look, heading, body, hw)}
+    html { color-scheme: ${dark ? 'dark' : 'light'}; }
+    body { background: ${st.body(t)}; background-color: ${pt.bg}; color: ${ink}; -webkit-font-smoothing: antialiased; }
+    a { color: ${t.primaryText}; }
+    :focus-visible { outline: 2px solid ${t.primaryText}; outline-offset: 2px; }
+    ::selection { background: ${pt.pSoft}; color: ${ink}; }
+    ::-webkit-scrollbar { width: 8px; height: 8px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: ${rgb(pt.borderStrong, 0.6)}; border-radius: 8px; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; scroll-behavior: auto !important; }
+      .MuiButton-root:hover, .rbc-event:hover { transform: none !important; }
+    }
+    ${calendarCss(dark)}
+    ${dark ? lightSheetCss(site, heading, body) : ''}
+  `;
+
+  const options: ThemeOptions = {
     palette: {
-      ...(look.dark ? { mode: 'dark' as const } : {}),
-      primary: {
-        main: natural ? t.primary : t.primaryText,
-        light: t.primaryLight,
-        dark: t.primaryDark,
-        contrastText: natural ? onColor(t.primary, t.dark) : bestOn(t.primaryText, '#ffffff', t.ink),
-      },
-      secondary: {
-        main: t.secondary,
-        light: lighten(t.secondary, 0.3),
-        dark: darken(t.secondary, 0.2),
-        contrastText: onColor(t.secondary, look.dark ? t.ink : t.dark),
-      },
-      background: {
-        default: t.bg,
-        paper: natural ? 'rgba(255, 255, 255, 0.65)' : (t.surfaceStrong || tk.dialogBg),
-      },
-      text: {
-        primary: t.dark,
-        secondary: t.textMuted,
+      mode: dark ? 'dark' : 'light',
+      primary: { main: t.primaryText, light: pt.pSoft, dark: t.primaryDark, contrastText: cr('#FFFFFF', t.primaryText) >= 4.5 ? '#FFFFFF' : (dark ? pt.bg : '#111111') },
+      secondary: { main: pt.sUI, light: pt.sSoft, dark: t.secondaryText, contrastText: cr('#FFFFFF', pt.sUI) >= 4.5 ? '#FFFFFF' : (dark ? pt.bg : '#111111') },
+      success: semMain(pt.ok, pt.okSoft),
+      error: semMain(pt.bad, pt.badSoft),
+      warning: semMain(pt.warn, pt.warnSoft),
+      info: semMain(pt.info, pt.infoSoft),
+      background: { default: pt.bg, paper: pt.surf },
+      text: { primary: ink, secondary: pt.muted, disabled: t.textFaint },
+      divider: pt.border,
+      action: {
+        hover: rgb(dark ? '#FFFFFF' : ink, 0.05),
+        selected: pt.pSoft,
+        focus: rgb(pt.p, 0.16),
+        disabledBackground: rgb(dark ? '#FFFFFF' : ink, 0.08),
         disabled: t.textFaint,
       },
-      // Colores de estado: no son de marca, se mantienen fijos
-      error: { main: '#C2857A', light: '#DBA89D' },
-      warning: { main: '#D4A574', light: '#E8CCAE' },
-      success: { main: '#7D9B6C', light: '#A3BD95' },
-      info: { main: '#8BA0A3', light: '#B3C5C7' },
-      divider: L(0.25),
     },
     typography: {
       fontFamily: body,
-      fontWeightLight: 300,
-      fontWeightRegular: 400,
       fontWeightMedium: 500,
-      fontWeightBold: 600,
-      h1: {
-        fontFamily: heading,
-        fontWeight: 600,
-        fontSize: '2.25rem',
-        lineHeight: 1.2,
-        letterSpacing: '-0.01em',
-        color: t.dark,
-      },
-      h2: {
-        fontFamily: heading,
-        fontWeight: 600,
-        fontSize: '1.875rem',
-        lineHeight: 1.3,
-        color: t.dark,
-      },
-      h3: {
-        fontFamily: heading,
-        fontWeight: 500,
-        fontSize: '1.5rem',
-        lineHeight: 1.4,
-        color: t.dark,
-      },
-      h4: {
-        fontFamily: heading,
-        fontWeight: 500,
-        fontSize: '1.25rem',
-        lineHeight: 1.4,
-        color: t.dark,
-      },
-      h5: {
-        fontFamily: heading,
-        fontWeight: 500,
-        fontSize: '1.1rem',
-        lineHeight: 1.5,
-        color: t.dark,
-      },
-      h6: {
-        fontFamily: body,
-        fontWeight: 500,
-        fontSize: '1rem',
-        lineHeight: 1.5,
-      },
-      body1: {
-        fontFamily: body,
-        fontWeight: 400,
-        fontSize: '0.95rem',
-        lineHeight: 1.7,
-      },
-      body2: {
-        fontFamily: body,
-        fontWeight: 400,
-        fontSize: '0.85rem',
-        lineHeight: 1.6,
-        color: t.textMuted,
-      },
-      button: {
-        fontFamily: body,
-        fontWeight: 500,
-        textTransform: 'none',
-        letterSpacing: '0.02em',
-      },
-      caption: {
-        fontFamily: body,
-        fontWeight: 400,
-        fontSize: '0.75rem',
-        letterSpacing: '0.03em',
-        color: natural ? t.textFaint : t.textHint,
-      },
+      fontWeightBold: 700,
+      h1: { ...headings, fontSize: '2.1rem', lineHeight: 1.15 },
+      h2: { ...headings, fontSize: '1.75rem', lineHeight: 1.2 },
+      h3: { ...headings, fontSize: '1.45rem', lineHeight: 1.25 },
+      h4: { ...headings, fontSize: '1.25rem', lineHeight: 1.3 },
+      h5: { ...headings, fontSize: '1.1rem', lineHeight: 1.35 },
+      h6: { fontFamily: body, fontWeight: 700, fontSize: '1rem', lineHeight: 1.4 },
+      body1: { fontSize: '0.95rem', lineHeight: 1.6 },
+      body2: { fontSize: '0.875rem', lineHeight: 1.55, color: pt.muted },
+      button: { fontFamily: body, fontWeight: 600, textTransform: 'none', letterSpacing: '0.005em' },
+      caption: { fontSize: '0.78rem', color: pt.muted },
+      overline: { fontWeight: 700, letterSpacing: st.labelSpacing, fontSize: '0.72rem', ...(brutal || neon ? { fontFamily: MONO } : {}) },
     },
-    shape: { borderRadius: tk.shape },
+    // borderRadius: n en sx = n × este valor (lo usan las pantallas)
+    shape: { borderRadius: Math.max(2, Math.round(R.md / 3)) },
     spacing: 8,
-
     components: {
-      MuiCssBaseline: {
-        styleOverrides: `
-          ${cssVariables(t, heading, body, tk, look)}
-          body {
-            background: ${tk.body};
-            -webkit-font-smoothing: antialiased;
-          }
-          ::-webkit-scrollbar { width: 6px; }
-          ::-webkit-scrollbar-track { background: transparent; }
-          ::-webkit-scrollbar-thumb { background: ${P(0.3)}; border-radius: 3px; }
-          ::-webkit-scrollbar-thumb:hover { background: ${P(0.5)}; }
-        ${natural ? '' : `  ${look.dark ? ':root { color-scheme: dark; } body { background-color: ' + t.bg + '; }' : `body { background-color: ${t.bg}; }`}\n          ${calendarCss(look.dark)}\n        `}`,
-      },
-
+      MuiCssBaseline: { styleOverrides: css },
       MuiPaper: {
         styleOverrides: {
           root: {
             backgroundImage: 'none',
-            borderRadius: R.paper,
-            backgroundColor: tk.paperBg,
-            backdropFilter: tk.blur,
-            WebkitBackdropFilter: tk.blur,
-            border: tk.paperBorder,
+            backgroundColor: cardBg,
+            border: cardBorder,
+            borderRadius: R.lg,
+            ...(glass ? { backdropFilter: st.blur, WebkitBackdropFilter: st.blur, ...opaque } : {}),
           },
-          elevation0: {
-            boxShadow: 'none',
-          },
-          elevation1: {
-            boxShadow: tk.shadows[0],
-          },
-          elevation2: {
-            boxShadow: tk.shadows[1],
-          },
-          elevation3: {
-            boxShadow: tk.shadows[2],
-          },
+          elevation0: { boxShadow: 'none' },
+          elevation1: { boxShadow: sh1 },
+          elevation2: { boxShadow: sh1 },
+          elevation3: { boxShadow: sh1 },
+          elevation8: { boxShadow: sh2, backgroundColor: pt.surf, ...(brutal ? { border: `2px solid ${ink}` } : {}) },
+          elevation16: { boxShadow: sh2, backgroundColor: pt.surf },
+          elevation24: { boxShadow: sh2, backgroundColor: pt.surf },
         },
       },
-
       MuiAppBar: {
-        styleOverrides: {
-          root: {
-            backgroundColor: tk.appBarBg,
-            backdropFilter: tk.appBarBlur,
-            WebkitBackdropFilter: tk.appBarBlur,
-            boxShadow: tk.appBarShadow,
-            // Estilos «de trabajo»: barra recta con solo la línea de abajo
-            ...(natural ? {} : { border: 'none', borderRadius: 0, color: t.dark }),
-            borderBottom: tk.appBarBorder,
-          },
-        },
+        styleOverrides: { root: { backgroundColor: rgb(pt.bg, 0.92), color: ink, boxShadow: 'none', borderRadius: 0, border: 'none', borderBottom: `1px solid ${pt.border}` } },
       },
-
       MuiDrawer: {
-        styleOverrides: {
-          paper: {
-            border: 'none',
-            background: tk.drawerBg,
-            backdropFilter: tk.drawerBlur,
-            WebkitBackdropFilter: tk.drawerBlur,
-            borderRight: tk.drawerBorder,
-            ...(natural ? {} : { borderRadius: 0 }),
-          },
-        },
+        styleOverrides: { paper: { backgroundColor: pt.surf, border: 'none', borderRadius: 0, boxShadow: sh2 } },
       },
-
-      MuiButton: {
-        styleOverrides: {
-          root: {
-            borderRadius: R.button,
-            textTransform: 'none',
-            fontWeight: 500,
-            padding: '10px 24px',
-            fontSize: '0.9rem',
-            transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
-          },
-          contained: {
-            boxShadow: `0 2px 8px ${P(0.15)}`,
-            background: `linear-gradient(135deg, ${t.primary}, ${t.primaryShade})`,
-            '&:hover': {
-              boxShadow: `0 4px 16px ${P(0.25)}`,
-              background: `linear-gradient(135deg, ${t.primaryHover}, ${t.primary})`,
-              transform: 'translateY(-1px)',
-            },
-          },
-          outlined: {
-            borderWidth: 1.5,
-            borderColor: P(0.4),
-            '&:hover': {
-              borderColor: t.primary,
-              backgroundColor: P(0.05),
-              borderWidth: 1.5,
-            },
-          },
-          text: {
-            '&:hover': {
-              backgroundColor: P(0.06),
-            },
-          },
-          sizeSmall: { padding: '6px 16px', fontSize: '0.8rem', borderRadius: R.buttonSmall },
-        },
-        defaultProps: { disableElevation: true },
-      },
-
-      MuiTableContainer: {
-        styleOverrides: {
-          root: {
-            borderRadius: R.table,
-            backgroundColor: tk.tableBg,
-            backdropFilter: tk.blur,
-            border: tk.tableBorder,
-          },
-        },
-      },
-
-      MuiTableRow: {
-        styleOverrides: {
-          root: {
-            '&:hover': { backgroundColor: P(0.04) },
-            transition: 'background-color 0.2s ease',
-          },
-        },
-      },
-
-      MuiTableCell: {
-        styleOverrides: {
-          root: {
-            borderBottom: `1px solid ${L(0.2)}`,
-            padding: '15px 22px',
-            fontSize: '0.9rem',
-          },
-          head: {
-            fontWeight: 500,
-            fontSize: '0.78rem',
-            color: natural ? t.primary : t.primaryText,
-            backgroundColor: rgb(t.bg, 0.6),
-            borderBottom: `2px solid ${L(0.3)}`,
-            letterSpacing: '0.05em',
-            textTransform: 'uppercase',
-            padding: '16px 22px',
-          },
-        },
-      },
-
-      MuiChip: {
-        styleOverrides: {
-          root: { fontWeight: 500, fontSize: '0.78rem', borderRadius: R.chip },
-          colorSuccess: { backgroundColor: 'rgba(125,155,108,0.12)', color: '#5E7A4D' },
-          colorError: { backgroundColor: 'rgba(194,133,122,0.12)', color: '#A86B5E' },
-          colorWarning: { backgroundColor: 'rgba(212,165,116,0.12)', color: '#B8883C' },
-          colorInfo: { backgroundColor: 'rgba(139,160,163,0.12)', color: '#6B8589' },
-        },
-      },
-
       MuiDialog: {
         styleOverrides: {
           paper: {
-            borderRadius: R.dialog,
-            boxShadow: tk.dialogShadow,
-            backgroundColor: tk.dialogBg,
-            backdropFilter: tk.dialogBlur,
-            border: tk.dialogBorder,
+            borderRadius: R.xl, backgroundColor: pt.surf, boxShadow: sh2,
+            border: brutal ? `2px solid ${ink}` : dark ? `1px solid ${pt.border}` : 'none',
           },
         },
       },
-      MuiDialogTitle: {
+      MuiDialogTitle: { styleOverrides: { root: { ...headings, fontSize: '1.35rem', padding: '24px 28px 12px' } } },
+      MuiDialogContent: { styleOverrides: { root: { padding: '8px 28px 20px' } } },
+      MuiDialogActions: { styleOverrides: { root: { padding: '12px 28px 24px', gap: 8 } } },
+      MuiBackdrop: { styleOverrides: { root: { '&:not(.MuiBackdrop-invisible)': { backgroundColor: dark ? 'rgb(0 0 0 / 0.66)' : rgb(ink, 0.48) } } } },
+      MuiButton: {
+        defaultProps: { disableElevation: true },
         styleOverrides: {
           root: {
-            fontFamily: heading,
-            fontSize: '1.4rem',
-            fontWeight: 600,
-            padding: '30px 34px 16px',
+            borderRadius: R.btn, minHeight: 40, padding: '8px 18px', fontWeight: 600, fontSize: '0.92rem',
+            transition: 'background-color .2s, box-shadow .2s, transform .12s, border-color .2s, color .2s',
+            '&:active': { transform: brutal ? 'translate(2px, 2px)' : 'scale(0.98)', ...(brutal ? { boxShadow: 'none' } : {}) },
+            ...(brutal ? { border: `2px solid ${ink}` } : {}),
           },
+          contained: {
+            backgroundColor: pt.p, color: pt.onP, boxShadow: neon ? st.glow(t) : st.btnShadow(t),
+            '&:hover': { backgroundColor: mix(pt.p, pt.onP, 0.9), boxShadow: neon ? st.glow(t) : st.btnShadow(t) },
+            '&.Mui-disabled': { backgroundColor: rgb(dark ? '#FFFFFF' : ink, 0.1), color: t.textFaint, boxShadow: 'none', ...(brutal ? { borderColor: rgb(ink, 0.3) } : {}) },
+          },
+          containedSecondary: { backgroundColor: pt.sUI, color: cr('#FFFFFF', pt.sUI) >= 4.5 ? '#FFFFFF' : ink },
+          outlined: {
+            borderColor: brutal ? ink : pt.borderStrong, color: ink, backgroundColor: brutal ? pt.surf : 'transparent',
+            borderWidth: brutal ? 2 : 1,
+            '&:hover': { borderColor: brutal ? ink : t.primaryText, backgroundColor: pt.surf2, borderWidth: brutal ? 2 : 1 },
+            ...(brutal ? { boxShadow: st.btnShadow(t) } : {}),
+          },
+          text: { color: t.primaryText, '&:hover': { backgroundColor: pt.pSoft } },
+          sizeSmall: { minHeight: 34, padding: '4px 14px', fontSize: '0.85rem', '@media (pointer: coarse)': { minHeight: 44 } },
+          sizeLarge: { minHeight: 48, padding: '10px 22px', fontSize: '1rem' },
         },
       },
-      MuiDialogContent: {
-        styleOverrides: { root: { padding: '8px 34px 24px' } },
+      MuiIconButton: {
+        styleOverrides: { root: { color: 'inherit', '&:hover': { backgroundColor: pt.surf2 } } },
       },
-      MuiDialogActions: {
-        styleOverrides: { root: { padding: '16px 34px 28px', gap: 10 } },
-      },
-
       MuiTextField: {
         styleOverrides: {
           root: {
             '& .MuiOutlinedInput-root': {
-              borderRadius: R.input,
-              backgroundColor: tk.inputBg,
-              '& fieldset': { borderColor: L(0.4), borderWidth: 1.5 },
-              '&:hover fieldset': { borderColor: t.primaryLight },
-              '&.Mui-focused fieldset': { borderColor: t.primary, borderWidth: 2 },
+              borderRadius: R.md,
+              backgroundColor: pt.surf,
+              '& fieldset': { borderColor: fieldBorder, borderWidth: brutal ? 2 : 1 },
+              '&:hover fieldset': { borderColor: brutal ? ink : t.textBody },
+              '&.Mui-focused fieldset': { borderColor: brutal ? ink : t.primaryText, borderWidth: 2 },
+              '&.Mui-focused': { boxShadow: brutal ? `3px 3px 0 ${ink}` : `0 0 0 3px ${pt.pSoft}` },
             },
+            '& .MuiInputLabel-root.Mui-focused': { color: t.primaryText },
           },
         },
       },
-
-      MuiSelect: {
+      MuiOutlinedInput: {
         styleOverrides: {
-          root: {
-            borderRadius: R.input,
-            backgroundColor: tk.inputBg,
-          },
+          root: { borderRadius: R.md, backgroundColor: pt.surf },
+          notchedOutline: { borderColor: fieldBorder, borderWidth: brutal ? 2 : 1 },
         },
       },
-
-      MuiSwitch: {
+      MuiSelect: { styleOverrides: { root: { borderRadius: R.md } } },
+      MuiChip: {
         styleOverrides: {
-          root: {
-            '& .MuiSwitch-switchBase.Mui-checked': { color: natural ? t.primary : t.primaryText },
-            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: P(0.4) },
-          },
+          root: { fontWeight: 600, fontSize: '0.78rem', borderRadius: brutal ? 0 : 999, ...(brutal ? { border: `1.5px solid ${ink}` } : {}) },
+          ...Object.fromEntries(sem.map((k) => [`color${semName[k]}`, { backgroundColor: semSoft(k), color: semColor(k) }])),
+          colorPrimary: { backgroundColor: pt.pSoft, color: t.primaryText },
+          outlined: { borderColor: pt.borderStrong },
         },
       },
-
+      MuiAlert: {
+        styleOverrides: {
+          root: { borderRadius: R.md, fontSize: '0.9rem', fontWeight: 500, ...(brutal ? { border: `2px solid ${ink}` } : {}) },
+          ...Object.fromEntries(sem.flatMap((k) => [
+            [`standard${semName[k]}`, { backgroundColor: semSoft(k), color: semColor(k), border: brutal ? `2px solid ${ink}` : `1px solid ${rgb(semColor(k), 0.25)}`, '& .MuiAlert-icon': { color: semColor(k) } }],
+            [`filled${semName[k]}`, { backgroundColor: semColor(k), color: cr('#FFFFFF', semColor(k)) >= 4.5 ? '#FFFFFF' : (dark ? pt.bg : '#111111') }],
+            [`outlined${semName[k]}`, { color: semColor(k), borderColor: rgb(semColor(k), 0.5) }],
+          ])),
+        },
+      },
       MuiTabs: {
         styleOverrides: {
-          root: {
-            borderBottom: `1px solid ${L(0.25)}`,
-          },
-          indicator: { height: 3, borderRadius: '3px 3px 0 0', backgroundColor: t.primary },
+          root: { borderBottom: `${brutal ? 2 : 1}px solid ${brutal ? ink : pt.border}` },
+          indicator: { height: brutal ? 4 : 3, borderRadius: brutal ? 0 : '3px 3px 0 0', backgroundColor: brutal ? ink : pt.p, ...(neon ? { boxShadow: `0 0 12px ${rgb(pt.p, 0.8)}` } : {}) },
         },
       },
       MuiTab: {
+        styleOverrides: { root: { textTransform: 'none', fontWeight: 600, fontSize: '0.92rem', color: pt.muted, minHeight: 48, '&.Mui-selected': { color: brutal ? ink : t.primaryText } } },
+      },
+      MuiTableContainer: {
+        styleOverrides: { root: { borderRadius: R.lg, backgroundColor: cardBg, border: cardBorder === '1px solid transparent' ? `1px solid ${pt.border}` : cardBorder } },
+      },
+      MuiTableCell: {
         styleOverrides: {
-          root: {
-            textTransform: 'none',
-            fontWeight: 500,
-            fontSize: '0.9rem',
-            fontFamily: body,
-            color: t.textMuted,
-            '&.Mui-selected': { color: natural ? t.primary : t.primaryText },
+          root: { borderBottom: `1px solid ${pt.border}`, padding: '14px 18px', fontSize: '0.9rem' },
+          head: {
+            fontWeight: 700, fontSize: '0.74rem', color: pt.muted, backgroundColor: pt.surf2, letterSpacing: st.labelSpacing,
+            textTransform: 'uppercase', borderBottom: `${brutal ? 2 : 1}px solid ${brutal ? ink : pt.borderStrong}`,
+            ...(brutal || neon ? { fontFamily: MONO } : {}),
           },
         },
       },
-
+      MuiTableRow: { styleOverrides: { root: { transition: 'background-color .2s', '&:hover': { backgroundColor: rgb(dark ? '#FFFFFF' : ink, 0.03) } } } },
       MuiTooltip: {
         styleOverrides: {
           tooltip: {
-            backgroundColor: D(0.88),
-            backdropFilter: 'blur(10px)',
-            borderRadius: R.tooltip,
-            fontSize: '0.8rem',
-            padding: '8px 14px',
+            backgroundColor: dark ? pt.surf2 : ink, color: dark ? ink : pt.surf, borderRadius: Math.min(R.md, 10), fontSize: '0.8rem', padding: '8px 12px',
+            ...(dark ? { border: `1px solid ${pt.borderStrong}` } : {}),
+          },
+          arrow: { color: dark ? pt.surf2 : ink },
+        },
+      },
+      MuiMenu: { styleOverrides: { paper: { borderRadius: R.md, border: brutal ? `2px solid ${ink}` : `1px solid ${pt.border}` } } },
+      MuiMenuItem: { styleOverrides: { root: { minHeight: 44, borderRadius: Math.min(R.sm, 10), margin: '0 6px', '&.Mui-selected': { backgroundColor: pt.pSoft } } } },
+      MuiListItemButton: { styleOverrides: { root: { borderRadius: Math.min(R.btn, 14) } } },
+      MuiSwitch: {
+        styleOverrides: {
+          root: {
+            '& .MuiSwitch-switchBase.Mui-checked': { color: dark ? pt.onP : '#FFFFFF' },
+            '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': { backgroundColor: pt.p, opacity: 1 },
+            '& .MuiSwitch-track': { backgroundColor: pt.borderStrong, opacity: 1 },
           },
         },
       },
-
+      MuiCheckbox: { styleOverrides: { root: { color: pt.borderStrong, '&.Mui-checked': { color: t.primaryText } } } },
+      MuiRadio: { styleOverrides: { root: { color: pt.borderStrong, '&.Mui-checked': { color: t.primaryText } } } },
       MuiLinearProgress: {
         styleOverrides: {
-          root: { borderRadius: 6, height: 6, backgroundColor: L(0.2) },
-          bar: { borderRadius: 6, backgroundColor: t.primary },
+          root: { borderRadius: brutal ? 0 : 6, height: brutal ? 10 : 6, backgroundColor: pt.surf2, ...(brutal ? { border: `2px solid ${ink}` } : {}) },
+          bar: { borderRadius: brutal ? 0 : 6, backgroundColor: pt.p },
         },
       },
-
-      MuiCircularProgress: {
-        styleOverrides: { root: { color: t.primary } },
-      },
-
-      MuiListItemButton: {
-        styleOverrides: {
-          root: {
-            borderRadius: R.item,
-            margin: '3px 14px',
-            transition: 'all 0.2s ease',
-          },
-        },
-      },
-
-      MuiDivider: {
-        styleOverrides: { root: { borderColor: L(0.25) } },
-      },
-
-      MuiAlert: {
-        styleOverrides: {
-          root: { borderRadius: R.alert, fontSize: '0.9rem', fontWeight: 500 },
-          standardSuccess: { backgroundColor: '#E6F0E0', color: '#3D5A2E', border: '1px solid #A3BD95' },
-          standardError: { backgroundColor: '#FAE8E4', color: '#8B3A30', border: '1px solid #DBA89D' },
-          standardWarning: { backgroundColor: '#FDF0DC', color: '#8B6914', border: '1px solid #E8CCAE' },
-          standardInfo: { backgroundColor: '#E8F0F2', color: '#3D5A63', border: '1px solid #B3C5C7' },
-          filledSuccess: { backgroundColor: '#7D9B6C', color: '#fff' },
-          filledError: { backgroundColor: '#C2857A', color: '#fff' },
-          filledWarning: { backgroundColor: '#D4A574', color: '#fff' },
-          filledInfo: { backgroundColor: '#8BA0A3', color: '#fff' },
-        },
-      },
-
-      MuiSnackbar: {
-        styleOverrides: { root: {} },
-      },
-
+      MuiCircularProgress: { styleOverrides: { root: { color: t.primaryText } } },
+      MuiDivider: { styleOverrides: { root: { borderColor: pt.border } } },
       MuiPagination: {
-        styleOverrides: {
-          root: {
-            '& .MuiPaginationItem-root': {
-              borderRadius: R.pagination,
-              '&.Mui-selected': natural
-                ? { backgroundColor: t.primary, color: onColor(t.primary, t.dark) }
-                : { backgroundColor: t.primaryFill, color: t.onPrimary },
-            },
-          },
-        },
+        styleOverrides: { root: { '& .MuiPaginationItem-root': { borderRadius: Math.min(R.btn, 10), '&.Mui-selected': { backgroundColor: pt.p, color: pt.onP } } } },
       },
-
-      MuiCheckbox: {
-        styleOverrides: {
-          root: {
-            color: natural ? t.primaryLight : t.uiBorder,
-            '&.Mui-checked': { color: natural ? t.primary : t.primaryText },
-          },
-        },
-      },
+      MuiBottomNavigation: { styleOverrides: { root: { backgroundColor: 'transparent' } } },
+      MuiSnackbarContent: { styleOverrides: { root: { backgroundColor: dark ? pt.surf2 : ink, color: dark ? ink : pt.surf, borderRadius: 999 } } },
+      MuiAccordion: { styleOverrides: { root: { '&:before': { display: 'none' } } } },
     },
   };
+  return createTheme(options);
+}
 
-  if (natural) return createTheme(base);
-  if (look.dark) {
-    // Zona clara dentro del panel oscuro (hoja para imprimir…): className="studio-light".
-    // Tonos claros clásicos, pero con el primario oscurecido hasta leerse sobre
-    // blanco (un lima o un rosa neón no se leen en papel).
-    const nt = studioTones(site, { style: 'natural', icons: 'classic', dark: false });
-    const ink = studioTones(site, { style: 'minimal', icons: 'classic', dark: false }).primaryText;
-    const sheet: Tones = {
-      ...nt, primary: ink, primaryLight: lighten(ink, 0.3), primaryPale: lighten(ink, 0.55),
-      primaryShade: darken(ink, 0.12), primaryDark: darken(ink, 0.22), primaryDeep: darken(ink, 0.32),
-      line: mix(ink, nt.bg, 0.25), primaryText: ink, primaryFill: ink, onPrimary: bestOn(ink, '#ffffff', nt.dark),
-    };
-    const light = cssVariables(sheet, heading, body, naturalTokens(sheet), { style: 'natural', icons: 'classic', dark: false })
-      .replace(':root {', '.studio-light { color-scheme: light; color: var(--studio-dark);');
-    (base.components!.MuiCssBaseline as { styleOverrides: string }).styleOverrides += `\n          ${light}\n`;
-  }
-  // Los estilos «de trabajo»: su ficha y sus detalles se suman (deep merge) al
-  // tema base. La paleta va antes de crear el tema (MUI calcula con ella los
-  // tonos claros/oscuros y el texto encima de cada color) y el CSS global de
-  // cada capa se concatena (styleOverrides de CssBaseline es texto).
-  const layers: ThemeOptions[] = [];
-  if (look.dark) layers.push(darkBase(t, look.style === 'neon'));
-  if (spec.extra) layers.push(spec.extra(t, tk, { heading, body }));
-  for (const l of layers) base.palette = { ...base.palette, ...l.palette };
-  const css = [base, ...layers]
-    .map((o) => o.components?.MuiCssBaseline?.styleOverrides)
-    .filter((c): c is string => typeof c === 'string')
-    .join('\n');
-  const rest = layers.map(({ palette: _p, components, ...o }) => {
-    const { MuiCssBaseline: _c, ...others } = components || {};
-    return { ...o, components: others };
-  });
-  const theme = createTheme(base, ...rest);
-  theme.components = { ...theme.components, MuiCssBaseline: { styleOverrides: css } };
-  return theme;
+/**
+ * Zona clara dentro del panel oscuro (hoja para imprimir…): className="studio-light".
+ * Variables de una versión clara de los mismos colores.
+ */
+function lightSheetCss(site: SiteConfigPublic, heading: string, body: string): string {
+  const look: PanelLook = { ...panelLook(site), classic: true, dark: false, side: 'light' };
+  const t = studioTones(site, look);
+  return cssVariables(t, STRUCTS.classic, look, heading, body, 600)
+    .replace(':root:root {', '.studio-light { color-scheme: light; color: var(--studio-dark);');
 }

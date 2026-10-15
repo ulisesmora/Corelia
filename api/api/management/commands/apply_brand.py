@@ -6,7 +6,8 @@ colores de un estudio concreto.
         --logo https://…/logo.png --style natural --tagline "Pilates junto al mar"
 
 --color genera la paleta completa a partir de un solo color (igual que el
-panel). --logo descarga la imagen y la guarda en la base de datos.
+panel, y corregida para que se lea). --palette elige una de las paletas del
+estilo (design/tokens). --logo descarga la imagen y la guarda en la base de datos.
 """
 import io
 
@@ -28,6 +29,7 @@ class Command(BaseCommand):
     def add_arguments(self, parser):
         parser.add_argument('--name', required=True)
         parser.add_argument('--color', help='Color principal de la marca (#RRGGBB)')
+        parser.add_argument('--palette', help='Paleta del estilo (slug, p. ej. «salvia»)')
         parser.add_argument('--logo', help='URL del logo')
         parser.add_argument('--style', choices=[s for s, _ in SiteConfig.STYLE_PRESETS])
         parser.add_argument('--icons', choices=[s for s, _ in SiteConfig.ICON_STYLES])
@@ -41,18 +43,27 @@ class Command(BaseCommand):
             cfg.tagline = o['tagline']
         if o['city']:
             cfg.city = o['city']
-        if o['style']:
-            cfg.style_preset = o['style']
         if o['icons']:
             cfg.icon_style = o['icons']
-        if o['color']:
+        incoming = {}
+        if o['style']:
+            incoming['style_preset'] = o['style']
+        if o['palette']:
+            incoming['palette'] = o['palette']
+        elif o['color']:
             c = o['color'].upper()
             if len(c) != 7 or not c.startswith('#'):
                 raise CommandError('--color debe ser #RRGGBB')
-            cfg.color_primary = c
-            cfg.color_secondary = _mix(c, '#000000', 0.22)
-            cfg.color_dark = _mix(c, '#141414', 0.78)
-            cfg.color_background = _mix(c, '#FFFFFF', 0.92)
+            incoming.update(palette='', color_primary=c, color_secondary=_mix(c, '#000000', 0.22),
+                            color_dark=_mix(c, '#141414', 0.78), color_background=_mix(c, '#FFFFFF', 0.92))
+        if incoming:
+            from api.utils.palettes import THEME_FIELDS, ThemeError, resolve_theme
+            try:
+                resolved = resolve_theme({f: getattr(cfg, f) for f in THEME_FIELDS}, incoming)
+            except ThemeError as e:
+                raise CommandError(e.message)
+            for f, v in resolved.items():
+                setattr(cfg, f, v)
         if o['logo']:
             r = requests.get(o['logo'], timeout=15)
             if not r.ok:

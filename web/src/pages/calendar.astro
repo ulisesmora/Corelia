@@ -3,7 +3,6 @@ import Footer from '../components/Footer';
 import AppFixed from '../components/AppFixed';
 import CalendarViewPage from '../components/CalendarSection';
 import OptimizedHead from '../components/OptimizedHead.astro';
-import PageLoader from '../components/PageLoader.astro';
 import { getSiteConfig, htmlThemeAttrs } from '../lib/site';
 const site = await getSiteConfig();
 ---
@@ -18,13 +17,10 @@ const site = await getSiteConfig();
     />
   </head>
   <body class="format">
-    <PageLoader minMs={300} maxMs={4000} />
-    <AppFixed client:only="react" />
+        <AppFixed client:only="react" />
 
-    <main id="contenido" style="">
-      <CalendarViewPage client:only="react"/>
-
-   
+    <main id="contenido" style="min-height:100vh">
+      <CalendarViewPage client:only="react" />
     </main>
 
     <Footer client:only="react" />

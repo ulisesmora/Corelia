@@ -15,7 +15,6 @@ import { PhotoPicker } from '../components/guide';
 import { authHeaders } from '../utils/auth';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { API_BASE_URL } from '../config';
-import { StepGuide } from '../onboarding';
 
 // ====================================================================
 // PANTALLA "FOTOS DE LA WEB"
@@ -215,26 +214,15 @@ export default function SiteImagesManagement() {
 
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
-      <StepGuide step="content" />
       <PageIntro
         pageKey="site-images"
         title="Fotos de la web"
-        subtitle="Aquí guardas las fotos y textos de los apartados generales de tu web (portada, galería…). Las fotos de cada clase, instructor o sala se cambian en sus propias pantallas."
+        subtitle="Fotos y textos de la portada y la galería de tu web."
         actions={(
           <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
             Añadir una foto
           </Button>
         )}
-        steps={[
-          { title: 'Pulsa «Añadir una foto»', text: 'O «Editar» en una que ya exista.' },
-          { title: 'Elige en qué parte de la web va', text: 'Te decimos debajo dónde se verá exactamente.' },
-          { title: 'Sube la foto y escribe los textos', text: 'Verás la foto recortada tal y como saldrá.' },
-          { title: 'Pulsa «Guardar»', text: 'Saldrá un aviso verde abajo cuando esté guardada.' },
-        ]}
-        tips={[
-          'Para quitar una foto un tiempo sin perderla, usa el interruptor «Visible en la web». Borrar es para siempre.',
-          'Dentro de cada apartado, la foto con la posición más baja (0, 1, 2…) es la que sale primero.',
-        ]}
       />
 
       <Alert severity="info" sx={{ mb: 2.5, fontSize: '0.95rem' }}>
@@ -243,7 +231,7 @@ export default function SiteImagesManagement() {
       </Alert>
 
       <TextField
-        label="Buscar por título o apartado"
+        data-tour="search" label="Buscar por título o apartado"
         placeholder="Escribe una palabra…"
         value={search}
         onChange={(e) => setSearch(e.target.value)}

@@ -9,6 +9,10 @@
 //    `getSiteClient()`.
 import { serverApiRoot } from '../config';
 import { formatMoney } from './money';
+import PALETTES from '../design/palettes.json';
+
+/** Tonos de una paleta (design/tokens; mismos nombres que en el panel). */
+interface PaletteTokens { id: string; p: string; onP: string; pText: string; ink: string; muted: string }
 
 export interface SiteContact {
   email: string;
@@ -42,6 +46,13 @@ export interface SiteTheme {
   style: string;
   /** Familia de iconos: 'line' (Lucide) | 'soft' (Phosphor) | 'solid' (FontAwesome). */
   icons: 'line' | 'soft' | 'solid';
+  /**
+   * Paleta del estilo elegida en el panel ('' = colores propios). Los 4 colores
+   * de arriba ya son los suyos; themeCss() añade sus tonos comprobados (--pal-*).
+   */
+  palette: string;
+  /** Pareja de letra del estilo ('' = propia). Las fuentes de arriba ya son las suyas. */
+  font_pair: string;
 }
 
 /** Textos editables de la portada (panel → Ajustes → Contenido de la web). */
@@ -173,6 +184,8 @@ export const DEFAULT_SITE: SiteConfig = {
     font_body: 'Jost',
     style: 'natural',
     icons: 'line',
+    palette: '',
+    font_pair: '',
   },
   currency: 'EUR',
   country: 'ES',
@@ -351,6 +364,8 @@ export function normalizeSite(raw: unknown): SiteConfig {
       icons: (ICON_FAMILIES as readonly string[]).includes(t.icons as string)
         ? (t.icons as SiteTheme['icons'])
         : d.theme.icons,
+      palette: typeof t.palette === 'string' && /^[a-z0-9-]{1,24}$/.test(t.palette) ? t.palette : '',
+      font_pair: typeof t.font_pair === 'string' && /^[a-z0-9-]{1,48}$/.test(t.font_pair) ? t.font_pair : '',
     },
     currency: /^[A-Z]{3}$/.test(str(r.currency).toUpperCase()) ? str(r.currency).toUpperCase() : d.currency,
     country: [r.country, c.country].map((v) => str(v).toUpperCase()).find((v) => /^[A-Z]{2}$/.test(v)) || d.country,
@@ -539,6 +554,7 @@ function ensureContrast(color: string, against: string, min: number, towards: st
  */
 export function themeCss(cfg: SiteConfig): string {
   const t = cfg.theme;
+  const pal = paletteTokens(cfg);
   const NEAR_BLACK = '#0b0b10';
   const onFill = (fill: string) => (contrast(fill, '#ffffff') >= 3 ? '#ffffff' : (contrast(t.dark, fill) >= 4.5 ? t.dark : NEAR_BLACK));
   const bgLight = luminance(t.background) >= 0.6 ? t.background : mix(t.background, '#ffffff', 0.88);
@@ -549,11 +565,30 @@ export function themeCss(cfg: SiteConfig): string {
   // Segundo tono del primario para degradados y hover: más oscuro si el texto
   // encima es blanco, más claro si es oscuro (el texto sigue leyéndose).
   const primary2 = onPrimary === '#ffffff' ? mix(t.primary, t.dark, 0.35) : mix(t.primary, '#ffffff', 0.3);
+  // Paleta elegida: sus tonos ya comprobados (los mismos que usa el panel)
+  const palCss = pal
+    ? `--pal-ink:${pal.ink};--pal-muted:${pal.muted};--pal-accent:${pal.pText};--on-primary:${pal.onP};`
+    : '';
   return `:root{--brand-primary:${t.primary};--brand-secondary:${t.secondary};--brand-dark:${t.dark};--brand-bg:${t.background};`
     + `--on-primary:${onPrimary};--on-secondary:${onFill(t.secondary)};--brand-primary-2:${primary2};`
     + `--brand-bg-light:${bgLight};--brand-bg-dark:${bgDark};`
     + `--brand-primary-on-light:${primaryOnLight};--brand-primary-on-dark:${primaryOnDark};`
+    + palCss
     + `--font-heading:"${t.font_heading}",Georgia,serif;--font-body:"${t.font_body}",system-ui,-apple-system,"Segoe UI",sans-serif;}`;
+}
+
+/**
+ * Tonos de la paleta elegida en el panel (design/tokens → ../design/palettes.json,
+ * el mismo archivo que usan el API y el panel). null con colores propios, o si
+ * los colores guardados ya no son los de la paleta (se respetan los guardados).
+ */
+export function paletteTokens(cfg: SiteConfig): PaletteTokens | null {
+  const t = cfg.theme;
+  if (!t.palette) return null;
+  const style = (PALETTES.styles as unknown as Record<string, { palettes: PaletteTokens[] }>)[t.style];
+  const p = style?.palettes.find((x) => x.id === t.palette);
+  if (!p || p.p.toUpperCase() !== t.primary.toUpperCase()) return null;
+  return p;
 }
 
 /**

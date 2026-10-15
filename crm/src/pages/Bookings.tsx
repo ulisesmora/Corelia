@@ -672,7 +672,7 @@ export default function BookingViewer() {
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mb: 2 }}>
         <TextField
           fullWidth
-          label="Buscar reservas"
+          data-tour="search" label="Buscar reservas"
           placeholder="Nombre, teléfono, email o clase (p. ej. María o Reformer)"
           helperText="Busca por nombre, apellido, teléfono, email, clase o sala."
           value={searchInput}
@@ -931,20 +931,10 @@ export default function BookingViewer() {
       <PageIntro
         pageKey="bookings"
         title="Reservas"
-        subtitle="Mira quién viene a cada clase, contacta con ellas y cancela una reserva o una clase entera."
-        steps={[
-          { title: 'Busca la clase en el calendario', text: 'Usa «Anterior», «Siguiente» y «Hoy» para moverte entre semanas.' },
-          { title: 'Pulsa la clase', text: 'Se abre una ventana con la lista de personas apuntadas y sus teléfonos.' },
-          { title: 'Elige qué hacer', text: 'Llamar o escribir por WhatsApp, cancelar la reserva de una persona o cancelar la clase para todas.' },
-          { title: '¿Buscas a alguien?', text: 'En la pestaña «Lista de reservas» puedes buscar por nombre, teléfono, email o clase, también reservas antiguas.' },
-        ]}
-        tips={[
-          'Tanto si cancelas la reserva de una persona como la clase entera, a cada una le llega un aviso automático (email, y WhatsApp y móvil si los tiene).',
-          'Antes de cancelar nada te explicamos qué va a pasar y te pedimos que lo confirmes.',
-        ]}
+        subtitle="Quién viene a cada clase."
       />
 
-      <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+      <Box data-tour="bookings-tabs" sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
         <SectionTabs value={currentTab} onChange={handleChangeTab} variant="scrollable" allowScrollButtonsMobile>
           <Tab label="Quién viene (calendario)" icon={<CalendarMonthIcon />} iconPosition="start" sx={{ minHeight: 52 }} />
           <Tab label="Lista de reservas" icon={<ListAltIcon />} iconPosition="start" sx={{ minHeight: 52 }} />

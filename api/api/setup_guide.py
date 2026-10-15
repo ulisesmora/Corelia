@@ -69,12 +69,19 @@ ACK_KEYS = {
     'google': ('done', 'skipped'),
 }
 
+# Puesta en marcha OBLIGATORIA del panel (crm/src/pages/Setup.tsx): 8 pasos,
+# en orden. Un paso está hecho cuando sus datos están Y el estudio ha pulsado
+# «Continuar» en él (setup_steps["flow"]); «launch» = web publicada. Mientras
+# no esté todo, el panel desbloquea secciones según el paso al que se ha
+# llegado (crm/src/onboarding/locks.ts). Con la web publicada, todo hecho.
+FLOW_STEPS = ['studio', 'style', 'rooms', 'instructors', 'class_types', 'schedule', 'plans', 'launch']
+
 DEFAULT_STUDIO_NAME = 'Mi Estudio'
 DEFAULT_ROOM_NAME = 'Sala principal'
 DEFAULT_ROOM_CAPACITY = 10
 SAMPLE_MARK = '(ejemplo)'  # seed_demo: «Laura (ejemplo)»
-STYLE_FIELDS = ('style_preset', 'icon_style', 'color_primary', 'color_secondary', 'color_dark',
-                'color_background', 'font_heading', 'font_body')
+STYLE_FIELDS = ('style_preset', 'icon_style', 'palette', 'font_pair', 'color_primary', 'color_secondary',
+                'color_dark', 'color_background', 'font_heading', 'font_body')
 
 
 # ── Plantillas de tipos de clase ─────────────────────────────────────────────
@@ -156,19 +163,21 @@ CLASS_TEMPLATES = [
 TEMPLATE_BY_KEY = {t[0]: t for t in CLASS_TEMPLATES}
 
 
-def _template_payload(t, existing_titles) -> dict:
+def _template_payload(t, existing: dict) -> dict:
+    """`existing`: {título en minúsculas: id} de los tipos de clase que ya hay."""
     key, title, title_en, cat, minutes, credits, level, capacity, desc, desc_en = t
     cat_name, cat_name_en, _, _ = CATEGORIES[cat]
     return {
         'key': key, 'title': title, 'title_en': title_en, 'category': cat, 'category_name': cat_name,
         'category_name_en': cat_name_en, 'duration_minutes': minutes, 'credits': credits, 'level': level,
         'capacity': capacity, 'description': desc, 'description_en': desc_en,
-        'exists': title.lower() in existing_titles,
+        'exists': title.lower() in existing,
+        'id': existing.get(title.lower()),
     }
 
 
 def list_class_templates() -> list:
-    existing = {t.lower() for t in ClassType.objects.values_list('title', flat=True)}
+    existing = {t.lower(): pk for pk, t in ClassType.objects.order_by('-id').values_list('id', 'title')}
     return [_template_payload(t, existing) for t in CLASS_TEMPLATES]
 
 
@@ -367,6 +376,7 @@ def compute_progress(cfg: SiteConfig | None = None) -> dict:
             'can_skip': 'skipped' in ACK_KEYS.get(key, ()),
         })
 
+    flow = flow_state(cfg, done_map)
     required_done = sum(1 for s in steps if s['required'] and s['done'])
     finished = [s for s in steps if s['status'] in ('done', 'skipped')]
     pending = [s for s in steps if s['status'] not in ('done', 'skipped')]
@@ -385,6 +395,41 @@ def compute_progress(cfg: SiteConfig | None = None) -> dict:
         'missing_to_publish': [s['key'] for s in steps if s['required'] and not s['done']],
         'counts': counts,
         'steps': steps,
+        'flow': flow,
+    }
+
+
+def _confirmed(cfg: SiteConfig) -> list:
+    steps = cfg.setup_steps if isinstance(cfg.setup_steps, dict) else {}
+    value = steps.get('flow')
+    return [k for k in value if k in FLOW_STEPS] if isinstance(value, list) else []
+
+
+def flow_state(cfg: SiteConfig, done_map: dict) -> dict:
+    """Estado de la puesta en marcha obligatoria (8 pasos en orden).
+
+    reached: número (1…8) del primer paso sin terminar; 9 = todo hecho. Los
+    pasos se terminan en orden: uno hecho después de uno pendiente no cuenta
+    para desbloquear (el panel se abre según `reached`)."""
+    published = bool(cfg.setup_completed)
+    confirmed = set(_confirmed(cfg))
+    items, reached = [], None
+    for i, key in enumerate(FLOW_STEPS, start=1):
+        data_ok = published if key == 'launch' else bool(done_map.get(key))
+        done = published or (data_ok and (key == 'launch' or key in confirmed))
+        items.append({'key': key, 'done': done, 'data_done': data_ok, 'confirmed': key in confirmed})
+        if not done and reached is None:
+            reached = i
+    reached = reached or len(FLOW_STEPS) + 1
+    raw = cfg.setup_steps if isinstance(cfg.setup_steps, dict) else {}
+    return {
+        'steps': items,
+        'total': len(FLOW_STEPS),
+        'reached': reached,
+        'current': FLOW_STEPS[reached - 1] if reached <= len(FLOW_STEPS) else None,
+        'left': len(FLOW_STEPS) - reached + 1,
+        'finished': reached > len(FLOW_STEPS),
+        'later': bool(raw.get('later')) and not published,
     }
 
 

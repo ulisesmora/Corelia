@@ -38,6 +38,23 @@ export interface SetupProgress {
   missing_to_publish: StepKey[];
   counts: Record<string, number>;
   steps: StepState[];
+  /** Puesta en marcha obligatoria (8 pasos en orden; ver ./flow.ts) */
+  flow: FlowState;
+}
+
+export type FlowKey = 'studio' | 'style' | 'rooms' | 'instructors' | 'class_types' | 'schedule' | 'plans' | 'launch';
+
+export interface FlowState {
+  steps: { key: FlowKey; done: boolean; data_done: boolean; confirmed: boolean }[];
+  total: number;
+  /** Número (1…8) del primer paso sin terminar; 9 = todo hecho */
+  reached: number;
+  current: FlowKey | null;
+  /** Pasos que quedan (incluido publicar) */
+  left: number;
+  finished: boolean;
+  /** «Guardar y seguir luego»: el panel se abre limitado en vez de en la puesta en marcha */
+  later: boolean;
 }
 
 export interface ClassTemplate {
@@ -53,12 +70,15 @@ export interface ClassTemplate {
   description: string;
   description_en: string;
   exists: boolean;
+  /** Id del tipo de clase si ya existe */
+  id: number | null;
 }
 
 export interface TemplateItem {
   key: string;
   title?: string;
   duration_minutes?: number;
+  credits?: number;
   instructor_id?: number | null;
 }
 
@@ -102,3 +122,86 @@ export const updateRoom = (id: number, patch: { name?: string; capacity?: number
   call<{ id: number; name: string; capacity: number }>(`v1/rooms/${id}/`, {
     method: 'PATCH', body: JSON.stringify(patch),
   });
+
+// ── Puesta en marcha obligatoria (api/api/setup_flow.py) ─────────────────
+
+/** «Continuar» en un paso (exige sus datos y los anteriores hechos). */
+export const confirmFlowStep = (key: FlowKey) =>
+  call<SetupProgress>('v1/setup/flow/', { method: 'POST', body: JSON.stringify({ confirm: key }) });
+
+/** «Guardar y seguir luego». */
+export const setSetupLater = (later: boolean) =>
+  call<SetupProgress>('v1/setup/flow/', { method: 'POST', body: JSON.stringify({ later }) });
+
+export const createInstructor = (name: string) =>
+  call<{ id: number; name: string }>('v1/setup/instructors/', { method: 'POST', body: JSON.stringify({ name }) });
+
+export const renameInstructor = (id: number, name: string) =>
+  call<{ id: number; name: string }>(`v1/instructors/${id}/`, { method: 'PATCH', body: JSON.stringify({ name }) });
+
+export const listInstructors = () => call<{ id: number; name: string }[]>('v1/instructors/');
+
+async function remove(path: string) {
+  const res = await fetch(`${API_BASE_URL}${path}`, { method: 'DELETE', headers: authHeaders() });
+  if (!res.ok && res.status !== 404) {
+    let message = '';
+    try { message = (await res.clone().json())?.error || ''; } catch { /* sin cuerpo */ }
+    throw new Error(message || (await friendlyError(res)));
+  }
+}
+
+export const deleteInstructor = (id: number) => remove(`v1/instructors/${id}/`);
+export const deleteRoom = (id: number) => remove(`v1/rooms/${id}/`);
+export const listRooms = () => call<{ id: number; name: string; capacity: number }[]>('v1/rooms/');
+
+/** Quita una clase elegida por error (y sus huecos de la semana). */
+export const deleteClassType = (id: number) => remove(`v1/setup/class-types/${id}/`);
+
+export const updateClassType = (id: number, patch: { title?: string; duration_minutes?: number; default_price_credits?: number }) =>
+  call<{ id: number }>(`v1/class-types/${id}/`, { method: 'PATCH', body: JSON.stringify(patch) });
+
+export interface WeekSlot {
+  id: number;
+  weekday: number;
+  start_time: string;
+  class_type_id: number;
+  title: string;
+  room_id: number;
+  duration_minutes: number | null;
+}
+
+export interface WeekData {
+  slots: WeekSlot[];
+  class_types: { id: number; title: string; duration_minutes: number; credits: number; category: string }[];
+  rooms: { id: number; name: string; capacity: number }[];
+}
+
+export const loadWeek = () => call<WeekData>('v1/setup/week/');
+export const addWeekSlot = (body: { weekday: number; start_time: string; class_type_id: number; room_id?: number }) =>
+  call<WeekData>('v1/setup/week/', { method: 'POST', body: JSON.stringify(body) });
+export const changeWeekSlot = (id: number, class_type_id: number) =>
+  call<WeekData>(`v1/setup/week/${id}/`, { method: 'PATCH', body: JSON.stringify({ class_type_id }) });
+export const removeWeekSlot = (id: number) => call<WeekData>(`v1/setup/week/${id}/`, { method: 'DELETE' });
+
+export interface PackSuggestion {
+  key: string;
+  name: string;
+  description: string;
+  credits: number;
+  price: string;
+  expire_days: number;
+  on: boolean;
+  plan_id: number | null;
+  suggested_on: boolean;
+}
+
+export const loadPacks = () => call<{ packs: PackSuggestion[]; currency: string }>('v1/setup/packs/');
+export const savePack = (body: { key: string; on?: boolean; price?: string }) =>
+  call<{ packs: PackSuggestion[]; currency: string }>('v1/setup/packs/', { method: 'POST', body: JSON.stringify(body) });
+
+/** Visitas guiadas y consejos ya vistos (por persona, en el servidor). */
+export const loadSeenTips = () => call<{ seen: string[] }>('v1/setup/tips/');
+export const markTipSeen = (key: string) =>
+  call<{ seen: string[] }>('v1/setup/tips/', { method: 'POST', body: JSON.stringify({ key }) });
+export const resetTips = () =>
+  call<{ seen: string[] }>('v1/setup/tips/', { method: 'POST', body: JSON.stringify({ reset: true }) });

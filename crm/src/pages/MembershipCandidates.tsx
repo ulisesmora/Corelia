@@ -199,17 +199,8 @@ export default function MembershipCandidates() {
       <PageIntro
         pageKey="membership-candidates"
         title="Candidatas a membresía"
-        subtitle="Clientas que vienen casi cada semana y todavía pagan con bonos. Con la membresía su plaza se reserva sola y suele salirles más barato."
+        subtitle="Vienen casi cada semana y aún pagan con bonos."
         actions={<Button variant="outlined" startIcon={<RefreshIcon />} onClick={load}>Actualizar</Button>}
-        steps={[
-          { title: 'Mira quién sale en la lista', text: 'Te decimos cuánto viene y qué membresía le iría mejor.' },
-          { title: 'Pulsa «Escribir por WhatsApp»', text: 'Se abre WhatsApp con un mensaje ya escrito. Puedes cambiarlo antes de enviarlo.' },
-          { title: 'Listo', text: 'Al pulsarlo la marcamos como «ya le escribiste» para que no le repitas el mensaje.' },
-        ]}
-        tips={[
-          'Si prefieres escribirle por otro sitio, usa «Copiar mensaje» y luego «Ya le he escrito».',
-          'Además, cada clienta ve esta recomendación en su cuenta de la web y recibe como mucho un email automático al mes (3 como máximo en total).',
-        ]}
       />
 
       {rows && rows.length > 0 && (

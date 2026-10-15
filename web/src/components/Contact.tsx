@@ -38,7 +38,7 @@ const fadeUp = {
   }),
 };
 
-function ContactInner() {
+function ContactInner({ hideHeading = false }: { hideHeading?: boolean }) {
   const t = useT();
   const site = useSite();
 
@@ -126,6 +126,7 @@ function ContactInner() {
 
         {/* ── Left: Editorial info ── */}
         <Box flex={{ base: 'none', lg: '1' }}>
+          {!hideHeading && (<>
           {/* Section badge */}
           <MotionBox
             custom={0} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}
@@ -153,6 +154,7 @@ function ContactInner() {
             </Text>
           </MotionBox>
 
+          </>)}
           {/* Thin accent line */}
           <MotionBox custom={2} variants={fadeUp} initial="hidden" whileInView="visible" viewport={{ once: true }}>
             <Box w="48px" h="2px" bg={C.accent} borderRadius="full" mb={6} />
@@ -373,10 +375,11 @@ function ContactInner() {
 
 // Se renderiza en el servidor (datos de contacto en el HTML inicial) con el
 // idioma de la página.
-function Contacto() {
+/** `hideHeading`: en /contacto la página ya tiene su título (sin «Contáctanos» repetido). */
+function Contacto({ hideHeading = false }: { hideHeading?: boolean }) {
   return (
     <Chakra>
-      <ContactInner />
+      <ContactInner hideHeading={hideHeading} />
     </Chakra>
   );
 }

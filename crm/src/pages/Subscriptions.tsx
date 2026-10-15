@@ -341,7 +341,7 @@ export default function SubscriptionsPage() {
       <PageIntro
         pageKey="subscriptions"
         title="Membresías"
-        subtitle="Las clientas que pagan cada mes (o cada 2-3 meses) de forma automática, y quién tiene un pago pendiente."
+        subtitle="Quién paga cada mes y quién tiene un pago pendiente."
         actions={
           <>
             <Button variant="outlined" startIcon={<RefreshIcon />} onClick={fetchSubs} disabled={loading}>
@@ -350,15 +350,6 @@ export default function SubscriptionsPage() {
             <Button variant="contained" startIcon={<AddIcon />} onClick={openCreateDialog}>Crear membresía a mano</Button>
           </>
         }
-        steps={[
-          { title: 'Revisa los pagos pendientes', text: 'Pulsa «Pago pendiente» arriba de la lista para ver quién tiene un cobro sin pagar.' },
-          { title: 'Escríbeles si hace falta', text: 'El botón WhatsApp abre un mensaje ya escrito para recordarle que revise su tarjeta.' },
-          { title: 'Mira el detalle', text: 'Con «Ver detalle» ves sus créditos y en qué los ha gastado.' },
-        ]}
-        tips={[
-          `Lo normal es que la clienta contrate la membresía ella misma en la web (${webName ? `${webName} → ` : ''}Precios) con su tarjeta. «Crear membresía a mano» es solo para casos especiales.`,
-          'Las bajas las hace la propia clienta desde su cuenta en la web: se da de baja al final del periodo que ya pagó.',
-        ]}
       />
 
       {/* Filtros por estado */}
@@ -392,7 +383,7 @@ export default function SubscriptionsPage() {
       )}
 
       <TextField
-        label="Buscar"
+        data-tour="search" label="Buscar"
         placeholder="Nombre, email o plan (p. ej. Marta o Starter)"
         value={search}
         onChange={(e) => { setSearch(e.target.value); setPage(1); }}

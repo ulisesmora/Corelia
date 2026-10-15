@@ -469,22 +469,12 @@ export default function BroadcastManagement() {
       <PageIntro
         pageKey="mails"
         title="Avisos a clientas"
-        subtitle="Manda un mensaje a todas las clientas a la vez: por email, como notificación en el móvil, o de las dos formas."
+        subtitle="Un mensaje a todas tus clientas: por email, al móvil o las dos cosas."
         actions={
           <Button variant="contained" size="large" startIcon={<SendIcon />} onClick={openNew}>
             Escribir un aviso nuevo
           </Button>
         }
-        steps={[
-          { title: 'Pulsa «Escribir un aviso nuevo»', text: 'Se abre una ventana con el mensaje a la izquierda y cómo se verá a la derecha.' },
-          { title: 'Elige por dónde lo mandas', text: 'Notificación al móvil (llega al momento), email, o los dos.' },
-          { title: 'Escribe el mensaje', text: 'Un título corto, una frase destacada y el texto completo.' },
-          { title: 'Revisa y envía', text: 'Antes de mandarlo te diremos a cuántas clientas llega. Una vez enviado no se puede retirar.' },
-        ]}
-        tips={[
-          <>¿Quieres repetir un aviso anterior? Pulsa <b>«Reutilizar»</b> en el historial: se copia el texto y solo tienes que cambiar lo necesario.</>,
-          <>La notificación al móvil solo llega a las clientas que instalaron la app del estudio y aceptaron recibir notificaciones.</>,
-        ]}
       />
 
       {audience && (
@@ -511,7 +501,7 @@ export default function BroadcastManagement() {
       {broadcasts.length > 5 && (
         <TextField
           fullWidth
-          label="Buscar en el historial"
+          data-tour="search" label="Buscar en el historial"
           placeholder="Escribe parte del asunto o el título…"
           value={searchTerm}
           onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}

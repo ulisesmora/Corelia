@@ -1,36 +1,42 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import {
-  Alert, Box, Button, ButtonBase, Chip, CircularProgress, FormControlLabel, Paper, Stack, Switch, TextField,
-  ThemeProvider, Typography,
+  Alert, Box, Button, ButtonBase, CircularProgress, Collapse, FormControlLabel, Stack, Switch, TextField, Typography,
 } from '@mui/material';
-import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { useNotify } from '../guide';
 import { useSite } from '../../site/SiteProvider';
-import { normalizeSiteConfig } from '../../site/siteConfig';
 import StudioIcon from '../../site/StudioIcon';
-import { buildTheme, panelTokens } from '../../theme';
+import { loadPreviewFonts } from '../../site/fonts';
+import { styleShape } from '../../theme';
+import {
+  SINGLE_WEIGHT_FONTS, STYLE_ORDER, colorsFromBrand, fontPairBySlug, fontPairsFor, headingWeight, isDarkStyle, palettesFor,
+  pickCustomColors, pickFontPair, pickPalette, pickStyle, sameColor, sideOf, styleEntry, themeTokens,
+  type PaletteTokens, type SiteColors,
+} from '../../design/tokens';
+import type { StyleId } from '../../site/siteConfig';
 import { saveSettings } from './api';
+import type { StudioSettings } from './api';
 import { FaBell, FaCalendarAlt, FaHeart, FaMapMarkerAlt, FaUser } from 'react-icons/fa';
 import { LuBell, LuCalendar, LuHeart, LuMapPin, LuUser } from 'react-icons/lu';
 import { PiBellLight, PiCalendarBlankLight, PiHeartLight, PiMapPinLight, PiUserLight } from 'react-icons/pi';
-import type { StudioSettings } from './api';
-import {
-  colorsFromImage, contrast, FONT_PAIRS, ICON_STYLES, loadGoogleFonts, PALETTES, paletteFromColor,
-  STYLE_PRESETS, styleById, type IconStyleId, type StylePreset,
-} from './presets';
+import { colorsFromImage, ICON_STYLES, type IconStyleId } from './presets';
+
+// ====================================================================
+// «Tu estilo» (asistente de bienvenida, guía de puesta en marcha y Ajustes →
+// Aspecto): estilo con miniatura, 10 paletas, 3 parejas de letra, iconos y
+// vista previa en directo de la web y del panel. Las paletas y la letra salen
+// de src/design/palettes.json (mismo origen que la web y el API). Los colores
+// propios se corrigen para que se lean (igual que al guardar en el API).
+// ====================================================================
 
 interface Props {
   value: StudioSettings;
   onChange: (patch: Partial<StudioSettings>) => void;
-  /** Sin la maqueta «Así se verá» del final (la guía la enseña al lado) */
+  /** Sin la vista previa (la guía la enseña al lado) */
   hidePreview?: boolean;
 }
 
-type ColorKey = 'color_primary' | 'color_secondary' | 'color_dark' | 'color_background';
 type IconComp = React.ComponentType<{ size?: number }>;
 const HEX = /^#[0-9A-Fa-f]{6}$/;
-const same = (a: string, b: string) => a?.toLowerCase() === b?.toLowerCase();
 
 // Iconos de muestra de cada familia: calendario, persona, ubicación, aviso, favorito
 const ICON_SAMPLES: Record<IconStyleId, IconComp[]> = {
@@ -39,36 +45,71 @@ const ICON_SAMPLES: Record<IconStyleId, IconComp[]> = {
   solid: [FaCalendarAlt, FaUser, FaMapMarkerAlt, FaBell, FaHeart],
 };
 
-/** Estilo, iconos, colores y tipografía de la web, con vista previa en vivo. */
+const colorsOf = (v: StudioSettings): SiteColors => ({
+  primary: v.color_primary, secondary: v.color_secondary, dark: v.color_dark, background: v.color_background,
+});
+
+/** Tokens de lo que se está eligiendo (aún sin guardar). */
+function previewTokens(v: StudioSettings): PaletteTokens {
+  const ok = [v.color_primary, v.color_secondary, v.color_dark, v.color_background].every((c) => HEX.test(c || ''));
+  const colors = ok ? colorsOf(v) : palettesFor(v.style_preset)[0].fields;
+  return themeTokens({ style: v.style_preset, palette: v.palette, ...colors }).tokens;
+}
+
+const sectionTitle = (id: string, text: string, extra?: ReactNode) => (
+  <Stack direction="row" alignItems="baseline" spacing={1} sx={{ mb: 1.25 }}>
+    <Typography id={id} component="h2" sx={{ fontFamily: 'var(--studio-font-body)', fontWeight: 700, fontSize: '1.05rem', color: 'var(--studio-ink)' }}>{text}</Typography>
+    {extra}
+  </Stack>
+);
+
+const pressedRing = {
+  borderColor: 'var(--studio-primary-fill)',
+  boxShadow: '0 0 0 3px var(--studio-p-soft)',
+};
+
 export default function StyleSection({ value, onChange, hidePreview }: Props) {
-  const [justPicked, setJustPicked] = useState<StylePreset | null>(null);
-  const [baseColor, setBaseColor] = useState(value.color_primary);
+  const style = (value.style_preset || 'natural') as StyleId;
+  const custom = !value.palette;
+  const pairs = fontPairsFor(style);
+  const [customOpen, setCustomOpen] = useState(custom);
+  const [fontsOpen, setFontsOpen] = useState(!value.font_pair);
+  // Colores propios que tenía (para volver a ellos con «Mis colores»)
+  const [ownColors, setOwnColors] = useState<SiteColors | null>(custom ? colorsOf(value) : null);
+  const [brand, setBrand] = useState(value.color_primary);
+  const [fixNote, setFixNote] = useState('');
   const [logoColors, setLogoColors] = useState<string[] | null>(null);
   const [logoBusy, setLogoBusy] = useState(false);
 
   useEffect(() => {
-    loadGoogleFonts([value.font_heading, value.font_body, ...FONT_PAIRS.flatMap((f) => [f.heading, f.body]),
-      ...STYLE_PRESETS.flatMap((s) => [s.fonts.heading, s.fonts.body])]);
-  }, [value.font_heading, value.font_body]);
+    loadPreviewFonts([...pairs.flatMap((f) => [f.heading, f.body]), value.font_heading, value.font_body], SINGLE_WEIGHT_FONTS);
+  }, [pairs, value.font_heading, value.font_body]);
 
-  const style = styleById(value.style_preset);
-
-  const pickStyle = (s: StylePreset) => {
-    onChange({ style_preset: s.id });
-    setJustPicked(s);
+  const chooseStyle = (s: StyleId) => {
+    if (s === style) return;
+    if (custom) setOwnColors(colorsOf(value));
+    onChange(pickStyle(s, { palette: value.palette, font_pair: value.font_pair }));
+    setFixNote('');
   };
 
-  const applyStyleLook = (s: StylePreset) => {
-    onChange({
-      color_primary: s.palette.primary, color_secondary: s.palette.secondary,
-      color_dark: s.palette.dark, color_background: s.palette.background,
-      font_heading: s.fonts.heading, font_body: s.fonts.body,
-    });
-    setJustPicked(null);
+  const choosePalette = (id: string) => {
+    if (custom) setOwnColors(colorsOf(value));
+    onChange(pickPalette(style, id));
+    setCustomOpen(false);
+    setFixNote('');
   };
 
-  const setPalette = (p: { primary: string; secondary: string; dark: string; background: string }) =>
-    onChange({ color_primary: p.primary, color_secondary: p.secondary, color_dark: p.dark, color_background: p.background });
+  const applyCustom = (colors: SiteColors, why = '') => {
+    const patch = pickCustomColors(style, colors);
+    const { changed, ...fields } = patch;
+    onChange(fields);
+    setFixNote(changed ? why || 'Hemos ajustado un poco los tonos para que los textos y los botones se lean bien.' : '');
+  };
+
+  const chooseCustom = () => {
+    setCustomOpen(true);
+    if (!custom) applyCustom(ownColors || colorsFromBrand(style, value.color_primary));
+  };
 
   const extractFromLogo = async () => {
     if (!value.logo_url) return;
@@ -82,325 +123,366 @@ export default function StyleSection({ value, onChange, hidePreview }: Props) {
     }
   };
 
-  // Avisos de legibilidad (WCAG: 4,5 para texto normal, 3 para botones)
-  const warnings: string[] = [];
-  if (HEX.test(value.color_primary) && contrast('#FFFFFF', value.color_primary) < 3 && contrast('#111111', value.color_primary) < 4.5) {
-    warnings.push('El texto de los botones se lee mal sobre el color principal. Prueba un tono más oscuro o más claro.');
-  }
-  if (!style.dark && HEX.test(value.color_dark) && HEX.test(value.color_background)
-    && contrast(value.color_dark, value.color_background) < 4.5) {
-    warnings.push('El color oscuro (textos) y el fondo se parecen demasiado: los textos costarán de leer.');
-  }
-  if (style.dark && HEX.test(value.color_background) && contrast('#FFFFFF', value.color_background) < 4.5) {
-    warnings.push(`«${style.name}» es un estilo oscuro: el fondo debería ser oscuro para que el texto claro se lea. Pulsa «Aplicar» arriba o elige un fondo más oscuro.`);
-  }
-
-  const colorField = (key: ColorKey, label: string, help: string) => (
-    <Stack direction="row" spacing={1.5} alignItems="center" sx={{ flex: 1, minWidth: 260 }}>
-      <Box
-        component="input" type="color" value={HEX.test(value[key]) ? value[key] : '#000000'}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => onChange({ [key]: e.target.value.toUpperCase() })}
-        aria-label={label}
-        sx={{ width: 52, height: 52, p: 0, border: '1px solid', borderColor: 'divider', borderRadius: 2, cursor: 'pointer', background: 'none', flexShrink: 0 }}
-      />
-      <Box sx={{ flex: 1 }}>
-        <Typography fontWeight={600}>{label}</Typography>
-        <Typography variant="body2" color="text.secondary">{help}</Typography>
-      </Box>
-      <TextField
-        size="small" value={value[key]} sx={{ width: 110 }} inputProps={{ 'aria-label': `${label} (código)`, maxLength: 7 }}
-        onChange={(e) => {
-          let v = e.target.value.trim();
-          if (!v.startsWith('#')) v = `#${v}`;
-          onChange({ [key]: v.toUpperCase() });
-        }}
-        error={!HEX.test(value[key])}
-      />
-    </Stack>
-  );
-
-  return (
-    <Stack spacing={5}>
+  const picker = (
+    <Stack spacing={3.5} sx={{ minWidth: 0 }}>
       {/* ── Estilo ── */}
-      <Box>
-        <Typography variant="h6" gutterBottom>Estilo de tu web</Typography>
-        <Typography color="text.secondary" sx={{ mb: 2 }}>
-          Cambia el aspecto de toda la web (tarjetas, botones, bordes, claro u oscuro) sin cambiar lo que hay en ella.
-        </Typography>
-        {(['calma', 'tendencia'] as const).map((family) => (
-          <Box key={family} sx={{ mb: 2.5 }}>
-            <Typography variant="overline" color="text.secondary">
-              {family === 'calma' ? 'Calma — serenos y atemporales' : 'Tendencia 2026 — con personalidad'}
-            </Typography>
-            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' }, gap: 1.5, mt: 0.5 }}>
-              {STYLE_PRESETS.filter((s) => s.family === family).map((s) => (
-                <StyleCard key={s.id} preset={s} selected={s.id === style.id} onClick={() => pickStyle(s)} />
-              ))}
-            </Box>
-          </Box>
-        ))}
-        {justPicked && !(same(justPicked.palette.primary, value.color_primary) && justPicked.fonts.heading === value.font_heading) && (
-          <Alert
-            severity="info" icon={<AutoFixHighIcon />}
-            action={<Button color="inherit" variant="outlined" size="small" onClick={() => applyStyleLook(justPicked)}>Aplicar</Button>}
-          >
-            ¿Usar también los colores y la letra con los que mejor luce <b>{justPicked.name}</b>? Podrás cambiarlos después.
-          </Alert>
-        )}
-        <PanelStyleSwitch value={value} onChange={onChange} />
-      </Box>
-
-      {/* ── Iconos ── */}
-      <Box>
-        <Typography variant="h6" gutterBottom>Iconos</Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, 1fr)' }, gap: 1.5 }}>
-          {ICON_STYLES.map((ic) => {
-            const selected = (value.icon_style || 'line') === ic.id;
-            return (
-              <ButtonBase key={ic.id} onClick={() => onChange({ icon_style: ic.id })} aria-pressed={selected}
-                sx={{ display: 'block', textAlign: 'left', p: 2, borderRadius: 3, border: '2px solid', borderColor: selected ? 'primary.main' : 'divider' }}>
-                <Stack direction="row" spacing={1.5} sx={{ color: 'primary.main', mb: 1 }}>
-                  {ICON_SAMPLES[ic.id].map((I, i) => <I key={i} size={24} />)}
-                </Stack>
-                <Stack direction="row" spacing={0.5} alignItems="center">
-                  <Typography fontWeight={700}>{ic.name}</Typography>
-                  {selected && <CheckCircleIcon fontSize="small" color="primary" />}
-                </Stack>
-                <Typography variant="body2" color="text.secondary">{ic.description}</Typography>
-              </ButtonBase>
-            );
-          })}
+      <Box component="section" aria-labelledby="st-style">
+        {sectionTitle('st-style', 'Estilo')}
+        <Box role="group" aria-labelledby="st-style" sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(4, minmax(0, 1fr))' }, gap: 1.25 }}>
+          {STYLE_ORDER.map((s) => (
+            <StyleCard key={s} style={s as StyleId} name={value.studio_name} selected={s === style} onClick={() => chooseStyle(s as StyleId)} />
+          ))}
         </Box>
+        <Typography sx={{ mt: 1, fontSize: '0.85rem', color: 'var(--studio-muted)' }}>
+          {styleEntry(style).name}: {styleEntry(style).desc.toLowerCase()}{isDarkStyle(style) ? ' · fondo oscuro' : ''}. Cambia el acabado de tu web y de tu panel, no lo que hay en ellos.
+        </Typography>
       </Box>
 
       {/* ── Colores ── */}
-      <Box>
-        <Typography variant="h6" gutterBottom>Colores</Typography>
-        <Typography color="text.secondary" sx={{ mb: 2 }}>
-          Elige una combinación lista, crea la tuya a partir de un color o ajusta cada color como quieras.
-        </Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, 1fr)', sm: 'repeat(4, 1fr)' }, gap: 1.5 }}>
-          {PALETTES.map((p) => {
-            const selected = same(p.primary, value.color_primary) && same(p.dark, value.color_dark);
-            return (
-              <ButtonBase key={p.name} onClick={() => setPalette(p)} aria-pressed={selected}
-                sx={{ display: 'block', textAlign: 'left', borderRadius: 3, p: 1.5, border: '2px solid', borderColor: selected ? p.dark : 'divider', bgcolor: p.background, minHeight: 44 }}>
-                <Stack direction="row" spacing={0.5} sx={{ mb: 1 }}>
-                  {[p.primary, p.secondary, p.dark].map((c) => <Box key={c} sx={{ width: 22, height: 22, borderRadius: '50%', bgcolor: c }} />)}
-                </Stack>
-                <Stack direction="row" alignItems="center" spacing={0.5}>
-                  <Typography fontWeight={600} sx={{ color: p.dark }}>{p.name}</Typography>
-                  {selected && <CheckCircleIcon fontSize="small" sx={{ color: p.dark }} />}
-                </Stack>
-              </ButtonBase>
-            );
-          })}
+      <Box component="section" aria-labelledby="st-colors">
+        {sectionTitle('st-colors', 'Colores', <Typography sx={{ fontSize: '0.82rem', color: 'var(--studio-muted)' }}>10 paletas de {styleEntry(style).name}, todas legibles</Typography>)}
+        <Box role="group" aria-labelledby="st-colors" sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+          {palettesFor(style).map((p) => (
+            <Swatch key={p.id} colors={[p.p, p.s, p.bg]} label={p.name} selected={value.palette === p.id} onClick={() => choosePalette(p.id)} />
+          ))}
+          <Swatch
+            colors={custom ? [value.color_primary, value.color_secondary, value.color_background] : ownColors ? [ownColors.primary, ownColors.secondary, ownColors.background] : []}
+            label="Mis colores"
+            icon={<StudioIcon name="style" sx={{ fontSize: 18 }} />}
+            selected={custom}
+            onClick={chooseCustom}
+          />
         </Box>
-
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} sx={{ mt: 3 }}>
-          <Box sx={{ flex: 1, p: 2, borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
-            <Typography fontWeight={700} sx={{ mb: 1 }}>Crear mi paleta desde un color</Typography>
-            <Stack direction="row" spacing={1.5} alignItems="center">
-              <Box component="input" type="color" value={HEX.test(baseColor) ? baseColor : '#A0897C'}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBaseColor(e.target.value.toUpperCase())}
-                aria-label="Color de tu marca"
-                sx={{ width: 48, height: 48, p: 0, border: '1px solid', borderColor: 'divider', borderRadius: 2, cursor: 'pointer', background: 'none' }} />
-              <Button variant="outlined" onClick={() => setPalette(paletteFromColor(baseColor))}>Generar los 4 colores</Button>
+        <Collapse in={custom && customOpen} unmountOnExit>
+          <Box sx={{ mt: 2, p: 2, borderRadius: 'var(--studio-radius-md)', border: '1px dashed var(--studio-border-strong)' }}>
+            <Typography sx={{ fontWeight: 700, mb: 1 }}>Tu color de marca</Typography>
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} alignItems={{ sm: 'center' }}>
+              <Stack direction="row" spacing={1.25} alignItems="center">
+                <Box component="input" type="color" value={HEX.test(brand) ? brand : '#A0897C'}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setBrand(e.target.value.toUpperCase())}
+                  aria-label="Color de tu marca"
+                  sx={{ width: 48, height: 48, p: 0, border: '1px solid var(--studio-border-strong)', borderRadius: 'min(var(--studio-radius-md), 12px)', cursor: 'pointer', background: 'none' }} />
+                <TextField size="small" value={brand} sx={{ width: 120 }} inputProps={{ 'aria-label': 'Código del color de tu marca', maxLength: 7 }}
+                  onChange={(e) => { let v = e.target.value.trim(); if (!v.startsWith('#')) v = `#${v}`; setBrand(v.toUpperCase()); }}
+                  error={!HEX.test(brand)} />
+              </Stack>
+              <Button variant="outlined" disabled={!HEX.test(brand)} onClick={() => applyCustom(colorsFromBrand(style, brand), `Partimos de ${brand} y lo hemos ajustado lo justo para que se lea sobre el fondo.`)}>
+                Crear mis colores con este
+              </Button>
             </Stack>
-          </Box>
-          <Box sx={{ flex: 1, p: 2, borderRadius: 3, border: '1px dashed', borderColor: 'divider' }}>
-            <Typography fontWeight={700} sx={{ mb: 1 }}>Sacar los colores de mi logo</Typography>
-            {value.logo_url ? (
-              <>
-                <Button variant="outlined" onClick={extractFromLogo} disabled={logoBusy}
-                  startIcon={logoBusy ? <CircularProgress size={16} /> : undefined}>
-                  Buscar colores en el logo
+            {value.logo_url && (
+              <Box sx={{ mt: 2 }}>
+                <Button size="small" onClick={extractFromLogo} disabled={logoBusy} startIcon={logoBusy ? <CircularProgress size={14} /> : undefined}>
+                  Sacar el color de mi logo
                 </Button>
-                {logoColors && logoColors.length === 0 && (
-                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>No he encontrado colores claros en el logo.</Typography>
-                )}
+                {logoColors && logoColors.length === 0 && <Typography variant="body2" sx={{ mt: 1 }}>No he encontrado colores en el logo.</Typography>}
                 {logoColors && logoColors.length > 0 && (
-                  <>
-                    <Stack direction="row" spacing={1} sx={{ mt: 1.5 }} flexWrap="wrap" useFlexGap>
-                      {logoColors.map((c) => (
-                        <Chip key={c} label={c} onClick={() => setPalette(paletteFromColor(c))}
-                          sx={{ bgcolor: c, color: contrast('#FFFFFF', c) > 3 ? '#fff' : '#111', fontWeight: 700 }} />
-                      ))}
-                    </Stack>
-                    <Typography variant="caption" color="text.secondary">Pulsa un color para crear la paleta a partir de él.</Typography>
-                  </>
+                  <Stack direction="row" spacing={1} sx={{ mt: 1 }} flexWrap="wrap" useFlexGap>
+                    {logoColors.map((c) => (
+                      <ButtonBase key={c} onClick={() => { setBrand(c); applyCustom(colorsFromBrand(style, c)); }} aria-label={`Usar ${c}`}
+                        sx={{ width: 36, height: 36, borderRadius: '50%', background: c, border: '2px solid var(--studio-surf)', boxShadow: '0 0 0 1px var(--studio-border-strong)' }} />
+                    ))}
+                  </Stack>
                 )}
-              </>
-            ) : (
-              <Typography variant="body2" color="text.secondary">Sube tu logo en «Mi estudio» y podrás usar sus colores.</Typography>
+              </Box>
             )}
+            <AdvancedColors value={value} style={style} onChange={(colors) => applyCustom(colors)} />
           </Box>
-        </Stack>
-
-        <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 3 }}>
-          {colorField('color_primary', 'Principal', 'Botones y detalles')}
-          {colorField('color_secondary', 'Secundario', 'Enlaces y acentos')}
-          {colorField('color_dark', 'Oscuro', style.dark ? 'Menú y pie (lo más oscuro)' : 'Textos y títulos')}
-          {colorField('color_background', 'Fondo', style.dark ? 'Fondo de la web (oscuro)' : 'Color de fondo')}
-        </Stack>
-        {warnings.map((w) => <Alert key={w} severity="warning" sx={{ mt: 2 }}>{w}</Alert>)}
+        </Collapse>
+        {fixNote && custom && <Alert severity="info" sx={{ mt: 1.5 }}>{fixNote}</Alert>}
       </Box>
 
-      {/* ── Tipografía ── */}
-      <Box>
-        <Typography variant="h6" gutterBottom>Tipografía</Typography>
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', md: 'repeat(3, 1fr)' }, gap: 1.5 }}>
-          {FONT_PAIRS.map((f) => {
-            const selected = f.heading === value.font_heading && f.body === value.font_body;
-            return (
-              <ButtonBase key={f.name} onClick={() => onChange({ font_heading: f.heading, font_body: f.body })} aria-pressed={selected}
-                sx={{ display: 'block', textAlign: 'left', borderRadius: 3, p: 2, border: '2px solid', borderColor: selected ? 'primary.main' : 'divider' }}>
-                <Typography sx={{ fontFamily: `"${f.heading}", serif`, fontSize: '1.5rem', lineHeight: 1.2 }}>{f.name}</Typography>
-                <Typography variant="body2" sx={{ fontFamily: `"${f.body}", sans-serif`, color: 'text.secondary' }}>{f.description}</Typography>
-              </ButtonBase>
-            );
-          })}
+      {/* ── Letra ── */}
+      <Box component="section" aria-labelledby="st-fonts">
+        {sectionTitle('st-fonts', 'Letra')}
+        <Box role="group" aria-labelledby="st-fonts" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' }, gap: 1 }}>
+          {pairs.map((f) => (
+            <ButtonBase
+              key={f.id}
+              onClick={() => { onChange(pickFontPair(style, f.id)); setFontsOpen(false); }}
+              aria-pressed={value.font_pair === f.id}
+              sx={{
+                display: 'flex', flexDirection: { xs: 'row', sm: 'column' }, alignItems: { xs: 'center', sm: 'flex-start' }, gap: { xs: 1.75, sm: 0.5 },
+                p: 1.5, minHeight: { xs: 64, sm: 84 }, textAlign: 'left', borderRadius: 'var(--studio-radius-md)',
+                border: '2px solid var(--studio-border-color)', background: 'var(--studio-surf)', color: 'var(--studio-ink)',
+                '&[aria-pressed="true"]': pressedRing,
+              }}
+            >
+              <Box aria-hidden sx={{ fontFamily: `"${f.heading}", serif`, fontWeight: f.weight, fontSize: { xs: '1.45rem', sm: '1.7rem' }, lineHeight: 1.1 }}>Aa</Box>
+              <Typography sx={{ fontSize: '0.76rem', color: 'var(--studio-muted)', lineHeight: 1.25 }}>
+                {f.heading}{f.heading !== f.body ? ` + ${f.body}` : ''}
+              </Typography>
+            </ButtonBase>
+          ))}
         </Box>
-        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 2 }}>
-          <TextField label="Fuente de títulos" value={value.font_heading} fullWidth
-            onChange={(e) => onChange({ font_heading: e.target.value })}
-            helperText="Cualquier fuente de fonts.google.com, escrita igual." />
-          <TextField label="Fuente del texto" value={value.font_body} fullWidth onChange={(e) => onChange({ font_body: e.target.value })} />
-        </Stack>
+        <Button size="small" sx={{ mt: 1 }} onClick={() => setFontsOpen((o) => !o)} aria-expanded={fontsOpen}>
+          {fontsOpen ? 'Ocultar' : 'Usar otra letra de Google Fonts'}
+        </Button>
+        <Collapse in={fontsOpen} unmountOnExit>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} sx={{ mt: 1 }}>
+            <TextField label="Letra de los títulos" value={value.font_heading} fullWidth
+              onChange={(e) => onChange({ font_heading: e.target.value, font_pair: '' })}
+              helperText="Cualquier fuente de fonts.google.com, escrita igual." />
+            <TextField label="Letra del texto" value={value.font_body} fullWidth onChange={(e) => onChange({ font_body: e.target.value, font_pair: '' })} />
+          </Stack>
+        </Collapse>
       </Box>
 
-      {!hidePreview && (
-        <Box>
-          <Typography variant="h6" gutterBottom>Así se verá</Typography>
-          <StylePreview value={value} />
+      {/* ── Iconos ── */}
+      <Box component="section" aria-labelledby="st-icons">
+        {sectionTitle('st-icons', 'Iconos')}
+        <Box role="group" aria-labelledby="st-icons" sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' }, gap: 1 }}>
+          {ICON_STYLES.map((ic) => (
+            <ButtonBase key={ic.id} onClick={() => onChange({ icon_style: ic.id })} aria-pressed={(value.icon_style || 'line') === ic.id}
+              sx={{ display: 'block', textAlign: 'left', p: 1.5, borderRadius: 'var(--studio-radius-md)', border: '2px solid var(--studio-border-color)', background: 'var(--studio-surf)', color: 'var(--studio-ink)', '&[aria-pressed="true"]': pressedRing }}>
+              <Stack direction="row" spacing={1.25} sx={{ color: 'var(--studio-primary-text)', mb: 0.75 }} aria-hidden>
+                {ICON_SAMPLES[ic.id].map((I, i) => <I key={i} size={20} />)}
+              </Stack>
+              <Typography sx={{ fontWeight: 700, fontSize: '0.92rem' }}>{ic.name}</Typography>
+              <Typography sx={{ fontSize: '0.8rem', color: 'var(--studio-muted)' }}>{ic.description}</Typography>
+            </ButtonBase>
+          ))}
         </Box>
-      )}
+      </Box>
+
+      <PanelStyleSwitch value={value} onChange={onChange} />
+    </Stack>
+  );
+
+  if (hidePreview) return picker;
+  return (
+    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) minmax(0, 440px)' }, gap: { xs: 3, lg: 4 }, alignItems: 'start' }}>
+      <Box sx={{ display: { xs: 'block', lg: 'none' } }}>
+        <PreviewLabel />
+        <WebPreviewMock value={value} narrow />
+      </Box>
+      {picker}
+      <Box sx={{ display: { xs: 'none', lg: 'flex' }, flexDirection: 'column', gap: 1.75, position: 'sticky', top: 84 }}>
+        <PreviewLabel />
+        <StylePreview value={value} />
+      </Box>
+    </Box>
+  );
+}
+
+function PreviewLabel() {
+  return (
+    <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, fontSize: '0.72rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--studio-muted)' }}>
+      <StudioIcon name="eye" sx={{ fontSize: 16 }} /><span>Así se verá</span>
     </Stack>
   );
 }
 
-/** Miniatura de un estilo con su propia paleta recomendada. */
-function StyleCard({ preset, selected, onClick }: { preset: StylePreset; selected: boolean; onClick: () => void }) {
-  const { palette: p, look, fonts } = preset;
-  const bg = p.background;
-  const text = preset.dark ? '#F5F5F5' : p.dark;
+/** Chip de paleta: 3 colores + nombre. */
+function Swatch({ colors, label, selected, onClick, icon }: { colors: string[]; label: string; selected: boolean; onClick: () => void; icon?: ReactNode }) {
   return (
-    <ButtonBase onClick={onClick} aria-pressed={selected} aria-label={`Estilo ${preset.name}`}
-      sx={{ display: 'block', textAlign: 'left', borderRadius: 3, overflow: 'hidden', border: '3px solid', borderColor: selected ? 'primary.main' : 'transparent', boxShadow: 1 }}>
-      <Box sx={{
-        height: 96, p: 1.25, bgcolor: bg, position: 'relative',
-        ...(preset.id === 'neon' && { backgroundImage: `linear-gradient(${p.primary}22 1px, transparent 1px), linear-gradient(90deg, ${p.primary}22 1px, transparent 1px)`, backgroundSize: '12px 12px' }),
-        ...(preset.id === 'glass' && { background: `radial-gradient(circle at 15% 20%, ${p.secondary}88, transparent 55%), ${p.background}` }),
-        ...(preset.id === 'pop' && { background: `radial-gradient(circle at 85% 15%, ${p.secondary}44, transparent 45%), ${p.background}` }),
-      }}>
-        <Box sx={{
-          bgcolor: look.surface, border: look.border, borderRadius: `${Math.min(look.radius, 16)}px`, boxShadow: look.shadow,
-          p: 1, height: '100%', boxSizing: 'border-box', ...(look.blur && { backdropFilter: 'blur(6px)' }),
-          ...(preset.id === 'energy' && { clipPath: 'polygon(0 0, 100% 0, 100% 80%, 90% 100%, 0 100%)' }),
-        }}>
-          <Typography sx={{
-            fontFamily: `"${fonts.heading}", sans-serif`, fontWeight: 700, color: text, fontSize: '1rem', lineHeight: 1.1,
-            textTransform: look.upper ? 'uppercase' : 'none', ...(look.glow && { textShadow: `0 0 8px ${p.primary}` }),
-          }}>
-            Pilates
-          </Typography>
-          <Box sx={{
-            mt: 1, display: 'inline-block', px: 1.2, py: 0.4, fontSize: '0.7rem', fontWeight: 700,
-            fontFamily: `"${fonts.body}", sans-serif`, bgcolor: p.primary,
-            color: contrast('#FFFFFF', p.primary) > 3 ? '#fff' : '#111',
-            borderRadius: ['brutalist', 'editorial', 'energy'].includes(preset.id) ? '2px' : '999px',
-            border: preset.id === 'brutalist' ? '2px solid #111' : 'none',
-            boxShadow: preset.id === 'brutalist' ? '2px 2px 0 #111' : look.glow ? `0 0 10px ${p.primary}` : 'none',
-            textTransform: look.upper ? 'uppercase' : 'none',
-          }}>
-            Reservar
-          </Box>
-        </Box>
+    <ButtonBase
+      onClick={onClick}
+      aria-pressed={selected}
+      sx={{
+        display: 'inline-flex', alignItems: 'center', gap: 1, minHeight: 44, p: '4px 14px 4px 4px', borderRadius: 999,
+        border: '2px solid var(--studio-border-color)', background: 'var(--studio-surf)', color: 'var(--studio-ink)',
+        fontWeight: 600, fontSize: '0.88rem', fontFamily: 'var(--studio-font-body)', '&[aria-pressed="true"]': pressedRing,
+      }}
+    >
+      <Box aria-hidden sx={{ display: 'flex', width: 44, height: 32, borderRadius: 99, overflow: 'hidden', flex: 'none', boxShadow: 'inset 0 0 0 1px rgb(0 0 0 / 0.08)', background: 'var(--studio-surf2)', alignItems: 'center', justifyContent: 'center' }}>
+        {colors.length ? colors.map((c, i) => <Box key={i} sx={{ flex: 1, alignSelf: 'stretch', background: c }} />) : icon}
       </Box>
-      <Box sx={{ p: 1.25, bgcolor: 'background.paper' }}>
-        <Stack direction="row" spacing={0.5} alignItems="center">
-          <Typography fontWeight={700}>{preset.name}</Typography>
-          {preset.dark && <Chip label="Oscuro" size="small" sx={{ height: 18, fontSize: '0.65rem' }} />}
-          {selected && <CheckCircleIcon fontSize="small" color="primary" />}
-        </Stack>
-        <Typography variant="caption" color="text.secondary" sx={{ display: 'block', lineHeight: 1.3 }}>{preset.description}</Typography>
-      </Box>
+      {label}
     </ButtonBase>
   );
 }
 
-/** Maqueta de la web con el estilo, los colores, las fuentes y los iconos elegidos. */
-export function StylePreview({ value }: { value: StudioSettings }) {
-  const style = styleById(value.style_preset);
-  const { look } = style;
-  const heading = `"${value.font_heading}", serif`;
-  const body = `"${value.font_body}", sans-serif`;
-  const pageBg = value.color_background;
-  const text = style.dark ? '#F3F3F3' : value.color_dark;
-  const surface = style.dark ? 'rgba(255,255,255,0.06)' : look.surface;
-  const accent = style.dark ? value.color_primary : value.color_secondary;
-  const btnRadius = ['brutalist', 'editorial', 'energy'].includes(style.id) ? '4px' : '999px';
-  const [CalendarIcon, UserIcon, PinIcon] = ICON_SAMPLES[(value.icon_style as IconStyleId) || 'line'];
-  const upper = look.upper ? 'uppercase' : 'none';
+/** Miniatura de un estilo con su primera paleta. */
+function StyleCard({ style, name, selected, onClick }: { style: StyleId; name: string; selected: boolean; onClick: () => void }) {
+  const e = styleEntry(style);
+  const t = e.palettes[0];
+  const f = e.fonts[0];
+  const shape = styleShape(style);
+  const brutal = style === 'brutalist';
+  const word = (name || 'Luna').trim().split(/\s+/).pop() || 'Luna';
   return (
-    <Box sx={{
-      borderRadius: 3, overflow: 'hidden', border: '1px solid', borderColor: 'divider', bgcolor: pageBg, fontFamily: body,
-      ...(style.id === 'neon' && { backgroundImage: `linear-gradient(${value.color_primary}18 1px, transparent 1px), linear-gradient(90deg, ${value.color_primary}18 1px, transparent 1px)`, backgroundSize: '24px 24px' }),
-      ...(style.id === 'glass' && { background: `radial-gradient(circle at 20% 10%, ${value.color_secondary}55, transparent 50%), ${value.color_background}` }),
-    }}>
-      <Stack direction="row" justifyContent="space-between" alignItems="center"
-        sx={{ px: 3, py: 1.5, bgcolor: style.dark ? value.color_dark : surface, borderBottom: style.id === 'brutalist' ? '3px solid #111' : 'none', ...(look.blur && { backdropFilter: 'blur(10px)' }) }}>
-        {value.logo_url ? (
-          <Box component="img" src={value.logo_url} alt="" sx={{ maxHeight: 36, maxWidth: 160 }} />
-        ) : (
-          <Typography sx={{ fontFamily: heading, fontWeight: 700, color: text, fontSize: '1.2rem', textTransform: upper }}>
-            {value.studio_name || 'Mi Estudio'}
-          </Typography>
-        )}
-        <Stack direction="row" spacing={1.5} sx={{ color: accent }}>
-          <CalendarIcon size={20} />
-          <UserIcon size={20} />
+    <ButtonBase
+      onClick={onClick}
+      aria-pressed={selected}
+      aria-label={`Estilo ${e.name}`}
+      sx={{
+        display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 1, p: 1, borderRadius: '16px', textAlign: 'left',
+        border: '2px solid var(--studio-border-color)', background: 'var(--studio-surf)', color: 'var(--studio-ink)',
+        transition: 'transform .12s, border-color .2s', '&:hover': { transform: 'translateY(-1px)' }, '&[aria-pressed="true"]': pressedRing,
+      }}
+    >
+      <Box aria-hidden sx={{
+        height: 66, borderRadius: '10px', overflow: 'hidden', p: 1, display: 'flex', flexDirection: 'column', gap: '5px',
+        background: style === 'glass' ? `linear-gradient(135deg, ${t.pSoft}, ${t.bg})` : t.bg, color: t.ink,
+        border: `${brutal ? 2 : 1}px solid ${brutal ? t.ink : t.border}`,
+      }}>
+        <Box sx={{ fontFamily: `"${f.heading}", sans-serif`, fontWeight: f.weight, fontSize: '0.82rem', lineHeight: 1, textTransform: shape.headingTransform, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+          {word}
+        </Box>
+        <Box sx={{ height: 4, width: '70%', borderRadius: 4, background: t.ink, opacity: 0.35 }} />
+        <Box sx={{ height: 4, width: '45%', borderRadius: 4, background: t.ink, opacity: 0.35 }} />
+        <Box sx={{ mt: 'auto', height: 14, width: 46, borderRadius: `${Math.min(shape.r.btn, 7)}px`, background: t.p, ...(brutal ? { boxShadow: `2px 2px 0 ${t.ink}` } : style === 'neon' ? { boxShadow: `0 0 10px ${t.p}` } : {}) }} />
+      </Box>
+      <Typography component="span" sx={{ fontSize: '0.82rem', fontWeight: 700, px: 0.5, pb: 0.25 }}>{e.name}</Typography>
+    </ButtonBase>
+  );
+}
+
+/** Los 4 colores a mano (avanzado). Se corrigen para que se lean. */
+function AdvancedColors({ value, style, onChange }: { value: StudioSettings; style: StyleId; onChange: (c: SiteColors) => void }) {
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState<SiteColors>(colorsOf(value));
+  useEffect(() => { setDraft(colorsOf(value)); }, [value.color_primary, value.color_secondary, value.color_dark, value.color_background]); // eslint-disable-line react-hooks/exhaustive-deps
+  const dark = isDarkStyle(style);
+  const fields: [keyof SiteColors, string, string][] = [
+    ['primary', 'Principal', 'Botones y detalles'],
+    ['secondary', 'Secundario', 'Acentos'],
+    ['dark', dark ? 'Zonas profundas' : 'Textos', dark ? 'Menú y pie (lo más oscuro)' : 'Textos y títulos'],
+    ['background', 'Fondo', dark ? 'Fondo de la web (oscuro)' : 'Color de fondo'],
+  ];
+  const valid = fields.every(([k]) => HEX.test(draft[k]));
+  const changed = fields.some(([k]) => !sameColor(draft[k], value[`color_${k}` as const]));
+  return (
+    <Box sx={{ mt: 1.5 }}>
+      <Button size="small" onClick={() => setOpen((o) => !o)} aria-expanded={open}>{open ? 'Ocultar' : 'Ajustar cada color'}</Button>
+      <Collapse in={open} unmountOnExit>
+        <Stack direction="row" flexWrap="wrap" gap={1.5} sx={{ mt: 1 }}>
+          {fields.map(([k, label, help]) => (
+            <Stack key={k} direction="row" spacing={1.25} alignItems="center" sx={{ flex: '1 1 240px', minWidth: 0 }}>
+              <Box component="input" type="color" value={HEX.test(draft[k]) ? draft[k] : '#000000'}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => setDraft({ ...draft, [k]: e.target.value.toUpperCase() })}
+                aria-label={label}
+                sx={{ width: 44, height: 44, p: 0, border: '1px solid var(--studio-border-strong)', borderRadius: '10px', cursor: 'pointer', background: 'none', flex: 'none' }} />
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontWeight: 600, fontSize: '0.9rem' }}>{label}</Typography>
+                <Typography sx={{ fontSize: '0.78rem', color: 'var(--studio-muted)' }}>{help}</Typography>
+              </Box>
+              <TextField size="small" value={draft[k]} sx={{ width: 104, flex: 'none' }} inputProps={{ 'aria-label': `${label} (código)`, maxLength: 7 }}
+                onChange={(e) => { let v = e.target.value.trim(); if (!v.startsWith('#')) v = `#${v}`; setDraft({ ...draft, [k]: v.toUpperCase() }); }}
+                error={!HEX.test(draft[k])} />
+            </Stack>
+          ))}
         </Stack>
-      </Stack>
-      <Box sx={{ px: 3, py: 4 }}>
-        <Typography sx={{
-          fontFamily: heading, color: text, fontSize: { xs: '1.8rem', sm: '2.4rem' }, lineHeight: 1.1, fontWeight: 700,
-          textTransform: upper, ...(look.glow && { textShadow: `0 0 18px ${value.color_primary}` }),
-        }}>
-          {value.hero_title || value.tagline || 'Muévete mejor, siéntete mejor'}
-        </Typography>
-        <Typography sx={{ fontFamily: body, color: text, opacity: 0.75, mt: 1.5, maxWidth: 480 }}>
-          Reserva tu clase en segundos y recibe un aviso antes de empezar.
-        </Typography>
-        <Stack direction="row" spacing={1.5} sx={{ mt: 3 }} flexWrap="wrap" useFlexGap>
-          <Box sx={{
-            fontFamily: body, bgcolor: value.color_primary, color: contrast('#FFFFFF', value.color_primary) > 3 ? '#fff' : '#111',
-            px: 3, py: 1.2, borderRadius: btnRadius, fontWeight: 700, textTransform: upper,
-            border: style.id === 'brutalist' ? '3px solid #111' : 'none',
-            boxShadow: style.id === 'brutalist' ? '4px 4px 0 #111' : look.glow ? `0 0 16px ${value.color_primary}` : 'none',
-          }}>
-            Reservar clase
+        <Button variant="outlined" size="small" sx={{ mt: 1.5 }} disabled={!valid || !changed} onClick={() => onChange(draft)}>Aplicar estos colores</Button>
+      </Collapse>
+    </Box>
+  );
+}
+
+const HERO_ART = (
+  <svg viewBox="0 0 200 120" aria-hidden="true" style={{ position: 'absolute', left: 0, right: 0, bottom: 0, width: '100%', height: 'auto' }}>
+    <circle cx="150" cy="40" r="22" fill="currentColor" opacity=".35" />
+    <path d="M0 95 C40 70 70 70 100 88 S160 105 200 80 V120 H0Z" fill="currentColor" opacity=".55" />
+    <path d="M0 105 C50 90 90 96 130 104 S180 110 200 100 V120 H0Z" fill="currentColor" />
+  </svg>
+);
+
+/** Portada de la web con lo elegido (aún sin guardar). */
+function WebPreviewMock({ value, narrow }: { value: StudioSettings; narrow?: boolean }) {
+  const style = (value.style_preset || 'natural') as StyleId;
+  const t = useMemo(() => previewTokens(value), [value]);
+  const shape = styleShape(style);
+  const brutal = style === 'brutalist';
+  const hw = fontPairBySlug(style, value.font_pair)?.weight || headingWeight(style);
+  const heading = `"${value.font_heading}", Georgia, serif`;
+  const body = `"${value.font_body}", system-ui, sans-serif`;
+  const btn = (primary: boolean) => ({
+    display: 'inline-flex', alignItems: 'center', minHeight: 34, px: 1.75, fontSize: '0.78rem', fontWeight: 600, whiteSpace: 'nowrap' as const,
+    borderRadius: `${shape.r.btn}px`, ...(primary
+      ? { background: t.p, color: t.onP, ...(brutal ? { border: `2px solid ${t.ink}`, boxShadow: `3px 3px 0 ${t.ink}` } : style === 'neon' ? { boxShadow: `0 0 0 1px ${t.p}, 0 0 18px ${t.p}66` } : {}) }
+      : { border: `${brutal ? 2 : 1}px solid ${brutal ? t.ink : t.borderStrong}`, color: t.ink, background: brutal ? t.surf : 'transparent' }),
+  });
+  const name = value.studio_name || 'Tu estudio';
+  return (
+    <Box aria-hidden sx={{ borderRadius: '16px', overflow: 'hidden', border: `1px solid ${t.border}`, background: t.bg, boxShadow: `0 18px 50px ${t.ink}22` }}>
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, py: 1, background: t.surf2, borderBottom: `1px solid ${t.border}` }}>
+        {[0, 1, 2].map((i) => <Box key={i} sx={{ width: 9, height: 9, borderRadius: '50%', background: t.borderStrong }} />)}
+        <Box sx={{ ml: 1.25, flex: 1, maxWidth: 240, fontSize: '0.7rem', color: t.muted, background: t.surf, px: 1.25, py: 0.4, borderRadius: 99, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          {(value.web_url || 'tuestudio.corelia.app').replace(/^https?:\/\//, '')}
+        </Box>
+      </Box>
+      <Box sx={{ background: style === 'glass' ? `radial-gradient(80% 60% at 0% 0%, ${t.p}29, transparent 60%), radial-gradient(60% 60% at 100% 20%, ${t.s}38, transparent 60%), ${t.bg}` : t.bg, color: t.ink, fontFamily: body }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, px: 2.5, py: 1.75 }}>
+          <Box sx={{ width: 30, height: 30, borderRadius: `${Math.min(shape.r.sm, 10)}px`, display: 'grid', placeItems: 'center', background: t.p, color: t.onP, fontFamily: heading, fontWeight: 700, fontSize: '0.8rem', flex: 'none' }}>
+            {name.trim()[0]?.toUpperCase()}
           </Box>
-          <Box sx={{ fontFamily: body, border: `2px solid ${accent}`, color: accent, px: 3, py: 1, borderRadius: btnRadius, fontWeight: 700, textTransform: upper }}>
-            Ver precios
+          <Box sx={{ fontFamily: heading, fontWeight: hw, textTransform: shape.headingTransform, fontSize: '0.95rem', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</Box>
+          <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1.5, fontSize: '0.75rem', color: t.muted }}>
+            {!narrow && <><span>Clases</span><span>Precios</span></>}
+            <Box sx={btn(true)}>Reservar</Box>
           </Box>
-        </Stack>
-        <Box sx={{
-          mt: 4, bgcolor: surface, borderRadius: `${look.radius}px`, p: 2, maxWidth: 360, border: look.border, boxShadow: look.shadow,
-          ...(look.blur && { backdropFilter: 'blur(12px)' }),
-          ...(style.id === 'energy' && { clipPath: 'polygon(0 0, 100% 0, 100% 80%, 94% 100%, 0 100%)' }),
-        }}>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ color: value.color_primary, mb: 0.5 }}>
-            <CalendarIcon size={18} />
-            <Typography sx={{ fontFamily: heading, color: text, fontWeight: 700, textTransform: upper }}>Pilates Mat</Typography>
-          </Stack>
-          <Stack direction="row" spacing={1} alignItems="center" sx={{ color: text, opacity: 0.75 }}>
-            <PinIcon size={16} />
-            <Typography variant="body2" sx={{ fontFamily: body }}>Lunes · 09:30 · 4 plazas libres</Typography>
-          </Stack>
+        </Box>
+        <Box sx={{ display: 'grid', gridTemplateColumns: narrow ? '1fr' : '1.1fr 1fr', gap: 2.5, px: 2.5, pt: 1, pb: 3, alignItems: 'center' }}>
+          <Box>
+            <Box sx={{ fontFamily: heading, fontWeight: hw, textTransform: shape.headingTransform, letterSpacing: shape.headingSpacing, fontSize: narrow ? '1.55rem' : '1.75rem', lineHeight: 1.05, mb: 1.25, overflowWrap: 'anywhere' }}>
+              {value.hero_title || 'Pilates que te sienta bien'}
+            </Box>
+            <Box sx={{ color: t.muted, fontSize: '0.84rem', mb: 1.75 }}>
+              {value.hero_subtitle || value.tagline || 'Reserva tu clase en segundos y recibe un aviso antes de empezar.'}
+            </Box>
+            <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+              <Box sx={btn(true)}>Reservar clase</Box>
+              <Box sx={btn(false)}>Ver horario</Box>
+            </Box>
+          </Box>
+          {!narrow && (
+            <Box sx={{
+              aspectRatio: '4 / 4.4', borderRadius: `${shape.r.xl}px`, position: 'relative', overflow: 'hidden', color: t.p,
+              background: `radial-gradient(120% 90% at 20% 10%, ${t.cls.mat.tint}, transparent 60%), radial-gradient(90% 80% at 90% 90%, ${t.cls.yoga.tint}, transparent 60%), linear-gradient(160deg, ${t.pSoft}, ${t.surf2})`,
+              ...(brutal ? { border: `2px solid ${t.ink}` } : {}),
+            }}>{HERO_ART}</Box>
+          )}
         </Box>
       </Box>
     </Box>
+  );
+}
+
+/** Panel en miniatura con lo elegido. */
+function MiniPanel({ value }: { value: StudioSettings }) {
+  const style = (value.style_preset || 'natural') as StyleId;
+  const follows = value.panel_follows_style !== false;
+  const t = useMemo(() => previewTokens(value), [value]);
+  const side = follows ? sideOf(style) : 'light';
+  const shape = styleShape(follows ? style : 'classic');
+  const heading = `"${value.font_heading}", Georgia, serif`;
+  const light = side === 'light';
+  const sideBg = follows ? t.sideBg : t.surf;
+  return (
+    <Box aria-hidden sx={{ borderRadius: '16px', overflow: 'hidden', border: `1px solid ${t.border}`, boxShadow: `0 18px 50px ${t.ink}1f` }}>
+      <Box sx={{ display: 'grid', gridTemplateColumns: '92px 1fr', gap: 1, p: 1, height: 184, background: t.bg }}>
+        <Box sx={{ background: side === 'glass' ? `${t.surf}aa` : sideBg, borderRadius: '12px', p: '10px 8px', display: 'flex', flexDirection: 'column', gap: '5px', ...(light || side === 'darkmode' ? { border: `1px solid ${t.border}` } : {}) }}>
+          <Box sx={{ width: 22, height: 22, borderRadius: '7px', background: t.p, mb: 0.75 }} />
+          <Box sx={{ height: 14, borderRadius: 99, background: follows ? t.sideActive : t.pSoft }} />
+          {[0, 1, 2].map((i) => <Box key={i} sx={{ height: 14, borderRadius: 99, background: follows ? t.sideText : t.ink, opacity: 0.18 }} />)}
+          <Box sx={{ mt: 'auto', height: 14, borderRadius: 99, background: follows ? t.sideText : t.ink, opacity: 0.18 }} />
+        </Box>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, minWidth: 0 }}>
+          <Box sx={{ fontFamily: heading, fontWeight: 700, fontSize: '0.92rem', color: t.ink, textTransform: shape.headingTransform, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Buenos días</Box>
+          <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 0.75 }}>
+            {[['Reservas', '184'], ['Ingresos', '4.320 €'], ['Ocupación', '78%']].map(([l, v]) => (
+              <Box key={l} sx={{ height: 46, borderRadius: `${Math.min(shape.r.md, 10)}px`, p: 0.75, background: `linear-gradient(165deg, ${t.pSoft}, ${t.surf})`, border: style === 'brutalist' && follows ? `2px solid ${t.ink}` : `1px solid ${t.border}`, fontFamily: heading, fontWeight: 700, fontSize: '0.82rem', color: t.ink, overflow: 'hidden' }}>
+                <Box sx={{ fontFamily: 'inherit', fontSize: '0.55rem', fontWeight: 600, color: t.muted }}>{l}</Box>{v}
+              </Box>
+            ))}
+          </Box>
+          {(['reformer', 'barre', 'yoga'] as const).map((k) => (
+            <Box key={k} sx={{ height: 22, borderRadius: '8px', background: t.cls[k].tint, borderLeft: `3px solid ${t.cls[k].dot}` }} />
+          ))}
+        </Box>
+      </Box>
+    </Box>
+  );
+}
+
+/** Vista previa: la portada de la web y el panel en miniatura (lo usa también la guía). */
+export function StylePreview({ value }: { value: StudioSettings }) {
+  return (
+    <Stack spacing={1.75}>
+      <WebPreviewMock value={value} />
+      <MiniPanel value={value} />
+    </Stack>
   );
 }
 
@@ -430,80 +512,15 @@ function PanelStyleSwitch({ value, onChange }: Props) {
   };
 
   return (
-    <Stack
-      direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ xs: 'stretch', sm: 'center' }}
-      sx={{ mt: 2, p: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}
-    >
-      <Box sx={{ flex: 1, minWidth: 0 }}>
-        <FormControlLabel
-          control={<Switch checked={follows} disabled={busy} onChange={(e) => toggle(e.target.checked)} />}
-          label={<Typography fontWeight={700}>Panel con el estilo de mi web</Typography>}
-        />
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Este panel de trabajo usa también el estilo y los iconos de tu web (y el modo oscuro si tu estilo es oscuro).
-          Apágalo para verlo con su aspecto clásico.
-        </Typography>
-      </Box>
-      <PanelPreview value={value} follows={follows} />
-    </Stack>
-  );
-}
-
-/** Maqueta pequeña del panel con el estilo, los colores y los iconos elegidos (aún sin guardar). */
-function PanelPreview({ value, follows }: { value: StudioSettings; follows: boolean }) {
-  const { config } = useSite();
-  const site = useMemo(() => normalizeSiteConfig({
-    ...config,
-    theme: {
-      primary: value.color_primary, secondary: value.color_secondary, dark: value.color_dark,
-      background: value.color_background, font_heading: value.font_heading, font_body: value.font_body,
-      style: value.style_preset, icons: value.icon_style, panel_follows_style: follows,
-    },
-  }), [config, value.color_primary, value.color_secondary, value.color_dark, value.color_background,
-    value.font_heading, value.font_body, value.style_preset, value.icon_style, follows]);
-  const theme = useMemo(() => buildTheme(site), [site]);
-  const { look, tones, tokens } = useMemo(() => panelTokens(site), [site]);
-
-  return (
-    <ThemeProvider theme={theme}>
-      <Box
-        role="img"
-        aria-label={follows ? 'Vista previa del panel con el estilo de tu web' : 'Vista previa del panel con su aspecto clásico'}
-        sx={{
-          width: { xs: '100%', sm: 280 }, height: 168, flexShrink: 0, display: 'flex', overflow: 'hidden',
-          borderRadius: 2, border: '1px solid', borderColor: 'divider', background: tokens.body,
-          backgroundColor: tones.bg, color: 'text.primary', fontFamily: 'var(--studio-font-body)',
-        }}
-      >
-        <Stack spacing={1.5} alignItems="center" sx={{
-          width: 44, py: 1.5, background: tokens.drawerBg, borderRight: tokens.drawerBorder, color: tones.textHint,
-        }}>
-          <StudioIcon name="home" iconStyle={look.icons} sx={{ fontSize: 18, color: tones.primaryText }} />
-          <StudioIcon name="bookings" iconStyle={look.icons} sx={{ fontSize: 18 }} />
-          <StudioIcon name="clients" iconStyle={look.icons} sx={{ fontSize: 18 }} />
-          <StudioIcon name="schedule" iconStyle={look.icons} sx={{ fontSize: 18 }} />
-        </Stack>
-        <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Box sx={{ height: 26, background: tokens.appBarBg, borderBottom: tokens.appBarBorder, ...(look.style === 'energy' && { borderImage: `linear-gradient(100deg, ${tones.primary}, ${tones.secondary}) 1` }) }} />
-          <Box sx={{ p: 1.25 }}>
-            <Typography variant="h1" sx={{ fontSize: '1rem !important', mb: 1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-              Reservas
-            </Typography>
-            <Paper elevation={1} sx={{ p: 1.25 }}>
-              <Stack direction="row" spacing={0.75} alignItems="center" sx={{ mb: 1 }}>
-                <StudioIcon name="today" iconStyle={look.icons} sx={{ fontSize: 16, color: tones.primaryText }} />
-                <Typography sx={{ fontSize: '0.78rem', fontWeight: 600, lineHeight: 1.2 }}>Pilates · 09:30</Typography>
-              </Stack>
-              <Stack direction="row" spacing={0.75} alignItems="center">
-                <Button variant="contained" size="small" tabIndex={-1} sx={{ px: 1.25, py: 0.25, minWidth: 0, fontSize: '0.68rem', pointerEvents: 'none' }}>
-                  Apuntar
-                </Button>
-                <Chip label="4 plazas" size="small" color="success" sx={{ height: 20, fontSize: '0.66rem' }} />
-              </Stack>
-            </Paper>
-          </Box>
-        </Box>
-      </Box>
-    </ThemeProvider>
+    <Box sx={{ p: 2, borderRadius: 'var(--studio-radius-md)', border: '1px solid var(--studio-border-color)' }}>
+      <FormControlLabel
+        control={<Switch checked={follows} disabled={busy} onChange={(e) => toggle(e.target.checked)} />}
+        label={<Typography sx={{ fontWeight: 700 }}>Panel con el estilo de mi web</Typography>}
+      />
+      <Typography variant="body2" sx={{ mt: 0.5 }}>
+        Este panel usa también tu estilo, tus colores y tus iconos (y el modo oscuro si tu estilo es oscuro).
+        Apágalo para verlo con su aspecto clásico, claro y sencillo.
+      </Typography>
+    </Box>
   );
 }

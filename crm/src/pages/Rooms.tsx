@@ -16,7 +16,7 @@ import { authHeaders } from '../utils/auth';
 import { PhotoPicker } from '../components/guide';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { API_BASE_URL } from '../config';
-import { StepGuide, useActionParam } from '../onboarding';
+import { useActionParam } from '../onboarding';
 
 interface Room {
   id: number;
@@ -207,31 +207,19 @@ export default function RoomsManagement() {
 
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
-      <StepGuide step="rooms" />
       <PageIntro
         pageKey="rooms"
         title="Salas"
-        subtitle="Los espacios del estudio donde se dan las clases. Salen en la portada de la web («Nuestras salas») y al poner una clase en el horario eliges en qué sala es."
+        subtitle="Dónde se dan las clases. Salen en tu web."
         actions={(
           <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
             Añadir una sala
           </Button>
         )}
-        steps={[
-          { title: 'Pulsa «Añadir una sala»', text: 'O «Editar» en la tarjeta de una sala que ya exista.' },
-          { title: 'Escribe el nombre y cuántas personas caben', text: 'Es lo único obligatorio.' },
-          { title: 'Añade una foto y una descripción', text: 'Es lo que ven las clientas en la web.' },
-          { title: 'Pulsa «Guardar»', text: 'Saldrá un aviso verde abajo cuando esté guardada.' },
-        ]}
-        tips={[
-          'Las plazas de cada clase NO se cogen de aquí: se ponen en cada clase en «Mis clases y horarios». Lo que pongas aquí es solo informativo para la web.',
-          'La web enseña como mucho las 6 primeras salas.',
-          'Los cambios pueden tardar unos 10 minutos en verse en la web.',
-        ]}
       />
 
       <TextField
-        label="Buscar una sala"
+        data-tour="search" label="Buscar una sala"
         placeholder="Nombre o ubicación…"
         value={search}
         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
@@ -269,7 +257,7 @@ export default function RoomsManagement() {
         />
       ) : (
         <>
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' } }}>
+          <Box data-tour="list" sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' } }}>
             {paginated.map((r) => (
               <Paper
                 key={r.id}

@@ -418,18 +418,7 @@ export default function CreditsManagement() {
       <PageIntro
         pageKey="credits"
         title="Créditos"
-        subtitle="Mira cuántas clases le quedan a una clienta y añádele o quítale créditos, por ejemplo cuando te paga en mano."
-        steps={[
-          { title: 'Busca a la clienta', text: 'Escribe su nombre, teléfono o email en el buscador y elígela de la lista.' },
-          { title: 'Mira su saldo', text: 'Verás cuántos créditos tiene ahora y, debajo, todo lo que ha gastado o recibido.' },
-          { title: 'Pulsa «Añadir» o «Quitar»', text: 'Elige cuántos créditos y, si añades, hasta cuándo puede usarlos.' },
-          { title: 'Revisa y confirma', text: 'Antes de guardar verás cuántos tiene y cuántos tendrá. Al terminar aparece un aviso.' },
-        ]}
-        tips={[
-          <>1 crédito = 1 clase de suelo (mat, yoga, barre, dance). Las de máquinas (Reformer o Chair) gastan <b>2 créditos</b>.</>,
-          <>A la clienta <b>no le llega ningún aviso</b> cuando le añades o quitas créditos. Tampoco se mueve dinero: si te paga en mano, cóbraselo tú aparte.</>,
-          <>Los créditos con fecha de caducidad se quitan solos ese día si no los ha usado.</>,
-        ]}
+        subtitle="Cuántas clases le quedan a cada clienta. Añade o quita."
       />
 
       <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '5fr 7fr' }, alignItems: 'start' }}>
@@ -485,7 +474,7 @@ export default function CreditsManagement() {
               <TextField
                 {...params}
                 inputRef={searchInputRef}
-                label="Buscar clienta"
+                data-tour="search" label="Buscar clienta"
                 placeholder="Ej.: Marta o 612 345 678"
                 error={Boolean(usersError)}
                 helperText={usersError ? `No se ha podido buscar. ${usersError}` : 'Nombre, teléfono o email.'}

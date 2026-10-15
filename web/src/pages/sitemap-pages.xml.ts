@@ -1,4 +1,4 @@
-// Sitemap de las páginas públicas fijas (portada, precios, horario). Las legales
+// Sitemap de las páginas públicas fijas (portada, precios, horario, estudio, contacto). Las legales
 // llevan noindex y no se incluyen.
 // Las fichas de clase van en /sitemap-classes.xml.
 import { SSR_CACHE, origin } from '../seo/site';
@@ -12,6 +12,10 @@ const PAGES: { loc: string; alt?: { es: string; en: string }; priority: string; 
   { loc: '/calendar', priority: '0.9', changefreq: 'daily' },
   { loc: '/prices', alt: { es: '/prices', en: '/en/prices' }, priority: '0.8', changefreq: 'monthly' },
   { loc: '/en/prices', alt: { es: '/prices', en: '/en/prices' }, priority: '0.7', changefreq: 'monthly' },
+  { loc: '/estudio', alt: { es: '/estudio', en: '/en/studio' }, priority: '0.7', changefreq: 'monthly' },
+  { loc: '/en/studio', alt: { es: '/estudio', en: '/en/studio' }, priority: '0.6', changefreq: 'monthly' },
+  { loc: '/contacto', alt: { es: '/contacto', en: '/en/contact' }, priority: '0.7', changefreq: 'monthly' },
+  { loc: '/en/contact', alt: { es: '/contacto', en: '/en/contact' }, priority: '0.6', changefreq: 'monthly' },
 ];
 
 const esc = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;');

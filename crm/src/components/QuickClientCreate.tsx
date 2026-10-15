@@ -34,6 +34,8 @@ interface Props {
   onClose: () => void;
   /** Recibe el nombre de la clienta para poder buscarla en la lista */
   onCreated?: (name?: string) => void;
+  /** 'existing' = empezar buscando una clienta que ya existe (para apuntarla a una clase) */
+  initialMode?: 'new' | 'existing';
 }
 
 const jsonHeaders = () => authHeaders({ 'Content-Type': 'application/json' });
@@ -90,7 +92,7 @@ function ChoiceCard({ selected, onClick, icon, title, text }: {
   );
 }
 
-export default function QuickClientCreate({ open, onClose, onCreated }: Props) {
+export default function QuickClientCreate({ open, onClose, onCreated, initialMode = 'new' }: Props) {
   const notify = useNotify();
   const theme = useTheme();
   const fullScreen = useMediaQuery(theme.breakpoints.down('sm'));
@@ -117,7 +119,7 @@ export default function QuickClientCreate({ open, onClose, onCreated }: Props) {
   useEffect(() => {
     if (open) {
       setStep(0);
-      setMode('new');
+      setMode(initialMode);
       setFirstName('');
       setPhone('');
       setTouched({ name: false, phone: false });
@@ -129,7 +131,7 @@ export default function QuickClientCreate({ open, onClose, onCreated }: Props) {
       setSimilar([]);
       setError('');
     }
-  }, [open]);
+  }, [open, initialMode]);
 
   useEffect(() => {
     if (!open) return;
@@ -327,7 +329,7 @@ export default function QuickClientCreate({ open, onClose, onCreated }: Props) {
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
       <DialogTitle sx={{ fontFamily: 'var(--studio-font-heading)', fontSize: '1.4rem', pb: 0.5 }}>
-        {step === 0 ? 'Dar de alta a una clienta' : `Apuntar a ${displayName || 'la clienta'} a una clase`}
+        {step === 0 ? (mode === 'existing' ? 'Apuntar a una clienta a una clase' : 'Dar de alta a una clienta') : `Apuntar a ${displayName || 'la clienta'} a una clase`}
         <Typography sx={{ fontSize: '0.92rem', color: 'text.secondary', mt: 0.5 }}>
           Paso {step + 1} de 2 · {step === 0 ? '¿Quién es?' : '¿A qué clase viene? (opcional)'}
         </Typography>

@@ -1,125 +1,52 @@
-import { useEffect, useState, ReactNode } from 'react';
-import { Navigate, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import {
-  Box,
-  Drawer,
-  List,
-  ListItem,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
-  AppBar,
-  Toolbar,
-  Typography,
-  Divider,
-  Avatar,
-  Stack,
-  Tooltip,
-  Paper,
-  BottomNavigation,
-  BottomNavigationAction,
-} from '@mui/material';
-import Button from '@mui/material/Button';
-import { OPEN_GUIDE_EVENT } from './guide';
-import InstallCrmApp, { canInstallCrm, openInstallHelp } from './InstallCrmApp';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Navigate, Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Box, useMediaQuery } from '@mui/material';
+import InstallCrmApp from './InstallCrmApp';
+import QuickClientCreate from './QuickClientCreate';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE_URL } from '../config';
 import { authHeaders } from '../utils/auth';
 import { useSite } from '../site/SiteProvider';
-import StudioLogo from '../site/StudioLogo';
-import StudioIcon from '../site/StudioIcon';
-import { GUIDE_PATH, GUIDE_UI, useSetupProgress } from '../onboarding';
+import { panelLook } from '../theme';
+import { CoachProvider } from '../onboarding/coach';
+import { useLocks } from '../onboarding/locks';
+import LockedScreen from '../onboarding/LockedScreen';
+import SetupBanner from '../onboarding/SetupBanner';
+import Sidebar from './shell/Sidebar';
+import { BottomNav, MobileTopBar, TopBar } from './shell/TopBar';
+import CommandPalette from './shell/CommandPalette';
+import { NAV, sectionOf } from './shell/navigation';
+import { ShellContext } from './shell/ShellContext';
+import { useShellExtensions } from './shell/extensions';
+import { useTextSize } from './shell/textSize';
 
-const DRAWER_WIDTH = 290;
-// Menú encogido (solo iconos) en ordenador
-const MINI_WIDTH = 84;
-const MINI_KEY = 'crmSidebarMini';
-// Alto de la barra inferior del móvil (sin contar la zona del gesto de inicio)
-const BOTTOM_NAV_HEIGHT = 68;
-
-// Lo más usado, siempre a mano abajo en el móvil ("Más" abre el menú completo)
-const BOTTOM_ITEMS = [
-  { label: 'Inicio', icon: <StudioIcon name="home" />, path: '/' },
-  { label: 'Reservas', icon: <StudioIcon name="bookings" />, path: '/bookings' },
-  { label: 'Clientas', icon: <StudioIcon name="clients" />, path: '/clients' },
-  { label: 'Horarios', icon: <StudioIcon name="schedule" />, path: '/calendar' },
-];
-
-function readMini(): boolean {
-  try {
-    return localStorage.getItem(MINI_KEY) === '1';
-  } catch {
-    return false;
-  }
-}
-
-interface MenuItem {
-  text: string;
-  /** Una línea que explica para qué sirve */
-  hint: string;
-  icon: ReactNode;
-  path: string;
-}
-
-const MENU_SECTIONS: { title: string; items: MenuItem[] }[] = [
-  {
-    title: '',
-    items: [{ text: 'Inicio', hint: 'Lo más usado, en un clic', icon: <StudioIcon name="home" />, path: '/' }],
-  },
-  {
-    title: 'Día a día',
-    items: [
-      { text: 'Reservas', hint: 'Quién viene a cada clase', icon: <StudioIcon name="bookings" />, path: '/bookings' },
-      { text: 'Clientas', hint: 'Buscar, dar de alta, ver fichas', icon: <StudioIcon name="clients" />, path: '/clients' },
-      { text: 'Créditos', hint: 'Añadir o quitar clases a alguien', icon: <StudioIcon name="credits" />, path: '/credits' },
-      { text: 'Avisos a clientas', hint: 'Enviar un mensaje a todas', icon: <StudioIcon name="notices" />, path: '/mails' },
-    ],
-  },
-  {
-    title: 'Clases y horarios',
-    items: [
-      { text: 'Mis clases y horarios', hint: 'Horario, cambios y cierres', icon: <StudioIcon name="schedule" />, path: '/calendar' },
-      { text: 'Clases fijas de clientas', hint: 'Plaza guardada cada semana', icon: <StudioIcon name="fixedClasses" />, path: '/assign-classes' },
-      { text: 'Tipos de clase', hint: 'Pilates, yoga… y su descripción', icon: <StudioIcon name="classTypes" />, path: '/classes' },
-      { text: 'Instructores', hint: 'Quién da las clases', icon: <StudioIcon name="instructors" />, path: '/instructors' },
-    ],
-  },
-  {
-    title: 'Ventas y precios',
-    items: [
-      { text: 'Pagos', hint: 'Lo que se ha cobrado', icon: <StudioIcon name="payments" />, path: '/payments' },
-      { text: 'Membresías', hint: 'Quién paga cada mes', icon: <StudioIcon name="subscriptions" />, path: '/subscriptions' },
-      { text: 'Candidatas a membresía', hint: 'Vienen cada semana sin membresía', icon: <StudioIcon name="candidates" />, path: '/membership-candidates' },
-      { text: 'Bonos y precios', hint: 'Lo que se vende en la web', icon: <StudioIcon name="plans" />, path: '/plans' },
-      { text: 'Cupones de descuento', hint: 'Códigos con descuento', icon: <StudioIcon name="coupons" />, path: '/cuopon' },
-    ],
-  },
-  {
-    title: 'Ajustes (se usan poco)',
-    items: [
-      { text: 'Mi estudio y mi web', hint: 'Nombre, aspecto, textos, Google y anuncios, emails y pagos', icon: <StudioIcon name="settings" />, path: '/ajustes' },
-      { text: 'Salas', hint: 'Espacios del estudio', icon: <StudioIcon name="rooms" />, path: '/rooms' },
-      { text: 'Categorías', hint: 'Grupos de clases en la web', icon: <StudioIcon name="categories" />, path: '/categories' },
-      { text: 'Fotos de la web', hint: 'Imágenes de tu web', icon: <StudioIcon name="photos" />, path: '/site-images' },
-      { text: 'Administradores', hint: 'Quién puede entrar aquí', icon: <StudioIcon name="admins" />, path: '/admins' },
-      { text: 'Seguridad', hint: 'Código del móvil al entrar', icon: <StudioIcon name="security" />, path: '/seguridad' },
-    ],
-  },
-];
+// ====================================================================
+// Armazón del panel (rediseño, fase 1): menú lateral en tarjeta con los
+// colores de la paleta, barra superior con el buscador ⌘K, «Ver como
+// clienta», ayuda y «+ Nuevo»; en el móvil, barra de abajo (Hoy, Calendario,
+// Reservas, Clientas, Más) y «+» arriba. El mapa de secciones vive en
+// ./shell/navigation.ts y las distribuciones añaden lo suyo en
+// ./shell/extensions.tsx (sin tocar este archivo).
+//
+// Fase 2: mientras la puesta en marcha no está terminada, el panel se abre
+// por partes (candados en el menú, aviso «Te quedan N pasos» arriba y, si se
+// entra por la dirección en algo cerrado, por qué y «Ir a …»; reglas en
+// ../onboarding/locks.ts). Y las visitas guiadas (../onboarding/coach).
+// ====================================================================
 
 export default function MainLayout() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [mini, setMini] = useState(readMini);
-  const toggleMini = () => {
-    setMini((m) => {
-      try { localStorage.setItem(MINI_KEY, m ? '0' : '1'); } catch { /* sin almacenamiento */ }
-      return !m;
-    });
-  };
-  const drawerWidth = mini ? MINI_WIDTH : DRAWER_WIDTH;
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout, updateUser } = useAuth();
+  const { config } = useSite();
+  const locks = useLocks();
+  const look = panelLook(config);
+  const wide = useMediaQuery('(min-width:1024px)', { noSsr: true });
+  const ext = useShellExtensions();
+  const [textSize, setTextSize] = useTextSize(user?.email || '');
+  const [cmd, setCmd] = useState<{ open: boolean; q: string }>({ open: false, q: '' });
+  const [newClient, setNewClient] = useState<false | 'new' | 'existing'>(false);
+
   // ¿Exige el estudio la verificación en dos pasos y esta persona aún no la
   // tiene? Entonces el API solo le deja activarla: se la lleva a Seguridad.
   useEffect(() => {
@@ -133,359 +60,87 @@ export default function MainLayout() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   const mustSetup2fa = Boolean(user?.two_factor_setup_required) && location.pathname !== '/seguridad';
-  const { config } = useSite();
-  const { progress } = useSetupProgress();
 
-  // «Puesta en marcha»: arriba del todo mientras la web no está publicada;
-  // después, en Ajustes (por si se quiere repasar algún paso opcional).
-  const guideItem: MenuItem = {
-    text: GUIDE_UI.guideTitle,
-    hint: progress ? GUIDE_UI.progress(progress.done_count, progress.total) : GUIDE_UI.menuHint,
-    icon: <StudioIcon name="launch" />,
-    path: GUIDE_PATH,
-  };
-  const menuSections = progress && !progress.published
-    ? [{ ...MENU_SECTIONS[0], items: [...MENU_SECTIONS[0].items, guideItem] }, ...MENU_SECTIONS.slice(1)]
-    : MENU_SECTIONS.map((sec, i) => (i === MENU_SECTIONS.length - 1 ? { ...sec, items: [guideItem, ...sec.items] } : sec));
+  // ⌘K / Ctrl+K desde cualquier pantalla
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setCmd((c) => ({ open: !c.open, q: '' }));
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
-  const drawerContent = (compact: boolean, showMiniToggle = false) => (
-    <Box sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-      {/* Logo del estudio (o su nombre, si no ha subido logo) */}
-      <Box sx={{ px: compact ? 0 : 3, pt: 3.5, pb: 2.5, textAlign: compact ? 'center' : 'left' }}>
-        <StudioLogo compact={compact} height={56} fontSize={compact ? '2rem' : '1.6rem'} />
-        {!compact && config.tagline && <Typography
-          sx={{
-            fontFamily: 'var(--studio-font-body)',
-            fontWeight: 300,
-            fontSize: '0.7rem',
-            color: 'var(--studio-primary-text)',
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-            mt: 0.6,
-          }}
-        >
-          {config.tagline}
-        </Typography>}
-      </Box>
-
-      <Divider sx={{ mx: 2.5 }} />
-
-      <Box sx={{ flexGrow: 1, overflowY: 'auto', py: 1.5 }}>
-        {menuSections.map((section) => (
-          <Box key={section.title} sx={{ mb: 1 }}>
-            {compact && section.title && <Divider sx={{ mx: 2, my: 1 }} />}
-            {!compact && section.title && <Typography
-              sx={{
-                px: 3,
-                pt: 2,
-                pb: 0.8,
-                fontSize: '0.72rem',
-                fontWeight: 600,
-                color: 'var(--studio-primary-shade)',
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-              }}
-            >
-              {section.title}
-            </Typography>}
-            <List sx={{ p: 0 }}>
-              {section.items.map((item) => {
-                const active = location.pathname === item.path;
-                return (
-                  <ListItem key={item.path} disablePadding>
-                    <Tooltip
-                      title={compact ? <><b>{item.text}</b><br />{item.hint}</> : ''}
-                      placement="right"
-                      disableInteractive
-                    >
-                    <ListItemButton
-                      onClick={() => { navigate(item.path); setMobileOpen(false); }}
-                      aria-current={active ? 'page' : undefined}
-                      aria-label={compact ? item.text : undefined}
-                      sx={{
-                        justifyContent: compact ? 'center' : 'flex-start',
-                        mx: 1.5,
-                        my: 0.3,
-                        borderRadius: 2.5,
-                        minHeight: 52,
-                        backgroundColor: active ? 'rgb(var(--studio-primary-rgb) / 0.1)' : 'transparent',
-                        '&:hover': {
-                          backgroundColor: active
-                            ? 'rgb(var(--studio-primary-rgb) / 0.15)'
-                            : 'rgb(var(--studio-primary-rgb) / 0.05)',
-                        },
-                        position: 'relative',
-                        overflow: 'hidden',
-                      }}
-                    >
-                      {active && (
-                        <Box
-                          sx={{
-                            position: 'absolute',
-                            left: 0,
-                            top: '50%',
-                            transform: 'translateY(-50%)',
-                            width: 3,
-                            height: 22,
-                            borderRadius: '0 4px 4px 0',
-                            backgroundColor: 'var(--studio-primary)',
-                          }}
-                        />
-                      )}
-                      <ListItemIcon
-                        sx={{
-                          minWidth: compact ? 0 : 36,
-                          color: active ? 'var(--studio-primary)' : 'var(--studio-text-hint)',
-                          transition: 'color 0.25s',
-                        }}
-                      >
-                        {item.icon}
-                      </ListItemIcon>
-                      {!compact && <ListItemText
-                        primary={item.text}
-                        secondary={item.hint}
-                        slotProps={{
-                          primary: {
-                            sx: {
-                              fontSize: '0.95rem',
-                              fontWeight: active ? 600 : 500,
-                              color: active ? 'var(--studio-dark)' : 'var(--studio-text-strong)',
-                              transition: 'color 0.25s',
-                              lineHeight: 1.3,
-                            },
-                          },
-                          secondary: {
-                            sx: { fontSize: '0.78rem', color: 'var(--studio-text-hint)', lineHeight: 1.3, mt: 0.2 },
-                          },
-                        }}
-                      />}
-                    </ListItemButton>
-                    </Tooltip>
-                  </ListItem>
-                );
-              })}
-            </List>
-          </Box>
-        ))}
-      </Box>
-
-      <Divider sx={{ mx: 2.5 }} />
-
-      <Box sx={{ p: compact ? 1 : 2 }}>
-        {canInstallCrm() && (
-          <ListItem disablePadding>
-            <ListItemButton
-              onClick={() => { setMobileOpen(false); openInstallHelp(); }}
-              sx={{ mx: 0.5, borderRadius: 2.5, minHeight: 52, color: 'var(--studio-primary-dark)' }}
-            >
-              <ListItemIcon sx={{ minWidth: 36, color: 'var(--studio-primary)' }}>
-                <StudioIcon name="install" />
-              </ListItemIcon>
-              <ListItemText
-                primary="Instalar en el móvil"
-                secondary="Como una app, con su icono"
-                slotProps={{
-                  primary: { sx: { fontSize: '0.95rem', fontWeight: 600 } },
-                  secondary: { sx: { fontSize: '0.78rem', color: 'var(--studio-text-hint)' } },
-                }}
-              />
-            </ListItemButton>
-          </ListItem>
-        )}
-        {showMiniToggle && (
-          <ListItem disablePadding>
-            <Tooltip title={compact ? 'Mostrar el menú completo' : ''} placement="right" disableInteractive>
-              <ListItemButton
-                onClick={toggleMini}
-                aria-label={compact ? 'Mostrar el menú completo' : undefined}
-                sx={{ mx: 0.5, borderRadius: 2.5, minHeight: 48, justifyContent: compact ? 'center' : 'flex-start', color: 'var(--studio-text-muted)' }}
-              >
-                <ListItemIcon sx={{ minWidth: compact ? 0 : 36, color: 'var(--studio-text-hint)' }}>
-                  {compact ? <StudioIcon name="expand" /> : <StudioIcon name="collapse" />}
-                </ListItemIcon>
-                {!compact && (
-                  <ListItemText
-                    primary="Encoger el menú"
-                    slotProps={{ primary: { sx: { fontSize: '0.9rem', fontWeight: 500 } } }}
-                  />
-                )}
-              </ListItemButton>
-            </Tooltip>
-          </ListItem>
-        )}
-        <ListItem disablePadding>
-          <Tooltip title={compact ? 'Salir del programa' : ''} placement="right" disableInteractive>
-          <ListItemButton
-            onClick={logout}
-            aria-label={compact ? 'Salir del programa' : undefined}
-            sx={{
-              justifyContent: compact ? 'center' : 'flex-start',
-              mx: 0.5,
-              borderRadius: 2.5,
-              color: 'var(--studio-danger-text, #C2857A)',
-              '&:hover': { backgroundColor: 'rgba(194,133,122,0.08)' },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: compact ? 0 : 36, color: 'var(--studio-danger-text, #C2857A)' }}>
-              <StudioIcon name="logout" />
-            </ListItemIcon>
-            {!compact && <ListItemText
-              primary="Salir del programa"
-              slotProps={{ primary: { sx: { fontSize: '0.95rem', fontWeight: 500 } } }}
-            />}
-          </ListItemButton>
-          </Tooltip>
-        </ListItem>
-      </Box>
-    </Box>
+  const openCommand = useCallback((q = '') => setCmd({ open: true, q }), []);
+  const openNewClient = useCallback((mode: 'new' | 'existing' = 'new') => setNewClient(mode), []);
+  const shell = useMemo(
+    () => ({ openCommand, openNewClient, extraSettings: ext.settingsItems }),
+    [openCommand, openNewClient, ext.settingsItems],
   );
 
-  // Sección activa de la barra inferior (también en sus subpantallas)
-  const bottomValue = BOTTOM_ITEMS.find((b) => b.path === location.pathname)?.path ?? 'menu';
+  const active = sectionOf(location.pathname, location.search);
+  // Entrar en algo aún cerrado (por enlace o escribiendo la dirección): se explica
+  const lock = locks.route(location.pathname);
+  const lockedTitle = !lock ? '' : location.pathname === '/assign-classes' ? 'Clases fijas de clientas'
+    : NAV.find((n) => n.key === sectionOf(location.pathname))?.label || 'Esta sección';
+  const userName = user?.name || user?.email || 'Administración';
+
+  // Al cambiar de pantalla: arriba del todo
+  useEffect(() => { window.scrollTo({ top: 0 }); }, [location.pathname]);
+
+  const content = (
+    <Box component="main" id="main" tabIndex={-1} sx={{ width: '100%', maxWidth: 1280, mx: 'auto', outline: 'none', pt: { xs: 1, lg: 0.5 } }}>
+      {ext.banner}
+      <SetupBanner />
+      {mustSetup2fa ? <Navigate to="/seguridad" replace /> : lock ? <LockedScreen lock={lock} title={lockedTitle} /> : <Outlet />}
+    </Box>
+  );
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          ml: { md: `${drawerWidth}px` },
-          transition: 'width 0.25s ease, margin 0.25s ease',
-        }}
-      >
-        <Toolbar sx={{ px: { xs: 1.5, sm: 2, md: 4 }, minHeight: '64px !important', gap: 1 }}>
-          <Button
-            onClick={() => setMobileOpen(!mobileOpen)}
-            startIcon={<StudioIcon name="menu" />}
-            aria-label="Abrir el menú"
-            sx={{ display: { md: 'none' }, color: 'var(--studio-dark)', minHeight: 44, px: 1.5 }}
-          >
-            Menú
-          </Button>
-          <Box aria-hidden sx={{ display: { xs: 'block', md: 'none' }, minWidth: 0, maxWidth: '45vw' }}>
-            <StudioLogo height={32} fontSize="1.2rem" sx={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} />
+    <ShellContext.Provider value={shell}>
+      <CoachProvider>
+        <Box component="a" href="#main" sx={skipLink}>Saltar al contenido</Box>
+        {wide ? (
+          <Box sx={{ display: 'grid', gridTemplateColumns: '264px minmax(0, 1fr)', minHeight: '100dvh', p: '12px 0 12px 12px' }}>
+            <Sidebar
+              active={active}
+              guide={null}
+              userName={userName}
+              userRole="Administración"
+              textSize={textSize}
+              onTextSize={setTextSize}
+              onLogout={logout}
+            />
+            <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', px: 3, pb: 5 }}>
+              <TopBar style={look.classic ? 'classic' : look.style} />
+              {content}
+            </Box>
           </Box>
-          <Box sx={{ flexGrow: 1 }} />
-          <Stack direction="row" spacing={{ xs: 1, sm: 2.5 }} alignItems="center">
-            <Button
-              variant="outlined"
-              startIcon={<StudioIcon name="help" />}
-              onClick={() => window.dispatchEvent(new Event(OPEN_GUIDE_EVENT))}
-              sx={{ minHeight: 44, px: 2, backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.7)' }}
-            >
-              Ayuda
-            </Button>
-            <Typography
-              sx={{ fontSize: '0.9rem', color: 'var(--studio-text-muted)', fontFamily: 'var(--studio-font-body)', display: { xs: 'none', sm: 'block' } }}
-            >
-              {user?.name || user?.email || 'Administrador'}
-            </Typography>
-            <Avatar
-              sx={{
-                display: { xs: 'none', sm: 'flex' },
-                width: 34,
-                height: 34,
-                bgcolor: 'var(--studio-primary)',
-                fontSize: '0.85rem',
-                fontFamily: 'var(--studio-font-heading)',
-              }}
-            >
-              {(user?.name || user?.email || config.studio_name || 'A')[0].toUpperCase()}
-            </Avatar>
-          </Stack>
-        </Toolbar>
-      </AppBar>
+        ) : (
+          <Box sx={{ minWidth: 0, px: 2, pb: 'calc(96px + env(safe-area-inset-bottom))', overflowX: 'clip' }}>
+            <MobileTopBar />
+            {content}
+            <BottomNav active={active} />
+          </Box>
+        )}
 
-      <Box component="nav" sx={{ width: { md: drawerWidth }, flexShrink: { md: 0 }, transition: 'width 0.25s ease' }}>
-        <Drawer
-          variant="temporary"
-          open={mobileOpen}
-          onClose={() => setMobileOpen(false)}
-          ModalProps={{ keepMounted: true }}
-          sx={{
-            display: { xs: 'block', md: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: DRAWER_WIDTH, maxWidth: '86vw' },
-          }}
-        >
-          {drawerContent(false)}
-        </Drawer>
-        <Drawer
-          variant="permanent"
-          sx={{
-            display: { xs: 'none', md: 'block' },
-            '& .MuiDrawer-paper': {
-              boxSizing: 'border-box',
-              width: drawerWidth,
-              overflowX: 'hidden',
-              transition: 'width 0.25s ease',
-            },
-          }}
-          open
-        >
-          {drawerContent(mini, true)}
-        </Drawer>
-      </Box>
-
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          minWidth: 0,
-          width: { md: `calc(100% - ${drawerWidth}px)` },
-          minHeight: '100vh',
-          // Hueco para que la barra inferior del móvil no tape el final de la página
-          pb: { xs: `calc(${BOTTOM_NAV_HEIGHT}px + env(safe-area-inset-bottom))`, md: 0 },
-        }}
-      >
-        <Toolbar />
-        <Box sx={{ p: { xs: 2, md: 3.5 } }}>
-          {mustSetup2fa ? <Navigate to="/seguridad" replace /> : <Outlet />}
-        </Box>
-      </Box>
-
-      <InstallCrmApp />
-
-      {/* Móvil y tablet: lo más usado abajo, al alcance del pulgar */}
-      <Paper
-        component="nav"
-        aria-label="Secciones principales"
-        elevation={0}
-        sx={{
-          display: { xs: 'block', md: 'none' },
-          position: 'fixed',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          zIndex: (theme) => theme.zIndex.appBar,
-          borderRadius: 0,
-          borderTop: '1px solid rgb(var(--studio-line-rgb) / 0.35)',
-          backgroundColor: 'rgb(var(--studio-surface-rgb) / 0.92)',
-          boxShadow: '0 -4px 20px rgb(var(--studio-shadow-rgb) / 0.08)',
-          pb: 'env(safe-area-inset-bottom)',
-        }}
-      >
-        <BottomNavigation
-          showLabels
-          value={bottomValue}
-          onChange={(_, value: string) => {
-            if (value === 'menu') setMobileOpen(true);
-            else { navigate(value); setMobileOpen(false); }
-          }}
-          sx={{
-            height: BOTTOM_NAV_HEIGHT,
-            backgroundColor: 'transparent',
-            '& .MuiBottomNavigationAction-root': { minWidth: 0, px: 0.5, color: 'var(--studio-text-hint)' },
-            '& .MuiBottomNavigationAction-root.Mui-selected': { color: 'var(--studio-primary-dark)' },
-            '& .MuiBottomNavigationAction-label': { fontSize: '0.78rem', fontWeight: 500, mt: 0.25 },
-            '& .MuiBottomNavigationAction-label.Mui-selected': { fontSize: '0.8rem', fontWeight: 600 },
-          }}
-        >
-          {BOTTOM_ITEMS.map((b) => (
-            <BottomNavigationAction key={b.path} value={b.path} label={b.label} icon={b.icon} />
-          ))}
-          <BottomNavigationAction value="menu" label="Más" icon={<StudioIcon name="menu" />} />
-        </BottomNavigation>
-      </Paper>
-    </Box>
+        <CommandPalette open={cmd.open} initialQuery={cmd.q} onClose={() => setCmd({ open: false, q: '' })} />
+        <QuickClientCreate
+          open={Boolean(newClient)}
+          initialMode={newClient || 'new'}
+          onClose={() => setNewClient(false)}
+          onCreated={(name) => { setNewClient(false); navigate(name ? `/clients?buscar=${encodeURIComponent(name)}` : '/clients'); }}
+        />
+        <InstallCrmApp />
+      </CoachProvider>
+    </ShellContext.Provider>
   );
 }
+
+const skipLink = {
+  position: 'fixed', left: 12, top: -60, zIndex: 2000, px: 1.75, py: 1.25, borderRadius: '10px',
+  background: 'var(--studio-ink)', color: 'var(--studio-surf)', fontWeight: 600, textDecoration: 'none',
+  '&:focus': { top: 12 },
+} as const;

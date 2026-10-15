@@ -1568,6 +1568,9 @@ export function currencySymbol(lang: string = 'es'): string {
 const ROUTE_PAIRS: [es: string, en: string][] = [
   ['/', '/en'],
   ['/classes', '/en/classes'],
+  ['/prices', '/en/prices'],
+  ['/estudio', '/en/studio'],
+  ['/contacto', '/en/contact'],
   ['/terminos-condiciones', '/en/terms-conditions'],
   ['/promociones', '/en/promotions-terms'],
   ['/cookies', '/en/cookies'],
@@ -1586,7 +1589,10 @@ export function localizedPath(path: string, lang: string): string | null {
 /** Página cuyo texto está escrito en el HTML (no cambia con el selector). */
 export function isStaticLangPage(path: string): boolean {
   const p = normPath(path);
-  return p === '/terminos-condiciones' || p === '/promociones' || p === '/cookies' || p.startsWith('/en');
+  // La portada, precios, el estudio y contacto llevan el texto en el HTML del
+  // servidor: al cambiar de idioma se salta a su versión (/en…).
+  return p === '/' || p === '/prices' || p === '/estudio' || p === '/contacto'
+    || p === '/terminos-condiciones' || p === '/promociones' || p === '/cookies' || p.startsWith('/en');
 }
 
 // Hook principal

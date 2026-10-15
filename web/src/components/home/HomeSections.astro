@@ -1,0 +1,251 @@
+---
+// Secciones cortas de la portada (todo en HTML de servidor, sin JavaScript):
+// cada una enseña poco y enlaza a su página completa con «Ver todo →».
+//   offer  → Lo que ofrecemos (clases)          → /classes
+//   prices → Precios en resumen (3 tarjetas)     → /prices
+//   trust  → Estudio, equipo y opiniones         → /estudio
+//   visit  → Dónde estamos, horario, contacto    → /contacto
+// Una sección sin datos no se pinta. Estilos .w-* en styles/site.css.
+import { Icon } from '../ui/Icon';
+import { classPath, niceTitle, openingHoursFromSchedules, type Lang } from '../../seo/site';
+import {
+  LEVELS, tr, type ApiClassType, type ApiInstructor, type ApiPlan, type ApiSchedule, type ApiTestimonial,
+} from '../../seo/catalog';
+import { addressLine, contactUrl, lt, mapsUrl, phoneHref, siteMoney, whatsappUrl, type SiteConfig } from '../../lib/site';
+
+interface Props {
+  kind: 'offer' | 'prices' | 'trust' | 'visit';
+  lang: Lang;
+  site: SiteConfig;
+  offered?: { cls: ApiClassType; slots: ApiSchedule[] }[];
+  plans?: ApiPlan[];
+  instructors?: ApiInstructor[];
+  testimonials?: ApiTestimonial[];
+  schedules?: ApiSchedule[] | null;
+}
+const { kind, lang, site, offered = [], plans = [], instructors = [], testimonials = [], schedules = [] } = Astro.props;
+const es = lang === 'es';
+const pre = es ? '' : '/en';
+const money = (n: number | string) => siteMoney(Number(n), site, lang);
+
+// ── Lo que ofrecemos ──
+const offer = offered.slice(0, 6).map(({ cls, slots }) => ({
+  href: classPath(cls.slug, lang),
+  title: niceTitle(tr(cls, 'title', lang)),
+  text: tr(cls, 'description', lang).replace(/\s+/g, ' ').trim(),
+  image: cls.image || '',
+  minutes: cls.duration_minutes || 0,
+  level: cls.level && LEVELS[cls.level] ? LEVELS[cls.level][lang] : '',
+  perWeek: slots.length,
+}));
+
+// ── Precios: clase suelta · el bono que más compensa · la cuota más popular ──
+const packs = plans.filter((p) => p.type === 'pack').sort((a, b) => Number(a.price_eur) - Number(b.price_eur));
+const subs = plans.filter((p) => p.type === 'sub').sort((a, b) => Number(a.price_eur) - Number(b.price_eur));
+const name = (p: ApiPlan) => (es ? p.name : p.name_en || p.name);
+const perClass = (p: ApiPlan) => (p.credits > 0 ? Number(p.price_eur) / p.credits : 0);
+const bestPack = packs.length ? [...packs].sort((a, b) => perClass(a) - perClass(b))[0] : null;
+const midSub = subs.length ? subs[Math.floor((subs.length - 1) / 2)] : null;
+const priceCards = [
+  { kind: es ? 'Clase suelta' : 'Drop-in class', amount: money(site.drop_in_price), unit: '', text: es ? 'Sin compromiso. Ideal para probar.' : 'No commitment. Ideal to try us.', hi: false },
+  bestPack && { kind: es ? 'Bono' : 'Class pack', amount: money(bestPack.price_eur), unit: '', text: `${name(bestPack)} · ${es ? 'sale a' : 'works out at'} ${money(perClass(bestPack).toFixed(2))} ${es ? 'la clase' : 'per class'}`, hi: false },
+  midSub && { kind: es ? 'Mensualidad' : 'Membership', amount: money(midSub.price_eur), unit: es ? '/mes' : '/month', text: `${name(midSub)} · ${es ? 'sin permanencia' : 'cancel anytime'}`, hi: true },
+].filter(Boolean) as { kind: string; amount: string; unit: string; text: string; hi: boolean }[];
+
+// ── Estudio, equipo y opiniones ──
+const aboutTitle = lt(site.content, 'about_title', lang);
+const aboutText = lt(site.content, 'about_text', lang).split(/\n{2,}/)[0]?.trim() || '';
+const team = instructors.slice(0, 6).map((i) => ({
+  name: tr(i, 'name', lang) || i.name,
+  role: i.experience_years ? (es ? `${i.experience_years} años de experiencia` : `${i.experience_years} years' experience`) : '',
+  image: i.image || '',
+  initial: (i.name || '?').trim().charAt(0).toUpperCase(),
+}));
+const quotes = testimonials.slice(0, 3);
+const qText = (t: ApiTestimonial) => (lang === 'en' && t.text_en?.trim()) || t.text;
+const stars = (n: number) => Math.max(0, Math.min(5, Math.round(n)));
+const showTrust = !!(aboutText || team.length || quotes.length);
+
+// ── Dónde estamos ──
+const address = addressLine(site);
+const map = mapsUrl(site);
+const { latitude: lat, longitude: lon } = site.contact;
+const d = 0.006;
+const osm = lat != null && lon != null
+  ? `https://www.openstreetmap.org/export/embed.html?bbox=${lon - d}%2C${lat - d}%2C${lon + d}%2C${lat + d}&layer=mapnik&marker=${lat}%2C${lon}`
+  : '';
+const DAYS = es ? ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const SCHEMA = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const hours = openingHoursFromSchedules(schedules).map((h) => ({
+  day: DAYS[SCHEMA.indexOf(String(h.dayOfWeek).split('/').pop() || '')],
+  time: `${h.opens}–${h.closes}`,
+}));
+const wa = whatsappUrl(site);
+const tel = phoneHref(site);
+const write = contactUrl(site);
+const showVisit = !!(address || site.contact.phone || site.contact.email || hours.length);
+---
+{kind === 'offer' && offer.length > 0 && (
+  <section class="w-sec w-sec--alt" id="clases" aria-labelledby="offer-title">
+    <div class="w-wrap">
+      <div class="w-head">
+        <div>
+          <h2 class="w-h2" id="offer-title">{es ? 'Lo que ofrecemos' : 'What we offer'}</h2>
+          <p class="w-lead">{es ? 'Grupos reducidos y todos los niveles. Elige la que te apetezca.' : 'Small groups, all levels. Pick the one you fancy.'}</p>
+        </div>
+        <a class="w-more" href={`${pre}/classes`}>{es ? 'Ver todas las clases' : 'See all classes'} <span aria-hidden="true">→</span></a>
+      </div>
+      <ul class="w-snap" style={`--cols:${Math.min(3, offer.length)};list-style:none;margin:0;padding-left:0`}>
+        {offer.map((o) => (
+          <li>
+            <a class="w-card w-offer" href={o.href}>
+              <div class:list={['w-offer-img', !o.image && 'w-offer-img--ph']}>
+                {o.image
+                  ? <img src={o.image} alt="" loading="lazy" decoding="async" width="480" height="300" />
+                  : <Icon name="yoga" aria-hidden />}
+              </div>
+              <div class="w-offer-body">
+                <h3 class="w-h3">{o.title}</h3>
+                {o.text && <p>{o.text}</p>}
+                <div class="w-offer-meta">
+                  {o.minutes > 0 && <span class="w-chip">{o.minutes} min</span>}
+                  {o.level && <span class="w-chip">{o.level}</span>}
+                  <span class="w-chip">{es ? `${o.perWeek} ${o.perWeek === 1 ? 'vez' : 'veces'}/semana` : `${o.perWeek}×/week`}</span>
+                </div>
+              </div>
+            </a>
+          </li>
+        ))}
+      </ul>
+      {offer.length > 1 && <p class="w-snap-hint" aria-hidden="true">{es ? 'Desliza para ver más' : 'Swipe to see more'} →</p>}
+    </div>
+  </section>
+)}
+
+{kind === 'prices' && (
+  <section class="w-sec" id="precios" aria-labelledby="prices-title">
+    <div class="w-wrap">
+      <div class="w-head">
+        <div>
+          <h2 class="w-h2" id="prices-title">{es ? 'Precios claros' : 'Simple prices'}</h2>
+          <p class="w-lead">{es ? 'Paga por clase, con bono o con una cuota al mes.' : 'Pay per class, with a pack or a monthly membership.'}</p>
+        </div>
+        <a class="w-more" href={`${pre}/prices`}>{es ? 'Ver todos los precios' : 'See all prices'} <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="w-snap" style={`--cols:${priceCards.length}`}>
+        {priceCards.map((c) => (
+          <div class:list={['w-card w-price', c.hi && 'w-price--hi']}>
+            <span class="w-price-kind">{c.kind}</span>
+            <span class="w-price-amount">{c.amount}<small>{c.unit}</small></span>
+            <p>{c.text}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </section>
+)}
+
+{kind === 'trust' && showTrust && (
+  <section class="w-sec w-sec--alt" id="estudio" aria-labelledby="trust-title">
+    <div class="w-wrap">
+      <div class="w-head">
+        <div>
+          <h2 class="w-h2" id="trust-title">{aboutTitle || (es ? 'Quién te acompaña' : 'Who you will train with')}</h2>
+          {aboutText && <p class="w-lead" style="display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">{aboutText}</p>}
+        </div>
+        <a class="w-more" href={es ? '/estudio' : '/en/studio'}>{es ? 'Conoce el estudio' : 'Meet the studio'} <span aria-hidden="true">→</span></a>
+      </div>
+      {team.length > 0 && (
+        <div class="w-team" style="margin-bottom: var(--w-6)">
+          {team.map((p) => (
+            <a class="w-person" href={es ? '/estudio#equipo' : '/en/studio#equipo'}>
+              {p.image
+                ? <img src={p.image} alt="" loading="lazy" decoding="async" width="88" height="88" />
+                : <span class="w-avatar" aria-hidden="true">{p.initial}</span>}
+              <span>{p.name}{p.role && <><br /><small>{p.role}</small></>}</span>
+            </a>
+          ))}
+        </div>
+      )}
+      {quotes.length > 0 && (
+        <>
+          <ul class="w-snap" style={`--cols:${Math.min(3, quotes.length)};list-style:none;margin:0;padding-left:0`}>
+            {quotes.map((q) => (
+              <li>
+                <figure class="w-card w-quote">
+                  {q.rating ? <p class="w-stars" aria-label={es ? `${stars(q.rating)} de 5` : `${stars(q.rating)} out of 5`}><span aria-hidden="true">{'★'.repeat(stars(q.rating))}</span></p> : null}
+                  <blockquote>{qText(q)}</blockquote>
+                  <figcaption>
+                    {q.photo_url && <img src={q.photo_url} alt="" width="36" height="36" loading="lazy" decoding="async" />}
+                    <span><strong>{q.author}</strong>{q.source && <span class="w-muted"> · {q.source}</span>}</span>
+                  </figcaption>
+                </figure>
+              </li>
+            ))}
+          </ul>
+          {quotes.length > 1 && <p class="w-snap-hint" aria-hidden="true">{es ? 'Desliza para leer más' : 'Swipe to read more'} →</p>}
+        </>
+      )}
+    </div>
+  </section>
+)}
+
+{kind === 'visit' && showVisit && (
+  <section class="w-sec" id="contacto" aria-labelledby="visit-title">
+    <div class="w-wrap">
+      <div class="w-head">
+        <div>
+          <h2 class="w-h2" id="visit-title">{es ? 'Ven a vernos' : 'Come and see us'}</h2>
+        </div>
+        <a class="w-more" href={es ? '/contacto' : '/en/contact'}>{es ? 'Contacto y preguntas' : 'Contact and FAQ'} <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="w-visit">
+        <div class="w-card w-visit-card">
+          <dl>
+            {address && (
+              <div>
+                <dt>{es ? 'Dirección' : 'Address'}</dt>
+                <dd>{map ? <a href={map} target="_blank" rel="noopener">{address}</a> : address}</dd>
+              </div>
+            )}
+            {hours.length > 0 && (
+              <div>
+                <dt>{es ? 'Horario de clases' : 'Class hours'}</dt>
+                <dd><ul class="w-hours">{hours.map((h) => <li><span>{h.day}</span><span>{h.time}</span></li>)}</ul></dd>
+              </div>
+            )}
+            {(site.contact.phone || site.contact.email) && (
+              <div>
+                <dt>{es ? 'Contacto' : 'Contact'}</dt>
+                <dd>
+                  {site.contact.phone && (wa || tel) && <><a href={wa || tel}>{site.contact.phone}</a><br /></>}
+                  {site.contact.email && <a href={`mailto:${site.contact.email}`}>{site.contact.email}</a>}
+                </dd>
+              </div>
+            )}
+          </dl>
+          {write && (
+            <div style="display:flex;gap:var(--w-2);flex-wrap:wrap;margin-top:auto">
+              <a class="w-btn sk-btn-ghost" href={write} target={write.startsWith('http') ? '_blank' : undefined} rel="noopener">
+                <Icon name={wa ? 'whatsapp' : 'mail'} aria-hidden /> {es ? 'Escríbenos' : 'Message us'}
+              </a>
+            </div>
+          )}
+        </div>
+        {osm
+          ? <iframe class="w-map" src={osm} title={es ? `Mapa de ${site.studio_name}` : `Map of ${site.studio_name}`} loading="lazy" referrerpolicy="no-referrer"></iframe>
+          : (map && (
+            <a class="w-map-ph" href={map} target="_blank" rel="noopener">
+              <Icon name="map-pin" size={28} aria-hidden />
+              <strong>{es ? 'Abrir en el mapa' : 'Open in maps'}</strong>
+              <span class="w-small">{address}</span>
+            </a>
+          ))}
+      </div>
+    </div>
+  </section>
+)}
+
+<style>
+  .w-map-ph { text-decoration: none; text-transform: none; font-family: var(--font-body); }
+</style>

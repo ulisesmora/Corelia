@@ -432,7 +432,7 @@ export default function CustomerViewer() {
         </Typography>
 
         {isMobile ? (
-          <Stack spacing={1.5}>
+          <Stack spacing={1.5} data-tour="list">
             {paginatedUsers.map((user) => (
               <Paper key={user.id} variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
                 <Typography sx={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--studio-dark)' }}>
@@ -451,7 +451,7 @@ export default function CustomerViewer() {
             ))}
           </Stack>
         ) : (
-          <TableContainer component={Paper} sx={{ overflowX: 'auto' }}>
+          <TableContainer component={Paper} data-tour="list" sx={{ overflowX: 'auto' }}>
             <Table>
               <TableHead>
                 <TableRow>
@@ -617,26 +617,17 @@ export default function CustomerViewer() {
       <PageIntro
         pageKey="clients"
         title="Clientas"
-        subtitle="Todas las personas que vienen al estudio: las que tienen ficha y las invitadas que reservaron por la web sin crear cuenta."
+        subtitle="Todas las personas que vienen a tu estudio."
         actions={
           <Button variant="contained" size="large" startIcon={<PersonAddIcon />} onClick={() => setQuickCreateOpen(true)}>
             Dar de alta a una clienta
           </Button>
         }
-        steps={[
-          { title: 'Busca a la clienta', text: 'Escribe su nombre, su teléfono o su email en el buscador. No hace falta poner tildes.' },
-          { title: 'Mira sus datos', text: 'Verás su teléfono (púlsalo para llamarla desde el móvil) y si ya confirmó su email.' },
-          { title: '¿Necesita clases?', text: 'Pulsa «Ver créditos» en su fila para ver cuántas le quedan y añadirle más.' },
-          { title: '¿Es nueva?', text: 'Pulsa «Dar de alta a una clienta». Si quieres, en la misma ventana la apuntas a una clase.' },
-        ]}
-        tips={[
-          <>Las <b>invitadas</b> están en la segunda pestaña: reservaron y pagaron con tarjeta en la web sin crear una cuenta.</>,
-        ]}
       />
 
       <TextField
         fullWidth
-        label="Buscar clienta"
+        data-tour="search" label="Buscar clienta"
         placeholder="Nombre, teléfono o email"
         helperText="Ej.: Marta, García o 612 345 678. Busca a la vez en las dos pestañas."
         value={searchTerm}

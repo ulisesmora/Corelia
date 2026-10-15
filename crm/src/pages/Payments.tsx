@@ -1,6 +1,7 @@
-// OJO nombre heredado: esta página es la gestión de HORARIOS (ruta /calendar)
+// OJO nombre heredado: esta página es la gestión de HORARIOS (ruta /calendar/horarios;
+// el calendario del día a día es pages/CalendarPage.tsx en /calendar)
 import { useState, useEffect, useMemo, useCallback, type ReactNode } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Button,
@@ -211,6 +212,7 @@ export default function RecurringScheduleManagement() {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isNarrow = useMediaQuery(theme.breakpoints.down('md'));
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const today = madridToday();
   const nextMonth = firstOfNextMonth();
 
@@ -1497,10 +1499,13 @@ export default function RecurringScheduleManagement() {
       <StepGuide step="schedule" />
       <PageIntro
         pageKey="horarios"
-        title="Mis clases y horarios"
-        subtitle="Tu horario del estudio: las clases que se repiten cada semana, las de un solo día y los días que cierras."
+        title="Clases semanales y cierres"
+        subtitle="La lista de tus clases que se repiten, las de un solo día, las vacaciones y el horario para imprimir. Para el día a día, usa el Calendario."
         actions={
           <>
+            <Button variant="text" startIcon={<CalendarMonthIcon />} onClick={() => navigate('/calendar')}>
+              Volver al calendario
+            </Button>
             <Button variant="outlined" startIcon={<CalendarMonthIcon />} onClick={() => setPlanOpen(true)}>
               Preparar {planMonthName}
             </Button>
@@ -1514,28 +1519,6 @@ export default function RecurringScheduleManagement() {
             </Button>
           </>
         }
-        steps={[
-          {
-            title: 'Las clases semanales se repiten solas',
-            text: 'No hay que crearlas cada mes. Una clase de «todos los lunes» sale cada lunes hasta que tú la termines.',
-          },
-          {
-            title: 'Para cambiar una clase, pulsa en su fila',
-            text: '«Editar» corrige datos; «Terminar» la deja de dar desde una fecha; «Más» cambia la hora desde una fecha o mueve un solo día.',
-          },
-          {
-            title: 'Para no dar clase unos días',
-            text: 'Usa la pestaña «Vacaciones y cierres». No se borra nada y, al pasar esas fechas, todo sigue como siempre.',
-          },
-          {
-            title: 'Antes de guardar, lee el resumen',
-            text: 'Cada ventana te dice cuántas clientas están apuntadas y qué les pasará (si se mueven, se cancelan con devolución o se quedan igual).',
-          },
-        ]}
-        tips={[
-          'Si una clienta ya tiene reserva y cambias algo, siempre te preguntamos qué hacer con ella antes de guardar.',
-          `¿Preparando el mes que viene? Pulsa «Preparar ${planMonthName}» y te llevamos paso a paso.`,
-        ]}
       />
 
       <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>

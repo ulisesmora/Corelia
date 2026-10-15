@@ -756,3 +756,11 @@ def ping_indexnow(urls):
     """Aviso a buscadores (IndexNow) tras crear/editar una clase."""
     from api.utils.indexnow import ping
     ping(urls)
+
+
+@shared_task
+def expire_waitlist_offers():
+    """Cada 10 min: las plazas ofrecidas de la lista de espera que nadie ha
+    aceptado a tiempo pasan a la siguiente persona (api/utils/waitlist.py)."""
+    from api.utils.waitlist import expire_offers
+    return expire_offers()

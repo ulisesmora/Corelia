@@ -3,29 +3,28 @@ import { Navigate } from 'react-router-dom';
 import { Box, CircularProgress } from '@mui/material';
 import { useSite } from '../../site/SiteProvider';
 import { useSetupProgress } from '../../onboarding';
+import { setupStepLink, setupUnfinished } from '../../onboarding/flow';
 
 /**
- * Mientras el estudio no haya terminado el asistente de bienvenida, el panel
- * lo lleva allí (una sola vez por sesión: si lo cierra, puede seguir usando
- * el panel y volver desde la guía de puesta en marcha).
+ * Puesta en marcha OBLIGATORIA: mientras el estudio no la haya terminado
+ * (web publicada), al abrir el panel se va a ella (/bienvenida), al paso donde
+ * lo dejó. Con «Guardar y seguir luego» (progress.flow.later) el panel se abre,
+ * pero limitado: candados y el aviso «Te quedan N pasos» (MainLayout).
  *
- * «Terminado» lo dice el API (/api/v1/setup/progress/ → welcome_done). Los
- * estudios con la web ya publicada (setup_completed) no lo consultan: para
- * ellos el panel se abre como siempre.
+ * Los estudios con la web ya publicada (setup_completed) nunca vuelven aquí, y
+ * si el API no responde el panel se abre como siempre (nunca se bloquea por
+ * un fallo de red).
  */
 export default function SetupGate({ children }: { children: ReactNode }) {
   const { config, loading } = useSite();
   const { progress, ready } = useSetupProgress();
-  let skipped = false;
-  try { skipped = sessionStorage.getItem('setupSkipped') === '1'; } catch { /* sin storage */ }
 
-  if (loading || config.setup_completed !== false || skipped) return <>{children}</>;
+  if (loading || config.setup_completed) return <>{children}</>;
   if (!ready) {
     return <Box sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center' }}><CircularProgress aria-label="Cargando" /></Box>;
   }
-  if (progress && !progress.published && !progress.welcome_done) {
-    try { sessionStorage.setItem('setupSkipped', '1'); } catch { /* sin storage */ }
-    return <Navigate to="/bienvenida" replace />;
+  if (progress && setupUnfinished(progress, config.setup_completed) && !progress.flow.later) {
+    return <Navigate to={setupStepLink(Math.min(progress.flow.reached, progress.flow.total))} replace />;
   }
   return <>{children}</>;
 }

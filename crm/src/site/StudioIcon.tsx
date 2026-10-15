@@ -143,6 +143,53 @@ import TodayRoundedIcon from '@mui/icons-material/TodayRounded';
 import CelebrationIcon from '@mui/icons-material/Celebration';
 import CelebrationOutlinedIcon from '@mui/icons-material/CelebrationOutlined';
 import CelebrationRoundedIcon from '@mui/icons-material/CelebrationRounded';
+import LanguageIcon from '@mui/icons-material/Language';
+import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined';
+import LanguageRoundedIcon from '@mui/icons-material/LanguageRounded';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import VisibilityOutlinedIcon from '@mui/icons-material/VisibilityOutlined';
+import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
+import AddIcon from '@mui/icons-material/Add';
+import AddOutlinedIcon from '@mui/icons-material/AddOutlined';
+import AddRoundedIcon from '@mui/icons-material/AddRounded';
+import GridViewIcon from '@mui/icons-material/GridView';
+import GridViewOutlinedIcon from '@mui/icons-material/GridViewOutlined';
+import GridViewRoundedIcon from '@mui/icons-material/GridViewRounded';
+import EventAvailableIcon from '@mui/icons-material/EventAvailable';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import EventAvailableRoundedIcon from '@mui/icons-material/EventAvailableRounded';
+import CloseIcon from '@mui/icons-material/Close';
+import CloseOutlinedIcon from '@mui/icons-material/CloseOutlined';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import OpenInNewOutlinedIcon from '@mui/icons-material/OpenInNewOutlined';
+import OpenInNewRoundedIcon from '@mui/icons-material/OpenInNewRounded';
+import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
+import ChatBubbleOutlineRoundedIcon from '@mui/icons-material/ChatBubbleOutlineRounded';
+import ChatBubbleIcon from '@mui/icons-material/ChatBubble';
+// Puesta en marcha obligatoria, bloqueos y visitas guiadas (fase 2)
+import LockIcon from '@mui/icons-material/Lock';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
+import LockRoundedIcon from '@mui/icons-material/LockRounded';
+import PlayCircleOutlineIcon from '@mui/icons-material/PlayCircleOutline';
+import PlayCircleOutlineRoundedIcon from '@mui/icons-material/PlayCircleOutlineRounded';
+import PlayCircleIcon from '@mui/icons-material/PlayCircle';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
+import ContentCopyOutlinedIcon from '@mui/icons-material/ContentCopyOutlined';
+import ContentCopyRoundedIcon from '@mui/icons-material/ContentCopyRounded';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import ArrowBackOutlinedIcon from '@mui/icons-material/ArrowBackOutlined';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
+import AccessTimeIcon from '@mui/icons-material/AccessTime';
+import AccessTimeOutlinedIcon from '@mui/icons-material/AccessTimeOutlined';
+import AccessTimeRoundedIcon from '@mui/icons-material/AccessTimeRounded';
+import AccessTimeFilledIcon from '@mui/icons-material/AccessTimeFilled';
+import CloudDoneIcon from '@mui/icons-material/CloudDone';
+import CloudDoneOutlinedIcon from '@mui/icons-material/CloudDoneOutlined';
+import CloudDoneRoundedIcon from '@mui/icons-material/CloudDoneRounded';
+import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
+import PhoneIphoneOutlinedIcon from '@mui/icons-material/PhoneIphoneOutlined';
+import PhoneIphoneRoundedIcon from '@mui/icons-material/PhoneIphoneRounded';
 import { panelLook } from '../theme';
 import { useSite } from './SiteProvider';
 
@@ -218,6 +265,23 @@ const ICONS = {
   style: [PaletteIcon, PaletteOutlinedIcon, PaletteRoundedIcon, PaletteIcon],
   google: [TravelExploreIcon, TravelExploreOutlinedIcon, TravelExploreRoundedIcon, TravelExploreIcon],
   launch: [RocketLaunchIcon, RocketLaunchOutlinedIcon, RocketLaunchRoundedIcon, RocketLaunchIcon],
+  // Menú principal y barra superior
+  web: [LanguageIcon, LanguageOutlinedIcon, LanguageRoundedIcon, LanguageIcon],
+  eye: [VisibilityOutlinedIcon, VisibilityOutlinedIcon, VisibilityRoundedIcon, VisibilityIcon],
+  plus: [AddIcon, AddOutlinedIcon, AddRoundedIcon, AddIcon],
+  more: [GridViewOutlinedIcon, GridViewOutlinedIcon, GridViewRoundedIcon, GridViewIcon],
+  booked: [EventAvailableIcon, EventAvailableOutlinedIcon, EventAvailableRoundedIcon, EventAvailableIcon],
+  close: [CloseIcon, CloseOutlinedIcon, CloseRoundedIcon, CloseIcon],
+  external: [OpenInNewIcon, OpenInNewOutlinedIcon, OpenInNewRoundedIcon, OpenInNewIcon],
+  chat: [ChatBubbleOutlineIcon, ChatBubbleOutlineIcon, ChatBubbleOutlineRoundedIcon, ChatBubbleIcon],
+  // Puesta en marcha obligatoria, bloqueos y visitas guiadas
+  lock: [LockIcon, LockOutlinedIcon, LockRoundedIcon, LockIcon],
+  play: [PlayCircleOutlineIcon, PlayCircleOutlineIcon, PlayCircleOutlineRoundedIcon, PlayCircleIcon],
+  copy: [ContentCopyIcon, ContentCopyOutlinedIcon, ContentCopyRoundedIcon, ContentCopyIcon],
+  back: [ArrowBackIcon, ArrowBackOutlinedIcon, ArrowBackRoundedIcon, ArrowBackIcon],
+  clock: [AccessTimeIcon, AccessTimeOutlinedIcon, AccessTimeRoundedIcon, AccessTimeFilledIcon],
+  saved: [CloudDoneIcon, CloudDoneOutlinedIcon, CloudDoneRoundedIcon, CloudDoneIcon],
+  phone: [PhoneIphoneIcon, PhoneIphoneOutlinedIcon, PhoneIphoneRoundedIcon, PhoneIphoneIcon],
 } satisfies Record<string, [IconComp, IconComp, IconComp, IconComp]>;
 
 export type StudioIconName = keyof typeof ICONS;

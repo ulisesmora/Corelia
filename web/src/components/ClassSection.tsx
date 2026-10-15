@@ -57,20 +57,12 @@ export default function ClassesSection() {
 
   return (
     <Chakra>
-      <Flex w="100%" id="classes" justifyContent="center" pt="4rem">
-        <Text as="h2" className="sk-section-title" fontSize="5xl" color="var(--heading-color)" fontWeight="bold">
-           {t("home.classes.heading")}
-        </Text>
-      </Flex>
-
-      <Box textAlign="center" maxW="800px" mx="auto" px={4} pb={8}>
-        <Text fontSize="lg" color="var(--text-muted)">
-        {t("home.classes.intro")}
-        </Text>
-      </Box>
-
-      {/* Guía para quien llega por primera vez: qué clase elegir y cómo reservarla */}
-      <FirstClassGuide />
+      {/* Cabecera corta (como el resto de páginas) y las clases primero; la
+          guía «¿Qué clase elijo?» va después, para quien la necesite */}
+      <header className="w-wrap w-pagehead" id="classes">
+        <h1 className="w-h1">{t("home.classes.heading")}</h1>
+        <p className="w-lead">{t("home.classes.intro")}</p>
+      </header>
 
       <Flex align="center" w="100%" flexDir="column">
         {/* Tabs controladas: solo montamos el contenido de la pestaña activa */}
@@ -88,7 +80,7 @@ export default function ClassesSection() {
           variant="subtle"
           lazyMount  // no monta contenidos no activos
         >
-          <Tabs.List display="flex" justifyContent="center" gap={4} flexWrap="wrap">
+          <Tabs.List display="flex" justifyContent="flex-start" gap={2} flexWrap="wrap" maxW="var(--w-max)" mx="auto" px="var(--w-gutter)">
             {groups.map((g) => (
               <Tabs.Trigger
                 key={g.key}
@@ -115,6 +107,9 @@ export default function ClassesSection() {
         </Tabs.Root>
         )}
       </Flex>
+
+      {/* Guía para quien llega por primera vez: qué clase elegir y cómo reservarla */}
+      <FirstClassGuide />
 
       <Flex mb="3rem" />
     </Chakra>

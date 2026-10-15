@@ -17,7 +17,7 @@ import { authHeaders } from '../utils/auth';
 import { PhotoPicker } from '../components/guide';
 import { EnglishChip, EnglishField, EnglishVersion } from '../components/guide/EnglishVersion';
 import { API_BASE_URL } from '../config';
-import { StepGuide, useActionParam } from '../onboarding';
+import { useActionParam } from '../onboarding';
 
 // ====================================================================
 // UTILIDADES
@@ -335,30 +335,19 @@ export default function InstructorManagement() {
 
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
-      <StepGuide step="instructors" />
       <PageIntro
         pageKey="instructors"
         title="Instructores"
-        subtitle="Las personas que dan las clases. Salen en la portada de la web («Nuestro equipo»); al pulsar su foto se abre una ficha con todo lo que escribas aquí."
+        subtitle="Quién da las clases. Salen en tu web."
         actions={(
           <Button variant="contained" startIcon={<AddIcon />} onClick={handleOpenCreate}>
             Añadir un instructor
           </Button>
         )}
-        steps={[
-          { title: 'Pulsa «Añadir un instructor»', text: 'O «Editar» en la tarjeta de alguien que ya esté.' },
-          { title: 'Escribe su nombre y sube su foto', text: 'Verás la foto recortada tal y como saldrá.' },
-          { title: 'Cuenta algo sobre esa persona', text: 'Frase corta, «Sobre mí» y «Mi visión». Todo es opcional.' },
-          { title: 'Pulsa «Guardar»', text: 'Saldrá un aviso verde abajo cuando esté guardado.' },
-        ]}
-        tips={[
-          'Para decir quién da cada clase, ve a «Tipos de clase» (profesor/a habitual) o a «Mis clases y horarios» (sustituciones).',
-          'Los cambios pueden tardar unos 10 minutos en verse en la web.',
-        ]}
       />
 
       <TextField
-        label="Buscar por nombre"
+        data-tour="search" label="Buscar por nombre"
         placeholder="Escribe un nombre…"
         value={searchTerm}
         onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
@@ -396,7 +385,7 @@ export default function InstructorManagement() {
         />
       ) : (
         <>
-          <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' } }}>
+          <Box data-tour="list" sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, 1fr)', lg: 'repeat(3, 1fr)' } }}>
             {paginatedInstructors.map((inst) => (
               <Paper
                 key={inst.id}

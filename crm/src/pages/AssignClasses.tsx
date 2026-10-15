@@ -531,7 +531,7 @@ export default function AssignClassesManagement() {
           clearText="Borrar"
           isOptionEqualToValue={(o, v) => o.id === v.id}
           renderInput={(params) => (
-            <TextField {...params} label="Buscar clienta" placeholder="p. ej. Marta, marta@gmail.com o 612345678" />
+            <TextField {...params} data-tour="search" label="Buscar clienta" placeholder="p. ej. Marta, marta@gmail.com o 612345678" />
           )}
           fullWidth
         />
@@ -729,16 +729,7 @@ export default function AssignClassesManagement() {
       <PageIntro
         pageKey="assign-classes"
         title="Clases fijas de clientas"
-        subtitle="Guarda a una clienta su plaza en una clase de todas las semanas, sin que tenga que reservar ella."
-        steps={[
-          { title: 'Busca a la clienta', text: 'Verás sus créditos y si tiene membresía.' },
-          { title: 'Elige la clase semanal', text: 'Y hasta qué fecha quieres reservarle (normalmente 3 meses).' },
-          { title: 'Lee el resumen y confirma', text: 'Te explicamos qué se reserva, si gasta créditos y qué pasa después.' },
-        ]}
-        tips={[
-          'Las reservas que haces aquí no le descuentan créditos a la clienta.',
-          'Para quitar una clase fija, búscala y pulsa «Quitar clase fija» en su lista de clases fijas.',
-        ]}
+        subtitle="Su plaza guardada cada semana, sin que tenga que reservar."
       />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="flex-start">

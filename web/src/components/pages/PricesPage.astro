@@ -8,6 +8,7 @@ import SuscriptionPlans from '../SuscriptionPlans';
 import OptimizedHead from '../OptimizedHead.astro';
 import JsonLd from '../seo/JsonLd.astro';
 import FaqList from '../sections/FaqList.astro';
+import LangBoot from '../site/LangBoot.astro';
 import { BRAND_CACHE, breadcrumbJsonLd, businessJsonLd, faqJsonLd } from '../../seo/site';
 import { getFaqs, getPlans, getSchedules } from '../../seo/catalog';
 import { siteMoney, getSiteConfig, htmlThemeAttrs } from '../../lib/site';
@@ -47,12 +48,14 @@ const jsonLd = [
       alternates={{ es: '/prices', en: '/en/prices' }}
     />
     {jsonLd.map((d) => <JsonLd data={d} />)}
+    <LangBoot lang={lang} />
   </head>
   <body class="format">
     <AppFixed client:only="react" />
 
     <main id="contenido">
       <SuscriptionPlans client:load lang={lang} initialPlans={plans} />
+      {/* Dudas sobre precios: acordeón (abierta solo la primera) */}
       <FaqList faqs={faqs} lang={lang} />
     </main>
 

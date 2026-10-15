@@ -45,6 +45,8 @@ export async function buildLlmsText(full: boolean): Promise<string> {
   L.push(`- Weekly timetable: ${ORIGIN}/calendar`);
   L.push(`- Classes: ${ORIGIN}/classes (Spanish) · ${ORIGIN}/en/classes (English)`);
   L.push(`- Prices and memberships: ${ORIGIN}/prices`);
+  L.push(`- The studio, team and rooms: ${ORIGIN}/estudio (Spanish) · ${ORIGIN}/en/studio (English)`);
+  L.push(`- Contact, location and FAQ: ${ORIGIN}/contacto (Spanish) · ${ORIGIN}/en/contact (English)`);
   if (b.phone) L.push(`- Phone: ${b.phone}`);
   if (b.whatsapp) L.push(`- WhatsApp: ${b.whatsapp}`);
   if (b.email) L.push(`- Email: ${b.email}`);

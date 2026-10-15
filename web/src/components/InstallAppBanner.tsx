@@ -368,7 +368,7 @@ export default function InstallAppBanner() {
           position: 'fixed',
           left: '12px',
           right: '12px',
-          bottom: 'calc(74px + env(safe-area-inset-bottom, 0px))',
+          bottom: 'calc(84px + env(safe-area-inset-bottom, 0px))',
           zIndex: 1350,
           padding: '16px',
           fontFamily: 'var(--font-body)',

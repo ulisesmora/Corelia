@@ -159,3 +159,19 @@ export function offeredClasses(classes: ApiClassType[] | null, schedules: ApiSch
     .map((c) => ({ cls: c, slots: currentWeeklySlots(schedules, c.id) }))
     .filter((x) => x.slots.length > 0);
 }
+
+/** «Ahora» en la zona del estudio, como el API: YYYY-MM-DDTHH:mm:ss. */
+export function studioNow(): string {
+  const tz = getSiteClient().timezone || 'Europe/Madrid';
+  return new Intl.DateTimeFormat('sv-SE', {
+    timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23',
+  }).format(new Date()).replace(' ', 'T');
+}
+
+/** Sesiones del horario de los próximos `days` días (plazas libres incluidas). Caché 1 min. */
+export async function getUpcomingSessions(days = 8) {
+  const start = studioNow().slice(0, 10);
+  const end = new Date(Date.parse(`${start}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
+  return (await getJson<import('../lib/booking').ScheduleSession[]>(
+    `v1/schedule/schedule/?start_date=${start}&end_date=${end}`, SHORT_TTL_MS)) || [];
+}

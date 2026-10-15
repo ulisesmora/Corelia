@@ -14,16 +14,14 @@ import TestimonialEditor from '../components/setup/TestimonialEditor';
 import PaymentsSection from '../components/setup/PaymentsSection';
 import StudioSection from '../components/setup/StudioSection';
 import StyleSection from '../components/setup/StyleSection';
-import { loadSettings, saveSettings, type StudioSettings as Settings } from '../components/setup/api';
+import { loadSettings, saveSettings, STYLE_FIELDS, type StudioSettings as Settings } from '../components/setup/api';
 import { useSite } from '../site/SiteProvider';
-import { StepGuide, type StepKey } from '../onboarding';
 
 // Pestañas: 0 Mi estudio · 1 Aspecto · 2 Portada · 3 Textos · 4 Preguntas · 5 Opiniones · 6 Google y anuncios · 7 Emails · 8 Avisos al móvil · 9 Pagos · 10 Acceso con Google · 11 Dominio
 const STUDIO_FIELDS = [
   'studio_name', 'logo_url', 'icon_url', 'phone', 'whatsapp', 'contact_email', 'instagram',
   'address', 'city', 'postal_code', 'area_served', 'maps_url', 'country', 'currency', 'legal_name', 'tax_id',
 ] as const;
-const STYLE_FIELDS = ['style_preset', 'icon_style', 'color_primary', 'color_secondary', 'color_dark', 'color_background', 'font_heading', 'font_body'] as const;
 const HERO_FIELDS = ['hero_mode', 'hero_image_url', 'hero_video_url', 'hero_illustration'] as const;
 const CONTENT_FIELDS = [
   'hero_title', 'hero_title_en', 'hero_subtitle', 'hero_subtitle_en', 'about_title', 'about_title_en',
@@ -32,11 +30,6 @@ const CONTENT_FIELDS = [
 const FORM_TABS: Record<number, readonly string[]> = { 0: STUDIO_FIELDS, 1: STYLE_FIELDS, 2: HERO_FIELDS, 3: CONTENT_FIELDS, 6: MARKETING_FIELDS };
 // ?tab=… (enlaces desde la guía de puesta en marcha), en el orden de las pestañas
 const TAB_KEYS = ['estudio', 'aspecto', 'portada', 'textos', 'preguntas', 'opiniones', 'google', 'emails', 'avisos', 'pagos', 'acceso-google', 'dominio'] as const;
-// Paso de la guía al que corresponde cada pestaña
-const TAB_STEP: Partial<Record<number, StepKey>> = {
-  0: 'studio', 1: 'style', 2: 'content', 3: 'content', 4: 'content', 5: 'content', 6: 'google', 7: 'payments', 9: 'payments', 11: 'google',
-};
-
 /** Ajustes del estudio: lo mismo que el asistente de bienvenida, en pestañas. */
 export default function StudioSettings() {
   const notify = useNotify();
@@ -89,9 +82,9 @@ export default function StudioSettings() {
       <PageIntro
         pageKey="studio-settings"
         title="Ajustes del estudio"
-        subtitle="El nombre, el aspecto, la portada y los textos de tu web, tu ficha de Google y tus anuncios, los emails, los pagos online y el acceso con Google."
+        subtitle="Datos, aspecto, textos, emails y pagos de tu estudio."
       />
-      {TAB_STEP[tab] && <StepGuide key={TAB_STEP[tab]} step={TAB_STEP[tab]!} />}
+      <Box data-tour="tabs">
       <SectionTabs value={tab} onChange={(_, v) => setTab(v)}>
         <Tab label="Mi estudio" />
         <Tab label="Aspecto" />
@@ -106,7 +99,8 @@ export default function StudioSettings() {
         <Tab label="Acceso con Google" />
         <Tab label="Tu dominio" />
       </SectionTabs>
-      <Paper elevation={0} sx={{ p: { xs: 2, sm: 4 }, mt: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
+      </Box>
+      <Paper data-tour="settings-form" elevation={0} sx={{ p: { xs: 2, sm: 4 }, mt: 2, borderRadius: 3, border: '1px solid', borderColor: 'divider' }}>
         {tab === 0 && <StudioSection value={settings} onChange={(p) => setSettings({ ...settings, ...p })} onBusyChange={setUploading} showLegal />}
         {tab === 1 && <StyleSection value={settings} onChange={(p) => setSettings({ ...settings, ...p })} />}
         {tab === 2 && <HeroSection value={settings} onChange={(p) => setSettings({ ...settings, ...p })} onBusyChange={setUploading} />}
@@ -121,7 +115,7 @@ export default function StudioSettings() {
         {tab === 11 && <DomainSection value={settings} onSaved={onSaved} />}
         {isForm && (
           <Stack direction="row" spacing={2} sx={{ mt: 4 }}>
-            <Button variant="contained" size="large" onClick={save} disabled={!dirty || saving || uploading}
+            <Button data-tour="save" variant="contained" size="large" onClick={save} disabled={!dirty || saving || uploading}
               startIcon={saving ? <CircularProgress size={18} color="inherit" /> : undefined}>
               Guardar cambios
             </Button>

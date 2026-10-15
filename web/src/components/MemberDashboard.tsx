@@ -536,8 +536,7 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
 
         <Box flex={1} minW={0}>
           <Text fontFamily='var(--font-heading)' fontSize="lg"
-            color={C.brown} letterSpacing="0.03em"
-            style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            color={C.brown} letterSpacing="0.03em" lineClamp={2} lineHeight="1.2">
             {what}
           </Text>
           <Flex gap={3} mt={0.5} flexWrap="wrap">
@@ -573,6 +572,11 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
             </Text>
           </Box>
 
+        </Flex>
+      </Flex>
+      {/* Acciones con texto (añadir al calendario y cancelar), táctiles de 44px */}
+      {(booking.status !== 'canceled' || cancelable) && (
+        <Flex px={4} pb={3} pt={0} gap={2} align="center" justify="space-between" wrap="wrap">
           {/* Calendar export button */}
           {booking.status !== 'canceled' && (
             <Box position="relative" ref={calMenuRef}>
@@ -580,7 +584,7 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
               <Flex
                 as="button"
                 align="center" gap={1.5}
-                px={2.5} py={1}
+                px={3} minH="40px"
                 borderRadius="var(--radius-button)"
                 border={`1px solid ${showCalMenu ? C.borderStrong : C.border}`}
                 bg={showCalMenu ? 'var(--accent-soft)' : 'transparent'}
@@ -633,11 +637,14 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
           )}
 
           {cancelable && (
-            <IconButton aria-label={cancelLabel} size="xs" variant="ghost"
+            <Button size="sm" variant="ghost" minH="44px" px={3}
               color={C.danger} onClick={() => onCancel(booking.id)}
+              fontFamily='var(--font-body)' fontWeight={700} fontSize="13px" gap={1.5}
+              _hover={{ bg: 'var(--danger-soft)' }}
               disabled={isCanceling}>
               {isCanceling ? <Spinner size="xs" /> : <Icon name="close" size={11} />}
-            </IconButton>
+              {cancelLabel}
+            </Button>
           )}
           {/* Aviso de plazo — la clase es próxima pero ya no se puede cancelar */}
           {!isPast && !canCancelBooking(booking.start_datetime) && booking.status === 'reserved' && (
@@ -649,7 +656,7 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
             </Flex>
           )}
         </Flex>
-      </Flex>
+      )}
     </MotionBox>
   );
 }
@@ -1228,28 +1235,61 @@ function MemberDashboardInner() {
       {/* Acceso fijo a instalar la app (solo móvil sin instalar) */}
       <InstallAppCTA compact />
 
-      {/* Stats strip */}
-      <SimpleGrid columns={3} gap={3}>
-        {[
-          { label: t('dashboard.agenda.stats.upcoming'), value: upcomingBookings.length, icon: <Icon name="calendar-check" size={13} />, clr: C.success },
-          { label: t('dashboard.agenda.stats.credits'),  value: balance !== null ? balance.toFixed(1) : '—', icon: <Icon name="bolt" size={13} />, clr: C.accentDark },
-          { label: t('dashboard.agenda.stats.favorites'), value: preferences.filter(p => p.is_active).length, icon: <Icon name="star" size={13} />, clr: C.warning },
-        ].map(({ label, value, icon, clr }) => (
-          <Box key={label} bg={C.card} borderRadius="var(--radius-card)" p={{ base: 3, md: 4 }}
-            border="var(--border-width) solid var(--surface-border)"
-            boxShadow="var(--shadow-card)" backdropFilter="var(--surface-blur)" textAlign="center"
-            transition="transform 0.18s ease, box-shadow 0.18s ease"
-            _hover={{ transform: 'translateY(-2px)', boxShadow: 'var(--shadow-hover)' }}>
-            <Flex justify="center" mb={1.5} color={clr}>{icon}</Flex>
-            <Text fontFamily='var(--font-heading)' fontSize={{ base: 'xl', md: '2xl' }}
-              color={C.brown} lineHeight="1">{value}</Text>
-            <Text fontFamily='var(--font-body)' fontSize="9px" color={C.textMuted}
-              fontWeight={700} textTransform="uppercase" letterSpacing="0.08em" mt={0.5}>
-              {label}
-            </Text>
+      {/* Resumen: créditos que quedan, tu próxima clase y la acción principal */}
+      {(() => {
+        const next = upcomingBookings[0];
+        const credits = balance === null ? null : Math.round(balance * 100) / 100;
+        const en = lang === 'en';
+        const when = next ? new Date(next.start_datetime).toLocaleString(locale, { weekday: 'long', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) : '';
+        const favs = preferences.filter(p => p.is_active).length;
+        return (
+          <Box className="w-card" p={{ base: 5, md: 6 }}>
+            <Flex gap={{ base: 4, md: 8 }} align={{ base: 'stretch', md: 'center' }} direction={{ base: 'column', md: 'row' }}>
+              <Box flexShrink={0}>
+                <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={700} color={C.textMuted}
+                  textTransform="uppercase" letterSpacing="0.1em">
+                  {en ? 'Credits left' : 'Créditos disponibles'}
+                </Text>
+                <Text fontFamily='var(--font-heading)' fontSize={{ base: '5xl', md: '6xl' }} lineHeight="1" color="var(--heading-color)" mt={1}>
+                  {credits === null ? '—' : credits}
+                </Text>
+                <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mt={1}>
+                  {credits === null ? '' : credits === 1 ? (en ? '1 class' : '1 clase') : (en ? `≈ ${Math.floor(credits)} classes` : `≈ ${Math.floor(credits)} clases`)}
+                </Text>
+              </Box>
+              <Box flex={1} minW={0} borderLeft={{ md: '1px solid var(--border-neutral)' }} pl={{ md: 8 }}>
+                <Text fontFamily='var(--font-body)' fontSize="xs" fontWeight={700} color={C.textMuted}
+                  textTransform="uppercase" letterSpacing="0.1em">
+                  {en ? 'Your next class' : 'Tu próxima clase'}
+                </Text>
+                {next ? (
+                  <>
+                    <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="lg" color="var(--page-text)" mt={1} lineClamp={1}>
+                      {tr(next, 'what', lang)}
+                    </Text>
+                    <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} textTransform="capitalize">
+                      {when}{next.room_name ? ` · ${tr(next, 'room_name', lang)}` : ''}
+                    </Text>
+                  </>
+                ) : (
+                  <Text fontFamily='var(--font-body)' fontSize="md" color="var(--page-text)" mt={1}>
+                    {en ? 'No classes booked yet.' : 'Aún no tienes clases reservadas.'}
+                  </Text>
+                )}
+                <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted} mt={2}>
+                  {en
+                    ? `${upcomingBookings.length} upcoming · ${favs} regular ${favs === 1 ? 'class' : 'classes'}`
+                    : `${upcomingBookings.length} próximas · ${favs} ${favs === 1 ? 'clase fija' : 'clases fijas'}`}
+                </Text>
+              </Box>
+              <Flex direction={{ base: 'row', md: 'column' }} gap={2} flexShrink={0} wrap="wrap">
+                <a className="w-btn sk-btn" href="/calendar" style={{ flex: '1 1 140px', whiteSpace: 'nowrap' }}>{t('nav.cta.book')}</a>
+                <a className="w-btn sk-btn-ghost" href="/prices" style={{ flex: '1 1 140px', whiteSpace: 'nowrap' }}>{t('dashboard.agenda.buyCta')}</a>
+              </Flex>
+            </Flex>
           </Box>
-        ))}
-      </SimpleGrid>
+        );
+      })()}
 
       {/* Section header + view toggle */}
       <Flex justify="space-between" align="center">
@@ -1473,16 +1513,6 @@ function MemberDashboardInner() {
             <Flex align="center" gap={2}><Icon name="calendar-plus" size={11} />{t('dashboard.agenda.saveAll')}</Flex>
           </Button>
         )}
-        <Button className="sk-btn-ghost" h="42px" variant="outline"
-          fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" px={5}
-          onClick={() => { window.location.href = '/calendar'; }}>
-          <Flex align="center" gap={2}><Icon name="calendar" size={11} />{t('dashboard.agenda.bookCta')}</Flex>
-        </Button>
-        <Button className="sk-btn" h="42px"
-          fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" px={5}
-          onClick={() => { window.location.href = '/checkout'; }}>
-          <Flex align="center" gap={2}><Icon name="bolt" size={11} />{t('dashboard.agenda.buyCta')}</Flex>
-        </Button>
       </Flex>
     </VStack>
   );
@@ -2525,9 +2555,17 @@ function MemberDashboardInner() {
   );
 
   // ── Render ─────────────────────────────────────────────────────────────────
+  // Saludo con el nombre (el que guardó el inicio de sesión)
+  const greeting = (() => {
+    let name = '';
+    try { name = (localStorage.getItem('username') || '').trim(); } catch { /* sin almacenamiento */ }
+    if (!name || name === 'undefined' || name === 'null') return '';
+    const first = name.split(/[\s@]/)[0];
+    return lang === 'en' ? `Hi, ${first}` : `Hola, ${first}`;
+  })();
   return (
-    // El padding inferior móvil lo aporta el BottomNav global del sitio
-    // (inyecta padding-bottom en el body); aquí solo un respiro extra.
+    // El hueco de la barra fija «Reservar clase» del móvil lo pone la
+    // cabecera (body.w-has-bar); aquí solo un respiro extra.
     <Box bg={C.bg} minH="100vh" pb={{ base: 8, md: 16 }}>
       <Toaster />
       {renderBookingDialog()}
@@ -2545,29 +2583,12 @@ function MemberDashboardInner() {
               <Text fontFamily='var(--font-heading)'
                 fontSize={{ base: '3xl', md: '5xl' }}
                 color="var(--heading-color)" letterSpacing="wide" lineHeight="1">
-                {t('dashboard.title')}
+                {greeting || t('dashboard.title')}
               </Text>
               <Box mt={2} h="2px" w="70px" borderRadius="full"
                 bg="linear-gradient(90deg, color-mix(in srgb, var(--brand-primary) 70%, transparent), transparent)" />
             </Box>
 
-            {/* Balance pill */}
-            {balance !== null && (
-              <Box px={4} py={2} borderRadius="var(--radius-chip)"
-                bg={C.card} border="var(--border-width) solid var(--surface-border)"
-                boxShadow="var(--shadow-card)" backdropFilter="var(--surface-blur)">
-                <Flex align="baseline" gap={1.5}>
-                  <Text fontFamily='var(--font-heading)' fontSize="xl"
-                    color={C.accentDark} lineHeight="1">
-                    {balance.toFixed(1)}
-                  </Text>
-                  <Text fontFamily='var(--font-body)' fontSize="xs"
-                    color={C.textMuted} fontWeight={600}>
-                    {t('dashboard.credits')}
-                  </Text>
-                </Flex>
-              </Box>
-            )}
           </Flex>
         </MotionBox>
       </Box>
@@ -2614,7 +2635,7 @@ function MemberDashboardInner() {
             {TABS.map(t => (
               <Button key={t.key} size="sm" borderRadius="var(--radius-button)"
                 px={{ base: 3, md: 4 }} flexShrink={0} flex={{ base: 1, md: '0 0 auto' }}
-                minH="42px"
+                minH="44px"
                 bg={tab === t.key ? C.fill : 'transparent'}
                 color={tab === t.key ? C.onFill : C.textMuted}
                 fontFamily='var(--font-body)' fontWeight={700}
@@ -2624,7 +2645,7 @@ function MemberDashboardInner() {
                 onClick={() => setTab(t.key)}
                 aria-current={tab === t.key ? 'page' : undefined}>
                 <Flex align="center" gap={1.5}>{t.icon}
-                  <Box as="span" display={{ base: tab === t.key ? 'inline' : 'none', sm: 'inline' }}>
+                  <Box as="span">
                     {t.label.split(' ').pop()}
                   </Box>
                 </Flex>

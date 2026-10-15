@@ -18,6 +18,13 @@
      --brand-primary-on-light / --brand-primary-on-dark   primario como texto
      --font-heading  --font-body
 
+   Paleta elegida en el panel (design/tokens → web/src/design/palettes.json):
+   si el estudio eligió una de las paletas de su estilo, themeCss() pone
+   además unos tonos ya comprobados (contraste ≥ 4,5:1) que los estilos usan
+   antes que sus mezclas: --pal-ink (texto), --pal-muted (texto secundario) y
+   --pal-accent (primario como texto). Con colores propios no existen y cada
+   estilo usa su mezcla de siempre: `var(--pal-muted, color-mix(…))`.
+
    Regla de los estilos OSCUROS (energy, neon): --brand-bg es el fondo de la
    página (el estudio lo pone oscuro), --brand-dark las zonas más profundas
    (navbar, footer, bandas) y el texto es claro y fijo. --brand-dark NUNCA es
@@ -44,12 +51,12 @@
   --deep-border: rgba(255, 255, 255, 0.14);
 
   /* Texto */
-  --page-text: var(--brand-dark);
-  --text-muted: color-mix(in srgb, var(--brand-secondary) 50%, var(--brand-dark));
-  --text-subtle: color-mix(in srgb, var(--brand-secondary) 78%, var(--brand-dark));
-  --heading-color: var(--brand-dark);
+  --page-text: var(--pal-ink, var(--brand-dark));
+  --text-muted: var(--pal-muted, color-mix(in srgb, var(--brand-secondary) 50%, var(--brand-dark)));
+  --text-subtle: var(--pal-muted, color-mix(in srgb, var(--brand-secondary) 78%, var(--brand-dark)));
+  --heading-color: var(--pal-ink, var(--brand-dark));
   --accent: var(--brand-primary);
-  --accent-text: var(--brand-primary-on-light);
+  --accent-text: var(--pal-accent, var(--brand-primary-on-light));
   --accent-soft: color-mix(in srgb, var(--brand-primary) 12%, transparent);
   --accent-border: color-mix(in srgb, var(--brand-primary) 30%, transparent);
   --border-neutral: color-mix(in srgb, var(--brand-dark) 12%, transparent);
@@ -138,8 +145,8 @@
   --page-bg-alt: color-mix(in srgb, var(--brand-bg-light) 38%, white);
   --section-bg: var(--page-bg);
 
-  --text-muted: color-mix(in srgb, var(--brand-dark) 68%, white);
-  --text-subtle: color-mix(in srgb, var(--brand-dark) 58%, white);
+  --text-muted: var(--pal-muted, color-mix(in srgb, var(--brand-dark) 68%, white));
+  --text-subtle: var(--pal-muted, color-mix(in srgb, var(--brand-dark) 58%, white));
   --accent-soft: color-mix(in srgb, var(--brand-primary) 8%, transparent);
   --accent-border: color-mix(in srgb, var(--brand-primary) 26%, transparent);
   --border-neutral: color-mix(in srgb, var(--brand-dark) 10%, transparent);
@@ -189,8 +196,8 @@
   --page-bg-alt: var(--page-bg);
   --section-bg: var(--page-bg);
 
-  --text-muted: color-mix(in srgb, var(--brand-dark) 72%, white);
-  --text-subtle: color-mix(in srgb, var(--brand-dark) 60%, white);
+  --text-muted: var(--pal-muted, color-mix(in srgb, var(--brand-dark) 72%, white));
+  --text-subtle: var(--pal-muted, color-mix(in srgb, var(--brand-dark) 60%, white));
   --border-neutral: color-mix(in srgb, var(--brand-dark) 16%, transparent);
 
   --surface: color-mix(in srgb, var(--brand-bg-light) 22%, white);
@@ -308,8 +315,8 @@
   --page-bg-alt: color-mix(in srgb, var(--brand-primary) 22%, var(--brand-bg-light));
   --section-bg: color-mix(in srgb, var(--brand-secondary) 12%, var(--brand-bg-light));
 
-  --text-muted: color-mix(in srgb, var(--brand-dark) 78%, white);
-  --text-subtle: color-mix(in srgb, var(--brand-dark) 66%, white);
+  --text-muted: var(--pal-muted, color-mix(in srgb, var(--brand-dark) 78%, white));
+  --text-subtle: var(--pal-muted, color-mix(in srgb, var(--brand-dark) 66%, white));
   --accent-soft: color-mix(in srgb, var(--brand-primary) 30%, white);
   --accent-border: var(--brand-dark);
   --border-neutral: color-mix(in srgb, var(--brand-dark) 30%, transparent);
@@ -382,11 +389,11 @@
   --deep-muted: rgba(243, 243, 243, 0.7);
   --deep-border: rgba(255, 255, 255, 0.1);
 
-  --page-text: #f3f3f3;
-  --text-muted: rgba(243, 243, 243, 0.7);
-  --text-subtle: rgba(243, 243, 243, 0.56);
+  --page-text: var(--pal-ink, #f3f3f3);
+  --text-muted: var(--pal-muted, rgba(243, 243, 243, 0.7));
+  --text-subtle: var(--pal-muted, rgba(243, 243, 243, 0.56));
   --heading-color: #ffffff;
-  --accent-text: var(--brand-primary-on-dark);
+  --accent-text: var(--pal-accent, var(--brand-primary-on-dark));
   --accent-soft: color-mix(in srgb, var(--brand-primary) 14%, transparent);
   --accent-border: color-mix(in srgb, var(--brand-primary) 45%, transparent);
   --border-neutral: rgba(255, 255, 255, 0.12);
@@ -461,8 +468,8 @@
   --page-pattern: radial-gradient(color-mix(in srgb, var(--brand-primary) 16%, transparent) 1.5px, transparent 1.7px) 0 0 / 22px 22px;
   --section-bg: var(--page-pattern), linear-gradient(160deg, color-mix(in srgb, var(--brand-primary) 14%, white) 0%, var(--brand-bg-light) 50%, color-mix(in srgb, var(--brand-secondary) 14%, white) 100%);
 
-  --text-muted: color-mix(in srgb, var(--brand-dark) 76%, var(--brand-primary));
-  --text-subtle: color-mix(in srgb, var(--brand-dark) 64%, var(--brand-primary));
+  --text-muted: var(--pal-muted, color-mix(in srgb, var(--brand-dark) 76%, var(--brand-primary)));
+  --text-subtle: var(--pal-muted, color-mix(in srgb, var(--brand-dark) 64%, var(--brand-primary)));
   --accent-soft: color-mix(in srgb, var(--brand-primary) 14%, white);
   --accent-border: color-mix(in srgb, var(--brand-primary) 45%, white);
   --border-neutral: color-mix(in srgb, var(--brand-primary) 22%, transparent);
@@ -527,11 +534,11 @@
   --deep-muted: rgba(241, 240, 255, 0.7);
   --deep-border: color-mix(in srgb, var(--brand-secondary) 24%, transparent);
 
-  --page-text: #f1f0ff;
-  --text-muted: rgba(241, 240, 255, 0.7);
-  --text-subtle: rgba(241, 240, 255, 0.55);
+  --page-text: var(--pal-ink, #f1f0ff);
+  --text-muted: var(--pal-muted, rgba(241, 240, 255, 0.7));
+  --text-subtle: var(--pal-muted, rgba(241, 240, 255, 0.55));
   --heading-color: #ffffff;
-  --accent-text: var(--brand-primary-on-dark);
+  --accent-text: var(--pal-accent, var(--brand-primary-on-dark));
   --accent-soft: color-mix(in srgb, var(--brand-primary) 14%, transparent);
   --accent-border: color-mix(in srgb, var(--brand-primary) 55%, transparent);
   --border-neutral: color-mix(in srgb, var(--brand-secondary) 22%, transparent);

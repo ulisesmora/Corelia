@@ -202,25 +202,16 @@ export default function CategoriesManagement() {
       <PageIntro
         pageKey="categories"
         title="Categorías"
-        subtitle="Los grandes grupos en los que se ordenan tus clases en la web: Pilates, Yoga, Mindfulness y Eventos. Cada tipo de clase pertenece a una categoría."
+        subtitle="Los grupos de clases de tu web: Pilates, Yoga…"
         actions={(
           <Button variant="contained" startIcon={<AddIcon />} onClick={openCreate}>
             Añadir una categoría
           </Button>
         )}
-        steps={[
-          { title: 'Pulsa «Editar» en una categoría', text: 'Para cambiar el título o el texto que sale en la web.' },
-          { title: 'Cambia el nombre o la descripción', text: 'Te decimos debajo en qué parte de la web sale.' },
-          { title: 'Pulsa «Guardar»', text: 'Saldrá un aviso verde abajo cuando esté guardada.' },
-        ]}
-        tips={[
-          'Pilates, Yoga, Mindfulness y Eventos están fijas en la web: puedes cambiarles el nombre y el texto, pero no borrarlas.',
-          'Una categoría nueva sirve para ordenar clases dentro del CRM, pero no aparece sola en la web: para eso hay que pedírselo al técnico.',
-        ]}
       />
 
       <TextField
-        label="Buscar una categoría"
+        data-tour="search" label="Buscar una categoría"
         placeholder="Escribe una palabra…"
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
@@ -256,7 +247,7 @@ export default function CategoriesManagement() {
           action={<Button variant="outlined" onClick={() => setSearchTerm('')} sx={{ minHeight: 44 }}>Borrar la búsqueda</Button>}
         />
       ) : (
-        <Box sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' } }}>
+        <Box data-tour="list" sx={{ display: 'grid', gap: 2, gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' } }}>
           {filtered.map((c) => {
             const place = WEB_PLACES[c.id];
             const count = classesOf(c.id).length;
