@@ -33,6 +33,7 @@ import PaymentsDisabledNotice from './PaymentsDisabledNotice';
 import { paymentsEnabled } from '../utils/payments';
 import { getSiteClient } from '../lib/site';
 import { hashId, track } from '../lib/tracking';
+import { joinWaitlist } from '../lib/booking';
 const MotionBox = motion(Box as any);
 
 // Paleta del checkout: solo tokens del estilo (presets.css). Los botones
@@ -820,6 +821,36 @@ function CheckoutPageInner() {
         const isDuplicateBooking =
           res.status === 400 &&
           /ya tienes una reserva/i.test(backendMsg);
+
+        // Clase llena (alguien reservó la última plaza mientras tanto): si el
+        // estudio tiene lista de espera, ofrecer apuntarse desde aquí mismo.
+        if (d.code === 'class_full' && d.waitlist && d.schedule_id && d.start_datetime) {
+          const en = lang === 'en';
+          toaster.create({
+            title: backendMsg || (en ? 'That class is full.' : 'Esa clase está completa.'),
+            description: en ? 'Join the waitlist and we’ll let you know if a spot opens up.' : 'Apúntate a la lista de espera y te avisamos si se libera una plaza.',
+            type: 'warning', duration: 12000,
+            action: {
+              label: en ? 'Join the waitlist' : 'Apuntarme a la lista de espera',
+              onClick: async () => {
+                const r = await joinWaitlist(Number(d.schedule_id), String(d.start_datetime));
+                const ok = r.kind === 'joined' || r.kind === 'already_waiting';
+                toaster.create({
+                  title: ok
+                    ? (en ? 'You’re on the waitlist. We’ll let you know.' : 'Estás en la lista de espera. Te avisaremos.')
+                    : r.kind === 'has_space'
+                      ? (en ? 'A spot just opened up: try booking again.' : 'Se ha liberado una plaza: vuelve a reservar.')
+                      : (r.kind === 'error' && r.message) || (en ? 'Couldn’t join the waitlist.' : 'No se ha podido apuntar a la lista.'),
+                  type: ok ? 'success' : 'info', duration: 4000,
+                });
+              },
+            },
+          });
+          setError(backendMsg);
+          setIsSubmitting(false);
+          setIsModalOpen(false);
+          return false;
+        }
 
         if (isDuplicateBooking) {
           toaster.create({

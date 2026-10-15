@@ -15,6 +15,7 @@ import { useLangStore } from '../components/stores/lang.store';
 import { clearSession } from '../utils/session';
 import { InstallAppCTA } from './InstallAppBanner';
 import EmailVerifyCard from './EmailVerifyCard';
+import MyWaitlists from './MyWaitlists';
 import MembershipSuggestionCard from './MembershipSuggestionCard';
 import { tr, roomName } from '../utils/localized';
 import { planDisplayName } from '../utils/planUtils';
@@ -1234,6 +1235,9 @@ function MemberDashboardInner() {
 
       {/* Acceso fijo a instalar la app (solo móvil sin instalar) */}
       <InstallAppCTA compact />
+
+      {/* Clases completas en las que espera plaza (no se pinta si no hay) */}
+      <MyWaitlists />
 
       {/* Resumen: créditos que quedan, tu próxima clase y la acción principal */}
       {(() => {
@@ -2622,9 +2626,8 @@ function MemberDashboardInner() {
           </MotionBox>
         )}
 
-        {/* Tira de secciones del panel — visible también en móvil (deslizable).
-            Es el control segmentado de "Mi cuenta"; la navegación global vive
-            en el BottomNav del sitio, así nunca hay dos barras inferiores. */}
+        {/* Tira de secciones de «Mi cuenta» — visible también en móvil (deslizable).
+            En móvil la barra fija de abajo es la de «Reservar clase» del sitio. */}
         <Box mb={{ base: 4, md: 7 }}>
           <Flex gap={1.5} p={1.5}
             bg="var(--surface)" borderRadius="var(--radius-button)"
@@ -2667,10 +2670,6 @@ function MemberDashboardInner() {
         </AnimatePresence>
       </Box>
 
-      {/* La barra inferior propia del panel se eliminó: en móvil chocaba
-          (apilada) con el BottomNav global del sitio. Ahora hay UNA sola
-          barra inferior (la global, con "Mi cuenta" activo) y las secciones
-          del panel viven en la tira de píldoras de arriba, también en móvil. */}
     </Box>
   );
 }

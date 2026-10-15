@@ -101,7 +101,9 @@ DEBUG=1 uv run python manage.py migrate
 DEBUG=1 ADMIN_EMAIL=admin@example.com ADMIN_PASSWORD=cambia-esta-clave SEED_DEMO=1 uv run python manage.py bootstrap
 DEBUG=1 uv run python manage.py runserver 8000
 
-# Panel (Node 20)
+# Panel (Node 20). Arranca el API con PANEL_URL=http://localhost:5173 para que
+# la web deje que «Mi web» la enseñe en su vista previa (en producción el panel
+# se sirve desde el API y no hace falta)
 cd crm && pnpm install && pnpm dev          # http://localhost:5173
 
 # Web (Node 20)

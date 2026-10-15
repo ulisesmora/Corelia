@@ -1,8 +1,10 @@
 "use client";
 // Horario con reserva: tira de la semana + lista del día (agenda), plazas que
 // quedan y «Reservar» de un toque (añade la clase y lleva al checkout, donde
-// se confirma). Una sesión completa ofrece «Lista de espera» solo si el API lo
-// dice (lib/booking.ts → waitlistEnabled); si no, «Completa».
+// se confirma). Una sesión completa ofrece «Apuntarme a la lista de espera»
+// solo si el API lo dice (waitlist_enabled en cada sesión); si no, «Completa».
+// Con sesión iniciada se marcan las listas en las que ya está (y la plaza
+// ofrecida, con su enlace para aceptarla).
 //
 // Se usa en /calendar y, compacto y filtrado a una clase, en su ficha
 // (ClassDetails). Sin Chakra ni animaciones: clases .w-cal-* de styles/site.css.
@@ -24,7 +26,10 @@ import { useT, formatPrice } from '../i18n';
 import 'react-day-picker/dist/style.css';
 import { API_ROOT } from '../config';
 import { getSiteClient } from '../lib/site';
-import { bookNow, cartItemFromSession, FEW_SPOTS, joinWaitlist, waitlistEnabled, type ScheduleSession } from '../lib/booking';
+import {
+  bookNow, cartItemFromSession, FEW_SPOTS, joinWaitlist, loginUrl, myWaitlist, sessionKey, waitlistEnabled,
+  type ScheduleSession, type WaitlistEntry,
+} from '../lib/booking';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -71,31 +76,41 @@ function getStatus(event: CalendarEvent): Status {
 
 const TX = {
   es: {
-    book: 'Reservar', chosen: 'Elegida', waitlist: 'Lista de espera', onWaitlist: 'En la lista', full: 'Completa', ended: 'Terminada',
+    book: 'Reservar', chosen: 'Elegida', waitlist: 'Apuntarme a la lista de espera', full: 'Completa', ended: 'Terminada',
+    onWaitlist: (n: number | null) => (n ? `En la lista · nº ${n}` : 'En la lista'), claim: '¡Tienes plaza! Aceptar', booked: 'Ya tienes plaza',
     left: (n: number) => (n === 1 ? 'Queda 1 plaza' : `Quedan ${n} plazas`), free: (n: number) => `${n} plazas libres`,
     today: 'Hoy', pick: 'Elegir fecha', nextDay: 'Ver el siguiente día con clases',
-    wlJoined: 'Te avisaremos si se libera una plaza', wlLogin: 'Entra en tu cuenta para apuntarte a la lista de espera',
-    wlNo: 'Ahora no se puede apuntar a la lista. Escríbenos y te ayudamos.',
+    wlJoined: (n: number | null) => (n ? `Estás en la lista (nº ${n}). Te avisaremos si se libera una plaza.` : 'Te avisaremos si se libera una plaza.'),
+    wlLogin: 'Entra en tu cuenta para apuntarte a la lista de espera', wlLoginBtn: 'Entrar',
+    wlSpace: 'Se ha liberado una plaza: puedes reservarla ya.', wlAlready: 'Ya estabas en la lista de espera de esta clase.',
+    wlBooked: 'Ya tienes plaza en esta clase.', wlNo: 'Ahora no se puede apuntar a la lista. Escríbenos y te ayudamos.',
     guideQ: '¿No sabes qué clase elegir?', guideA: 'Responde 2 preguntas y te recomendamos una.', guideBtn: 'Ayúdame',
     credits: (n: number) => (n === 1 ? '1 crédito' : `${n} créditos`),
   },
   en: {
-    book: 'Book', chosen: 'Selected', waitlist: 'Join waitlist', onWaitlist: 'On waitlist', full: 'Full', ended: 'Finished',
+    book: 'Book', chosen: 'Selected', waitlist: 'Join the waitlist', full: 'Full', ended: 'Finished',
+    onWaitlist: (n: number | null) => (n ? `On the waitlist · #${n}` : 'On the waitlist'), claim: 'Spot for you! Accept', booked: 'You have a spot',
     left: (n: number) => (n === 1 ? '1 spot left' : `${n} spots left`), free: (n: number) => `${n} spots available`,
     today: 'Today', pick: 'Pick a date', nextDay: 'See the next day with classes',
-    wlJoined: "We'll let you know if a spot opens up", wlLogin: 'Sign in to join the waitlist',
-    wlNo: "The waitlist isn't available right now. Message us and we'll help.",
+    wlJoined: (n: number | null) => (n ? `You're on the waitlist (#${n}). We'll let you know if a spot opens up.` : "We'll let you know if a spot opens up."),
+    wlLogin: 'Sign in to join the waitlist', wlLoginBtn: 'Sign in',
+    wlSpace: 'A spot just opened up: you can book it now.', wlAlready: "You're already on this class's waitlist.",
+    wlBooked: 'You already have a spot in this class.', wlNo: "The waitlist isn't available right now. Message us and we'll help.",
     guideQ: 'Not sure which class to pick?', guideA: 'Answer 2 questions and we’ll recommend one.', guideBtn: 'Help me',
     credits: (n: number) => (n === 1 ? '1 credit' : `${n} credits`),
   },
 };
 
 // ─── Una sesión de la lista ───────────────────────────────────────
-function SessionRow({ event, onBook, onWaitlist, waitlisted, hideDetailLink }: {
+function SessionRow({ event, onBook, onWaitlist, entry, mine, busy, hideDetailLink }: {
   event: CalendarEvent;
   onBook: (e: CalendarEvent) => void;
   onWaitlist: (e: CalendarEvent) => void;
-  waitlisted: boolean;
+  /** Su entrada en la lista de espera de esta sesión (si está apuntada). */
+  entry?: WaitlistEntry;
+  /** Ya tiene plaza (lo dijo el API al intentar apuntarse) */
+  mine?: boolean;
+  busy: boolean;
   hideDetailLink?: boolean;
 }) {
   const lang = useLangStore((s) => s.lang);
@@ -106,7 +121,7 @@ function SessionRow({ event, onBook, onWaitlist, waitlisted, hideDetailLink }: {
   const title = tr(r, 'title', lang) || event.title;
   const credits = Number(r.price_credit_overwrite ?? r.price_credit) || 0;
   const price = Number(r.price_eur_overwrite ?? r.price_eur) || 0;
-  const wl = status === 'full' && waitlistEnabled(r, getSiteClient());
+  const wl = status === 'full' && waitlistEnabled(r);
   const meta = [r.instructor, tr(r, 'room', lang)].filter(Boolean).join(' · ');
   const cost = credits > 0 ? tx.credits(credits) : price > 0 ? formatPrice(price, lang, 'auto') : '';
 
@@ -135,10 +150,18 @@ function SessionRow({ event, onBook, onWaitlist, waitlisted, hideDetailLink }: {
             {inCart && <Icon name="check" size={12} aria-hidden />}{inCart ? tx.chosen : tx.book}
           </button>
         )}
-        {wl && (
-          <button type="button" className="w-btn w-btn--sm sk-btn-ghost" disabled={waitlisted}
-            onClick={() => onWaitlist(event)}>
-            {waitlisted ? tx.onWaitlist : tx.waitlist}
+        {mine ? (
+          <span className="w-chip w-chip--ok">{tx.booked}</span>
+        ) : entry?.status === 'offered' && entry.claim_token ? (
+          <a className="w-btn w-btn--sm sk-btn" href={`${lang === 'en' ? '/en/waitlist' : '/lista-espera'}?token=${entry.claim_token}`}>
+            {tx.claim}
+          </a>
+        ) : entry ? (
+          <span className="w-chip w-chip--ok">{tx.onWaitlist(entry.position)}</span>
+        ) : wl && (
+          <button type="button" className="w-btn w-btn--sm sk-btn-ghost" disabled={busy} aria-busy={busy}
+            onClick={() => onWaitlist(event)} aria-label={`${tx.waitlist}: ${title} ${dayjs(event.start).tz(TIMEZONE).format('HH:mm')}`}>
+            {tx.waitlist}
           </button>
         )}
         {status === 'past' && <span className="w-cal-ended">{tx.ended}</span>}
@@ -158,7 +181,10 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPicker, setShowPicker] = useState(false);
-  const [waitlisted, setWaitlisted] = useState<Record<string, boolean>>({});
+  // Mis listas de espera (con sesión): clave regla|inicio → entrada
+  const [waitlist, setWaitlist] = useState<Record<string, WaitlistEntry>>({});
+  const [wlBusy, setWlBusy] = useState<string | null>(null);
+  const [mine, setMine] = useState<Record<string, boolean>>({});
   const pickerRef = useRef<HTMLDivElement>(null);
 
   // Primera visita (sin sesión ni guía vista): ofrecer la guía "Encuentra tu clase"
@@ -201,6 +227,13 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
     fetchEvents();
     return () => { alive = false; };
   }, [fetchKey]);
+
+  const loadWaitlist = useCallback(async () => {
+    const list = await myWaitlist();
+    if (!list) return;
+    setWaitlist(Object.fromEntries(list.map((e) => [sessionKey(e.schedule_id, e.start_datetime), e])));
+  }, []);
+  useEffect(() => { loadWaitlist(); }, [loadWaitlist]);
 
   useEffect(() => {
     const handler = (e: MouseEvent) => {
@@ -296,16 +329,40 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
   }, [onSelectEvent, t]);
 
   const handleWaitlist = useCallback(async (event: CalendarEvent) => {
-    const r = await joinWaitlist(event.id);
-    if (r === 'joined') {
-      setWaitlisted((w) => ({ ...w, [event.id]: true }));
-      toaster.create({ title: tx.wlJoined, type: 'success', duration: 3500 });
-    } else if (r === 'login') {
-      toaster.create({ title: tx.wlLogin, type: 'info', duration: 4000 });
-    } else {
-      toaster.create({ title: tx.wlNo, type: 'error', duration: 4000 });
+    const r = event.resource;
+    const key = sessionKey(r.source_id, r.start_datetime);
+    setWlBusy(event.id);
+    const res = await joinWaitlist(Number(r.source_id), r.start_datetime);
+    setWlBusy(null);
+    switch (res.kind) {
+      case 'joined':
+        setWaitlist((w) => ({ ...w, [key]: res.entry }));
+        toaster.create({ title: tx.wlJoined(res.entry.position), type: 'success', duration: 4000 });
+        break;
+      case 'login':
+        toaster.create({
+          title: tx.wlLogin, type: 'info', duration: 6000,
+          action: { label: tx.wlLoginBtn, onClick: () => window.location.assign(loginUrl()) },
+        });
+        break;
+      case 'has_space':
+        // Alguien ha cancelado mientras miraba: que la reserve directamente
+        toaster.create({ title: tx.wlSpace, type: 'success', duration: 3000 });
+        onSelectEvent(event);
+        bookNow(cartItemFromSession(r, event.start, event.end));
+        break;
+      case 'already_waiting':
+        toaster.create({ title: tx.wlAlready, type: 'info', duration: 3500 });
+        loadWaitlist();
+        break;
+      case 'already_booked':
+        setMine((m) => ({ ...m, [key]: true }));
+        toaster.create({ title: tx.wlBooked, type: 'info', duration: 3500 });
+        break;
+      default:
+        toaster.create({ title: res.message || tx.wlNo, type: 'error', duration: 4500 });
     }
-  }, [tx]);
+  }, [tx, onSelectEvent, loadWaitlist]);
 
   const isPrevDisabled = isBefore(weekStart, addDays(today, 1));
   const nextAfterSelected = upcomingDays.find((d) => isBefore(selectedDate, d) && !isSameDay(d, selectedDate)) || null;
@@ -428,7 +485,9 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
                 <ul className="w-cal-list">
                   {dayEvents.map((event) => (
                     <SessionRow key={event.id} event={event} onBook={handleBook} onWaitlist={handleWaitlist}
-                      waitlisted={!!waitlisted[event.id]} hideDetailLink={hideDetailLink} />
+                      entry={event.resource.type === 'EVENT' ? undefined : waitlist[sessionKey(event.resource.source_id, event.resource.start_datetime)]}
+                      mine={!!mine[sessionKey(event.resource.source_id, event.resource.start_datetime)]}
+                      busy={wlBusy === event.id} hideDetailLink={hideDetailLink} />
                   ))}
                 </ul>
               )}

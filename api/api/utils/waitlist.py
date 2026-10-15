@@ -180,9 +180,10 @@ def leave(entry, status='left'):
 # ── Ofrecer plazas libres ─────────────────────────────────────────────────
 
 def claim_url(entry):
+    """Enlace del aviso «¡Tienes plaza!»: la página /lista-espera de la web
+    (web/src/components/WaitlistClaim.tsx) pide entrar si hace falta y acepta
+    la plaza con POST /api/v1/waitlist/claim/ {token}."""
     from api.utils.site import web_url
-    # TODO(web, fase 5): página /lista-espera que lee ?token=, pide iniciar
-    # sesión si hace falta y llama a POST /api/v1/waitlist/claim/ {token}.
     return web_url(f"/lista-espera?token={entry.claim_token}")
 
 
@@ -302,7 +303,17 @@ def claim(token, user):
         raise WaitlistError('not_offered', 'Todavía no hay plaza para ti: te avisaremos si se libera.')
     if not _offer_alive(entry):
         raise WaitlistError('offer_expired', 'Se acabó el plazo para aceptar la plaza y ha pasado a la siguiente persona.')
-    return book_from_entry(entry, charge='credits')
+    try:
+        return book_from_entry(entry, charge='credits')
+    except WaitlistError as e:
+        if e.code == 'insufficient_credits':
+            # El texto de calendar_ops es para el estudio («Carla no tiene…»): aquí habla la clienta
+            limite = to_madrid_wall(entry.offer_expires_at)
+            raise WaitlistError(
+                'insufficient_credits',
+                f'No te quedan clases en tu bono. Compra uno y vuelve a este enlace antes de las {limite:%H:%M}.',
+                offer_expires_at=limite.isoformat(timespec='minutes') if limite else None)
+        raise
 
 
 def mark_claimed_by_booking(booking):

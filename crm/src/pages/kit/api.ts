@@ -195,10 +195,14 @@ export interface WebSection {
   hint: string;
   icon: string;
   edit: string;
+  /** Se puede apagar desde aquí (SiteConfig.web_sections) */
+  toggle: boolean;
+  /** El interruptor: encendida (aunque aún no tenga contenido) */
+  enabled: boolean;
+  has_content: boolean;
+  /** Se ve de verdad en la web: encendida y con contenido */
   visible: boolean;
   count: number | null;
-  toggle: boolean;
-  total: number | null;
   empty: string;
 }
 
@@ -228,7 +232,7 @@ export const dashApi = {
   sales: (period: Period) => dashRequest<SalesData>(`v1/dashboard/sales/?period=${period}`),
   exportSales: (period: Period) => downloadFile(`v1/dashboard/sales/export/?period=${period}`, `cierre-${period}.csv`),
   web: () => dashRequest<WebData>('v1/dashboard/web/'),
-  setSection: (section: string, visible: boolean, ids?: number[]) =>
-    dashPost<{ ids: number[]; active: number; total: number }>('v1/dashboard/web/sections/', { section, visible, ids }),
+  setSection: (section: string, visible: boolean) =>
+    dashPost<{ section: string; enabled: boolean; sections: Record<string, boolean> }>('v1/dashboard/web/sections/', { section, visible }),
   checklist: () => dashRequest<Checklist>('v1/dashboard/checklist/'),
 };

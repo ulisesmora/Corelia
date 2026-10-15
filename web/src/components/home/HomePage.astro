@@ -212,7 +212,11 @@ const heading = heroTitle || headline;
       {/* Cada sección respeta el interruptor del panel y se oculta si no tiene contenido */}
       {sectionOn(site, 'classes') && <HomeSections kind="offer" lang={lang} site={site} offered={offered} />}
       {sectionOn(site, 'prices') && <HomeSections kind="prices" lang={lang} site={site} plans={plans} />}
-      {sectionOn(site, 'team') && <HomeSections kind="trust" lang={lang} site={site} instructors={instructors || []} testimonials={testimonials} />}
+      {(sectionOn(site, 'team') || sectionOn(site, 'testimonials')) && (
+        <HomeSections kind="trust" lang={lang} site={site}
+          instructors={sectionOn(site, 'team') ? instructors || [] : []}
+          testimonials={sectionOn(site, 'testimonials') ? testimonials : []} />
+      )}
       {sectionOn(site, 'location') && <HomeSections kind="visit" lang={lang} site={site} schedules={schedules} />}
     </main>
 

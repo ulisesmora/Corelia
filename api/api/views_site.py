@@ -11,7 +11,7 @@ from rest_framework.views import APIView
 
 from api.models import SiteConfig
 from api.throttling import scoped
-from api.utils.site import ensure_vapid_keys, get_site_config
+from api.utils.site import ensure_vapid_keys, get_site_config, web_section_on, web_sections
 from api.utils.turnstile import turnstile_site_key
 
 logger = logging.getLogger(__name__)
@@ -321,10 +321,12 @@ def _web_url():
 
 def _panel_origins(cfg: SiteConfig) -> list:
     """Orígenes (esquema://host[:puerto]) desde los que se abre el panel: la
-    dirección que da el servidor y, si lo hay, el dominio propio del panel."""
+    dirección que da el servidor (en producción el panel se sirve desde el
+    API), PANEL_URL si apunta a otro sitio (en desarrollo, Vite en
+    http://localhost:5173) y, si lo hay, el dominio propio del panel."""
     from urllib.parse import urlsplit
     origins = []
-    for url in (settings.API_URL, f'https://{cfg.panel_domain}' if cfg.panel_domain else ''):
+    for url in (settings.API_URL, settings.PANEL_URL, f'https://{cfg.panel_domain}' if cfg.panel_domain else ''):
         parts = urlsplit((url or '').strip())
         if parts.scheme in ('http', 'https') and parts.netloc:
             origin = f'{parts.scheme}://{parts.netloc}'
@@ -424,6 +426,9 @@ def public_config_payload(cfg: SiteConfig) -> dict:
         'google_client_id': cfg.google_client_id,
         'vapid_public_key': vapid_public,
         'setup_completed': cfg.setup_completed,
+        # «Mi web» → Secciones: {next, classes, prices, team, location,
+        # testimonials, faqs, gallery} → true/false (web/src/lib/sections.ts)
+        'sections': web_sections(cfg),
         'site_url': _web_url(),
         # Orígenes del panel: la web deja que el panel la enseñe dentro de un
         # marco (vista previa de la guía de puesta en marcha) y a nadie más.
@@ -748,6 +753,9 @@ class FAQItemViewSet(_PublicReadAdminWrite):
 
     def get_queryset(self):
         qs = super().get_queryset()
+        user = self.request.user
+        if not (user and user.is_staff) and not web_section_on('faqs'):
+            return qs.none()  # apagada en «Mi web»: la web no la pinta
         page = self.request.query_params.get('page')
         if page in ('home', 'prices'):
             qs = qs.filter(page__in=(page, 'both'))
@@ -757,6 +765,13 @@ class FAQItemViewSet(_PublicReadAdminWrite):
 class TestimonialViewSet(_PublicReadAdminWrite):
     queryset = Testimonial.objects.all()
     serializer_class = TestimonialSerializer
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        user = self.request.user
+        if not (user and user.is_staff) and not web_section_on('testimonials'):
+            return qs.none()  # apagadas en «Mi web»
+        return qs
 
 
 def _ping_search_engines():

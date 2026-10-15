@@ -1,6 +1,7 @@
 // Mi web: las secciones de la web con lo que enseña cada una (y un enlace a su
-// editor), interruptores donde se pueden apagar de verdad (opiniones, preguntas
-// y galería), la vista previa en ordenador o móvil, el dominio y la app.
+// editor), un interruptor para apagar cada una sin borrar su contenido (se
+// guarda en el servidor: SiteConfig.web_sections), la vista previa en
+// ordenador o móvil, el dominio y la app.
 // Datos: GET /api/v1/dashboard/web/ (api/utils/dashboard.py).
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -22,20 +23,6 @@ import { Card, CardHead, IBadge, KitIcon, PageHead, Seg, Tag, TonalButton } from
 
 type Device = 'desktop' | 'mobile';
 const DESKTOP_WIDTH = 1280;
-const LS_HIDDEN = 'miweb.hidden.'; // ids ocultados con el interruptor (para volver a mostrar justo esos)
-
-function readIds(key: string): number[] | undefined {
-  try {
-    const v = JSON.parse(localStorage.getItem(LS_HIDDEN + key) || 'null');
-    return Array.isArray(v) && v.length ? v : undefined;
-  } catch { return undefined; }
-}
-function writeIds(key: string, ids: number[] | null) {
-  try {
-    if (ids && ids.length) localStorage.setItem(LS_HIDDEN + key, JSON.stringify(ids));
-    else localStorage.removeItem(LS_HIDDEN + key);
-  } catch { /* sin almacenamiento */ }
-}
 
 function Preview({ url, device, reloadKey }: { url: string; device: Device; reloadKey: number }) {
   const box = useRef<HTMLDivElement>(null);
@@ -60,7 +47,7 @@ function Preview({ url, device, reloadKey }: { url: string; device: Device; relo
           {[0, 1, 2].map((i) => <Box key={i} component="i" sx={{ width: 9, height: 9, borderRadius: '50%', background: 'var(--studio-border-strong)' }} />)}
           <Box component="span" sx={{ ml: 1.25, fontSize: '0.72rem', color: 'var(--studio-muted)', background: 'var(--studio-surf)', px: 1.25, py: 0.4, borderRadius: 99, flex: 1, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{host}</Box>
         </Box>
-        <Box sx={{ height, overflow: 'hidden', display: 'flex', justifyContent: 'center', background: '#fff' }}>
+        <Box sx={{ height, overflow: 'hidden', display: 'flex', justifyContent: 'center', background: 'var(--studio-surf)' }}>
           <Box component="iframe" key={`${reloadKey}-${device}`} src={url} title="Vista previa de tu web" loading="lazy"
             sx={{
               border: 0, flex: 'none', width: device === 'desktop' ? DESKTOP_WIDTH : '100%', height: device === 'desktop' ? height / scale : '100%',
@@ -90,17 +77,18 @@ export default function MyWebPage() {
 
   const webUrl = (siteUrl || data?.web_url || '').replace(/\/$/, '');
 
-  const toggle = async (s: WebSection, visible: boolean) => {
+  const toggle = async (s: WebSection, on: boolean) => {
     setBusy(s.key);
     try {
-      const r = await dashApi.setSection(s.key, visible, visible ? readIds(s.key) : undefined);
-      writeIds(s.key, visible ? null : r.ids);
+      const r = await dashApi.setSection(s.key, on);
       setData((d) => d && {
         ...d,
-        sections: d.sections.map((x) => (x.key === s.key ? { ...x, visible: r.active > 0, count: r.active, total: r.total } : x)),
+        sections: d.sections.map((x) => (x.key === s.key ? { ...x, enabled: r.enabled, visible: r.enabled && x.has_content } : x)),
       });
       setReloadKey((k) => k + 1);
-      notify(visible ? `${s.label}: se ven en tu web.` : `${s.label}: ocultas en tu web.`);
+      notify(on
+        ? `${s.label}: se ve en tu web${s.has_content ? '' : ' cuando tenga contenido'}.`
+        : `${s.label}: oculta en tu web. Tarda hasta un minuto en verse.`);
     } catch (e) {
       notify(e instanceof Error ? e.message : String(e), 'error');
     } finally {
@@ -112,9 +100,9 @@ export default function MyWebPage() {
 
   return (
     <Box sx={{ pb: 2 }}>
-      <PageHead icon={<LanguageRoundedIcon />} title="Mi web" tint="privada"
+      <PageHead icon={<LanguageRoundedIcon />} title="Mi web" tint="privada" page="web"
         actions={webUrl ? (
-          <Button variant="contained" component="a" href={webUrl} target="_blank" rel="noopener" startIcon={<OpenInNewRoundedIcon />}>Ver mi web</Button>
+          <Button variant="contained" component="a" href={webUrl} target="_blank" rel="noopener" startIcon={<OpenInNewRoundedIcon />} data-tour="web-publish">Ver mi web</Button>
         ) : undefined} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" onClick={load}>Reintentar</Button>}>{error}</Alert>}
@@ -126,7 +114,7 @@ export default function MyWebPage() {
 
       <Box sx={{ display: 'grid', gap: 2.25, alignItems: 'start', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: '370px minmax(0, 1fr)' } }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.25, minWidth: 0 }}>
-          <Card labelledBy="sec-h" id="web-secs">
+          <Card labelledBy="sec-h" id="web-secs" tour="web-sections">
             <CardHead id="sec-h" title="Secciones" right={data ? <Typography sx={{ fontSize: '0.84rem', color: 'var(--studio-muted)' }}>{shown} de {data.sections.length} se ven</Typography> : undefined} />
             {!data ? [0, 1, 2, 3, 4].map((i) => <Skeleton key={i} height={56} />) : (
               <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }}>
@@ -138,14 +126,14 @@ export default function MyWebPage() {
                         {s.label}{s.count ? <Box component="span" sx={{ fontWeight: 500, color: 'var(--studio-muted)' }}> · {s.count}</Box> : null}
                       </Typography>
                       <Typography sx={{ fontSize: '0.8rem', color: 'var(--studio-muted)' }}>
-                        {s.visible ? s.hint : (s.toggle ? 'Oculta en tu web' : s.empty)}
+                        {!s.enabled ? 'Oculta en tu web' : s.visible ? s.hint : s.empty}
                       </Typography>
                     </Box>
                     <Tooltip title={`Editar ${s.label.toLowerCase()}`}>
-                      <IconButton onClick={() => navigate(s.edit)} aria-label={`Editar ${s.label}`} sx={{ width: 40, height: 40 }}><EditOutlinedIcon fontSize="small" /></IconButton>
+                      <IconButton onClick={() => navigate(s.edit)} aria-label={`Editar ${s.label}`} sx={{ width: 44, height: 44 }}><EditOutlinedIcon fontSize="small" /></IconButton>
                     </Tooltip>
                     {s.toggle ? (
-                      <Switch checked={s.visible} disabled={busy === s.key} onChange={(e) => toggle(s, e.target.checked)}
+                      <Switch checked={s.enabled} disabled={busy === s.key} onChange={(e) => toggle(s, e.target.checked)}
                         slotProps={{ input: { 'aria-label': `Mostrar ${s.label} en la web` } }} />
                     ) : s.key === 'hero' ? (
                       <Tag tone="n">Siempre</Tag>
@@ -157,7 +145,7 @@ export default function MyWebPage() {
               </Box>
             )}
             <Typography sx={{ mt: 1, fontSize: '0.8rem', color: 'var(--studio-muted)' }}>
-              Cada sección aparece sola cuando tiene contenido. Opiniones, preguntas y galería se pueden ocultar sin borrarlas.
+              Cada sección aparece sola cuando tiene contenido. Apágala para ocultarla sin borrar nada.
             </Typography>
           </Card>
 
@@ -208,11 +196,11 @@ export default function MyWebPage() {
           )}
         </Box>
 
-        <Box component="section" aria-label="Vista previa" sx={{ minWidth: 0 }}>
+        <Box component="section" aria-label="Vista previa" data-tour="web-preview" sx={{ minWidth: 0 }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5, flexWrap: 'wrap' }}>
             <Typography variant="overline" component="h2" sx={{ color: 'var(--studio-muted)', flex: 1 }}>Vista previa</Typography>
             <Tooltip title="Recargar">
-              <IconButton onClick={() => setReloadKey((k) => k + 1)} aria-label="Recargar la vista previa" sx={{ width: 40, height: 40 }}><RefreshRoundedIcon fontSize="small" /></IconButton>
+              <IconButton onClick={() => setReloadKey((k) => k + 1)} aria-label="Recargar la vista previa" sx={{ width: 44, height: 44 }}><RefreshRoundedIcon fontSize="small" /></IconButton>
             </Tooltip>
             <Seg mode="toggle" label="Dispositivo" value={device} onChange={setDevice} options={[
               { value: 'desktop', label: <><DesktopWindowsOutlinedIcon sx={{ fontSize: 18 }} aria-hidden />Ordenador</> },

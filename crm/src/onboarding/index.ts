@@ -2,7 +2,6 @@
 // bloqueos del panel (./locks.ts) y visitas guiadas (./coach/).
 export { ProgressProvider, ProgressOutlet } from './ProgressProvider';
 export { useSetupProgress } from './progressContext';
-export { default as StepGuide } from './StepGuide';
 export { default as HomeSlot } from './HomeSlot';
 export { default as HomeProgressCard } from './HomeProgressCard';
 export { default as GuideRedirect } from './GuideRedirect';

@@ -10,6 +10,7 @@
 import { serverApiRoot } from '../config';
 import { formatMoney } from './money';
 import PALETTES from '../design/palettes.json';
+import { SECTION_KEYS, type SectionKey } from './sections';
 
 /** Tonos de una paleta (design/tokens; mismos nombres que en el panel). */
 interface PaletteTokens { id: string; p: string; onP: string; pText: string; ink: string; muted: string }
@@ -135,6 +136,10 @@ export interface SiteConfig {
   google_ads_purchase_label: string;
   google_ads_signup_label: string;
   meta_pixel_id: string;
+
+  // ── «Mi web» → Secciones (SiteConfig.web_sections del API) ──
+  /** Qué secciones se ven (false = el estudio la apagó). Ver lib/sections.ts. */
+  sections: Record<SectionKey, boolean>;
 }
 
 /** Valores por defecto: los mismos que usa el backend para un estudio recién creado. */
@@ -217,6 +222,7 @@ export const DEFAULT_SITE: SiteConfig = {
   google_ads_purchase_label: '',
   google_ads_signup_label: '',
   meta_pixel_id: '',
+  sections: Object.fromEntries(SECTION_KEYS.map((k) => [k, true])) as Record<SectionKey, boolean>,
 };
 
 /**
@@ -397,6 +403,8 @@ export function normalizeSite(raw: unknown): SiteConfig {
     google_ads_purchase_label: tracking('google_ads_purchase_label', r.google_ads_purchase_label),
     google_ads_signup_label: tracking('google_ads_signup_label', r.google_ads_signup_label),
     meta_pixel_id: tracking('meta_pixel_id', r.meta_pixel_id),
+    // Solo se apaga con un false explícito: lo que no venga (API antiguo) se ve
+    sections: Object.fromEntries(SECTION_KEYS.map((k) => [k, (r.sections as Record<string, unknown> | undefined)?.[k] !== false])) as Record<SectionKey, boolean>,
   };
 }
 

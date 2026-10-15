@@ -1164,6 +1164,11 @@ class SiteConfig(models.Model):
         default=True,
         help_text='El panel usa también el estilo de la web (esquinas, bordes, sombras, claro u oscuro). '
                   'Si no, el panel se ve con su aspecto clásico y los colores del estudio.')
+    # Secciones de la web que el estudio apaga desde «Mi web» ({clave: False}).
+    # Vacío = todas visibles. Claves: WEB_SECTION_KEYS (api/utils/site.py).
+    web_sections = models.JSONField(
+        default=dict, blank=True,
+        help_text='Secciones de la web ocultas desde «Mi web» ({"faqs": false}). Vacío = todas visibles.')
 
     # ── Negocio ──
     # Moneda (ISO 4217) y país (ISO 3166-1, campo `country` de arriba): listas

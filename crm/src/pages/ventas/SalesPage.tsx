@@ -260,10 +260,10 @@ export default function SalesPage() {
 
   return (
     <Box sx={{ pb: 2 }}>
-      <PageHead icon={<AccountBalanceWalletOutlinedIcon />} title="Ventas" tint="mat"
+      <PageHead icon={<AccountBalanceWalletOutlinedIcon />} title="Ventas" tint="mat" page="sales"
         sub={data ? `${data.label}${data.period === 'year' || data.period === 'quarter' || data.period === 'month' ? ` · hasta el ${shortDate(data.end)}` : ''}` : undefined}
         actions={<>
-          <Button variant="outlined" onClick={exportCsv} disabled={exporting} startIcon={<DownloadRoundedIcon />}
+          <Button variant="outlined" onClick={exportCsv} disabled={exporting} startIcon={<DownloadRoundedIcon />} data-tour="sales-export"
             aria-label="Cierre para la gestoría: descargar los cobros del periodo en Excel (CSV)">
             <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>Cierre para la gestoría</Box>
             <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>Cierre</Box>
@@ -271,11 +271,11 @@ export default function SalesPage() {
           <Button variant="contained" startIcon={<CreditCardOutlinedIcon />} onClick={() => navigate('/credits?accion=anadir')}>Cobrar</Button>
         </>} />
 
-      <Seg value={period} options={PERIODS} onChange={setPeriod} label="Periodo" sx={{ mb: 2 }} />
+      <Seg value={period} options={PERIODS} onChange={setPeriod} label="Periodo" tour="sales-period" sx={{ mb: 2 }} />
 
       {error && <Alert severity="error" sx={{ mb: 2 }} action={<Button color="inherit" onClick={() => load(period)}>Reintentar</Button>}>{error}</Alert>}
 
-      <Box component="section" aria-label="Cifras del periodo" sx={{ display: 'grid', gap: { xs: 1.25, sm: 1.75 }, mb: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' } }}>
+      <Box component="section" aria-label="Cifras del periodo" data-tour="sales-kpis" sx={{ display: 'grid', gap: { xs: 1.25, sm: 1.75 }, mb: 2, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', lg: 'repeat(4, minmax(0, 1fr))' } }}>
         {data ? kpisOf(data).map((k) => <KpiCard key={k.key} k={k} currency={cur} />)
           : [0, 1, 2, 3].map((i) => <Skeleton key={i} variant="rounded" height={128} sx={{ borderRadius: 'var(--studio-radius-lg)' }} />)}
       </Box>

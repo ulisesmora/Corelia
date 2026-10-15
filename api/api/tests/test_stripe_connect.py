@@ -48,6 +48,7 @@ PUBLIC_KEYS = {
     'preview_frame_origins', 'google_business_url', 'google_review_url', 'facebook_url', 'tiktok_url',
     'youtube_url', 'google_site_verification', 'bing_site_verification', 'ga4_measurement_id', 'google_ads_id',
     'google_ads_purchase_label', 'google_ads_signup_label', 'meta_pixel_id',
+    'sections',  # «Mi web» → Secciones (0010)
 }
 
 

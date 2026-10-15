@@ -93,7 +93,7 @@ import { SectionTabs, PageIntro, HelpTip, EmptyState, FormStep, useConfirm, useN
 import { friendlyError } from '../utils/errors';
 import { authHeaders } from '../utils/auth';
 import { API_BASE_URL } from '../config';
-import { ClassTemplatesDialog, PREREQ, QuickRoomDialog, StepGuide } from '../onboarding';
+import { ClassTemplatesDialog, PREREQ, QuickRoomDialog } from '../onboarding';
 import { currencySymbol, money } from '../site/money';
 
 // ====================================================================
@@ -1496,7 +1496,6 @@ export default function RecurringScheduleManagement() {
 
   return (
     <Box sx={{ p: { xs: 0, sm: 1, md: 3 }, maxWidth: '100%', overflowX: 'hidden' }}>
-      <StepGuide step="schedule" />
       <PageIntro
         pageKey="horarios"
         title="Clases semanales y cierres"

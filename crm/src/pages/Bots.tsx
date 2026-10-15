@@ -254,7 +254,7 @@ export default function ClassTypeManagement() {
       await fetchClassTypes();
       notify(data.id
         ? 'Clase guardada ✓ Puede tardar unos 5 minutos en verse cambiada en la web.'
-        : 'Clase creada ✓ Ahora ponle días y horas en «Mis clases y horarios».');
+        : 'Clase creada ✓ Ahora ponle días y horas en «Calendario».');
       handleCloseDialog(true);
     } catch (err) {
       notify(await saveErrorText(err), 'error');
@@ -284,7 +284,7 @@ export default function ClassTypeManagement() {
                 {usage.length > 5 && <li>y {usage.length - 5} más</li>}
               </ul>
               Esas clases <strong>no se borran</strong>: seguirán en el horario y se podrán reservar. Si quieres dejar de
-              darla, quítala primero en «Mis clases y horarios».
+              darla, quítala primero en «Calendario».
             </Box>
           )}
           {usage === null && (

@@ -5,8 +5,13 @@
 // ≥ 3:1 sobre la superficie). Ver docs/ESTILOS.md.
 //
 //   const color = useClassTypeColor();      // en un componente
-//   const { tint, dot } = color(classType.id);
-//   classTypeColor(tokens, id)              // fuera de React (con panelPalette)
+//   const { tint, dot } = color(classType.id, classType.title);
+//   classTypeColor(tokens, id, title)       // fuera de React (con panelPalette)
+//
+// El tono se elige por el nombre de la clase si es uno conocido (Reformer →
+// verde, Mat → naranja, Barre → rosa, Yoga → lila, Privada → azul: los mismos
+// matices que classHues de design/tokens) y, si no, rotando por id. Así una
+// clase tiene el mismo color en todas las pantallas y en las 80 paletas.
 // ====================================================================
 import { useMemo } from 'react';
 import { useSite } from '../site/SiteProvider';
@@ -24,6 +29,21 @@ export interface ClassTypeColor {
   text: string;
 }
 
+/** Nombre de la clase → tono. */
+const NAMED: [RegExp, string][] = [
+  [/reformer|m[aá]quina/i, 'reformer'],
+  [/\bmat\b|suelo|esterilla/i, 'mat'],
+  [/barre|barra/i, 'barre'],
+  [/yoga/i, 'yoga'],
+  [/privad|personal|1:1/i, 'privada'],
+];
+
+function keyByName(title: string | null | undefined): string | null {
+  if (!title) return null;
+  for (const [re, key] of NAMED) if (re.test(title) && CLASS_KEYS.includes(key)) return key;
+  return null;
+}
+
 function indexOf(id: number | string | null | undefined): number {
   if (id === null || id === undefined || id === '') return 0;
   const n = Number(id);
@@ -33,16 +53,20 @@ function indexOf(id: number | string | null | undefined): number {
   return h % CLASS_KEYS.length;
 }
 
-/** Tono del tipo de clase `classTypeId` (los ids consecutivos van rotando los 5 tonos). */
-export function classTypeColor(tokens: PaletteTokens, classTypeId: number | string | null | undefined): ClassTypeColor {
-  const key = CLASS_KEYS[indexOf(classTypeId)];
+/** Tono del tipo de clase: por su nombre si es conocido; si no, los ids consecutivos van rotando los 5 tonos. */
+export function classTypeColor(
+  tokens: PaletteTokens, classTypeId: number | string | null | undefined, title?: string | null,
+): ClassTypeColor {
+  const key = keyByName(title) ?? CLASS_KEYS[indexOf(classTypeId)];
   const c = tokens.cls[key];
   return { key, tint: c.tint, dot: c.dot, text: tokens.ink };
 }
 
-/** Hook: `const color = useClassTypeColor(); color(id).tint` con la paleta actual del panel. */
-export function useClassTypeColor(): (classTypeId: number | string | null | undefined) => ClassTypeColor {
+type ColorFn = (classTypeId: number | string | null | undefined, title?: string | null) => ClassTypeColor;
+
+/** Hook: `const color = useClassTypeColor(); color(id, title).tint` con la paleta actual del panel. */
+export function useClassTypeColor(): ColorFn {
   const { config } = useSite();
   const tokens = useMemo(() => panelPalette(config), [config]);
-  return useMemo(() => (id: number | string | null | undefined) => classTypeColor(tokens, id), [tokens]);
+  return useMemo<ColorFn>(() => (id, title) => classTypeColor(tokens, id, title), [tokens]);
 }

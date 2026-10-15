@@ -242,17 +242,20 @@ class WebAndSettingsTests(DashboardBase):
         b = FAQItem.objects.create(question='¿Puedo cancelar?', answer='Sí', is_active=False)
         data = self.api.get('/api/v1/dashboard/web/').json()
         faqs = next(s for s in data['sections'] if s['key'] == 'faqs')
-        self.assertEqual((faqs['visible'], faqs['toggle'], faqs['count'], faqs['total']), (True, True, 1, 2))
+        self.assertEqual((faqs['visible'], faqs['enabled'], faqs['toggle'], faqs['count']), (True, True, True, 1))
         r = self.api.post('/api/v1/dashboard/web/sections/', {'section': 'faqs', 'visible': False}, format='json')
-        self.assertEqual(r.json()['ids'], [a.id])
-        self.assertFalse(FAQItem.objects.filter(is_active=True).exists())
-        r = self.api.post('/api/v1/dashboard/web/sections/', {'section': 'faqs', 'visible': True, 'ids': [a.id]},
-                          format='json')
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertFalse(r.json()['enabled'])
+        self.assertEqual(SiteConfig.load().web_sections, {'faqs': False})
+        # El contenido no se toca: se apaga la sección entera
         a.refresh_from_db()
         b.refresh_from_db()
-        self.assertTrue(a.is_active)
-        self.assertFalse(b.is_active)  # lo que ya estaba oculto sigue oculto
-        r = self.api.post('/api/v1/dashboard/web/sections/', {'section': 'classes', 'visible': False}, format='json')
+        self.assertEqual((a.is_active, b.is_active), (True, False))
+        faqs = next(s for s in self.api.get('/api/v1/dashboard/web/').json()['sections'] if s['key'] == 'faqs')
+        self.assertEqual((faqs['visible'], faqs['enabled']), (False, False))
+        self.api.post('/api/v1/dashboard/web/sections/', {'section': 'faqs', 'visible': True}, format='json')
+        self.assertEqual(SiteConfig.load().web_sections, {})
+        r = self.api.post('/api/v1/dashboard/web/sections/', {'section': 'about', 'visible': False}, format='json')
         self.assertEqual(r.status_code, 400)
 
     def test_checklist(self):

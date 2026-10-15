@@ -124,7 +124,10 @@ colores propios no existen y la web se ve exactamente como antes.
 `crm/src/theme.ts` genera el tema de MUI desde los tokens (ver [El panel con el
 estilo de la web](#el-panel-con-el-estilo-de-la-web)). Los colores de los tipos de
 clase para el calendario: `crm/src/design/classColors.ts`
-(`classTypeColor(tokens, id)` o el hook `useClassTypeColor()`).
+(`classTypeColor(tokens, id, título)` o el hook `useClassTypeColor()`): el tono sale del
+nombre si es uno conocido (Reformer, Mat, Barre, Yoga, Privada) y, si no, rota por id. El
+calendario (`crm/src/components/calendar/classColors.ts`) usa los mismos tintes, así cada
+clase tiene el mismo color en todas las pantallas y en las 80 paletas.
 
 ## Cómo añadir un estilo nuevo
 

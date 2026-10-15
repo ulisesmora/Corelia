@@ -4,10 +4,9 @@
 // último. Los datos salen de GET /api/v1/dashboard/today/ (api/utils/dashboard.py).
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, Box, Button, Skeleton, Typography } from '@mui/material';
-import PlayCircleOutlineRoundedIcon from '@mui/icons-material/PlayCircleOutlineRounded';
 import { useAuth } from '../context/AuthContext';
 import HomeSlot from '../onboarding/HomeSlot';
-import { hasTour, startTour } from '../components/shell/ShellContext';
+import { HowItWorks } from '../onboarding/coach';
 import { dashApi, type TodayData } from './kit/api';
 import { greeting, longDate, plural } from './kit/format';
 import KpiRow from './hoy/KpiRow';
@@ -50,19 +49,15 @@ export default function Home() {
 
       <Box sx={{ display: 'flex', alignItems: 'flex-end', gap: 2, flexWrap: { xs: 'nowrap', sm: 'wrap' }, mt: { xs: 0.5, md: 1 }, mb: { xs: 2, sm: 2.75 } }}>
         <Box sx={{ flex: 1, minWidth: 0 }}>
-          <Typography variant="h1" tabIndex={-1} id="page-title" sx={{ fontSize: { xs: '1.7rem', md: '2.3rem' }, outline: 'none' }}>
+          <Typography variant="h1" tabIndex={-1} id="page-title" data-tour="page-head" sx={{ fontSize: { xs: '1.7rem', md: '2.3rem' }, outline: 'none' }}>
             {greeting()}{firstName ? `, ${firstName}` : ''}
           </Typography>
           <Typography sx={{ color: 'var(--studio-muted)', mt: 0.75, fontSize: { xs: '0.95rem', sm: '1rem' } }}>
             {data ? `${longDate(data.today)} · ${line}` : <Skeleton width={260} />}
           </Typography>
         </Box>
-        {hasTour() && (
-          <Button variant="outlined" onClick={startTour} startIcon={<PlayCircleOutlineRoundedIcon />} aria-label="Cómo funciona"
-            sx={{ flex: 'none', '& .lbl': { display: { xs: 'none', sm: 'inline' } }, minWidth: 44, px: { xs: 1.25, sm: 2 }, '& .MuiButton-startIcon': { mr: { xs: 0, sm: 1 } } }}>
-            <span className="lbl">Cómo funciona</span>
-          </Button>
-        )}
+        {/* Visita de 3 pasos de esta pantalla (la de bienvenida está en «?» → Visita guiada) */}
+        <HowItWorks page="today" />
       </Box>
 
       {error && (

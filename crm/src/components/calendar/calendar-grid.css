@@ -34,7 +34,7 @@
 .kc-hours { position: sticky; left: 0; z-index: 5; grid-row: 2; grid-column: 1; background: var(--k-surf); border-right: 1px solid var(--k-border); }
 .kc-hours span { position: absolute; right: 8px; font-size: .72rem; font-weight: 600; color: var(--k-muted); transform: translateY(-50%); font-variant-numeric: tabular-nums; }
 .kc-hours span.first { transform: none; margin-top: 4px; }
-.kc-hours .now-t { background: var(--k-bad); color: #fff; padding: 1px 6px; border-radius: 99px; right: 4px; z-index: 2; }
+.kc-hours .now-t { background: var(--k-bad); color: var(--k-on-bad); padding: 1px 6px; border-radius: 99px; right: 4px; z-index: 2; }
 .kc-col { position: relative; grid-row: 2; border-right: 1px solid var(--k-border); cursor: cell; touch-action: pan-x pan-y; }
 .kc-col:last-child { border-right: 0; }
 .kc-col.today { background-color: color-mix(in srgb, var(--k-p) 5%, transparent); }

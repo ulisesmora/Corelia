@@ -50,7 +50,7 @@ from .models import (
     Payment, CreditWallet, CreditLedgerEntry,
     Plan, Subscription, Coupon, CouponRedemption,
     Booking, Lead, ClassOccurrence, PushSubscription, ScheduleBlackout, UserClassPreference, SiteImage,
-    MembershipNudge, SiteConfig,
+    MembershipNudge, SiteConfig, WaitlistEntry, WaitlistSettings,
 )
 from api.utils.availability import (
     MADRID_TZ, UNAVAILABLE_MESSAGES, blackouts_overlapping,
@@ -1842,18 +1842,26 @@ class ScheduleViewSet(viewsets.GenericViewSet):
         start_dt_utc = start_dt_local.astimezone(dt_timezone.utc) 
         end_dt_utc = end_dt_local.astimezone(dt_timezone.utc)   
 
-        # 3. Obtener todos los bookings relevantes en UNA sola consulta
-        relevant_bookings = Booking.objects.filter(
+        # 3. Plazas ocupadas de cada sesión en DOS consultas para todo el rango
+        #    (nada de una por sesión): reservas activas + plazas ofrecidas a la
+        #    lista de espera y aún sin caducar (las guarda para esa persona,
+        #    igual que api/utils/waitlist.py:seats_taken).
+        #    Clave: ('S', regla, inicio UTC) para clases y ('E', evento, inicio UTC).
+        booking_counts = defaultdict(int)
+        for occ_id, ev_id, start in Booking.objects.filter(
             start_datetime__gte=start_dt_utc,
             start_datetime__lte=end_dt_utc,
-            status__in=['reserved'] # O los estados que consideres "ocupados"
-        )
-        
-        # 4. Crear el mapa de conteo [clave: datetime_utc] -> [valor: conteo]
-        booking_counts = defaultdict(int)
-        for booking in relevant_bookings:
-            booking_counts[booking.start_datetime] += 1
-            
+            status__in=['reserved', 'attended'],
+        ).values_list('occurrence_id', 'event_id', 'start_datetime'):
+            key = ('S', occ_id) if occ_id else ('E', ev_id)
+            booking_counts[(*key, start)] += 1
+        for sid, start in WaitlistEntry.objects.filter(
+            status='offered', offer_expires_at__gt=timezone.now(),
+            start_datetime__gte=start_dt_utc, start_datetime__lte=end_dt_utc,
+        ).values_list('schedule_id', 'start_datetime'):
+            booking_counts[('S', sid, start)] += 1
+        waitlist_on = WaitlistSettings.load().enabled
+
 
         # --- PASO 2: GENERAR LA LISTA 'final_schedule' (Tu lógica actual) ---
         
@@ -1932,7 +1940,7 @@ class ScheduleViewSet(viewsets.GenericViewSet):
                 'class_type_id': session.class_type.id,
                 'class_type_slug': session.class_type.slug,
                 'price_eur_overwrite': session.price_eur_override,
-                'price_credit_overwrite': session.price_eur_override,
+                'price_credit_overwrite': session.price_credits_override,
                 'image': session.class_type.image,
                 'price_eur': session.class_type.default_price_eur,
                 'price_credit': session.class_type.default_price_credits, 
@@ -1955,14 +1963,16 @@ class ScheduleViewSet(viewsets.GenericViewSet):
                 # 1. Convertir el string ISO (naive, local) de vuelta a un datetime naive
                 naive_dt = datetime.fromisoformat(event['start_datetime'])
                 
-                # 2. Localizarlo (decirle "esta hora es de 'Europe/Madrid'")
-                local_dt = naive_dt.replace(tzinfo=local_tz)
+                # 2. Localizarlo (decirle "esta hora es de 'Europe/Madrid'");
+                #    los eventos ya vienen con zona
+                local_dt = naive_dt.replace(tzinfo=local_tz) if naive_dt.tzinfo is None else naive_dt
                 
                 # 3. Convertirlo a UTC para usarlo como clave en nuestro mapa
                 utc_dt = local_dt.astimezone(dt_timezone.utc)
                 
                 # 4. Buscar en el mapa de conteo (con 0 como valor por defecto)
-                occupied_seats = booking_counts.get(utc_dt, 0)
+                kind = 'E' if event.get('type') == 'EVENT' else 'S'
+                occupied_seats = booking_counts.get((kind, event.get('source_id'), utc_dt), 0)
                 
             except Exception as e:
                 # Si algo falla (ej. un 'start_datetime' nulo o inválido),
@@ -1973,6 +1983,9 @@ class ScheduleViewSet(viewsets.GenericViewSet):
             # 5. Añadir los nuevos campos al evento (esto ahora SIEMPRE se ejecuta)
             event['occupied_seats'] = occupied_seats
             event['available_seats'] = max(0, capacity - occupied_seats) # Evitar negativos
+            # La web ofrece «Apuntarme a la lista de espera» si está llena
+            # (solo clases del horario: los eventos no tienen lista)
+            event['waitlist_enabled'] = bool(waitlist_on and event.get('type') != 'EVENT')
         
         
         # --- PASO 3.5: EXCLUIR SLOTS BLOQUEADOS (vacaciones/cierres/privadas) ---
@@ -4555,6 +4568,9 @@ class SiteImageViewSet(SoftDeleteModelViewSet):
         qs = super().get_queryset()
         if not (self.request.user and self.request.user.is_staff):
             qs = qs.filter(is_active=True)
+            from api.utils.site import web_section_on
+            if not web_section_on('gallery'):
+                qs = qs.exclude(section='gallery')  # galería apagada en «Mi web»
         return qs
     queryset = SiteImage.objects.all()
     serializer_class = SiteImageSerializer

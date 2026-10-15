@@ -1,0 +1,27 @@
+---
+// /lista-espera?token=… — enlace del email «¡Se ha liberado una plaza!»
+// (api/utils/waitlist.py → claim_url). Ver components/WaitlistClaim.tsx.
+import Footer from '../components/Footer';
+import AppFixed from '../components/AppFixed';
+import WaitlistClaim from '../components/WaitlistClaim';
+import OptimizedHead from '../components/OptimizedHead.astro';
+import { getSiteConfig, htmlThemeAttrs } from '../lib/site';
+const site = await getSiteConfig();
+---
+
+<html lang="es" {...htmlThemeAttrs(site)}>
+  <head>
+    <!-- noAnalytics: la URL lleva el token de la plaza; no debe llegar a Clarity -->
+    <OptimizedHead title="Tu plaza en la lista de espera" titleEn="Your waitlist spot" noAnalytics noindex />
+    <meta name="referrer" content="no-referrer" />
+  </head>
+  <body class="format" style="background:color-mix(in srgb, var(--brand-bg) 55%, white)">
+    <AppFixed client:only="react" />
+
+    <main id="contenido">
+      <WaitlistClaim client:only="react" />
+    </main>
+
+    <Footer client:only="react" />
+  </body>
+</html>

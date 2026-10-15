@@ -299,6 +299,11 @@ class WaitlistClaimView(APIView):
         try:
             booking = wl.claim(token, request.user)
         except wl.WaitlistError as e:
+            if e.code == 'already_claimed':
+                # Volver a abrir el enlace del email no es un error: ya tiene su plaza
+                entry = WaitlistEntry.objects.filter(claim_token=token, user=request.user).first()
+                return Response({'code': 'already_claimed', 'error': e.message,
+                                 'booking_id': entry.booking_id if entry else None})
             return _err(e)
         return Response({'booking_id': booking.id, 'status': booking.status}, status=status.HTTP_201_CREATED)
 

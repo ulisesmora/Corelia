@@ -33,6 +33,23 @@ def get_site_config():
     return _CACHE['obj']
 
 
+# ── «Mi web» → Secciones ─────────────────────────────────────────────────
+# Secciones de la web que el estudio puede apagar (SiteConfig.web_sections).
+# Mismas claves que web/src/lib/sections.ts.
+WEB_SECTION_KEYS = ('next', 'classes', 'prices', 'team', 'location', 'testimonials', 'faqs', 'gallery')
+
+
+def web_sections(cfg=None) -> dict:
+    """{clave: True/False} de todas las secciones (solo un False guardado la apaga)."""
+    cfg = cfg or get_site_config()
+    raw = cfg.web_sections if isinstance(cfg.web_sections, dict) else {}
+    return {k: raw.get(k) is not False for k in WEB_SECTION_KEYS}
+
+
+def web_section_on(key: str, cfg=None) -> bool:
+    return web_sections(cfg).get(key, True)
+
+
 def web_url(path: str = '') -> str:
     """URL absoluta de la web pública: web_url('/dashboard').
     Usa el dominio propio del estudio si lo ha configurado en el panel."""

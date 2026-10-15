@@ -146,7 +146,7 @@ export default function SettingsHub() {
 
   return (
     <Box>
-      <PageHead icon={<TuneRoundedIcon />} title="Ajustes" tint="barre" />
+      <PageHead icon={<TuneRoundedIcon />} title="Ajustes" tint="barre" page="settings" />
       <Box sx={{ display: 'grid', gap: 2.25, alignItems: 'start', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: '240px minmax(0, 1fr)' } }}>
         {/* Índice por grupos (escritorio) */}
         <Paper component="nav" aria-label="Grupos de ajustes" elevation={1}
@@ -166,7 +166,7 @@ export default function SettingsHub() {
         </Paper>
 
         <Box sx={{ minWidth: 0 }}>
-          <Box component="label" sx={{
+          <Box component="label" data-tour="settings-search" sx={{
             display: 'flex', alignItems: 'center', gap: 1.25, minHeight: 54, px: 2, mb: 2, borderRadius: 'var(--studio-radius-btn)',
             background: 'var(--studio-surf)', border: 'var(--studio-border-width) solid var(--studio-border-strong)',
             '&:focus-within': { boxShadow: '0 0 0 3px var(--studio-p-soft)', borderColor: 'var(--studio-primary-text)' },
@@ -188,7 +188,7 @@ export default function SettingsHub() {
           ) : (
             <>
               {check === null ? <Skeleton variant="rounded" height={110} sx={{ mb: 2, borderRadius: 'var(--studio-radius-lg)' }} /> : review.length > 0 && (
-                <Paper elevation={0} component="section" aria-labelledby="rv-h" sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, background: 'var(--studio-warn-soft)', borderColor: 'transparent' }}>
+                <Paper elevation={0} component="section" aria-labelledby="rv-h" data-tour="settings-review" sx={{ p: { xs: 2, sm: 2.5 }, mb: 2, background: 'var(--studio-warn-soft)', borderColor: 'transparent' }}>
                   <Typography id="rv-h" component="h2" sx={{ display: 'flex', alignItems: 'center', gap: 1, fontWeight: 700, color: 'var(--studio-warn)', mb: 0.75, fontSize: '1.02rem' }}>
                     <ErrorOutlineRoundedIcon aria-hidden />Revisa esto
                   </Typography>
@@ -204,7 +204,7 @@ export default function SettingsHub() {
                 </Paper>
               )}
 
-              <Box sx={{ display: 'grid', gap: 2, alignItems: 'start', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))' }}>
+              <Box data-tour="settings-groups" sx={{ display: 'grid', gap: 2, alignItems: 'start', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 260px), 1fr))' }}>
                 {groups.map((g) => (
                   <Card key={g.key} labelledBy={`grp-${g.key}`}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25, mb: 1 }}>

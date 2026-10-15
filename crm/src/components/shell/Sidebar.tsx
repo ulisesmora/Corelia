@@ -205,7 +205,7 @@ export function TextSizeToggle({ value, onChange }: { value: TextSize; onChange:
       sx={{
         minHeight: 30, minWidth: 30, px: 1, borderRadius: 99, fontWeight: 700, fontSize: fs, color: 'var(--studio-side-muted)',
         '&[aria-pressed="true"]': { background: 'var(--studio-side-active)', color: 'var(--studio-side-active-text)' },
-        '@media (pointer: coarse)': { minHeight: 40, minWidth: 40 },
+        '@media (pointer: coarse)': { minHeight: 44, minWidth: 44 },
       }}
     >
       {label}

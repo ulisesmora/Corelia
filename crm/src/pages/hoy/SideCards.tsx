@@ -85,7 +85,7 @@ export function QuickCard() {
     { icon: LanguageRoundedIcon, label: 'Mi web', tint: 'reformer', run: () => navigate('/mi-web') },
   ];
   return (
-    <Card labelledBy="qa-h">
+    <Card labelledBy="qa-h" tour="today-quick">
       <CardHead id="qa-h" title="Accesos rápidos" />
       <Box sx={{ display: 'grid', gap: 1, gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(3, minmax(0, 1fr))' } }}>
         {Q.map(({ icon: I, label, tint, run }) => (

@@ -41,7 +41,7 @@ export default function LockPopover({ pop, onClose, side = 'right' }: { pop: Loc
             size="small"
             endIcon={<StudioIcon name="next" sx={{ fontSize: 16 }} />}
             onClick={() => { onClose(); navigate(setupStepLink(pop.lock.step)); }}
-            sx={{ minHeight: 40, px: 1.75, fontWeight: 700, background: 'var(--studio-surf)', color: 'var(--studio-ink)', '&:hover': { background: 'var(--studio-surf2)' } }}
+            sx={{ minHeight: 44, px: 1.75, fontWeight: 700, background: 'var(--studio-surf)', color: 'var(--studio-ink)', '&:hover': { background: 'var(--studio-surf2)' } }}
           >
             Ir a {pop.lock.stepLabel}
           </Button>

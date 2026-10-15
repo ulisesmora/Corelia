@@ -1,0 +1,28 @@
+---
+// /en/waitlist?token=… — English version of /lista-espera (components/WaitlistClaim.tsx).
+import Footer from '../../components/Footer';
+import AppFixed from '../../components/AppFixed';
+import WaitlistClaim from '../../components/WaitlistClaim';
+import OptimizedHead from '../../components/OptimizedHead.astro';
+import LangBoot from '../../components/site/LangBoot.astro';
+import { getSiteConfig, htmlThemeAttrs } from '../../lib/site';
+const site = await getSiteConfig();
+---
+
+<html lang="en" {...htmlThemeAttrs(site)}>
+  <head>
+    <LangBoot lang="en" />
+    <!-- noAnalytics: the URL carries the spot token; it must not reach Clarity -->
+    <OptimizedHead title="Tu plaza en la lista de espera" titleEn="Your waitlist spot" noAnalytics noindex />
+    <meta name="referrer" content="no-referrer" />
+  </head>
+  <body class="format" style="background:color-mix(in srgb, var(--brand-bg) 55%, white)">
+    <AppFixed client:only="react" />
+
+    <main id="contenido">
+      <WaitlistClaim client:only="react" />
+    </main>
+
+    <Footer client:only="react" />
+  </body>
+</html>

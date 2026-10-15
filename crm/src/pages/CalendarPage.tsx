@@ -39,7 +39,9 @@ import { calendarApi, errorText } from '../components/calendar/api';
 import { classTypeColor } from '../components/calendar/classColors';
 import { addDays, addMonths, rangeLabel, startOfWeek, studioNow } from '../components/calendar/dates';
 import type { CalendarData, Catalog, Filters, Occurrence, View } from '../components/calendar/types';
-import { ClassTemplatesDialog, QuickRoomDialog, StepGuide } from '../onboarding';
+import { ClassTemplatesDialog, QuickRoomDialog } from '../onboarding';
+import { useSite } from '../site/SiteProvider';
+import { panelPalette } from '../theme';
 import { HowItWorks } from '../onboarding/coach';
 import { STUDIO_TZ } from '../site/timezone';
 
@@ -140,7 +142,10 @@ export default function CalendarPage() {
     return () => window.removeEventListener('keydown', onKey);
   }, [full, openOcc, form, move]);
 
-  const tone = useCallback((o: Occurrence) => classTypeColor(theme, o.class_type.id, o.class_type.title), [theme]);
+  // Tintes de la paleta del estudio (design/tokens → cls): siguen al estilo y a la paleta
+  const { config: siteConfig } = useSite();
+  const palette = useMemo(() => panelPalette(siteConfig), [siteConfig]);
+  const tone = useCallback((o: Occurrence) => classTypeColor(palette, o.class_type.id, o.class_type.title), [palette]);
 
   const visible = useMemo(() => (data?.occurrences || []).filter((o) =>
     (filters.room === 'all' || o.room.id === filters.room) &&
@@ -199,6 +204,7 @@ export default function CalendarPage() {
       '--k-ink': p.text.primary,
       '--k-muted': p.text.secondary,
       '--k-bad': p.error.main,
+      '--k-on-bad': p.error.contrastText,
       '--k-warn': dark ? p.warning.light : p.warning.dark,
       '--k-warn-soft': alpha(p.warning.main, 0.16),
       '--k-r': `${Math.round(br * 1.25)}px`,
@@ -317,7 +323,6 @@ export default function CalendarPage() {
   const page = (
     <Box className={`kc ${full ? 'kc-full' : ''}`} style={cssVars}
       sx={full ? { position: 'fixed', inset: 0, zIndex: 1250, bgcolor: 'background.default', overflow: 'auto', p: { xs: 1.5, md: 2.5 } } : { pb: 2 }}>
-      {!full && <StepGuide step="schedule" />}
       <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2, mt: { xs: 0.5, md: 0 } }} data-tour="page-head">
         <Box sx={{ width: 44, height: 44, borderRadius: 3, display: 'grid', placeItems: 'center', bgcolor: alpha(theme.palette.primary.main, 0.12), color: 'primary.main', flex: 'none' }} aria-hidden="true">
           <CalendarMonthOutlinedIcon />

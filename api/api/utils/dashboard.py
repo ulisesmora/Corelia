@@ -1039,41 +1039,37 @@ def sales_csv(period='month', offset=0):
 
 # ── Mi web ────────────────────────────────────────────────────────────────
 
-TOGGLE_MODELS = {
-    'testimonials': lambda: Testimonial.objects.all(),
-    'faqs': lambda: FAQItem.objects.filter(is_sample=False),
-    'gallery': lambda: SiteImage.objects.filter(section='gallery'),
-}
+# Claves antiguas de «Mi web» → las de la web (web/src/lib/sections.ts)
+SECTION_ALIASES = {'upcoming': 'next', 'contact': 'location'}
 
 
 def web_summary():
-    from api.utils.site import web_url
+    from api.utils.site import web_sections, web_url
     cfg = SiteConfig.load()
+    on = web_sections(cfg)
     today = local_today()
     sched = RecurringSchedule.objects.filter(is_active=True).filter(Q(end_date__isnull=True) | Q(end_date__gte=today))
     n_classes = ClassType.objects.filter(is_active=True).count()
     n_plans = Plan.objects.filter(is_active=True).count()
     n_team = Instructor.objects.count()
-
-    def toggle(key):
-        qs = TOGGLE_MODELS[key]()
-        total = qs.count()
-        active = qs.filter(is_active=True).count()
-        return total, active
-
-    t_total, t_active = toggle('testimonials')
-    f_total, f_active = toggle('faqs')
-    g_total, g_active = toggle('gallery')
+    n_testimonials = Testimonial.objects.filter(is_active=True).count()
+    n_faqs = FAQItem.objects.filter(is_active=True).count()  # las de ejemplo también se ven
+    n_gallery = SiteImage.objects.filter(section='gallery', is_active=True).count()
     has_contact = bool(cfg.address or cfg.city or cfg.phone or cfg.contact_email)
     hero_label = {'image': 'Foto', 'video': 'Vídeo', 'illustration': 'Ilustración'}.get(cfg.hero_mode, 'Foto')
 
-    def sec(key, label, hint, icon, edit, visible, count=None, toggle_=False, total=None, empty=''):
-        return {'key': key, 'label': label, 'hint': hint, 'icon': icon, 'edit': edit, 'visible': bool(visible),
-                'count': count, 'toggle': toggle_, 'total': total, 'empty': empty}
+    def sec(key, label, hint, icon, edit, has_content, count=None, empty=''):
+        """`enabled`: el interruptor (solo las que se pueden apagar). `visible`:
+        se ve de verdad en la web (encendida y con contenido)."""
+        toggle = key in on
+        enabled = on[key] if toggle else True
+        return {'key': key, 'label': label, 'hint': hint, 'icon': icon, 'edit': edit,
+                'toggle': toggle, 'enabled': enabled, 'has_content': bool(has_content),
+                'visible': bool(enabled and has_content), 'count': count, 'empty': empty}
 
     sections = [
         sec('hero', 'Portada', f"{hero_label}, título y botón Reservar", 'image', '/ajustes?tab=portada', True),
-        sec('upcoming', 'Próximas clases', 'Lo siguiente que se puede reservar', 'calendar', '/calendar',
+        sec('next', 'Próximas clases', 'Lo siguiente que se puede reservar', 'calendar', '/calendar',
             sched.exists(), empty='Aparece al poner tu horario'),
         sec('classes', 'Clases', 'Tus tipos de clase', 'layers', '/classes', n_classes, n_classes,
             empty='Aparece al crear tu primera clase'),
@@ -1084,12 +1080,12 @@ def web_summary():
         sec('about', 'Sobre el estudio', 'Quiénes sois, en tus palabras', 'text', '/ajustes?tab=textos',
             bool(cfg.about_text), empty='Escribe unas líneas sobre ti'),
         sec('testimonials', 'Opiniones', 'Lo que dicen tus clientas', 'star', '/ajustes?tab=opiniones',
-            t_active, t_active, toggle_=t_total > 0, total=t_total, empty='Añade la primera opinión'),
+            n_testimonials, n_testimonials, empty='Añade la primera opinión'),
         sec('faqs', 'Preguntas frecuentes', 'Dudas típicas, respondidas', 'help', '/ajustes?tab=preguntas',
-            f_active, f_active, toggle_=f_total > 0, total=f_total, empty='Añade tus preguntas'),
-        sec('gallery', 'Galería', 'Fotos del estudio', 'photos', '/site-images', g_active, g_active,
-            toggle_=g_total > 0, total=g_total, empty='Sube fotos de tu estudio'),
-        sec('contact', 'Dónde estamos', 'Dirección, mapa y contacto', 'pin', '/ajustes', has_contact,
+            n_faqs, n_faqs, empty='Añade tus preguntas'),
+        sec('gallery', 'Galería', 'Fotos del estudio', 'photos', '/site-images', n_gallery, n_gallery,
+            empty='Sube fotos de tu estudio'),
+        sec('location', 'Dónde estamos', 'Dirección, mapa y contacto', 'pin', '/ajustes', has_contact,
             empty='Añade tu dirección o teléfono'),
     ]
     m0 = month_start(today)
@@ -1110,27 +1106,23 @@ def web_summary():
     }
 
 
-def set_section_visible(key, visible, ids=None):
-    """Mostrar u ocultar una sección que se apaga con los «activo» de su
-    contenido. Al ocultar devuelve qué se ocultó (para volver a mostrar justo
-    eso); al mostrar sin `ids`, se muestra todo."""
-    if key not in TOGGLE_MODELS:
+def set_section_visible(key, visible):
+    """Enciende o apaga una sección de la web (SiteConfig.web_sections). No
+    toca su contenido: al volver a encenderla se ve igual que antes."""
+    from api.utils.site import WEB_SECTION_KEYS, web_sections
+    key = SECTION_ALIASES.get(key, key)
+    if key not in WEB_SECTION_KEYS:
         raise DashboardError('bad_request', 'Esa sección no se puede ocultar desde aquí.')
-    qs = TOGGLE_MODELS[key]()
+    cfg = SiteConfig.load()
+    stored = dict(cfg.web_sections) if isinstance(cfg.web_sections, dict) else {}
     if visible:
-        target = qs.filter(is_active=False)
-        if ids:
-            target = target.filter(id__in=[int(i) for i in ids if str(i).isdigit()])
-        changed = list(target.values_list('id', flat=True))
-        if not changed and ids:  # lo recordado ya no existe: se muestra todo
-            changed = list(qs.filter(is_active=False).values_list('id', flat=True))
-        qs.filter(id__in=changed).update(is_active=True, updated_at=timezone.now())
+        stored.pop(key, None)  # {} = todas visibles
     else:
-        changed = list(qs.filter(is_active=True).values_list('id', flat=True))
-        qs.filter(id__in=changed).update(is_active=False, updated_at=timezone.now())
-    logger.info("dashboard.web_section key=%s visible=%s n=%s", key, visible, len(changed))
-    return {'section': key, 'visible': bool(visible), 'ids': changed,
-            'active': qs.filter(is_active=True).count(), 'total': qs.count()}
+        stored[key] = False
+    cfg.web_sections = {k: False for k, v in stored.items() if k in WEB_SECTION_KEYS and v is False}
+    cfg.save(update_fields=['web_sections', 'updated_at'])
+    logger.info("dashboard.web_section key=%s visible=%s", key, visible)
+    return {'section': key, 'visible': bool(visible), 'enabled': bool(visible), 'sections': web_sections(cfg)}
 
 
 # ── Ajustes ───────────────────────────────────────────────────────────────

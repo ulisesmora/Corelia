@@ -289,3 +289,21 @@ a.w-cal-title:hover { text-decoration: underline; text-underline-offset: .2em; }
 .w-cal-guide b { display: block; font-size: .95rem; }
 .w-cal-guide small { color: var(--text-muted); font-size: .85rem; }
 .w-cal-guide .w-btn { flex-shrink: 0; }
+
+/* ── Mi cuenta → Mis listas de espera (components/MyWaitlists.tsx) ── */
+.w-wl { padding: var(--w-5); }
+.w-wl-title { margin: 0; font-family: var(--font-heading); font-size: 1.25rem; color: var(--heading-color); }
+.w-wl-hint { margin: 4px 0 var(--w-3); font-size: .88rem; color: var(--text-muted); }
+.w-wl-list { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--w-3); }
+.w-wl-row { display: flex; align-items: center; justify-content: space-between; gap: var(--w-3); flex-wrap: wrap; padding: var(--w-3) 0; border-top: 1px solid var(--border-neutral); }
+.w-wl-row:first-child { border-top: 0; padding-top: 0; }
+.w-wl-info { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; min-width: 0; }
+.w-wl-info b { color: var(--page-text); font-size: 1rem; overflow-wrap: anywhere; }
+.w-wl-info > span:not(.w-chip) { font-size: .88rem; color: var(--text-muted); }
+.w-wl-info > span:not(.w-chip)::first-letter { text-transform: uppercase; }
+.w-wl-act { display: flex; gap: 8px; flex-wrap: wrap; }
+.w-wl-msg { margin: var(--w-3) 0 0; font-size: .88rem; color: var(--text-muted); }
+@media (max-width: 520px) {
+  .w-wl-act { width: 100%; }
+  .w-wl-act .w-btn { flex: 1 1 auto; }
+}

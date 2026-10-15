@@ -290,7 +290,7 @@ export default function InstructorManagement() {
                 ))}
               </ul>
               Su nombre <strong>seguirá saliendo</strong> en esas clases de la web. Antes de borrarle, pon a otra persona
-              en «Tipos de clase» y en «Mis clases y horarios».
+              en «Tipos de clase» y en «Calendario».
             </Box>
           )}
           {classes === null && (

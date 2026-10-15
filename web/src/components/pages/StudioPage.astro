@@ -12,6 +12,7 @@ import OptimizedHead from '../OptimizedHead.astro';
 import JsonLd from '../seo/JsonLd.astro';
 import Testimonials from '../sections/Testimonials.astro';
 import LangBoot from '../site/LangBoot.astro';
+import { sectionOn } from '../../lib/sections';
 import { BRAND_CACHE, breadcrumbJsonLd, businessJsonLd, niceTitle, type Lang } from '../../seo/site';
 import { getClassTypes, getInstructors, getRooms, getSchedules, getSiteImages, getTestimonials, offeredClasses, tr } from '../../seo/catalog';
 import { getSiteConfig, htmlThemeAttrs, lt } from '../../lib/site';
@@ -24,7 +25,8 @@ Astro.response.headers.set('Cache-Control', BRAND_CACHE);
 const [site, instructors, rooms, testimonials, gallery, classes, schedules] = await Promise.all([
   getSiteConfig(), getInstructors(), getRooms(), getTestimonials(), getSiteImages('gallery'), getClassTypes(), getSchedules(),
 ]);
-const team = instructors || [];
+// «Mi web» → Secciones: equipo y opiniones se pueden apagar (lib/sections.ts)
+const team = sectionOn(site, 'team') ? instructors || [] : [];
 const activeRooms = (rooms || []).filter((r) => r.is_active !== false);
 const classNames = [...new Set(offeredClasses(classes, schedules).map(({ cls }) => niceTitle(tr(cls, 'title', lang))))].slice(0, 8);
 const path = es ? '/estudio' : '/en/studio';

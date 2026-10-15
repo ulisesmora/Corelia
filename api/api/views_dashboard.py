@@ -6,7 +6,7 @@
   GET  /api/v1/dashboard/sales/?period=month    «Ventas» (week|month|quarter|year, &offset=N)
   GET  /api/v1/dashboard/sales/export/?period=  «Cierre para la gestoría» (CSV)
   GET  /api/v1/dashboard/web/                   «Mi web»: secciones, dominio, app
-  POST /api/v1/dashboard/web/sections/          {"section": "faqs", "visible": false}
+  POST /api/v1/dashboard/web/sections/          {"section": "faqs", "visible": false}  (SiteConfig.web_sections)
   GET  /api/v1/dashboard/checklist/             extras opcionales y «Revisa esto» (Ajustes)
 
 La lógica vive en api/utils/dashboard.py.
@@ -100,8 +100,7 @@ class DashboardWebSectionView(APIView):
         if isinstance(visible, str):
             visible = visible.lower() in ('1', 'true', 'yes', 'si', 'sí')
         try:
-            return Response(dash.set_section_visible(request.data.get('section'), bool(visible),
-                                                     ids=request.data.get('ids') or None))
+            return Response(dash.set_section_visible(request.data.get('section'), bool(visible)))
         except WaitlistError as e:
             return _err(e)
 

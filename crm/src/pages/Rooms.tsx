@@ -168,7 +168,7 @@ export default function RoomsManagement() {
                 {usage.length > 5 && <li>y {usage.length - 5} más</li>}
               </ul>
               Esas clases <strong>no se borran</strong>: seguirán en el horario con esta sala. Si quieres cambiarlas de sala,
-              hazlo antes en «Mis clases y horarios».
+              hazlo antes en «Calendario».
             </Box>
           )}
           {usage === null && (

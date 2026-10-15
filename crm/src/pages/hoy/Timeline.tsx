@@ -96,7 +96,7 @@ export default function Timeline({ initial, today }: { initial: DayTimeline | nu
   const sessions = day && day.date === date ? day.sessions : null;
 
   return (
-    <Card labelledBy="tl-h" id="tl-card">
+    <Card labelledBy="tl-h" id="tl-card" tour="today-classes">
       <CardHead id="tl-h" title={offset === 0 ? 'Hoy en el estudio' : 'En el estudio'} right={
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.25 }}>
           <IconButton onClick={() => setOffset((o) => o - 1)} disabled={offset <= -RANGE} aria-label="Día anterior" sx={{ width: 44, height: 44 }}>

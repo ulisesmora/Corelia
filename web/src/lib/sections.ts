@@ -1,15 +1,17 @@
-// Secciones de la web que el estudio puede ocultar desde el panel («Mi web» →
-// Secciones). La portada siempre se ve. Mientras el API no publique
-// `sections` en la config pública (p. ej. { classes: true, prices: false,
-// team: true, location: true }), todas están visibles; y aunque estén
-// activadas, una sección sin contenido no se pinta (HomeSections.astro).
-import type { SiteConfig } from './site';
+// Secciones de la web que el estudio puede apagar desde el panel («Mi web» →
+// Secciones). Las guarda el API en SiteConfig.web_sections y las publica en
+// la config pública como `sections` ({ next: true, faqs: false, … }); la
+// portada siempre se ve. Aunque estén encendidas, una sección sin contenido
+// no se pinta (HomeSections.astro). Opiniones, preguntas y galería, además,
+// el API ya no las devuelve en sus listas públicas cuando están apagadas.
+//
+// Sin importar nada de ./site (este archivo lo importa site.ts).
+export const SECTION_KEYS = [
+  'next', 'classes', 'prices', 'team', 'location', 'testimonials', 'faqs', 'gallery',
+] as const;
 
-export type SectionKey = 'next' | 'classes' | 'prices' | 'team' | 'location';
+export type SectionKey = (typeof SECTION_KEYS)[number];
 
-export function sectionOn(site: SiteConfig, key: SectionKey): boolean {
-  const raw = (site as unknown as { sections?: unknown }).sections;
-  if (!raw || typeof raw !== 'object') return true;
-  const v = (raw as Record<string, unknown>)[key];
-  return v !== false;
+export function sectionOn(site: { sections?: Partial<Record<SectionKey, boolean>> }, key: SectionKey): boolean {
+  return site.sections?.[key] !== false;
 }

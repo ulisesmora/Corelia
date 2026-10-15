@@ -10,7 +10,7 @@ export const prerender = false;
 // Zonas privadas o sin valor para buscadores (cuenta, pago, formularios con token)
 const PRIVATE = [
   '/api/', '/dashboard', '/checkout', '/login', '/myCalendar', '/myPreferences', '/mySubscription',
-  '/updatePreferences', '/recover-password', '/verify-account',
+  '/updatePreferences', '/recover-password', '/verify-account', '/lista-espera', '/en/waitlist',
 ];
 
 // Asistentes y buscadores de IA: se permiten explícitamente en producción

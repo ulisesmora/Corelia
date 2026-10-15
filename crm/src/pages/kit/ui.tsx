@@ -25,6 +25,7 @@ import StarOutlineRoundedIcon from '@mui/icons-material/StarOutlineRounded';
 import TrendingDownRoundedIcon from '@mui/icons-material/TrendingDownRounded';
 import TrendingFlatRoundedIcon from '@mui/icons-material/TrendingFlatRounded';
 import TrendingUpRoundedIcon from '@mui/icons-material/TrendingUpRounded';
+import { HowItWorks } from '../../onboarding/coach';
 import type { Tint } from './api';
 import { TINTS, initialsOf } from './styles';
 
@@ -60,9 +61,10 @@ export function KitIcon({ name, size = 20 }: { name: string; size?: number }) {
 
 // ── Tarjeta ──────────────────────────────────────────────────────────────
 
-export function Card({ children, sx, labelledBy, id }: { children: ReactNode; sx?: SxProps<Theme>; labelledBy?: string; id?: string }) {
+/** `tour`: ancla de la visita guiada (data-tour, ver onboarding/coach/tours.ts). */
+export function Card({ children, sx, labelledBy, id, tour }: { children: ReactNode; sx?: SxProps<Theme>; labelledBy?: string; id?: string; tour?: string }) {
   return (
-    <Paper elevation={1} component="section" aria-labelledby={labelledBy} id={id}
+    <Paper elevation={1} component="section" aria-labelledby={labelledBy} id={id} data-tour={tour}
       sx={[{ p: { xs: 2, sm: 2.5 }, minWidth: 0 }, ...(Array.isArray(sx) ? sx : [sx])]}>
       {children}
     </Paper>
@@ -82,17 +84,19 @@ export function CardHead({ id, title, right, sx }: { id?: string; title: ReactNo
 
 // ── Cabecera de página ───────────────────────────────────────────────────
 
-export function PageHead({ icon, title, tint = 'reformer', actions, sub }: { icon: ReactNode; title: string; tint?: Tint; actions?: ReactNode; sub?: ReactNode }) {
+/** `page`: clave de su visita guiada (PAGE_TOURS): pone la píldora «Cómo funciona». */
+export function PageHead({ icon, title, tint = 'reformer', actions, sub, page }: { icon: ReactNode; title: string; tint?: Tint; actions?: ReactNode; sub?: ReactNode; page?: string }) {
   return (
     <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1.25, sm: 1.75 }, flexWrap: 'wrap', mt: { xs: 0.5, md: 0 }, mb: 2.25 }}>
       <Box aria-hidden sx={{ width: 44, height: 44, flex: 'none', borderRadius: 'var(--studio-radius-md)', display: 'grid', placeItems: 'center', background: `var(--studio-c-${tint})`, color: 'var(--studio-ink)' }}>
         {icon}
       </Box>
       <Box sx={{ flex: 1, minWidth: 0 }}>
-        <Typography variant="h1" tabIndex={-1} id="page-title" sx={{ fontSize: { xs: '1.6rem', md: '2rem' }, outline: 'none' }}>{title}</Typography>
+        <Typography variant="h1" tabIndex={-1} id="page-title" data-tour="page-head" sx={{ fontSize: { xs: '1.6rem', md: '2rem' }, outline: 'none' }}>{title}</Typography>
         {sub && <Typography sx={{ color: 'var(--studio-muted)', fontSize: '0.92rem', mt: 0.25 }}>{sub}</Typography>}
       </Box>
-      {actions && <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', width: { xs: '100%', sm: 'auto' }, '& > *': { flex: { xs: '1 1 auto', sm: 'none' } } }}>{actions}</Box>}
+      {page && <HowItWorks page={page} />}
+      {actions && <Box data-tour="page-actions" sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', alignItems: 'center', width: { xs: '100%', sm: 'auto' }, '& > *': { flex: { xs: '1 1 auto', sm: 'none' } } }}>{actions}</Box>}
     </Box>
   );
 }
@@ -110,13 +114,15 @@ export function TonalButton({ sx, ...props }: ButtonProps) {
 
 // ── Segmentado (pestañas compactas) ──────────────────────────────────────
 
-export function Seg<T extends string>({ value, options, onChange, label, mode = 'tabs', sx }: {
+export function Seg<T extends string>({ value, options, onChange, label, mode = 'tabs', sx, tour }: {
   value: T;
   options: { value: T; label: ReactNode; aria?: string }[];
   onChange: (v: T) => void;
   label: string;
   mode?: 'tabs' | 'toggle';
   sx?: SxProps<Theme>;
+  /** Ancla de la visita guiada (data-tour) */
+  tour?: string;
 }) {
   const tabs = mode === 'tabs';
   const onKey = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -128,7 +134,7 @@ export function Seg<T extends string>({ value, options, onChange, label, mode = 
     btn?.focus();
   };
   return (
-    <Box role={tabs ? 'tablist' : 'group'} aria-label={label} onKeyDown={onKey}
+    <Box role={tabs ? 'tablist' : 'group'} aria-label={label} onKeyDown={onKey} data-tour={tour}
       sx={[{ display: 'inline-flex', p: 0.5, gap: 0.25, maxWidth: '100%', overflowX: 'auto', borderRadius: 'calc(var(--studio-radius-btn) + 4px)', background: 'var(--studio-surf2)', border: 'var(--studio-border-width) solid var(--studio-border-color)', scrollbarWidth: 'none' }, ...(Array.isArray(sx) ? sx : [sx])]}>
       {options.map((o) => {
         const on = o.value === value;
@@ -137,7 +143,7 @@ export function Seg<T extends string>({ value, options, onChange, label, mode = 
             aria-selected={tabs ? on : undefined} aria-pressed={tabs ? undefined : on} aria-label={o.aria}
             tabIndex={tabs && !on ? -1 : 0} onClick={() => onChange(o.value)}
             sx={{
-              minHeight: 38, px: 1.75, gap: 0.75, borderRadius: 'var(--studio-radius-btn)', fontWeight: 600, fontSize: '0.88rem', whiteSpace: 'nowrap',
+              minHeight: 38, '@media (pointer: coarse)': { minHeight: 44 }, px: 1.75, gap: 0.75, borderRadius: 'var(--studio-radius-btn)', fontWeight: 600, fontSize: '0.88rem', whiteSpace: 'nowrap',
               color: on ? 'var(--studio-ink)' : 'var(--studio-muted)', background: on ? 'var(--studio-surf)' : 'transparent',
               boxShadow: on ? '0 1px 3px rgb(var(--studio-shadow-rgb) / 0.14)' : 'none',
               '&:hover': { color: 'var(--studio-ink)' },

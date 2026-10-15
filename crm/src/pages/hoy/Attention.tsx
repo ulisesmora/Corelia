@@ -109,7 +109,7 @@ export default function Attention({ items, fresh, onChanged }: { items: Attentio
   const busy = Object.values(state).some((v) => v.s !== 'done' || !!v.undo);
 
   return (
-    <Card labelledBy="att-h" id="att-card">
+    <Card labelledBy="att-h" id="att-card" tour="today-attention">
       <CardHead id="att-h" title={fresh ? 'Para empezar' : 'Necesita tu atención'}
         right={left > 0 ? <CountPill n={left} label={`${left} pendientes`} /> : undefined} />
       {shown === null ? (
