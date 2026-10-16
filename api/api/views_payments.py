@@ -133,3 +133,63 @@ class StripeConnectDisconnectView(APIView):
         unlink('disconnected')
         logger.info("stripe_connect.disconnect admin_id=%s", request.user.id)
         return Response(_status_payload())
+
+
+# ─── «Formas de pago en tu web» (api/utils/payment_methods.py) ────────────────
+#   GET  /api/v1/site-config/stripe/payment-methods/                 métodos del país y su estado
+#   POST /api/v1/site-config/stripe/payment-methods/toggle/          {method, enabled}
+#   POST /api/v1/site-config/stripe/payment-methods/recommended/     enciende los recomendados
+#   POST /api/v1/site-config/stripe/payment-methods/verify-domains/  «Verificar dominio para Apple Pay»
+# Errores: {error, code[, dashboard_url, method]}: payments_disabled (409),
+# dashboard_only (409: solo se cambia en el panel de Stripe → dashboard_url),
+# unavailable (409), unknown_method / not_in_country / bad_request (400), stripe (502).
+
+def _methods_error(e) -> Response:
+    return Response({'error': str(e), 'code': e.code, **e.extra}, status=e.status)
+
+
+class _PaymentMethodsBase(APIView):
+    permission_classes = [IsAdminUser]
+    throttle_classes = [scoped('payment_methods', 'user')]
+
+
+class PaymentMethodsView(_PaymentMethodsBase):
+    def get(self, request):
+        from api.utils.payment_methods import overview
+        return Response(overview(get_site_config()))
+
+
+class PaymentMethodsToggleView(_PaymentMethodsBase):
+    def post(self, request):
+        from api.utils.payment_methods import MethodsError, overview, set_methods
+        method = str(request.data.get('method') or '').strip()
+        enabled = request.data.get('enabled')
+        if not method or not isinstance(enabled, bool):
+            return Response({'error': 'Falta el método o si se enciende (enabled: true/false).', 'code': 'bad_request'},
+                            status=status.HTTP_400_BAD_REQUEST)
+        try:
+            result = set_methods(get_site_config(), {method: enabled})
+        except MethodsError as e:
+            return _methods_error(e)
+        logger.info("payment_methods.toggle method=%s enabled=%s admin_id=%s", method, enabled, request.user.id)
+        return Response({**result, 'overview': overview(get_site_config())})
+
+
+class PaymentMethodsRecommendedView(_PaymentMethodsBase):
+    def post(self, request):
+        from api.utils.payment_methods import MethodsError, apply_recommended, overview
+        try:
+            result = apply_recommended(get_site_config())
+        except MethodsError as e:
+            return _methods_error(e)
+        logger.info("payment_methods.recommended changed=%s admin_id=%s", result['changed'], request.user.id)
+        return Response({**result, 'overview': overview(get_site_config())})
+
+
+class PaymentMethodsVerifyDomainsView(_PaymentMethodsBase):
+    def post(self, request):
+        from api.utils.payment_methods import MethodsError, verify
+        try:
+            return Response(verify(get_site_config()))
+        except MethodsError as e:
+            return _methods_error(e)

@@ -342,6 +342,10 @@ def connect_stripe(secret_key: str, webhook_url: str) -> dict:
     except stripe.StripeError as e:
         raise ValueError(f'No se pudo crear el aviso automático (webhook) en Stripe: {e.user_message or e}')
 
+    # Dominios de la web y del panel para Apple Pay / Google Pay / Link (nunca falla)
+    from api.utils.payment_methods import register_with_keys
+    register_with_keys(client, cfg)
+
     return {
         'account_id': account.id,
         'account_name': _account_name(account),

@@ -209,6 +209,7 @@ _THROTTLE_DEFAULTS = {
     'public_form': '30/h',          # formularios públicos (contacto, preferencias, cupones)
     'test_email': '10/h',           # email de prueba del panel, por usuario
     'stripe_connect': '30/h',       # «Conectar pagos»: enlaces de Stripe y comprobar estado, por usuario
+    'payment_methods': '120/h',     # «Formas de pago en tu web»: leer, encender/apagar y verificar dominios
 }
 THROTTLE_RATES = {scope: env(f'THROTTLE_{scope.upper()}', rate) for scope, rate in _THROTTLE_DEFAULTS.items()}
 REST_FRAMEWORK['DEFAULT_THROTTLE_RATES'] = THROTTLE_RATES

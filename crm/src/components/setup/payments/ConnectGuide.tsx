@@ -12,6 +12,7 @@ import {
   type ConnectReturnTo, type PaymentsStatus, type StudioSettings,
 } from '../api';
 import { descriptorFrom, STATE_COPY, translateRequirements } from './copy';
+import { METHODS_ANCHOR } from './methodsApi';
 import { ReadyTips } from './StripeIntro';
 import { Checklist, CopyChip, GuideStepper, IconBox, Pill, ScreenTips, type StepDef } from './ui';
 
@@ -323,6 +324,10 @@ export default function ConnectGuide({ status, setStatus, value, onSaved, return
             </Alert>
           )}
           <ReadyTips live={status.live} webUrl={webUrl} dashboardUrl={status.dashboard_url} />
+          <Button variant="text" onClick={() => document.getElementById(METHODS_ANCHOR)?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
+            startIcon={<StudioIcon name="card" />} sx={{ mt: 1, minHeight: 44 }} data-testid="go-payment-methods">
+            Elegir formas de pago: Apple Pay, Bizum…
+          </Button>
           <Button color="error" onClick={disconnect} disabled={!!busy} startIcon={spinner('disconnect')} sx={{ mt: 1.5, minHeight: 44 }}>
             Desconectar mi cuenta de Stripe
           </Button>

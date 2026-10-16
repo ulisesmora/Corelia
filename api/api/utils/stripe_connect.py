@@ -262,9 +262,23 @@ def sync_status(account=None, reason: str = 'sync') -> dict:
     return payments_status(cfg)
 
 
+# Sufijos de dos partes (estudio.com.mx es un dominio «raíz», como estudio.es)
+_TWO_PART_SUFFIXES = frozenset({
+    'com.mx', 'com.br', 'com.pt', 'com.ar', 'com.co', 'com.au', 'com.es', 'org.es', 'co.uk', 'org.uk', 'co.nz',
+})
+
+
+def _is_apex(host: str) -> bool:
+    labels = host.split('.')
+    return len(labels) == 2 or (len(labels) == 3 and '.'.join(labels[1:]) in _TWO_PART_SUFFIXES)
+
+
 def payment_method_domains(cfg=None) -> list:
-    """Dominios donde se ve el pago (la web, su www/sin www y el panel).
-    Stripe los necesita registrados para Apple Pay y Google Pay."""
+    """Dominios donde se ve el pago: la web (su dominio propio con y sin www,
+    y la dirección de siempre, que sigue abriendo la web) y el panel.
+    Stripe los necesita registrados para Apple Pay, Google Pay y Link en el
+    pago embebido (cada dominio y subdominio por separado)."""
+    from django.conf import settings
     from api.utils.site import panel_url, web_url
     hosts = []
 
@@ -280,8 +294,9 @@ def payment_method_domains(cfg=None) -> list:
     if cfg is not None and cfg.web_domain and web_host == cfg.web_domain:
         if web_host.startswith('www.'):
             add(web_host[4:])
-        elif web_host.count('.') == 1:
+        elif _is_apex(web_host):
             add(f'www.{web_host}')
+        add(urlsplit(settings.WEB_URL).hostname or '')
     add(urlsplit(panel_url()).hostname or '')
     return hosts
 

@@ -26,6 +26,7 @@ from .views_security import (
     TwoFactorSetupView, TwoFactorStatusView, TwoFactorVerifyView,
 )
 from .views_payments import (
+    PaymentMethodsRecommendedView, PaymentMethodsToggleView, PaymentMethodsVerifyDomainsView, PaymentMethodsView,
     StripeConnectDisconnectView, StripeConnectStartView, StripeConnectStatusView, StripeConnectSyncView,
 )
 from .views_calendar import (
@@ -141,6 +142,14 @@ urlpatterns = [
     path('v1/site-config/stripe/connect/sync/', StripeConnectSyncView.as_view(), name='stripe-connect-sync'),
     path('v1/site-config/stripe/connect/disconnect/', StripeConnectDisconnectView.as_view(),
          name='stripe-connect-disconnect'),
+    # «Formas de pago en tu web» (Apple Pay, Bizum…; api/views_payments.py)
+    path('v1/site-config/stripe/payment-methods/', PaymentMethodsView.as_view(), name='payment-methods'),
+    path('v1/site-config/stripe/payment-methods/toggle/', PaymentMethodsToggleView.as_view(),
+         name='payment-methods-toggle'),
+    path('v1/site-config/stripe/payment-methods/recommended/', PaymentMethodsRecommendedView.as_view(),
+         name='payment-methods-recommended'),
+    path('v1/site-config/stripe/payment-methods/verify-domains/', PaymentMethodsVerifyDomainsView.as_view(),
+         name='payment-methods-verify-domains'),
     path('v1/site-config/icon/<int:size>.png', SiteIconView.as_view(), name='site-icon'),
     path('v1/site-config/og.png', SiteOgImageView.as_view(), name='site-og-image'),
     path('v1/site-config/badge.png', SiteBadgeView.as_view(), name='site-badge'),

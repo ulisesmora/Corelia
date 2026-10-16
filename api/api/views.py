@@ -2279,10 +2279,15 @@ class CreateCheckoutSessionView(APIView):
                 }
                 if stripe_discounts:
                     session_params['discounts'] = stripe_discounts
-                # Cuenta conectada: reservas sin métodos de pago asíncronos (OXXO,
-                # Multibanco…), que dejarían la plaza retenida días sin cobrar.
+                # Reservas sin métodos de pago que tardan días (OXXO, Multibanco,
+                # domiciliación…): dejarían la plaza retenida sin cobrar. Con la
+                # configuración «Reservas» de la plataforma, esa; si no, se quitan
+                # aquí (api/utils/payment_methods.py → booking_excluded_types).
                 if stripe_account and settings.STRIPE_CONNECT_BOOKING_PMC:
                     session_params['payment_method_configuration'] = settings.STRIPE_CONNECT_BOOKING_PMC
+                else:
+                    from api.utils.payment_methods import booking_excluded_types
+                    session_params['excluded_payment_method_types'] = booking_excluded_types()
                 checkout_session = client.v1.checkout.sessions.create(
                     params=session_params,
                     options={'idempotency_key': f"checkout_{payment.id}_{uuid.uuid4().hex[:8]}"},

@@ -6,6 +6,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import KeysPaymentsForm from './KeysPaymentsForm';
 import ConnectGuide from './payments/ConnectGuide';
+import PaymentMethodsCard from './payments/PaymentMethodsCard';
 import { NoOnlinePath, StripeFaq, StripeIntro } from './payments/StripeIntro';
 import { loadPaymentsStatus, type ConnectReturnTo, type PaymentsStatus, type StudioSettings } from './api';
 
@@ -22,6 +23,9 @@ interface Props {
  * necesitas; los pasos 1 Prepara tus datos → 2 Conecta con Stripe → 3 Stripe
  * lo revisa → 4 ¡Listo!; el camino sin pagos online y las preguntas
  * frecuentes. Nada de copiar claves.
+ *
+ * Ya cobrando (cuenta conectada o claves): «Formas de pago en tu web» (Apple
+ * Pay, Bizum, MB WAY…: PaymentMethodsCard).
  *
  * Plan B solo para instalaciones propias SIN Connect: «Avanzado» plegado con
  * el formulario de claves de siempre (si STRIPE_KEYS_FALLBACK_ENABLED lo
@@ -111,6 +115,7 @@ export default function PaymentsSection({ value, onSaved, returnTo = 'settings' 
             </AccordionDetails>
           </Accordion>
         )}
+        {hasKeys && status?.ready && <PaymentMethodsCard />}
         {currencyText}
         {!charging && <NoOnlinePath />}
       </Stack>
@@ -131,6 +136,7 @@ export default function PaymentsSection({ value, onSaved, returnTo = 'settings' 
         </Accordion>
       ) : <StripeIntro country={country} />}
       <ConnectGuide status={status} setStatus={setStatus} value={value} onSaved={onSaved} returnTo={returnTo} />
+      {status.ready && <PaymentMethodsCard />}
       {currencyText}
       {!charging && <NoOnlinePath />}
       <StripeFaq country={country} />

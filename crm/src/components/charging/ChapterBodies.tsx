@@ -6,6 +6,7 @@
 //   estudio · 4 Cancelaciones y devoluciones · 5 Lista de espera
 import { Box, Button, Typography } from '@mui/material';
 import StudioIcon from '../../site/StudioIcon';
+import { METHODS_PATH } from '../setup/payments/methodsApi';
 import type { GuideChapter } from './chapters';
 import { creditsText, daysText, defaultOptions, methodsText, minutesText, periodText, price, type ChargingFacts } from './facts';
 import TwoWorlds, { WORLD_PATHS } from './TwoWorlds';
@@ -60,7 +61,7 @@ export function OnlineChapter({ facts: f, go }: ChapterProps) {
       <Box sx={{ mt: 2 }}>
         <Flow label="Clienta online, paso a paso" steps={[
           { icon: 'web', title: 'Reserva o compra en tu web', text: 'Una clase, un bono o una membresía.' },
-          { icon: 'card', title: 'Paga con tarjeta', text: 'También con Apple Pay o Google Pay.' },
+          { icon: 'card', title: 'Paga con tarjeta', text: 'O con Apple Pay, Google Pay, Bizum… (las que actives).' },
           { icon: 'repeat', title: 'Todo se apunta solo', text: 'Sus créditos, el recibo por email y la renovación de cada mes.' },
           {
             icon: 'stats', title: 'Tú solo miras «Ventas»', text: 'El dinero llega a tu banco en unos 2–7 días.',
@@ -76,6 +77,17 @@ export function OnlineChapter({ facts: f, go }: ChapterProps) {
           </Typography>
           <Button variant="contained" size="small" onClick={() => go(WORLD_PATHS.payments)} startIcon={<StudioIcon name="card" />} sx={{ mt: 1, minHeight: 44 }}>
             Activar pagos online
+          </Button>
+        </Block>
+      )}
+
+      {f.payments.enabled && (
+        <Block title="¿Bizum, Apple Pay, domiciliación…?" icon="card" id="g-methods">
+          <Typography sx={{ fontSize: '0.9rem', color: 'var(--studio-ink)' }}>
+            Elige con qué pueden pagar en tu web: tarjeta, Apple Pay, Google Pay, Bizum y los métodos de tu país.
+          </Typography>
+          <Button variant="outlined" size="small" onClick={() => go(METHODS_PATH)} startIcon={<StudioIcon name="card" />} sx={{ mt: 1, minHeight: 44 }}>
+            Formas de pago en tu web
           </Button>
         </Block>
       )}
