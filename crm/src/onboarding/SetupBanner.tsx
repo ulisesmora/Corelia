@@ -22,7 +22,7 @@ export default function SetupBanner() {
       aria-label="Puesta en marcha pendiente"
       data-tour="setup-banner"
       sx={{
-        position: 'sticky', top: { xs: 64, lg: 76 }, zIndex: 20, mb: { xs: 2, md: 2.5 },
+        position: 'sticky', top: { xs: 64, md: 76 }, zIndex: 20, mb: { xs: 2, md: 2.5 },
         display: 'flex', alignItems: 'center', gap: { xs: 1.25, sm: 1.75 }, p: { xs: '10px 10px 10px 14px', sm: '12px 12px 12px 16px' },
         borderRadius: 'var(--studio-radius-lg)', background: 'var(--studio-ink)', color: 'var(--studio-surf)', boxShadow: 'var(--studio-shadow-2)',
         '[data-panel-mode="dark"] &': { background: 'var(--studio-primary-fill)', color: 'var(--studio-on-primary)' },

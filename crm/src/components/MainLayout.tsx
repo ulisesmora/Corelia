@@ -19,6 +19,7 @@ import { NAV, sectionOf } from './shell/navigation';
 import { ShellContext } from './shell/ShellContext';
 import { useShellExtensions } from './shell/extensions';
 import { useTextSize } from './shell/textSize';
+import { SIDEBAR_WIDTH, useSidebarMode } from './shell/sidebarMode';
 import { ChargingGuideHost } from './charging';
 
 // ====================================================================
@@ -42,9 +43,12 @@ export default function MainLayout() {
   const { config } = useSite();
   const locks = useLocks();
   const look = panelLook(config);
-  const wide = useMediaQuery('(min-width:1024px)', { noSsr: true });
+  // Desde 900px (el «md» de MUI, el mismo corte que usan los avisos y el
+  // calendario para la barra de abajo): menú lateral; por debajo, el del móvil.
+  const wide = useMediaQuery('(min-width:900px)', { noSsr: true });
   const ext = useShellExtensions();
   const [textSize, setTextSize] = useTextSize(user?.email || '');
+  const [sidebarMode, setSidebarMode] = useSidebarMode(user?.email || '');
   const [cmd, setCmd] = useState<{ open: boolean; q: string }>({ open: false, q: '' });
   const [newClient, setNewClient] = useState<false | 'new' | 'existing'>(false);
 
@@ -105,7 +109,19 @@ export default function MainLayout() {
       <CoachProvider>
         <Box component="a" href="#main" sx={skipLink}>Saltar al contenido</Box>
         {wide ? (
-          <Box sx={{ display: 'grid', gridTemplateColumns: '264px minmax(0, 1fr)', minHeight: '100dvh', p: '12px 0 12px 12px' }}>
+          // Ordenador: el menú lateral va FIJO (position: fixed, ver
+          // shell/Sidebar.tsx) y aquí solo se le deja su hueco a la izquierda;
+          // lo único que se desplaza es el contenido (la página normal, así los
+          // scrollTo, el teclado y los sticky siguen funcionando). Sin
+          // min-height: la página mide lo que su contenido.
+          <Box
+            data-sidebar={sidebarMode}
+            sx={{
+              pl: `${SIDEBAR_WIDTH[sidebarMode] + 12}px`,
+              transition: 'padding-left .22s cubic-bezier(.2,.8,.2,1)',
+              '@media (prefers-reduced-motion: reduce)': { transition: 'none' },
+            }}
+          >
             <Sidebar
               active={active}
               guide={null}
@@ -114,13 +130,17 @@ export default function MainLayout() {
               textSize={textSize}
               onTextSize={setTextSize}
               onLogout={logout}
+              compact={sidebarMode === 'compact'}
+              onToggleCompact={() => setSidebarMode(sidebarMode === 'compact' ? 'full' : 'compact')}
             />
-            <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', px: 3, pb: 5 }}>
+            <Box sx={{ minWidth: 0, display: 'flex', flexDirection: 'column', px: 3, pt: '12px', pb: 5, overflowX: 'clip' }}>
               <TopBar style={look.classic ? 'classic' : look.style} />
               {content}
             </Box>
           </Box>
         ) : (
+          // Móvil: barra de arriba + barra de secciones fija abajo; el hueco de
+          // esa barra (≈66px + zona segura) se deja UNA vez, aquí.
           <Box sx={{ minWidth: 0, px: 2, pb: 'calc(96px + env(safe-area-inset-bottom))', overflowX: 'clip' }}>
             <MobileTopBar />
             {content}

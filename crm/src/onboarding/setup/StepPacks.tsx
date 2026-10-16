@@ -98,7 +98,7 @@ export default function StepPacks({ onChanged }: { onChanged?: (packs: PackSugge
               display: 'flex', alignItems: 'center', gap: 0.75, px: 1.5, minHeight: 48, borderRadius: 'var(--studio-radius-md)',
               background: 'var(--studio-surf2)', opacity: p.on ? 1 : 0.55, ml: 'auto',
             }}>
-              <Box component="span" sx={{ position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Precio de {p.name}</Box>
+              <Box component="span" sx={{ position: 'absolute', width: '1px', height: '1px', overflow: 'hidden', clip: 'rect(0 0 0 0)' }}>Precio de {p.name}</Box>
               <Box
                 component="input"
                 id={`${id}-price`}

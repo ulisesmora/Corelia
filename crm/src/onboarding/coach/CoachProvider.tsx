@@ -173,6 +173,9 @@ export function CoachProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// Ojo: en `sx` de MUI, `width: 1` / `height: 1` significan 100 %, no 1px. Con
+// 100 % esta región (fuera de cualquier caja con position) medía lo mismo que la
+// ventana y, al ir después del panel, añadía una pantalla entera vacía al final.
 const visuallyHidden = {
-  position: 'absolute', width: 1, height: 1, p: 0, m: '-1px', overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0,
+  position: 'absolute', width: '1px', height: '1px', p: 0, m: '-1px', overflow: 'hidden', clip: 'rect(0 0 0 0)', whiteSpace: 'nowrap', border: 0,
 } as const;
