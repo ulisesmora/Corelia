@@ -3,6 +3,7 @@ import { Box, Stack, TextField, Typography } from '@mui/material';
 import { PhotoPicker } from '../guide';
 import { API_BASE_URL } from '../../config';
 import LocaleSection from './LocaleSection';
+import LocationPicker from './LocationPicker';
 import type { StudioSettings } from './api';
 
 interface Props {
@@ -100,6 +101,8 @@ export default function StudioSection({ value, onChange, onBusyChange, showLegal
         <TextField label="Ciudad" {...field('city')} />
         <TextField label="Código postal" {...field('postal_code')} sx={{ maxWidth: { sm: 200 } }} />
       </Stack>
+      {/* Punto del mapa de «Cómo llegar» (se busca solo al guardar la dirección) */}
+      <LocationPicker value={value} onChange={onChange} />
       <TextField
         label="Zonas desde donde vienen tus clientas (opcional)"
         {...field('area_served')}

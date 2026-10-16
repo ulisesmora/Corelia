@@ -136,3 +136,15 @@ Los contadores viven en Redis (`REDIS_URL`), compartidos entre procesos. Sin Red
   sube los límites `THROTTLE_*`. Con la web en Railway (lo recomendado) no hace falta.
 - **CSP en modo informe.** No bloquea nada; sirve para comprobar que la lista de
   servicios es correcta antes de activarla con `CSP_ENFORCE=1`.
+- **El mapa de «Cómo llegar».**
+  - Pide estilo, teselas, letras e iconos a `https://tiles.openfreemap.org`, en
+    `connect-src`.
+  - MapLibre pinta en un worker propio o `blob:`: `worker-src` y `child-src` incluyen
+    `'self' blob:`.
+  - Ya no hay iframe de OpenStreetMap, así que `frame-src` no lo incluye.
+  - Con `PUBLIC_MAP_STYLE_URL`, su dominio se añade solo.
+  - Sin cookies ni consentimiento: `docs/ESTILOS.md` («Mapa»).
+- **Coordenadas del estudio.** Se buscan en Nominatim (OpenStreetMap) solo al guardar la
+  dirección en el panel, nunca al servir la web pública. Como mucho 1 petición por
+  segundo, con un User-Agent propio (`NOMINATIM_USER_AGENT` lo cambia) y con límites de
+  tiempo. Los fallos se registran y el panel pide colocar el punto a mano.

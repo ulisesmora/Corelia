@@ -1,0 +1,180 @@
+---
+// Mapa del estudio + «Cómo llegar» (Google Maps · Apple Maps · Waze).
+//
+//  - El servidor pinta una caja de tamaño FIJO con un mapa dibujado en CSS
+//    (calles, agua y el marcador con los colores del estilo): no hay salto de
+//    contenido (CLS) cuando llega el mapa de verdad.
+//  - El mapa interactivo (MapLibre + OpenFreeMap, lib/studio-map.ts) se
+//    descarga SOLO cuando la caja se acerca a la pantalla. Sin WebGL2, sin
+//    coordenadas o si algo falla, la caja se queda como tarjeta estática con
+//    el nombre y la dirección; los botones «Cómo llegar» funcionan siempre.
+//  - Sin cookies y sin consentimiento: ver docs/ESTILOS.md («Mapa»).
+//
+// `fill`: ocupa todo el alto de su celda (franja «Ven a vernos» de la portada).
+import { MAP_STYLE_URL, studioMapData } from '../../lib/map';
+import type { SiteConfig } from '../../lib/site';
+import type { Lang } from '../../seo/site';
+
+interface Props { site: SiteConfig; lang: Lang; fill?: boolean }
+const { site, lang, fill = false } = Astro.props;
+const es = lang === 'es';
+const d = studioMapData(site);
+const hasCoords = d.lat != null && d.lng != null;
+const newTab = es ? ' (se abre en otra pestaña)' : ' (opens in a new tab)';
+---
+{(hasCoords || d.address) && (
+  <div class:list={['sk-mapbox', fill && 'sk-mapbox--fill']}>
+    <div
+      class:list={['sk-map', !hasCoords && 'is-static']}
+      role="group"
+      aria-label={es ? `Mapa con la ubicación de ${d.name}` : `Map showing where ${d.name} is`}
+      data-sk-map={hasCoords ? '' : undefined}
+      data-lat={hasCoords ? String(d.lat) : undefined}
+      data-lng={hasCoords ? String(d.lng) : undefined}
+      data-name={d.name}
+      data-initial={d.initial}
+      data-lang={lang}
+      data-style-url={hasCoords ? MAP_STYLE_URL : undefined}
+    >
+      {hasCoords && <div class="sk-map-canvas"></div>}
+      <div class="sk-map-ph" aria-hidden="true">
+        <span class="sk-map-pin sk-map-pin--ph"><span class="sk-map-drop"><span>{d.initial}</span></span></span>
+      </div>
+      {d.address && (
+        <p class="sk-map-card"><strong>{d.name}</strong><span>{d.address}</span></p>
+      )}
+    </div>
+    {d.directions.length > 0 && (
+      <nav class="sk-map-dirs" aria-label={es ? 'Cómo llegar' : 'Get directions'}>
+        <span class="sk-map-dirs-label">{es ? 'Cómo llegar con' : 'Directions with'}</span>
+        <ul>
+          {d.directions.map((l) => (
+            <li hidden={l.id === 'apple'} data-apple={l.id === 'apple' ? '' : undefined}>
+              <a class="sk-btn-ghost sk-map-go" href={l.href} target="_blank" rel="noopener">
+                {l.label}<span class="sk-map-sr">{newTab}</span>
+              </a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    )}
+  </div>
+)}
+
+<script>
+  // Apple Maps solo en iPhone, iPad y Mac (en el resto abre una web peor)
+  if (/iPhone|iPad|iPod|Macintosh/.test(navigator.userAgent)) {
+    document.querySelectorAll<HTMLElement>('[data-apple]').forEach((li) => { li.hidden = false; });
+  }
+  const maps = document.querySelectorAll<HTMLElement>('[data-sk-map]');
+  // MapLibre 6 necesita WebGL2: sin él ni se descarga, se queda la tarjeta
+  let gl: boolean | undefined;
+  const hasGL = () => {
+    try { gl ??= !!document.createElement('canvas').getContext('webgl2'); } catch { gl = false; }
+    return gl;
+  };
+  const mount = (el: HTMLElement) => {
+    if (!hasGL()) { el.classList.add('is-static'); return; }
+    import('../../lib/studio-map')
+      .then((m) => m.mountStudioMap(el))
+      .catch(() => el.classList.add('is-static'));
+  };
+  if (maps.length && 'IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        io.unobserve(e.target);
+        mount(e.target as HTMLElement);
+      }
+    }, { rootMargin: '300px 0px' });
+    maps.forEach((m) => io.observe(m));
+  } else maps.forEach(mount);
+</script>
+
+<style is:global>
+  /* Todo con tokens del estilo visual (styles/presets.css). Global porque el
+     marcador y los controles los crea MapLibre fuera del HTML de Astro. */
+  .sk-mapbox { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+  .sk-mapbox--fill { height: 100%; }
+  .sk-map {
+    --sk-land: color-mix(in srgb, var(--page-text) 3.5%, var(--page-bg));
+    --sk-road: color-mix(in srgb, white 72%, var(--sk-land));
+    --sk-road: light-dark(color-mix(in srgb, white 72%, var(--sk-land)), color-mix(in srgb, white 9%, var(--sk-land)));
+    --sk-water: color-mix(in srgb, var(--accent) 20%, var(--sk-land));
+    position: relative; overflow: hidden; isolation: isolate;
+    width: 100%; aspect-ratio: 16 / 10; min-height: 260px;
+    border-radius: var(--radius-card-lg);
+    border: var(--border-width) solid var(--surface-border);
+    box-shadow: var(--shadow-card);
+    background: var(--sk-land);
+    font-family: var(--font-body);
+  }
+  .sk-mapbox--fill .sk-map { flex: 1 1 auto; aspect-ratio: auto; min-height: 300px; }
+  @media (max-width: 899px) { .sk-mapbox--fill .sk-map { flex: none; aspect-ratio: 4 / 3; min-height: 260px; } }
+  /* Más específico que .maplibregl-map { position: relative } del CSS de MapLibre */
+  .sk-map .sk-map-canvas { position: absolute; inset: 0; }
+  .sk-map-canvas:focus-within { outline: none; }
+  .sk-map .maplibregl-canvas:focus-visible { outline: 3px solid var(--accent); outline-offset: -3px; }
+
+  /* Mapa dibujado (mientras llega el de verdad, o si no puede llegar) */
+  .sk-map-ph {
+    position: absolute; inset: 0; z-index: 2; pointer-events: none;
+    background:
+      radial-gradient(circle at 92% 108%, var(--sk-water) 0 24%, transparent 24.4%),
+      repeating-linear-gradient(28deg, transparent 0 54px, var(--sk-road) 54px 59px),
+      repeating-linear-gradient(-62deg, transparent 0 82px, var(--sk-road) 82px 88px),
+      var(--sk-land);
+    transition: opacity .45s ease;
+  }
+  .sk-map.is-ready .sk-map-ph { opacity: 0; }
+  @media (prefers-reduced-motion: reduce) { .sk-map-ph { transition: none; } }
+  .sk-map-pin--ph { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -100%); }
+
+  /* Marcador: gota del color principal con la inicial del estudio */
+  .sk-map-pin { display: block; width: 40px; height: 48px; position: relative; cursor: default; }
+  .sk-map-drop {
+    position: absolute; left: 0; top: 0; width: 40px; height: 40px; display: grid; place-items: center;
+    border-radius: 50% 50% 50% 0; transform: rotate(-45deg); background: var(--accent);
+    border: 3px solid var(--surface-strong);
+    box-shadow: 0 8px 18px -6px color-mix(in srgb, var(--page-text) 55%, transparent);
+  }
+  .sk-map-drop > span { transform: rotate(45deg); color: var(--on-primary); font: 700 16px/1 var(--font-heading); }
+
+  /* Tarjeta estática (sin WebGL o sin coordenadas) */
+  .sk-map-card {
+    display: none; position: absolute; z-index: 3; left: 14px; right: 14px; bottom: 14px; margin: 0;
+    padding: 12px 14px; flex-direction: column; gap: 2px; line-height: 1.4;
+    background: var(--surface-strong); color: var(--surface-text);
+    border: var(--border-width) solid var(--surface-border); border-radius: var(--radius-card);
+    box-shadow: var(--shadow-card); overflow-wrap: anywhere;
+  }
+  .sk-map-card span { color: var(--text-muted); font-size: .92rem; }
+  .sk-map.is-static .sk-map-card { display: flex; }
+  .sk-map.is-static .sk-map-canvas { display: none; }
+  .sk-map.is-static .sk-map-pin--ph { top: 42%; }
+
+  /* «Cómo llegar con» */
+  .sk-map-dirs { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; font-family: var(--font-body); }
+  .sk-map-dirs-label { font-size: .78rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--text-subtle, var(--text-muted)); }
+  .sk-map-dirs ul { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+  .sk-map-dirs li[hidden] { display: none; }
+  .sk-map-go { display: inline-flex; align-items: center; min-height: 44px; padding: 0 1rem; font-family: var(--font-body); font-size: .92rem; text-transform: none; text-decoration: none; white-space: nowrap; }
+  .sk-map-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+  /* Controles de MapLibre con el acabado del estilo */
+  .sk-map .maplibregl-ctrl-top-right { top: 6px; right: 6px; }
+  .sk-map .maplibregl-ctrl-group {
+    background: var(--surface-strong); border-radius: var(--radius-input); overflow: hidden;
+    box-shadow: var(--shadow-card); border: var(--border-width) solid var(--surface-border);
+  }
+  .sk-map .maplibregl-ctrl-group button + button { border-top-color: var(--surface-border); }
+  .sk-map .maplibregl-ctrl button:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; box-shadow: none; }
+  .sk-map.is-dark .maplibregl-ctrl button .maplibregl-ctrl-icon { filter: invert(1); }
+  .sk-map .maplibregl-ctrl-bottom-right { right: max(4px, calc(var(--radius-card-lg) * .35)); bottom: 2px; }
+  .sk-map .maplibregl-ctrl-attrib {
+    font-size: 10px; line-height: 1.5; padding: 1px 6px; border-radius: 6px;
+    background: color-mix(in srgb, var(--sk-land) 82%, transparent); color: var(--text-muted);
+  }
+  .sk-map .maplibregl-ctrl-attrib, .sk-map .maplibregl-ctrl-attrib a { color: var(--text-muted); font-family: var(--font-body); text-transform: none; letter-spacing: 0; }
+  .sk-map .maplibregl-cooperative-gesture-screen { font-family: var(--font-body); font-size: 1rem; }
+</style>

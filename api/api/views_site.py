@@ -78,6 +78,31 @@ def safe_public_url(value: str) -> str:
     return value if re.match(r'^https?://[^\s"\'<>]+$', value) else ''
 
 
+class CoordinateField(serializers.DecimalField):
+    """Latitud/longitud con 6 decimales (~10 cm). Acepta números con más
+    decimales (el mapa del panel manda floats) y '' o null = sin punto."""
+
+    def __init__(self, limit, **kwargs):
+        from decimal import Decimal
+        msg = f'Tiene que estar entre -{limit} y {limit}. Coloca el punto en el mapa.'
+        super().__init__(max_digits=9, decimal_places=6, allow_null=True,
+                         min_value=Decimal(-limit), max_value=Decimal(limit),
+                         error_messages={'min_value': msg, 'max_value': msg,
+                                         'invalid': 'Coordenada no válida. Coloca el punto en el mapa.'},
+                         **kwargs)
+
+    def to_internal_value(self, data):
+        if data in ('', None):
+            return None
+        try:
+            value = float(data)
+        except (TypeError, ValueError):
+            self.fail('invalid')
+        if value != value or value in (float('inf'), float('-inf')):  # NaN / infinito
+            self.fail('invalid')
+        return super().to_internal_value(f'{round(value, 6):.6f}')
+
+
 class SiteConfigSerializer(serializers.ModelSerializer):
     """Lo que el panel puede leer/editar. Los secretos son de solo escritura:
     el panel sabe si están puestos (has_*), nunca su valor."""
@@ -116,6 +141,9 @@ class SiteConfigSerializer(serializers.ModelSerializer):
     # ── País y moneda (listas cerradas: api/utils/locale.py) ──
     currency = serializers.CharField(required=False, max_length=10)
     country = serializers.CharField(required=False, max_length=10)
+    # ── Punto del mapa (el panel lo ajusta arrastrando el marcador) ──
+    latitude = CoordinateField(90, required=False)
+    longitude = CoordinateField(180, required=False)
 
     class Meta:
         model = SiteConfig
@@ -514,18 +542,46 @@ class SiteConfigAdminView(APIView):
 
     def patch(self, request):
         cfg = SiteConfig.load()
-        before = (cfg.address, cfg.city, cfg.postal_code)
+        before = (cfg.address, cfg.city, cfg.postal_code, cfg.country)
         panel_before = cfg.panel_domain
         web_before = cfg.web_domain
         ser = SiteConfigSerializer(cfg, data=request.data, partial=True)
         ser.is_valid(raise_exception=True)
         cfg = ser.save()
-        # Dirección nueva → coordenadas nuevas (salvo que se manden a mano)
-        if (cfg.address, cfg.city, cfg.postal_code) != before and 'latitude' not in request.data:
-            from api.utils.geocode import geocode
-            coords = geocode(cfg.address, cfg.city, cfg.postal_code, cfg.country)
-            cfg.latitude, cfg.longitude = coords if coords else (None, None)
-            cfg.save(update_fields=['latitude', 'longitude', 'updated_at'])
+        geocode_status = self._update_coordinates(cfg, before, request.data)
+        response = self._after_save(request, cfg, panel_before, web_before)
+        if geocode_status:
+            response.data['geocode_status'] = geocode_status
+        return response
+
+    @staticmethod
+    def _update_coordinates(cfg, before, data):
+        """Punto del mapa al guardar la dirección (nunca al servir la web).
+
+        - Punto puesto a mano (latitude/longitude con valor) → se respeta: 'manual'.
+        - Dirección nueva, o se guarda la dirección y aún no hay punto, o el
+          panel pide «volver a buscar» (latitude: null) → Nominatim: 'ok' o
+          'not_found' (el panel pide entonces colocar el punto a mano).
+        """
+        manual = data.get('latitude') not in (None, '') and data.get('longitude') not in (None, '')
+        if manual:
+            return 'manual'
+        changed = (cfg.address, cfg.city, cfg.postal_code, cfg.country) != before
+        address_sent = any(k in data for k in ('address', 'city', 'postal_code', 'country'))
+        missing = cfg.latitude is None or cfg.longitude is None
+        retry = 'latitude' in data  # latitude: null → buscar otra vez por la dirección
+        if not (changed or retry or (address_sent and missing)):
+            return None
+        from api.utils.geocode import geocode
+        coords = geocode(cfg.address, cfg.city, cfg.postal_code, cfg.country) if cfg.address else None
+        cfg.latitude, cfg.longitude = coords if coords else (None, None)
+        cfg.save(update_fields=['latitude', 'longitude', 'updated_at'])
+        if not cfg.address:
+            return None
+        logger.info("site_config.geocoded found=%s", bool(coords))
+        return 'ok' if coords else 'not_found'
+
+    def _after_save(self, request, cfg, panel_before, web_before):
         # Panel en otro dominio → el aviso de pagos de Stripe tiene que ir al nuevo
         if cfg.panel_domain != panel_before and cfg.payments_enabled and cfg.stripe_secret_key:
             try:

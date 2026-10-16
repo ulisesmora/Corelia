@@ -1,20 +1,16 @@
 ---
-// "Cómo llegar": dirección en texto y mapa (OpenStreetMap si hay coordenadas,
-// sin cookies ni claves) con enlace al mapa del panel. Solo si hay dirección.
-import { addressLine, mapsUrl, type SiteConfig } from '../../lib/site';
+// "Cómo llegar": dirección en texto y mapa minimalista del estudio con los
+// botones Google Maps / Apple Maps / Waze (StudioMap.astro: MapLibre +
+// OpenFreeMap, sin cookies ni claves). Solo si hay dirección o coordenadas.
+import StudioMap from './StudioMap.astro';
+import { addressLine, type SiteConfig } from '../../lib/site';
 import type { Lang } from '../../seo/site';
 
 interface Props { site: SiteConfig; lang: Lang }
 const { site, lang } = Astro.props;
 const es = lang === 'es';
 const address = addressLine(site);
-const map = mapsUrl(site);
-const { latitude: lat, longitude: lon } = site.contact;
-const hasCoords = lat != null && lon != null;
-const d = 0.006;
-const osm = hasCoords
-  ? `https://www.openstreetmap.org/export/embed.html?bbox=${lon! - d}%2C${lat! - d}%2C${lon! + d}%2C${lat! + d}&layer=mapnik&marker=${lat}%2C${lon}`
-  : '';
+const hasCoords = site.contact.latitude != null && site.contact.longitude != null;
 ---
 {(address || hasCoords) && (
   <section class="loc" aria-labelledby="loc-title">
@@ -28,23 +24,16 @@ const osm = hasCoords
       {site.contact.area_served.length > 0 && (
         <p class="loc-areas">{es ? 'También atendemos: ' : 'We also serve: '}{site.contact.area_served.join(', ')}</p>
       )}
-      {map && <a class="loc-btn sk-btn" href={map} target="_blank" rel="noopener">{es ? 'Abrir en el mapa' : 'Open in maps'}</a>}
     </div>
-    {osm && (
-      <iframe class="loc-map" src={osm} title={es ? `Mapa de ${site.studio_name}` : `Map of ${site.studio_name}`}
-        loading="lazy" referrerpolicy="no-referrer"></iframe>
-    )}
+    <StudioMap site={site} lang={lang} />
   </section>
 )}
 
 <style>
-  /* Acabado con los tokens del estilo visual (styles/presets.css). El botón
-     toma color, borde, radio y sombra de .sk-btn; aquí solo su tamaño. */
-  .loc { max-width: 1100px; margin: 0 auto; padding: 3rem 1.25rem 4rem; display: grid; gap: 1.5rem; grid-template-columns: 1fr; align-items: center; font-family: var(--font-body); color: var(--page-text); }
-  @media (min-width: 820px) { .loc { grid-template-columns: 1fr 1.4fr; } }
+  /* Acabado con los tokens del estilo visual (styles/presets.css). */
+  .loc { max-width: 1100px; margin: 0 auto; padding: 3rem 1.25rem 4rem; display: grid; gap: 1.5rem; grid-template-columns: minmax(0, 1fr); align-items: center; font-family: var(--font-body); color: var(--page-text); }
+  @media (min-width: 820px) { .loc { grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); } }
   .loc h2 { font-family: var(--font-heading); font-size: clamp(1.8rem, 4vw, 2.4rem); margin: 0 0 1rem; letter-spacing: .02em; color: var(--heading-color); }
   .loc address { font-style: normal; line-height: 1.7; margin-bottom: 1rem; }
   .loc-areas { color: var(--text-muted); margin: 0 0 1rem; }
-  .loc-btn { display: inline-flex; align-items: center; min-height: 46px; padding: 0 1.4rem; text-decoration: none; font-family: var(--font-body); }
-  .loc-map { width: 100%; height: 320px; border: 0; border-radius: var(--radius-card-lg); box-shadow: var(--shadow-card); }
 </style>

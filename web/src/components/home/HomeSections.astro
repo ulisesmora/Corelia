@@ -1,5 +1,6 @@
 ---
-// Secciones cortas de la portada (todo en HTML de servidor, sin JavaScript):
+// Secciones cortas de la portada (todo en HTML de servidor; solo el mapa de
+// «Ven a vernos» carga su JavaScript, y únicamente al acercarse a la pantalla):
 // cada una enseña poco y enlaza a su página completa con «Ver todo →».
 //   offer  → Lo que ofrecemos (clases)          → /classes
 //   prices → Precios en resumen (3 tarjetas)     → /prices
@@ -7,6 +8,7 @@
 //   visit  → Dónde estamos, horario, contacto    → /contacto
 // Una sección sin datos no se pinta. Estilos .w-* en styles/site.css.
 import { Icon } from '../ui/Icon';
+import StudioMap from '../sections/StudioMap.astro';
 import { classPath, niceTitle, openingHoursFromSchedules, type Lang } from '../../seo/site';
 import {
   LEVELS, tr, type ApiClassType, type ApiInstructor, type ApiPlan, type ApiSchedule, type ApiTestimonial,
@@ -69,11 +71,8 @@ const showTrust = !!(aboutText || team.length || quotes.length);
 // ── Dónde estamos ──
 const address = addressLine(site);
 const map = mapsUrl(site);
-const { latitude: lat, longitude: lon } = site.contact;
-const d = 0.006;
-const osm = lat != null && lon != null
-  ? `https://www.openstreetmap.org/export/embed.html?bbox=${lon - d}%2C${lat - d}%2C${lon + d}%2C${lat + d}&layer=mapnik&marker=${lat}%2C${lon}`
-  : '';
+// Mapa minimalista + «Cómo llegar» (sections/StudioMap.astro)
+const showMap = !!address || (site.contact.latitude != null && site.contact.longitude != null);
 const DAYS = es ? ['lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'] : ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const SCHEMA = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 const hours = openingHoursFromSchedules(schedules).map((h) => ({
@@ -232,8 +231,8 @@ const showVisit = !!(address || site.contact.phone || site.contact.email || hour
             </div>
           )}
         </div>
-        {osm
-          ? <iframe class="w-map" src={osm} title={es ? `Mapa de ${site.studio_name}` : `Map of ${site.studio_name}`} loading="lazy" referrerpolicy="no-referrer"></iframe>
+        {showMap
+          ? <StudioMap site={site} lang={lang} fill />
           : (map && (
             <a class="w-map-ph" href={map} target="_blank" rel="noopener">
               <Icon name="map-pin" size={28} aria-hidden />

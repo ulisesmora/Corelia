@@ -310,6 +310,57 @@ añade una entrada en `ICONS` con sus tres componentes de `react-icons`:
 Comprueba antes que los tres nombres existen en `node_modules/react-icons/{lu,pi,fa}/index.d.ts`.
 No importes `react-icons` directamente en los componentes.
 
+## Mapa («Cómo llegar»)
+
+`web/src/components/sections/StudioMap.astro` se usa en la franja «Ven a vernos» de la
+portada y en `/contacto`. Es un mapa vectorial minimalista que sigue el estilo de la web:
+
+- **Librería y datos.** [MapLibre GL JS](https://maplibre.org) (licencia BSD-3) con las
+  teselas vectoriales gratuitas de [OpenFreeMap](https://openfreemap.org), estilo
+  «positron». No hacen falta clave ni cuenta. La atribución
+  «OpenFreeMap © OpenMapTiles · Data from OpenStreetMap» es obligatoria y se ve siempre.
+  Si te alojas tus propias teselas, pon `PUBLIC_MAP_STYLE_URL` en la web: su dominio se
+  añade solo a la CSP.
+- **Colores.** `web/src/lib/studio-map.ts` recolorea «positron» con los tokens del estilo,
+  leídos con `getComputedStyle`:
+  - tierra: `--page-bg`;
+  - agua: un toque de `--accent`;
+  - parques: `--brand-secondary`;
+  - calles: un neutro claro;
+  - rótulos: `--text-muted`, con el nombre local de la calle.
+
+  Quita trenes, aeropuertos, fronteras y escudos de carretera. En los estilos con
+  `color-scheme: dark` (energy, neon) sale oscuro. El marcador es una gota del color
+  principal con la inicial del estudio. Controles, tarjeta y botones usan los tokens
+  (`--radius-card-lg`, `--shadow-card`, `.sk-btn-ghost`).
+- **Rendimiento.** El HTML trae una caja de tamaño fijo con un mapa dibujado en CSS, así
+  que no hay salto de contenido. MapLibre (unos 290 KB comprimidos, más su worker) se
+  descarga solo cuando la caja se acerca a la pantalla. Con import dinámico nunca va en
+  el JavaScript principal.
+- **Accesibilidad y gestos.**
+  - Gestos «cooperativos»: con un dedo (o la rueda) se mueve la página y no el mapa.
+    Aparece «Usa dos dedos para mover el mapa» o «Ctrl/⌘ + rueda».
+  - Teclado: flechas y `+`/`-` con el mapa enfocado.
+  - `prefers-reduced-motion`: sin animaciones ni inercia.
+- **Sin mapa.** Sin WebGL2, sin coordenadas o si falla la red se queda una tarjeta con
+  el nombre y la dirección. Los botones **Google Maps · Apple Maps · Waze** funcionan
+  siempre. Apple Maps solo se ofrece en iPhone, iPad y Mac. Google usa el enlace de la
+  ficha si el estudio lo pegó en el panel.
+- **Coordenadas.** Se buscan solas al guardar la dirección en el panel, con
+  OpenStreetMap/Nominatim: `api/utils/geocode.py`. Se cumple su política de uso:
+  - el API se identifica con un User-Agent (`NOMINATIM_USER_AGENT` para cambiarlo);
+  - hace como mucho 1 petición por segundo, con el turno compartido en la caché;
+  - tiene tiempo máximo por petición y en total;
+  - nunca pregunta al servir la web pública.
+
+  Si no la encuentra, el panel lo pide en Ajustes → Mi estudio (y en el paso 1 de la
+  bienvenida): «Ajusta el punto exacto», arrastrando el marcador o tocando el mapa.
+- **Privacidad.** OpenFreeMap no usa cookies ni hace seguimiento, así que el mapa **no
+  necesita consentimiento**: se carga sin el banner de cookies. El antiguo iframe de
+  OpenStreetMap tampoco lo necesitaba. Para servir las teselas recibe datos técnicos de
+  la petición, como la IP, a través de Cloudflare. La política de cookies lo explica
+  cuando hay mapa.
+
 ## El panel con el estilo de la web
 
 El panel sigue el estilo, la paleta, la letra y los iconos de la web (rediseño,

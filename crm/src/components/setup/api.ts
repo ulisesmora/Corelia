@@ -66,6 +66,11 @@ export interface StudioSettings {
   maps_url: string;
   latitude: string | null;
   longitude: string | null;
+  /**
+   * Solo en la respuesta del PATCH que toca la dirección o el punto del mapa:
+   * 'ok' encontrado · 'not_found' (colocar el punto a mano) · 'manual'.
+   */
+  geocode_status?: 'ok' | 'not_found' | 'manual';
   area_served: string;
   tagline_en: string;
   description_en: string;

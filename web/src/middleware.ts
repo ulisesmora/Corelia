@@ -8,8 +8,9 @@
 //  - Content-Security-Policy en modo SOLO INFORME (Report-Only): el navegador
 //    avisa en la consola si algo se sale de la lista, pero NO bloquea nada.
 //    Lista lo que la web carga de verdad: Stripe, Google Analytics/Ads, píxel
-//    de Meta, Microsoft Clarity, YouTube sin cookies, OpenStreetMap, «Entrar
-//    con Google», Turnstile y Google Fonts. Cuando lleve tiempo sin avisos se
+//    de Meta, Microsoft Clarity, YouTube sin cookies, el mapa (teselas de
+//    OpenFreeMap + worker blob: de MapLibre), «Entrar con Google», Turnstile
+//    y Google Fonts. Cuando lleve tiempo sin avisos se
 //    puede pasar a Content-Security-Policy (bloqueante) con CSP_ENFORCE=1.
 //  - frame-ancestors (siempre aplicado): solo la propia web y el panel del
 //    estudio pueden enseñarla dentro de un marco (vista previa del panel).
@@ -20,6 +21,16 @@ function env(name: string): string {
   const e = (globalThis as { process?: { env?: Record<string, string | undefined> } }).process?.env;
   return e?.[name] || (import.meta.env[name] as string | undefined) || '';
 }
+
+/** Origen de las teselas del mapa (OpenFreeMap o las propias con PUBLIC_MAP_STYLE_URL). */
+const MAP_ORIGINS = (() => {
+  const origins = new Set(['https://tiles.openfreemap.org']);
+  try {
+    const custom = env('PUBLIC_MAP_STYLE_URL');
+    if (custom) origins.add(new URL(custom).origin);
+  } catch { /* URL mal escrita: se queda OpenFreeMap */ }
+  return [...origins].join(' ');
+})();
 
 const CSP = [
   "default-src 'self'",
@@ -35,11 +46,15 @@ const CSP = [
   "connect-src 'self' https://api.stripe.com https://*.stripe.com https://*.google-analytics.com"
     + ' https://*.analytics.google.com https://www.googletagmanager.com https://*.g.doubleclick.net'
     + ' https://www.google.com https://www.googleadservices.com https://www.facebook.com https://*.clarity.ms'
-    + ' https://accounts.google.com https://challenges.cloudflare.com',
+    + ' https://accounts.google.com https://challenges.cloudflare.com'
+    // Mapa del estudio: estilo, teselas, letras e iconos (components/sections/StudioMap.astro)
+    + ` ${MAP_ORIGINS}`,
   'frame-src https://js.stripe.com https://*.js.stripe.com https://hooks.stripe.com https://checkout.stripe.com'
-    + ' https://www.youtube-nocookie.com https://www.openstreetmap.org https://accounts.google.com'
+    + ' https://www.youtube-nocookie.com https://accounts.google.com'
     + ' https://challenges.cloudflare.com https://td.doubleclick.net https://www.googletagmanager.com',
+  // MapLibre pinta en un worker (archivo propio o blob:); child-src para Safari antiguos
   "worker-src 'self' blob:",
+  "child-src 'self' blob:",
   "manifest-src 'self'",
   "form-action 'self' https://checkout.stripe.com",
   "base-uri 'self'",

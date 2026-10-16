@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Box, Stack, TextField, Typography } from '@mui/material';
 import { PhotoPicker } from '../../components/guide';
 import type { StudioSettings } from '../../components/setup/api';
+import LocationPicker from '../../components/setup/LocationPicker';
 import { useStepGuard } from './autosave';
 import { FieldError } from './ui';
 
@@ -63,6 +64,9 @@ export default function StepStudio({ value, onChange, onBusyChange }: Props) {
         </Stack>
         {tried && placeMissing && <FieldError id="su-city-err">Escribe la ciudad: sale en tu web y en Google.</FieldError>}
       </Box>
+
+      {/* Con calle y ciudad, el punto del mapa de la web (se busca solo al guardar) */}
+      {value.address.trim() && value.city.trim() && <LocationPicker value={value} onChange={onChange} />}
 
       <Box>
         <Typography component="h2" sx={{ fontWeight: 700, fontSize: '1rem', mb: 0.5, color: 'var(--studio-ink)' }}>¿Cómo te contactan?</Typography>

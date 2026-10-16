@@ -27,6 +27,8 @@ const nAnalytics = 3;
 const nAds = hasAnalytics ? 4 : 3;
 const nVideos = 3 + (hasAnalytics ? 1 : 0) + (hasAds ? 1 : 0);
 const captcha = !!site.turnstile_site_key;
+// Mapa de «Cómo llegar» (sections/StudioMap.astro): solo si hay coordenadas
+const hasMap = site.contact.latitude != null && site.contact.longitude != null;
 const holder = site.legal.name || site.studio_name;
 const email = site.contact.email;
 const termsHref = es ? '/terminos-condiciones' : '/en/terms-conditions';
@@ -109,6 +111,12 @@ const H = es
       ? 'La casilla de seguridad de Cloudflare Turnstile es un servicio de seguridad estrictamente necesario (protege tus datos frente a programas que prueban contraseñas o crean cuentas falsas), por eso no depende de tu consentimiento. Para hacer la comprobación, Cloudflare recibe datos técnicos de tu navegador y tu dirección IP, que puede tratar fuera del Espacio Económico Europeo (está adherida al Marco de Privacidad de Datos UE-EE. UU.). Más información en la política de privacidad de Cloudflare: '
       : 'The Cloudflare Turnstile security check is a strictly necessary security service (it protects your data from programs that guess passwords or create fake accounts), so it does not depend on your consent. To run the check, Cloudflare receives technical data from your browser and your IP address, which it may process outside the European Economic Area (it participates in the EU-U.S. Data Privacy Framework). More information in Cloudflare\'s privacy policy: '}
       <a href="https://www.cloudflare.com/turnstile-privacy-policy/" target="_blank" rel="noopener">cloudflare.com/turnstile-privacy-policy</a>.</p>
+  )}
+  {hasMap && (
+    <p>{es
+      ? 'El mapa de «Cómo llegar» se dibuja en tu navegador con datos de OpenStreetMap servidos por OpenFreeMap. No guarda cookies ni hace seguimiento, por eso no necesita tu consentimiento; para enviarte las piezas del mapa, OpenFreeMap (a través de la red de Cloudflare) recibe datos técnicos de la petición, como tu dirección IP. Más información: '
+      : 'The "How to find us" map is drawn in your browser with OpenStreetMap data served by OpenFreeMap. It stores no cookies and does no tracking, so it does not need your consent; to send you the map tiles, OpenFreeMap (through the Cloudflare network) receives technical request data such as your IP address. More information: '}
+      <a href="https://openfreemap.org/privacy/" target="_blank" rel="noopener">openfreemap.org/privacy</a>.</p>
   )}
 
   {hasAnalytics && (
