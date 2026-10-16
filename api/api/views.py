@@ -1395,10 +1395,8 @@ class BookingViewSet(SoftDeleteModelViewSet):
             )
             
         elif booking.event:
-            return Response(
-                {"error": "La cancelación de 'Eventos' aún no está implementada."}, 
-                status=status.HTTP_501_NOT_IMPLEMENTED
-            )
+            # Eventos sueltos: como una clase, se devuelve su precio en créditos
+            credits_to_refund = booking.event.price_credits
 
         # 4. Ejecutar la cancelación y reembolso en una transacción atómica
         try:
@@ -1459,7 +1457,8 @@ class BookingViewSet(SoftDeleteModelViewSet):
                     response_message = "Reserva cancelada. Se le devuelve el pago a su tarjeta."
             # Si la cancela el estudio (no ella misma), se le avisa siempre
             if person and booking.user_id != request.user.id:
-                title = booking.occurrence.class_type.title if booking.occurrence else "Clase"
+                title = (booking.occurrence.class_type.title if booking.occurrence
+                         else (booking.event.title if booking.event else "Clase"))
                 try:
                     notify_cancellation_email(person, title, booking.start_datetime)
                 except Exception:
@@ -1872,10 +1871,12 @@ class ScheduleViewSet(viewsets.GenericViewSet):
         # 2.2. Obtener Eventos Fijos y Sesiones Únicas (de la BBDD)
         
         # Eventos Fijos (modelo Event)
+        # Solo los activos y no cancelados (antes salían también los desactivados)
         qs_events = Event.objects.filter(
             start_datetime__date__gte=start_date,
-            start_datetime__date__lte=end_date
-        ).select_related('class_type','class_type__instructor' ,'room', 'override_instructor')
+            start_datetime__date__lte=end_date,
+            is_active=True,
+        ).exclude(status='canceled').select_related('class_type','class_type__instructor' ,'room', 'override_instructor')
         
         # Sesiones Únicas (Reglas No Recurrentes)
         qs_single_sessions = RecurringSchedule.objects.filter(
@@ -1896,11 +1897,14 @@ class ScheduleViewSet(viewsets.GenericViewSet):
                 'type': 'EVENT',
                 'title': event.title,
                 'title_en': event.title_en or event.title,
-                'start_datetime': event.start_datetime.isoformat(),
-                'end_datetime': event.end_datetime.isoformat(),
+                # Hora de pared del estudio y sin zona, como las clases: la web
+                # (portada, horario) las lee igual (antes «…+00:00» daba fecha
+                # inválida en «Próximas clases» y la hora en UTC)
+                'start_datetime': to_madrid_wall(event.start_datetime).isoformat(timespec='seconds'),
+                'end_datetime': to_madrid_wall(event.end_datetime).isoformat(timespec='seconds'),
                 'room': event.room.name,
                 'room_en': event.room.title_en or event.room.name,
-                'instructor': event.instructor.name,
+                'instructor': event.instructor.name if event.instructor else None,
                 'capacity_max': event.capacity_max,
                 'capacity_min': event.capacity_min, # <--- AÑADIDO
                 'is_recurrent': False,
@@ -2141,7 +2145,11 @@ class CreateCheckoutSessionView(APIView):
     Todo va en una transacción y las plazas se comprueban (con bloqueo) ANTES
     de crear nada: si una clase está llena, o Stripe falla, no quedan pagos ni
     reservas pendientes huérfanos. La validación del carrito y de la invitada
-    es la misma que la de «pagar en el estudio» (api/utils/guest_checkout.py)."""
+    es la misma que la de «pagar en el estudio» (api/utils/guest_checkout.py).
+
+    Sirve para clases del horario y eventos sueltos (con su precio), y también
+    para una clienta con cuenta (sesión iniciada): entonces el pago y las
+    reservas van a su nombre y no hacen falta los datos de invitada."""
     permission_classes = [AllowAny]
     throttle_classes = [scoped('checkout')]
 
@@ -2157,9 +2165,11 @@ class CreateCheckoutSessionView(APIView):
             if captcha:
                 return captcha
 
-        details, error = guest_details(request.data)
-        if error:
-            return error
+        registered = request.user if request.user.is_authenticated else None
+        if registered is None:
+            details, error = guest_details(request.data)
+            if error:
+                return error
 
         coupon_code = (request.data.get('couponCode') or '').strip()
         coupon_obj = None
@@ -2180,10 +2190,14 @@ class CreateCheckoutSessionView(APIView):
         currency = stripe_currency()
         try:
             with transaction.atomic():
-                guest, created = guest_profile(details['email'], details['name'], details['phone'])
-                logger.info("checkout.guest guest_id=%s created=%s", guest.public_id, created)
+                if registered is not None:
+                    owner, email = {'user': registered}, registered.email
+                else:
+                    guest, created = guest_profile(details['email'], details['name'], details['phone'])
+                    logger.info("checkout.guest guest_id=%s created=%s", guest.public_id, created)
+                    owner, email = {'guest': guest}, guest.email
 
-                lines, error = validate_cart(request.data.get('cart_items'), guest=guest, lock=True)
+                lines, error = validate_cart(request.data.get('cart_items'), lock=True, **owner)
                 if error:
                     transaction.set_rollback(True)
                     return error
@@ -2191,7 +2205,7 @@ class CreateCheckoutSessionView(APIView):
                 line_items = []
                 total = decimal.Decimal(0)
                 for line in lines:
-                    title = line.schedule.class_type.title
+                    title = line.title
                     if line.price is None or line.price <= 0:
                         transaction.set_rollback(True)
                         return Response(
@@ -2228,18 +2242,18 @@ class CreateCheckoutSessionView(APIView):
                 final_amount = max(final_amount, decimal.Decimal(0))
 
                 payment = Payment.objects.create(
-                    guest=guest, amount_eur=final_amount, status='pending',
+                    **owner, amount_eur=final_amount, status='pending',
                     currency=currency.upper(), method='stripe', stripe_account=stripe_account,
                 )
                 if coupon_obj:
                     CouponRedemption.objects.create(
-                        coupon=coupon_obj, guest=guest, payment=payment, times_used=1,
+                        coupon=coupon_obj, **owner, payment=payment, times_used=1,
                         metadata={'original_price': str(total)},
                     )
                 # Reservas PENDIENTES: el webhook las confirma al cobrar
                 for line in lines:
                     Booking.objects.create(
-                        guest=guest, payment=payment, occurrence_id=line.schedule.id,
+                        **owner, payment=payment, **line.target(),
                         start_datetime=line.start, end_datetime=line.end, status='pending',
                     )
 
@@ -2247,7 +2261,7 @@ class CreateCheckoutSessionView(APIView):
                     'ui_mode': 'embedded_page',
                     'line_items': line_items,
                     'mode': 'payment',
-                    'customer_email': guest.email,
+                    'customer_email': email,
                     'tax_id_collection': {'enabled': False},
                     'invoice_creation': {'enabled': True},
                     'metadata': {'local_payment_id': payment.id},
@@ -2899,6 +2913,23 @@ class StripeWebhookView(APIView):
                             reserved_count, locked_schedule.capacity_max,
                         )
                         continue
+                elif booking.event_id:
+                    # Evento suelto: mismo control de aforo que una clase
+                    locked_event = Event.objects.select_for_update().filter(id=booking.event_id).first()
+                    taken = Booking.objects.filter(
+                        event_id=booking.event_id, status__in=['reserved', 'attended'],
+                    ).count()
+                    if locked_event is None or not locked_event.is_active or locked_event.status == 'canceled' \
+                            or taken >= locked_event.capacity_max:
+                        booking.status = 'canceled'
+                        booking.save(update_fields=['status', 'updated_at'])
+                        refund_cents += self._booking_price_cents(booking, session_currency)
+                        if booking.user or booking.guest:
+                            not_confirmed.append((booking.user or booking.guest,
+                                                  locked_event.title if locked_event else 'tu clase',
+                                                  booking.start_datetime))
+                        logger.warning("booking.fulfill.canceled booking_id=%s reason=event_unavailable", booking.id)
+                        continue
 
                 booking.status = 'reserved'
                 booking.save(update_fields=['status', 'updated_at'])
@@ -3455,23 +3486,29 @@ class VerifyPlanPurchaseView(APIView):
 
         logger.info(f"Suscripción creada (verify): user={user_id}, plan={plan.name}, stripe_sub={subscription_stripe_id}")
 class CreateBookingWithCreditsView(APIView):
+    """Reserva con créditos de una clienta con cuenta (clases del horario y
+    eventos sueltos). Todo en una transacción con el monedero y las sesiones
+    bloqueados. La validación es la misma que la de las invitadas
+    (api/utils/guest_checkout.py:validate_cart): cada línea tiene que ser una
+    sesión real (día y hora de la clase, o el inicio del evento), activa, sin
+    cierre, que no haya empezado, con plaza (las ofertas de la lista de espera
+    cuentan, salvo la suya) y que no tenga ya reservada."""
     permission_classes = [IsAuthenticated]
 
-    @transaction.atomic # 2. Transacción Atómica: O todo o nada
+    @transaction.atomic
     def post(self, request, *args, **kwargs):
-        
-        # 3. Obtener el usuario del JWT y su carrito
+        from api.utils.guest_checkout import validate_cart
+
         user = request.user
         cart_items = request.data.get('cart_items')
-
-        if not cart_items or not isinstance(cart_items, list) or not cart_items:
+        if not cart_items or not isinstance(cart_items, list):
             return Response(
-                {'error': 'La solicitud debe contener una lista de items.'}, 
+                {'error': 'La solicitud debe contener una lista de items.'},
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # 4. Obtener el monedero del usuario con LOCK: serializa peticiones
-        # concurrentes del mismo usuario para que el check de saldo sea fiable.
+
+        # Monedero con LOCK: serializa peticiones concurrentes de la misma
+        # usuaria para que la comprobación de saldo sea fiable.
         try:
             wallet = CreditWallet.objects.select_for_update().get(user=user)
         except CreditWallet.DoesNotExist:
@@ -3480,138 +3517,42 @@ class CreateBookingWithCreditsView(APIView):
                 status=status.HTTP_404_NOT_FOUND
             )
 
-        # 5. Calcular el costo total en CRÉDITOS (Backend)
-        session_ids = [item.get('id_source') for item in cart_items if item.get('id_source')]
-        if not session_ids:
-             return Response(
-                {'error': 'No se encontraron IDs de sesión válidos en el carrito.'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        
-        schedules_map = RecurringSchedule.objects.filter(
-            id__in=session_ids
-        ).select_related('class_type').in_bulk()
+        lines, error = validate_cart(cart_items, user=user, lock=True, max_items=30)
+        if error:
+            transaction.set_rollback(True)
+            return error
 
         total_credits_cost = decimal.Decimal(0)
-        bookings_to_create_data = [] # Lista para los datos del booking
-
-        for item in cart_items:
-            # Los eventos sueltos («E_…») no son horarios: su id_source es de un
-            # Event y antes se reservaba la clase que tuviera ese mismo número.
-            if str(item.get('id') or '').startswith('E_'):
+        for line in lines:
+            if line.credits is None or line.credits <= 0:
+                transaction.set_rollback(True)
                 return Response(
-                    {'error': 'Este evento no se puede reservar online: escríbenos y te guardamos plaza.', 'code': 'event'},
+                    {'error': f'La clase "{line.title}" no tiene un precio en créditos válido.', 'code': 'no_credits'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
-            schedule = schedules_map.get(item.get('id_source'))
-            if not schedule:
-                return Response(
-                    {'error': f'La sesión con id {item.get("id_source")} no es válida.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
+            total_credits_cost += line.credits
 
-            # Vigencia del horario + excepciones (vacaciones/cierres/privadas)
-            unavailable = slot_unavailable_reason(schedule, item.get('sessionDate'))
-            if unavailable:
-                return Response(
-                    {'error': f'"{schedule.class_type.title}": {UNAVAILABLE_MESSAGES[unavailable]}'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Lógica de precio en CRÉDITOS (asumiendo campos similares a los de EUR)
-            price_credits = schedule.price_credits_override
-            if price_credits is None:
-                # Asumimos que ClassType tiene 'default_price_credits'
-                price_credits = schedule.class_type.default_price_credits 
-
-            if price_credits is None or price_credits <= 0:
-                return Response(
-                    {'error': f'La clase "{schedule.class_type.title}" no tiene un precio en créditos válido.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            
-            total_credits_cost += price_credits
-            
-            bookings_to_create_data.append({
-                'occurrence_id': schedule.id,
-                'start_datetime': item.get('sessionDate'),
-                'end_datetime': item.get('sessionDateEnd')
-            })
-
-        # 6. Comprobar si el usuario tiene saldo suficiente
-        current_balance = wallet.balance # Usamos la @property
+        current_balance = wallet.balance
         if current_balance < total_credits_cost:
+            transaction.set_rollback(True)
             return Response(
                 {
                     'error': 'Créditos insuficientes.',
+                    'code': 'insufficient_credits',
                     'balance': current_balance,
                     'cost': total_credits_cost
-                }, 
-                status=status.HTTP_400_BAD_REQUEST # Error "Payment Required"
+                },
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        # 7. Verificar capacidad y duplicados (con lock) antes de crear bookings
-        # select_for_update bloquea los rows de RecurringSchedule para evitar race conditions
-        locked_schedules = {
-            s.id: s
-            for s in RecurringSchedule.objects.select_for_update().select_related('class_type').filter(
-                id__in=[bd['occurrence_id'] for bd in bookings_to_create_data]
-            )
-        }
-
-        for booking_data in bookings_to_create_data:
-            locked_schedule = locked_schedules.get(booking_data['occurrence_id'])
-            if not locked_schedule:
-                return Response(
-                    {'error': 'Clase no encontrada.'},
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            # Verificar reserva duplicada
-            if Booking.objects.filter(
-                user=user,
-                occurrence_id=locked_schedule.id,
-                start_datetime=booking_data['start_datetime'],
-                status__in=['reserved', 'attended'],
-            ).exists():
-                return Response(
-                    {'error': f'Ya tienes una reserva para "{locked_schedule.class_type.title}" en ese horario.'},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-            # Verificar capacidad máxima. Las plazas ofrecidas a la lista de
-            # espera (y aún sin caducar) cuentan como ocupadas, salvo la suya.
-            reserved_count = Booking.objects.filter(
-                occurrence_id=locked_schedule.id,
-                start_datetime=booking_data['start_datetime'],
-                status__in=['reserved', 'attended'],
-            ).count()
-            from api.utils.waitlist import full_class_payload, seats_taken, wall_date as _wl_date
-            slot_day = _wl_date(booking_data['start_datetime'])
-            if slot_day is not None:
-                reserved_count = max(reserved_count, seats_taken(locked_schedule, slot_day, exclude_user_id=user.id))
-            if reserved_count >= locked_schedule.capacity_max:
-                # code='class_full' + waitlist=True → la web puede ofrecer
-                # «Apuntarme a la lista de espera» (POST /api/v1/waitlist/).
-                return Response(
-                    {'error': f'La clase "{locked_schedule.class_type.title}" está completa.',
-                     **full_class_payload(locked_schedule, booking_data['start_datetime'])},
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-
-        # Todos los checks pasaron — crear los bookings
-        created_booking_ids = []
         created_bookings = []
-        for booking_data in bookings_to_create_data:
-            booking = Booking.objects.create(
-                user=user,
-                occurrence_id=booking_data['occurrence_id'],
-                start_datetime=booking_data['start_datetime'],
-                end_datetime=booking_data['end_datetime'],
-                status='reserved',
-            )
-            created_booking_ids.append(booking.id)
-            created_bookings.append(booking)
+        for line in lines:
+            created_bookings.append(Booking.objects.create(
+                user=user, **line.target(),
+                start_datetime=line.start, end_datetime=line.end, status='reserved',
+                metadata={'credits': str(line.credits)},
+            ))
+        created_booking_ids = [b.id for b in created_bookings]
 
         # Confirmación tras el commit: solo push. El email detallado ("clase
         # reservada", con créditos gastados y saldo) lo manda el signal del
@@ -3621,31 +3562,28 @@ class CreateBookingWithCreditsView(APIView):
             lambda items=created_bookings: notify_booking_confirmation(items, send_email=False)
         )
 
-        # 8. Crear la transacción de gasto (Ledger Entry)
-        if total_credits_cost > 0:
-            CreditLedgerEntry.objects.create(
-                wallet=wallet,
-                kind="spend",
-                amount= -total_credits_cost, # <-- CAMBIO CLAVE: Monto negativo
-                reference="Reserva de clases",
-                metadata={
-                    'booking_ids': created_booking_ids,
-                    'cart_items': cart_items 
-                }
-            )
+        CreditLedgerEntry.objects.create(
+            wallet=wallet,
+            kind="spend",
+            amount=-total_credits_cost,
+            reference="Reserva de clases",
+            metadata={
+                'booking_ids': created_booking_ids,
+                'cart_items': cart_items,
+            }
+        )
 
         logger.info(
             "booking.credits.created user_id=%s booking_ids=%s credits_spent=%s balance=%s",
             user.id, created_booking_ids, total_credits_cost, wallet.balance,
         )
-
-        # 9. Enviar respuesta de éxito
         return Response(
             {
                 'status': 'success',
                 'message': 'Reserva completada con éxito.',
                 'credits_spent': total_credits_cost,
-                'new_balance': wallet.balance # Devuelve el nuevo saldo
+                'new_balance': wallet.balance,
+                'booking_ids': created_booking_ids,
             },
             status=status.HTTP_201_CREATED
         )

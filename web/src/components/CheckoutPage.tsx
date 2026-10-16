@@ -380,7 +380,7 @@ function CheckoutPageInner() {
     } catch { return []; }
   });
   const cartScheduleIds = useMemo(
-    () => new Set([...(items.map(i => i.id_source).filter(Boolean) as number[]), ...preferIds]),
+    () => new Set([...(items.filter(i => !String(i.id).startsWith('E_')).map(i => i.id_source).filter(Boolean) as number[]), ...preferIds]),
     [items, preferIds]
   );
 

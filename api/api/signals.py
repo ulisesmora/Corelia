@@ -81,39 +81,52 @@ def send_verification_email_on_user_created(sender, instance: User, created: boo
     transaction.on_commit(lambda: send_verification(User.objects.get(pk=instance.pk)))
 
 
+def _booking_title(booking):
+    """Título de una reserva: la clase del horario o el evento suelto."""
+    if booking.occurrence_id:
+        return booking.occurrence.class_type.title
+    if booking.event_id:
+        return booking.event.title
+    return 'Clase'
+
+
 @receiver(post_save, sender=Payment)
 def send_payment_confirmation_email(sender, instance: Payment, **kwargs):
-    if instance.guest == None:
+    """Recibo de un pago de RESERVAS con tarjeta (invitada o clienta con
+    cuenta). Los pagos de bonos/cuotas (sin reservas) los cubre el signal de
+    abajo."""
+    if instance.guest_id is None and instance.user_id is None:
         return
     if instance.status == 'succeeded':
         
         try:
             # --- 2. Recopilar la Información ---
-            user = instance.guest 
+            user = instance.guest or instance.user
             
             # Obtenemos los bookings (¡CON LA CORRECCIÓN!)
             # Optimizamos la query igual que en tu otro signal
             bookings = instance.bookings.all().select_related(
-                'occurrence__class_type'
+                'occurrence__class_type', 'event'
             )
 
             if not bookings.exists():
+                if instance.guest_id is None:
+                    return  # compra de un bono/cuota: otro email
                 logger.warning(f"Payment {instance.id} 'succeeded' pero no tiene bookings. No se envía email.")
                 return
 
             # --- 3. Formatear los datos (¡CON LA CORRECCIÓN!) ---
             bookings_data_for_email = []
             for booking in bookings:
-                schedule = booking.occurrence
                 local_dt = booking.start_datetime.astimezone(MADRID_TZ)
                 bookings_data_for_email.append({
-                    "clase": schedule.class_type.title,
+                    "clase": _booking_title(booking),
                     "fecha": local_dt.strftime("%d/%m/%Y"),
                     "hora": local_dt.strftime("%H:%M"),
                 })
 
             dynamic_data = {
-                "name": user.name or "",
+                "name": getattr(user, 'name', None) or getattr(user, 'first_name', None) or "",
                 "payment_id": str(instance.id),
                 "payment_total": money(instance.amount_eur, instance.currency), 
                 "payment_date": instance.created_at.strftime("%d/%m/%Y"), 
@@ -149,6 +162,10 @@ def send_plan_purchase_confirmation_email(sender, instance: Payment, **kwargs):
         return
 
     if not instance.user:
+        return
+
+    # Pago de reservas con tarjeta (clase o evento): ya lo cubre el recibo de arriba
+    if instance.bookings.exists():
         return
 
     try:
@@ -203,17 +220,16 @@ def send_credit_booking_confirmation_email(sender, instance: CreditLedgerEntry, 
 
         # Buscamos los bookings en la BBDD
         bookings = Booking.objects.filter(id__in=booking_ids).select_related(
-            'occurrence__class_type' # Optimizamos la query
+            'occurrence__class_type', 'event'
         )
         
 
         # --- 3. Formatear los datos para la plantilla ---
         bookings_data_for_email = []
         for booking in bookings:
-            schedule = booking.occurrence
             local_dt = booking.start_datetime.astimezone(MADRID_TZ)
             bookings_data_for_email.append({
-                "clase": schedule.class_type.title,
+                "clase": _booking_title(booking),
                 "fecha": local_dt.strftime("%d/%m/%Y"),
                 "hora": local_dt.strftime("%H:%M"),
             })

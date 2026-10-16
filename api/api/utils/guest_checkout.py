@@ -5,9 +5,11 @@
   - guest_details(data)       → nombre, email y teléfono validados (o un error).
   - guest_profile(...)        → la ficha de la invitada: reutiliza la que ya
                                 exista con ese email (también si estaba borrada).
-  - validate_cart(...)        → comprueba cada clase del carrito (existe, está
-                                activa, no ha pasado, tiene plaza, no la tiene
-                                ya reservada…) y devuelve las líneas con precio.
+  - validate_cart(...)        → comprueba cada clase o evento del carrito (es
+                                una sesión real, está activa, no ha empezado,
+                                no hay cierre, tiene plaza, no la tiene ya
+                                reservada…) y devuelve las líneas con precio.
+                                También lo usa la reserva con créditos.
 
 Antes, el pago de invitada creaba el Payment y las reservas pendientes ANTES de
 comprobar las plazas (si la 2.ª clase estaba llena quedaban huérfanos), fallaba
@@ -18,7 +20,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 from django.core.exceptions import ValidationError
@@ -36,13 +38,45 @@ MAX_GUEST_ITEMS = 10
 
 @dataclass
 class CartLine:
-    schedule: object
+    """Una sesión del carrito ya comprobada: una clase del horario (`schedule`)
+    o un evento suelto (`event`), con su inicio y fin reales y su precio."""
+    schedule: object | None
+    event: object | None
+    title: str
     start: datetime
     end: datetime | None
-    start_raw: str
-    end_raw: str | None
     price: Decimal | None
     credits: Decimal | None
+
+    def target(self) -> dict:
+        """Campos de Booking para esta sesión (clase XOR evento)."""
+        if self.event is not None:
+            return {'event_id': self.event.id}
+        return {'occurrence_id': self.schedule.id}
+
+
+def item_kind(item) -> str:
+    """'event' para los eventos sueltos («E_…» en la web), 'class' para el resto.
+    El id_source de un evento es el de Event, no el de una clase del horario."""
+    return 'event' if str((item or {}).get('id') or '').startswith('E_') or (item or {}).get('type') == 'EVENT' else 'class'
+
+
+def event_unavailable_reason(event):
+    """Motivo por el que un evento no se puede reservar, o None. Los cierres
+    globales (sin clase concreta) también afectan a los eventos."""
+    from api.models import ScheduleBlackout
+    from api.utils.availability import to_madrid_wall
+
+    if not event.is_active or event.status == 'canceled' or event.deleted_at is not None:
+        return 'inactive'
+    wall = to_madrid_wall(event.start_datetime)
+    day = timedelta(days=1)
+    for b in ScheduleBlackout.objects.filter(schedule__isnull=True,
+                                             start_datetime__lte=event.start_datetime + day,
+                                             end_datetime__gte=event.start_datetime - day):
+        if to_madrid_wall(b.start_datetime) <= wall < to_madrid_wall(b.end_datetime):
+            return 'blocked'
+    return None
 
 
 def _bad(message: str, code: str = '', **extra) -> Response:
@@ -113,87 +147,115 @@ def _aware(value) -> datetime | None:
     return dt
 
 
-def validate_cart(cart_items, guest=None, lock=False) -> tuple[list[CartLine] | None, Response | None]:
-    """Comprueba el carrito de una invitada. Con lock=True bloquea las clases
-    (select_for_update) para que dos reservas a la vez no pasen del aforo:
-    llámalo dentro de transaction.atomic()."""
-    from api.models import Booking, RecurringSchedule
+def validate_cart(cart_items, guest=None, user=None, lock=False,
+                  max_items=MAX_GUEST_ITEMS) -> tuple[list[CartLine] | None, Response | None]:
+    """Comprueba un carrito (clases del horario y eventos sueltos) para una
+    invitada (`guest`) o una clienta con cuenta (`user`). Con lock=True bloquea
+    las clases y eventos (select_for_update) para que dos reservas a la vez no
+    pasen del aforo: llámalo dentro de transaction.atomic().
+
+    Cada línea tiene que ser una sesión REAL: para una clase, su día de la
+    semana (o su fecha si es suelta) y su hora; para un evento, su inicio. La
+    hora que se guarda es la de la sesión, no la que mande el navegador."""
+    from api.models import Booking, Event, RecurringSchedule
     from api.utils.availability import UNAVAILABLE_MESSAGES, slot_unavailable_reason, to_madrid_wall
-    from api.utils.waitlist import full_class_payload, occurs_on, seats_taken, wall_date
+    from api.utils.waitlist import as_instant, full_class_payload, occurs_on, seats_taken, slot_bounds
 
     if not cart_items or not isinstance(cart_items, list):
         return None, _bad('La solicitud debe contener una lista de clases.', 'empty_cart')
-    if len(cart_items) > MAX_GUEST_ITEMS:
-        return None, _bad(f'Puedes reservar hasta {MAX_GUEST_ITEMS} clases a la vez.', 'too_many')
+    if len(cart_items) > max_items:
+        return None, _bad(f'Puedes reservar hasta {max_items} clases a la vez.', 'too_many')
 
-    ids = []
+    parsed = []  # (kind, id, item)
     for item in cart_items:
         if not isinstance(item, dict):
             return None, _bad('Carrito no válido.', 'bad_item')
-        # Los eventos sueltos («E_…») no son horarios: su id no es de una clase
-        # y antes se reservaba la clase que tuviera ese mismo número.
-        if str(item.get('id') or '').startswith('E_'):
-            return None, _bad('Este evento no se puede reservar online: escríbenos y te guardamos plaza.', 'event')
         try:
-            ids.append(int(item.get('id_source')))
+            ref = int(item.get('id_source'))
         except (TypeError, ValueError):
             return None, _bad('No se encontraron clases válidas en el carrito.', 'bad_item')
+        parsed.append((item_kind(item), ref, item))
 
-    qs = RecurringSchedule.objects.filter(id__in=ids).select_related('class_type')
-    if lock:
-        qs = qs.select_for_update()
-    schedules = {s.id: s for s in qs}
+    def fetch(model, ids, related):
+        qs = model.objects.filter(id__in=ids).select_related(*related)
+        if lock:
+            qs = qs.select_for_update(of=('self',))
+        return {o.id: o for o in qs}
+
+    schedules = fetch(RecurringSchedule, [r for k, r, _ in parsed if k == 'class'], ('class_type',))
+    events = fetch(Event, [r for k, r, _ in parsed if k == 'event'], ('class_type',))
 
     now = timezone.now()
+    owner = {'guest': guest} if guest is not None else ({'user': user} if user is not None else None)
     lines: list[CartLine] = []
     seen = set()
-    for item, sid in zip(cart_items, ids):
-        schedule = schedules.get(sid)
-        if schedule is None:
-            return None, _bad(f'La sesión con id {sid} no es válida o no existe.', 'not_found')
-        title = schedule.class_type.title
-        start = _aware(item.get('sessionDate'))
-        if start is None:
-            return None, _bad(f'"{title}": falta la fecha de la sesión.', 'bad_date')
-        end = _aware(item.get('sessionDateEnd'))
+    for kind, ref, item in parsed:
+        start_sent = _aware(item.get('sessionDate'))
+        if kind == 'event':
+            event = events.get(ref)
+            if event is None:
+                return None, _bad(f'El evento con id {ref} no es válido o no existe.', 'not_found')
+            title = event.title
+            start, end = event.start_datetime, event.end_datetime
+            # El navegador manda el inicio del evento: si no coincide, no es esa sesión
+            if start_sent is None or abs((start_sent - start).total_seconds()) >= 60:
+                return None, _bad(f'"{title}": esa sesión no existe en el horario.', 'bad_slot')
+        else:
+            schedule = schedules.get(ref)
+            if schedule is None:
+                return None, _bad(f'La sesión con id {ref} no es válida o no existe.', 'not_found')
+            title = schedule.class_type.title
+            if start_sent is None:
+                return None, _bad(f'"{title}": falta la fecha de la sesión.', 'bad_date')
+            wall = to_madrid_wall(start_sent)
+            # Su día y su hora: antes se aceptaba cualquier hora que mandara el navegador
+            if wall is None or not occurs_on(schedule, wall.date()) or \
+                    (wall.hour, wall.minute) != (schedule.start_time.hour, schedule.start_time.minute):
+                return None, _bad(f'"{title}": esa sesión no existe en el horario.', 'bad_slot')
+            s_wall, e_wall = slot_bounds(schedule, wall.date())
+            start, end = as_instant(s_wall), as_instant(e_wall)
+
         if start <= now:
             return None, _bad(f'"{title}": esa sesión ya ha empezado.', 'past')
-        key = (sid, start)
+        key = (kind, ref, start)
         if key in seen:
             continue  # la misma sesión dos veces en el carrito: cuenta una
         seen.add(key)
 
-        # La fecha tiene que ser una sesión real de esa clase (su día y su hora):
-        # antes se aceptaba cualquier hora que mandara el navegador.
-        wall = to_madrid_wall(start)
-        if wall is None or not occurs_on(schedule, wall.date()) or \
-                (wall.hour, wall.minute) != (schedule.start_time.hour, schedule.start_time.minute):
-            return None, _bad(f'"{title}": esa sesión no existe en el horario.', 'bad_slot')
-
-        unavailable = slot_unavailable_reason(schedule, start)
+        if kind == 'event':
+            unavailable = event_unavailable_reason(event)
+            active = Booking.objects.filter(event_id=ref, status__in=['reserved', 'attended'])
+        else:
+            unavailable = slot_unavailable_reason(schedule, start)
+            active = Booking.objects.filter(occurrence_id=ref, start_datetime=start,
+                                            status__in=['reserved', 'attended'])
         if unavailable:
             return None, _bad(f'"{title}": {UNAVAILABLE_MESSAGES[unavailable]}', unavailable)
-
-        active = Booking.objects.filter(occurrence_id=sid, start_datetime=start, status__in=['reserved', 'attended'])
-        if guest is not None and active.filter(guest=guest).exists():
+        if owner is not None and active.filter(**owner).exists():
             return None, _bad(f'Ya tienes una reserva para "{title}" en ese horario.', 'already_booked')
-        taken = active.count()
-        day = wall_date(start)
-        if day is not None:
-            taken = max(taken, seats_taken(schedule, day))
-        if taken >= schedule.capacity_max:
-            return None, _bad(f'La clase "{title}" está completa para el horario seleccionado.',
-                              **full_class_payload(schedule, start))
 
-        price = schedule.price_eur_override
-        if price is None:
-            price = schedule.class_type.default_price_eur
-        credits = schedule.price_credits_override
-        if credits is None:
-            credits = schedule.class_type.default_price_credits
+        taken = active.count()
+        if kind == 'event':
+            capacity, full_extra = event.capacity_max, {'code': 'class_full', 'waitlist': False}
+            price, credits = event.price_eur, event.price_credits
+        else:
+            # Las plazas ofrecidas a la lista de espera también cuentan (salvo la suya)
+            taken = max(taken, seats_taken(schedule, to_madrid_wall(start).date(),
+                                           exclude_user_id=getattr(user, 'id', None)))
+            capacity, full_extra = schedule.capacity_max, full_class_payload(schedule, start)
+            price = schedule.price_eur_override
+            if price is None:
+                price = schedule.class_type.default_price_eur
+            credits = schedule.price_credits_override
+            if credits is None:
+                credits = schedule.class_type.default_price_credits
+        if taken >= capacity:
+            return None, _bad(f'La clase "{title}" está completa para el horario seleccionado.', **full_extra)
+
         lines.append(CartLine(
-            schedule=schedule, start=start, end=end,
-            start_raw=str(item.get('sessionDate')), end_raw=item.get('sessionDateEnd'),
+            schedule=schedule if kind == 'class' else None,
+            event=event if kind == 'event' else None,
+            title=title, start=start, end=end,
             price=Decimal(price) if price is not None else None,
             credits=Decimal(credits) if credits is not None else None,
         ))

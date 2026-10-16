@@ -119,8 +119,8 @@ class CardCheckoutTests(GuestCheckoutBase):
         past = self.item(day=self.day - timedelta(days=14))
         r = self.post({**self.guest(), 'cart_items': [past]})
         self.assertEqual((r.status_code, r.json()['code']), (400, 'past'))
-        r = self.post({**self.guest(), 'cart_items': [{**self.item(), 'id': 'E_1'}]})
-        self.assertEqual((r.status_code, r.json()['code']), (400, 'event'))
+        r = self.post({**self.guest(), 'cart_items': [{**self.item(), 'id': 'E_999', 'id_source': 999}]})
+        self.assertEqual((r.status_code, r.json()['code']), (400, 'not_found'))
         self.assertFalse(Payment.objects.exists())
 
     def test_without_online_payments_says_so(self):
@@ -205,15 +205,3 @@ class PayAtStudioTests(GuestCheckoutBase):
         self.c.credentials(HTTP_AUTHORIZATION='Bearer token-caducado')
         r = self.c.post(RESERVE, {**self.guest(), 'cart_items': [self.item()]}, format='json')
         self.assertEqual(r.status_code, 201, r.content)
-
-
-class CreditsEventGuardTests(GuestCheckoutBase):
-    def test_registered_client_cannot_book_an_event_id_as_a_class(self):
-        user = make_client()
-        self.c.force_authenticate(user)
-        r = self.c.post('/api/v1/checkout/reserve/', {'cart_items': [{**self.item(), 'id': 'E_1'}]}, format='json')
-        self.assertEqual((r.status_code, r.json()['code']), (400, 'event'))
-        r = self.c.post('/api/v1/checkout/reserve/', {'cart_items': [self.item(), self.item(self.sched2, 18)]},
-                        format='json')
-        self.assertEqual(r.status_code, 201, r.content)
-        self.assertEqual(Booking.objects.filter(user=user, status='reserved').count(), 2)

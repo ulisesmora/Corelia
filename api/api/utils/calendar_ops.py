@@ -694,13 +694,19 @@ REFUND_POLICIES = ('credits', 'money', 'none')
 
 
 def _refund_credits(booking, schedule, reason):
-    credits = price_credits(schedule)
+    # schedule=None → reserva de un evento suelto: su precio en créditos
+    if schedule is not None:
+        credits, ref = price_credits(schedule), f'calendar_cancel_{schedule.id}_{booking.id}'
+    elif booking.event_id:
+        credits, ref = Decimal(booking.event.price_credits or 0), f'calendar_cancel_e{booking.event_id}_{booking.id}'
+    else:
+        return False
     if not booking.user_id or credits <= 0:
         return False
     wallet, _ = CreditWallet.objects.get_or_create(user_id=booking.user_id)
     CreditLedgerEntry.objects.create(
         wallet=wallet, kind='refund', amount=credits,
-        reference=f'calendar_cancel_{schedule.id}_{booking.id}',
+        reference=ref,
         metadata={'booking_id': booking.id, 'reason': reason},
     )
     return True
@@ -953,16 +959,17 @@ def add_client_to_occurrence(schedule, d, client, charge='credits', force=False,
 def remove_booking(booking, refund='credits', notify=False, user=None):
     """Quita a una persona de la clase (también «deshacer» de Añadir)."""
     schedule = booking.occurrence
-    if schedule is None:
+    if schedule is None and not booking.event_id:
         raise CalendarError('not_class', 'Esa reserva no es de una clase del horario.')
     if booking.status not in ('reserved', 'attended', 'no_show', 'pending'):
         raise CalendarError('not_active', 'Esa reserva ya no está activa.')
     if booking.status in ('attended', 'no_show'):
         Booking.objects.filter(pk=booking.pk).update(status='reserved')
         booking.refresh_from_db()
+    # (schedule=None en los eventos sueltos: se devuelve el precio del evento)
     n, n_credits, n_card, people = _cancel_bookings([booking], schedule, refund, 'Quitada por el estudio')
     if notify and people:
-        _notify_cancel(people, schedule.class_type.title)
+        _notify_cancel(people, schedule.class_type.title if schedule else booking.event.title)
     return {'removed': n, 'refunded_credits': n_credits, 'refunded_card': n_card}
 
 

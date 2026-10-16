@@ -69,7 +69,7 @@ class GuestReserveView(APIView):
                 price = line.price if line.price and line.price > 0 else Decimal(0)
                 total += price
                 bookings.append(Booking.objects.create(
-                    guest=guest, occurrence_id=line.schedule.id,
+                    guest=guest, **line.target(),
                     start_datetime=line.start, end_datetime=line.end, status='reserved',
                     metadata={'pay_at_studio': True, 'price': str(price), 'currency': currency,
                               'source': 'web_guest'},
@@ -83,7 +83,8 @@ class GuestReserveView(APIView):
             'pay_at_studio': True,
             'bookings': [{
                 'id': b.id,
-                'title': line.schedule.class_type.title,
+                'title': line.title,
+                'kind': 'event' if line.event is not None else 'class',
                 'start_datetime': b.start_datetime.isoformat() if hasattr(b.start_datetime, 'isoformat') else str(b.start_datetime),
                 'price': b.metadata.get('price'),
             } for b, line in zip(bookings, lines)],

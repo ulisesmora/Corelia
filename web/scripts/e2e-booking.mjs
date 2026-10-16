@@ -2,11 +2,13 @@
 //   - invitada sin cuenta en un estudio sin pagos online: varias clases en el
 //     panel «Tu reserva», quitar una, «Continuar al pago» y pagar en el estudio;
 //   - invitada con tarjeta (pagos simulados en el navegador: no llama a Stripe);
-//   - clienta registrada que reserva con créditos (CLIENT_JSON={"id","access"}).
+//   - clienta registrada que reserva con créditos (CLIENT_JSON={"id","access"});
+//   - eventos sueltos («E_…»): invitada que paga en el estudio y clienta con
+//     créditos (EVENT_TITLE=título de un evento futuro con plazas).
 //
 // Uso (con la web y el API de PRUEBA arrancados y datos de ejemplo, SEED_DEMO=1):
 //   npm i --no-save playwright-core && npx playwright install chromium
-//   node scripts/e2e-booking.mjs http://127.0.0.1:4321 /tmp/capturas [all|guest|card|client]
+//   node scripts/e2e-booking.mjs http://127.0.0.1:4321 /tmp/capturas [all|guest|card|client|event]
 // CHROME_PATH=… para usar otro Chromium. Reserva de verdad en ese API: nunca en producción.
 import { chromium } from 'playwright-core';
 import fs from 'node:fs';
@@ -105,6 +107,7 @@ if (only === 'all' || only === 'guest') {
   await page.locator('.w-hd-bag').click();
   await dlg.waitFor({ state: 'visible' });
   ok(await dlg.isVisible() && /2/.test(await page.locator('.w-hd-badge').innerText()), 'A10 la bolsa (con número) abre el panel');
+  const panelTotal = (await dlg.locator('.w-cart-total strong').innerText()).replace(/[^\d]/g, '');  // «39 €» → «39»
   await dlg.getByRole('link', { name: /Continuar al pago/ }).click();
   await page.waitForURL('**/checkout');
   await page.waitForSelector('input[name="email"]', { timeout: 15000 });
@@ -117,7 +120,7 @@ if (only === 'all' || only === 'guest') {
   await page.waitForSelector('[data-testid="guest-studio-done"]', { timeout: 15000 }).catch(async (e) => {
     console.log('  alert:', await page.locator('[data-status="error"]').allInnerTexts()); throw e; });
   const done = await page.locator('[data-testid="guest-studio-done"]').innerText();
-  ok(/Plaza reservada/.test(done) && /28/.test(done), 'A12 reserva de invitada confirmada (pagar en el estudio)');
+  ok(/Plaza reservada/.test(done) && done.replace(/[^\d]/g, '').includes(panelTotal), 'A12 reserva de invitada confirmada (pagar en el estudio)');
   ok(await page.evaluate(() => JSON.parse(localStorage.getItem('site-cart-storage') || '{}')?.state?.items?.length === 0), 'A13 carrito vacío tras reservar');
   await page.screenshot({ path: `${OUT}/after-e2e-390-guest-done.png`, fullPage: true });
   await ctx.close();
@@ -185,6 +188,70 @@ if ((only === 'all' && process.env.CLIENT_JSON) || only === 'client') {
   ok(/Reserva (completada|confirmada)|reservada|¡Reserva/i.test(txt), 'C2 reserva con créditos completada');
   await page.screenshot({ path: `${OUT}/after-e2e-390-client-done.png` });
   await ctx.close();
+}
+
+// ── D) Evento suelto: invitada (pagar en el estudio) y clienta con créditos ──
+async function bookEvent(page, title) {
+  // Busca el día del evento en el horario y pulsa su «Reservar»
+  for (let i = 0; i < 8; i++) {
+    const row = page.locator('.w-cal-row', { hasText: title });
+    if (await row.count()) {
+      await row.locator('button.sk-btn:has-text("Reservar")').click();
+      await page.getByRole('dialog').waitFor({ state: 'visible', timeout: 5000 });
+      return true;
+    }
+    const days = page.locator('.w-cal-day:not(:disabled)').filter({ has: page.locator('i.has') });
+    if (i >= await days.count()) return false;
+    await days.nth(i).click(); await page.waitForTimeout(600);
+  }
+  return false;
+}
+const EVENT_TITLE = process.env.EVENT_TITLE;
+if ((only === 'all' || only === 'event') && EVENT_TITLE) {
+  const { ctx, page } = await newPage(390);
+  await page.goto(BASE + '/calendar', { waitUntil: 'networkidle' });
+  await page.evaluate(() => localStorage.clear());
+  await page.reload({ waitUntil: 'networkidle' });
+  await page.waitForSelector('.w-cal-row');
+  ok(await bookEvent(page, EVENT_TITLE), 'D1 el evento sale en el horario y «Reservar» lo añade al panel');
+  const dlg = page.getByRole('dialog');
+  ok((await dlg.locator('.w-cart-item').innerText()).includes(EVENT_TITLE), 'D2 el panel muestra el evento con su precio');
+  await page.screenshot({ path: `${OUT}/after-e2e-390-event-panel.png` });
+  await dlg.getByRole('link', { name: /Continuar al pago/ }).click();
+  await page.waitForURL('**/checkout');
+  await page.waitForSelector('input[name="email"]', { timeout: 15000 });
+  await page.fill('input[name="email"]', 'evento.e2e@example.com');
+  await page.fill('input[name="name"]', 'Eva Evento');
+  await page.locator('input[name="phone"]').click(); await page.locator('input[name="phone"]').pressSequentially('600987654');
+  await page.getByRole('button', { name: /Reservar y pagar en el estudio/ }).click();
+  await page.waitForSelector('[data-testid="guest-studio-done"]', { timeout: 15000 });
+  ok((await page.locator('[data-testid="guest-studio-done"]').innerText()).includes(EVENT_TITLE), 'D3 invitada: evento reservado para pagar en el estudio');
+  await page.screenshot({ path: `${OUT}/after-e2e-390-event-guest-done.png`, fullPage: true });
+  await ctx.close();
+
+  if (process.env.CLIENT_JSON) {
+    const creds = JSON.parse(fs.readFileSync(process.env.CLIENT_JSON, 'utf8'));
+    const { ctx: c2, page: p2 } = await newPage(390);
+    await p2.goto(BASE + '/calendar', { waitUntil: 'networkidle' });
+    await p2.evaluate((c) => { localStorage.clear(); localStorage.setItem('storageVersion', 'v1.1'); localStorage.setItem('accessToken', c.access); localStorage.setItem('iduser', String(c.id)); localStorage.setItem('sessionTimestamp', String(Date.now())); }, creds);
+    await p2.reload({ waitUntil: 'networkidle' });
+    await p2.waitForSelector('.w-cal-row');
+    await bookEvent(p2, EVENT_TITLE);
+    ok(/2 créditos/.test(await p2.getByRole('dialog').locator('.w-cart-total').innerText()), 'D4 con cuenta, el evento cuesta sus créditos');
+    await p2.getByRole('dialog').getByRole('link', { name: /Continuar al pago/ }).click();
+    await p2.waitForURL('**/checkout');
+    let reserveRes = null;
+    p2.on('response', (r) => { if (r.url().includes('/checkout/reserve/')) r.json().then((j) => { reserveRes = j; }).catch(() => {}); });
+    const btn = p2.getByRole('button', { name: /Reservar|Confirmar/ }).last();
+    await btn.waitFor({ timeout: 15000 });
+    await btn.click();
+    const confirm = p2.getByRole('button', { name: /Confirmar|Sí, reservar|Reservar ahora/ }).last();
+    if (await confirm.isVisible().catch(() => false)) await confirm.click();
+    await p2.waitForTimeout(2500);
+    ok(reserveRes && reserveRes.status === 'success' && Number(reserveRes.credits_spent) === 2, 'D5 clienta: evento reservado con 2 créditos');
+    await p2.screenshot({ path: `${OUT}/after-e2e-390-event-client-done.png` });
+    await c2.close();
+  }
 }
 
 await browser.close();
