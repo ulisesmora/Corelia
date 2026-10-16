@@ -39,6 +39,7 @@ from .views_dashboard import (
     DashboardTodayView, DashboardWebSectionView, DashboardWebView,
 )
 from .views_guide import ChargingGuideView
+from .views_studio_plans import StudioPlanViewSet
 from .views_site import (
     FAQItemViewSet, SiteConfigAdminView, SiteConfigCheckDomainView, SiteConfigPublicView, SiteConfigStripeView,
     SiteBadgeView, SiteConfigTestEmailView, SiteIconView, SiteOgImageView, TestimonialViewSet,
@@ -71,6 +72,8 @@ router.register(r'site-images', SiteImageViewSet)
 router.register(r'blackouts', ScheduleBlackoutViewSet)
 router.register(r'faqs', FAQItemViewSet)
 router.register(r'testimonials', TestimonialViewSet)
+# Clientas del estudio: planes mensuales cobrados en el estudio (api/views_studio_plans.py)
+router.register(r'studio-plans', StudioPlanViewSet, basename='studio-plan')
 
 urlpatterns = [
     # Antes que el router: si no, `subscriptions/<pk>/` captura «create-stripe» (405).

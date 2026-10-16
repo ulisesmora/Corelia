@@ -51,6 +51,7 @@ function useNewEntries(): MenuEntry[] {
   return [
     { icon: 'booked', label: 'Reserva', hint: 'Apuntar a una clienta a una clase', onClick: () => openNewClient('existing'), badge: true },
     { icon: 'addClient', label: 'Clienta', hint: 'Dar de alta una ficha', onClick: () => openNewClient('new'), badge: true },
+    { icon: 'studio', label: 'Clienta del estudio', hint: 'Te paga en mano: clases o un mes fijo', onClick: () => navigate('/clientas/estudio/nueva'), badge: true },
     { icon: 'add', label: 'Clase', hint: 'Añadir una clase al horario', onClick: () => navigate('/calendar?accion=nueva'), badge: true },
     { icon: 'plans', label: 'Bono', hint: 'Un bono o una cuota para vender', onClick: () => navigate('/clases-y-precios?tab=precios&accion=nueva'), badge: true },
   ];

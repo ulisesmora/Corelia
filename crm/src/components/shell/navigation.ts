@@ -150,7 +150,7 @@ export function sectionOf(pathname: string, search = ''): SectionKey | null {
   if (pathname === '/') return 'today';
   if (pathname.startsWith('/calendar')) return 'calendar';
   if (pathname.startsWith('/bookings')) return 'bookings';
-  if (pathname.startsWith('/clients')) return 'clients';
+  if (pathname.startsWith('/clients') || pathname.startsWith('/clientas')) return 'clients';
   if (CATALOG_PATHS.has(pathname)) return 'catalog';
   if (SALES_PATHS.has(pathname)) return 'sales';
   if (pathname === '/mi-web' || pathname === '/site-images') return 'web';

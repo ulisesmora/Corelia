@@ -80,6 +80,7 @@ export default function CommandPalette({ open, initialQuery = '', onClose }: { o
   const items = useMemo<Item[]>(() => {
     const actions: Item[] = [
       { id: 'a-client', group: 'Acciones', label: 'Nueva clienta', icon: 'addClient', keywords: 'alta ficha', run: () => openNewClient('new') },
+      { id: 'a-studio-client', group: 'Acciones', label: 'Nueva clienta del estudio', hint: 'Te paga en mano: clases sueltas o un mes fijo', icon: 'studio', keywords: 'plan mensual efectivo bizum en mano mensualidad renovar corte alta', path: '/clientas/estudio/nueva', run: go('/clientas/estudio/nueva') },
       { id: 'a-booking', group: 'Acciones', label: 'Nueva reserva', hint: 'Apuntar a una clienta a una clase', icon: 'booked', keywords: 'reservar apuntar', run: () => openNewClient('existing') },
       { id: 'a-fixed', group: 'Acciones', label: 'Darle una clase fija a una clienta', icon: 'fixedClasses', keywords: 'plaza semanal', path: '/assign-classes', run: go('/assign-classes') },
       { id: 'a-class', group: 'Acciones', label: 'Añadir una clase al horario', icon: 'add', keywords: 'nueva clase horario', path: '/calendar', run: go('/calendar?accion=nueva') },

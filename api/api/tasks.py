@@ -55,6 +55,12 @@ def process_wallet_expiration(wallet, now):
             kind='grant', 
             expires_at__gte=now  # Grants que vencen hoy o en el futuro
         ).aggregate(total=Sum('amount'))['total'] or 0
+        # Las clases de un plan del estudio no tienen fecha: caducan en su
+        # corte (api/utils/studio_plans.py). Las del ciclo actual cuentan como vivas.
+        from api.models import StudioPlan
+        active_grants_total += StudioPlan.objects.filter(
+            user_id=wallet.user_id, status__in=['active', 'paused'],
+        ).aggregate(total=Sum('credits_pool'))['total'] or 0
 
         current_balance = wallet.balance
         
@@ -196,6 +202,9 @@ def _run_auto_reserve(start_date, end_date, filter_user_id=None):
             status='active', cancel_at_period_end=False
         ).values_list('user_id', flat=True)
     )
+    # Clientas del estudio con plan mensual activo (se cobra en el estudio)
+    from api.models import StudioPlan
+    active_subscriber_ids |= set(StudioPlan.objects.filter(status='active').values_list('user_id', flat=True))
 
     user_results: dict = {}  # user_id → {user, reserved, failed, classes}
 
@@ -786,3 +795,13 @@ def expire_waitlist_offers():
     aceptado a tiempo pasan a la siguiente persona (api/utils/waitlist.py)."""
     from api.utils.waitlist import expire_offers
     return expire_offers()
+
+
+@shared_task
+def studio_plans_daily():
+    """Cada mañana (hora del estudio): marca los planes del estudio que vencen
+    (salen en Hoy → «Renovaciones de este mes») y, solo si la dueña lo encendió
+    en el plan, avisa a la clienta unos días antes. No cobra ni renueva nada
+    (api/utils/studio_plans.py)."""
+    from api.utils.studio_plans import daily
+    return daily()

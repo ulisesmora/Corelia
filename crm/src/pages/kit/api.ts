@@ -2,6 +2,7 @@
 // api/api/views_dashboard.py.
 import { API_BASE_URL } from '../../config';
 import { authHeaders } from '../../utils/auth';
+import type { RenewalsCardData } from '../estudio/api';
 
 export class DashError extends Error {
   code: string;
@@ -133,15 +134,19 @@ export interface TodayData {
   extras: Extra[];
   web_url: string;
   published: boolean;
+  /** «Renovaciones de este mes» (clientas del estudio) */
+  renewals?: RenewalsCardData;
 }
 
 export interface OwedRow {
   id: string;
-  /** studio = reserva «pagar en el estudio» aún sin cobrar */
-  kind: 'payment' | 'subscription' | 'studio';
+  /** studio = reserva «pagar en el estudio» aún sin cobrar · studio_plan = mes de una clienta del estudio sin cobrar */
+  kind: 'payment' | 'subscription' | 'studio' | 'studio_plan';
   payment_id: number | null;
   subscription_id: number | null;
   booking_id?: number | null;
+  renewal_id?: number | null;
+  method?: string;
   name: string;
   email: string;
   concept: string;

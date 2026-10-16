@@ -463,6 +463,11 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'api.tasks.expire_waitlist_offers',
         'schedule': crontab(minute='*/10'),
     },
+    # 07:30 — clientas del estudio: marcar los planes que vencen (salen en Hoy) y aviso opcional
+    'clientas-estudio-renovaciones': {
+        'task': 'api.tasks.studio_plans_daily',
+        'schedule': crontab(minute=30, hour=7),
+    },
 }
 
 

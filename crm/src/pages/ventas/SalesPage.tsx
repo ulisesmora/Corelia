@@ -159,7 +159,9 @@ export default function SalesPage() {
   const markPaid = async (o: OwedRow, method: string) => {
     setPayMenu(null);
     try {
-      const r = await dashApi.action({ kind: 'mark_studio_paid', booking_id: o.booking_id, method });
+      const r = await dashApi.action(o.kind === 'studio_plan'
+        ? { kind: 'studio_plan_paid', renewal_id: o.renewal_id, method }
+        : { kind: 'mark_studio_paid', booking_id: o.booking_id, method });
       notify(r.done);
       load(period);
     } catch (e) {
@@ -191,7 +193,7 @@ export default function SalesPage() {
           <Box sx={rowRight}>
             <Amount v={o.amount} currency={cur} />
             <Tag tone={o.status === 'failed' ? 'bad' : o.status === 'pay_at_studio' ? 'n' : 'warn'}>{o.status_label}</Tag>
-            {o.kind === 'studio'
+            {o.kind === 'studio' || o.kind === 'studio_plan'
               ? <TonalButton size="small" onClick={(e) => setPayMenu({ el: e.currentTarget, row: o })}
                   aria-haspopup="menu" aria-label={`Marcar como cobrado: ${o.name}, ${o.concept}`}>Cobrado</TonalButton>
               : sent[o.id]

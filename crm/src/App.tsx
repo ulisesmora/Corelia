@@ -29,6 +29,7 @@ import SalesPage from './pages/ventas/SalesPage';
 import MyWebPage from './pages/miweb/MyWebPage';
 import SettingsHub from './pages/ajustes/SettingsHub';
 import CatalogPage from './pages/catalogo/CatalogPage';
+import NewStudioClientWizard from './pages/estudio/NewStudioClientWizard';
 import SetupGate from './components/setup/SetupGate';
 import { GuideRedirect, ProgressOutlet } from './onboarding';
 
@@ -69,6 +70,8 @@ const App = () => (
           <Route path="/configuracion" element={<SettingsHub />} />
           {/* Clases y precios: tipos de clase, precios y bonos, profesores, categorías y salas */}
           <Route path="/clases-y-precios" element={<CatalogPage />} />
+          {/* Clientas del estudio: alta guiada (plan mensual cobrado en el estudio) */}
+          <Route path="/clientas/estudio/nueva" element={<NewStudioClientWizard />} />
         </Route>
         </Route>
       </Route>

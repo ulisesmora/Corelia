@@ -137,9 +137,9 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
     { target: HEAD, title: 'Se escribe al pagar', text: 'La clienta lo pone en la web antes de pagar.' },
   ],
   credits: [
-    { target: [t('search'), ...HEAD], title: 'Busca a la clienta', text: 'Verás cuántas clases le quedan.' },
-    { target: [t('list')], title: 'Añade o quita clases', text: 'Por ejemplo, cuando te paga en mano.', guide: { chapter: 'en-mano', label: 'Pagos en mano' } },
-    { target: ACTIONS, title: 'Queda apuntado', text: 'Cada cambio se guarda con su motivo.' },
+    { target: [t('search'), t('balance'), ...HEAD], title: '¿Ya ha venido? Búscala', text: 'Por nombre o móvil. Abajo tienes las recientes y las que se quedan sin clases: un toque y listo.' },
+    { target: [t('new-client'), t('next-actions'), ...HEAD], title: '¿Es nueva? Regístrala aquí', text: 'Nombre y móvil, sin cuenta ni contraseña. Sigues con sus créditos sin salir.' },
+    { target: [t('list'), t('next-actions'), ...ACTIONS], title: 'Y después, apúntala', text: 'A una clase, a su clase fija de cada semana o a un plan mensual del estudio.', guide: { chapter: 'en-mano', label: 'Pagos en mano' } },
   ],
   mails: [
     { target: ACTIONS, title: 'Escribe un aviso', text: 'Por email, al móvil o de las dos formas.' },
@@ -166,6 +166,12 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
     { target: [t('list'), ...ACTIONS], title: 'Actívalo en un minuto', text: 'Escanea el código con una app de autenticación.' },
     { target: ACTIONS, title: 'Guarda los códigos de emergencia', text: 'Por si pierdes el móvil.' },
   ],
+  // Clientas del estudio (pages/estudio): alta guiada
+  'studio-client-new': [
+    { target: [t('wizard-steps'), ...HEAD], title: 'Cinco pasos cortos', text: 'Quién es, cómo viene, el precio, si la apuntas ya y un resumen antes de guardar.' },
+    { target: [t('wizard-kind'), t('search'), ...HEAD], title: 'Te paga en mano', text: 'Clases sueltas, un mes fijo o su clase de cada semana. Las clientas online las renueva Stripe; estas, tú.' },
+    { target: [t('wizard-details'), t('wizard-steps'), ...HEAD], title: 'Nada se cobra solo', text: 'Cada mes te sale en Hoy: «Cobrado y renovar» y listo. Tú decides qué pasa con las clases que sobran.' },
+  ],
 };
 
 export const FIRST_TIPS: Record<string, TourStep> = {
@@ -188,6 +194,7 @@ export function pageKeyOf(pathname: string): string | null {
     '/ajustes': 'studio-settings', '/payments': 'payments', '/subscriptions': 'subscriptions', '/cuopon': 'coupons',
     '/credits': 'credits', '/mails': 'mails', '/membership-candidates': 'membership-candidates',
     '/assign-classes': 'assign-classes', '/admins': 'admins', '/seguridad': 'security', '/clases-y-precios': 'catalog',
+    '/clientas/estudio/nueva': 'studio-client-new',
   };
   return map[pathname] ?? null;
 }

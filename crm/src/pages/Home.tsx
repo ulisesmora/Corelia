@@ -11,6 +11,7 @@ import { dashApi, type TodayData } from './kit/api';
 import { greeting, longDate, plural } from './kit/format';
 import KpiRow from './hoy/KpiRow';
 import Attention from './hoy/Attention';
+import RenewalsCard from './hoy/RenewalsCard';
 import Timeline from './hoy/Timeline';
 import { ChartCard, ExtrasCard, FeedCard, QuickCard } from './hoy/SideCards';
 
@@ -71,6 +72,7 @@ export default function Home() {
       <Box sx={{ display: 'grid', gap: { xs: 2, sm: 2.25 }, alignItems: 'start', gridTemplateColumns: { xs: 'minmax(0, 1fr)', lg: 'minmax(0, 1fr) 360px' } }}>
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: { xs: 2, sm: 2.25 }, minWidth: 0 }}>
           <Attention items={data?.attention ?? null} fresh={!!data && !data.has_bookings} onChanged={() => load(true)} />
+          <RenewalsCard data={data?.renewals} onChanged={() => load(true)} />
           <Timeline initial={data?.timeline ?? null} today={data?.today || ''} />
         </Box>
         <Box sx={{

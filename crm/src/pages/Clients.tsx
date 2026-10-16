@@ -14,7 +14,10 @@ import SearchIcon from '@mui/icons-material/Search';
 import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import VerifiedIcon from '@mui/icons-material/Verified';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import QuickClientCreate from '../components/QuickClientCreate';
+import StudioPlanBlock, { StudioClientsNote } from './estudio/StudioPlanBlock';
+import { studioApi, type StudioPlan } from './estudio/api';
 import { SectionTabs, PageIntro, HelpTip, EmptyState, useConfirm, useNotify } from '../components/guide';
 
 // Importa la URL base desde las variables de entorno
@@ -123,7 +126,17 @@ export default function CustomerViewer() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [currentTab, setCurrentTab] = useState(0);
+  const [currentTab, setCurrentTab] = useState(() => (searchParams.get('vista') === 'estudio' ? 2 : 0));
+
+  // --- Clientas del estudio (plan mensual cobrado en el estudio) ---
+  const [studioPlans, setStudioPlans] = useState<StudioPlan[] | null>(null);
+  const [studioError, setStudioError] = useState('');
+  const fetchStudioPlans = () => {
+    setStudioError('');
+    studioApi.plans('status=open')
+      .then(setStudioPlans)
+      .catch((e) => { setStudioPlans([]); setStudioError(e instanceof Error ? e.message : String(e)); });
+  };
 
   // --- Clientas con ficha ---
   const [users, setUsers] = useState<User[]>([]);
@@ -201,6 +214,7 @@ export default function CustomerViewer() {
   useEffect(() => {
     fetchUsers();
     fetchGuests();
+    fetchStudioPlans();
   }, []);
 
   // El estudio confirma a mano el email de una clienta que conoce en persona
@@ -259,6 +273,12 @@ export default function CustomerViewer() {
     const start = (guestCurrentPage - 1) * PAGE_SIZE;
     return filteredGuests.slice(start, start + PAGE_SIZE);
   }, [filteredGuests, guestCurrentPage]);
+
+  const planByUser = useMemo(() => new Map((studioPlans || []).map((p) => [p.user_id, p])), [studioPlans]);
+  const filteredPlans = useMemo(
+    () => (studioPlans || []).filter((p) => matches(searchTerm, [p.name, isInternalEmail(p.email) ? '' : p.email, p.phone], p.phone)),
+    [studioPlans, searchTerm],
+  );
 
   const changeSearch = (value: string) => {
     setSearchTerm(value);
@@ -372,6 +392,52 @@ export default function CustomerViewer() {
     </Button>
   );
 
+  const studioChip = (userId: number) => {
+    const p = planByUser.get(userId);
+    return (
+      <Chip size="small" variant="outlined" color={p?.overdue ? 'warning' : 'primary'} icon={<StorefrontOutlinedIcon />}
+        label={p?.overdue ? 'Del estudio · toca renovar' : 'Clienta del estudio'} onClick={() => setCurrentTab(2)}
+        sx={{ mt: 0.5, minHeight: 32 }} />
+    );
+  };
+
+  const renderStudioTab = () => {
+    if (studioPlans === null) return loadingBox('Cargando clientas del estudio…');
+    if (studioError) return errorBox(studioError, fetchStudioPlans);
+    if (filteredPlans.length === 0) {
+      return (
+        <EmptyState
+          title={searchTerm ? `Ninguna clienta del estudio coincide con «${searchTerm}»` : 'Todavía no hay clientas del estudio'}
+          text="Son las que te pagan en mano un mes fijo (p. ej. 8 clases por 60 €). Tú renuevas su mes desde aquí o desde Hoy."
+          action={
+            <Button variant="contained" startIcon={<StorefrontOutlinedIcon />} onClick={() => navigate('/clientas/estudio/nueva')} sx={{ minHeight: 44 }}>
+              Nueva clienta del estudio
+            </Button>
+          }
+        />
+      );
+    }
+    return (
+      <Box sx={{ display: 'grid', gap: 1.5, gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'repeat(2, minmax(0, 1fr))' } }} data-tour="studio-list">
+        {filteredPlans.map((p) => (
+          <Paper key={p.id} variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
+            <Stack direction="row" spacing={1} alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+              <Box sx={{ minWidth: 0 }}>
+                <Typography sx={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--studio-dark)' }} noWrap>{p.name}</Typography>
+                <Box>{phoneLink(p.phone || null)}</Box>
+              </Box>
+              <Button variant="outlined" startIcon={<AccountBalanceWalletIcon />} onClick={() => navigate(`/credits?clienta=${p.user_id}`)}
+                sx={{ minHeight: 44, whiteSpace: 'nowrap', flex: 'none' }}>
+                Créditos
+              </Button>
+            </Stack>
+            <StudioPlanBlock plan={p} compact onChanged={() => fetchStudioPlans()} />
+          </Paper>
+        ))}
+      </Box>
+    );
+  };
+
   const extraDetails = (user: User) => (
     <>
       <Detail label="Nivel" value={user.experience_level} />
@@ -438,6 +504,7 @@ export default function CustomerViewer() {
                 <Typography sx={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--studio-dark)' }}>
                   {fullName(user) || '(Sin nombre)'}
                 </Typography>
+                {planByUser.has(user.id) && studioChip(user.id)}
                 <Typography sx={{ fontSize: '0.88rem', color: 'var(--studio-text-body)', mb: 1 }}>
                   Ficha creada el {formatDay(user.date_joined)}
                 </Typography>
@@ -470,6 +537,7 @@ export default function CustomerViewer() {
                       <Typography sx={{ fontSize: '0.88rem', color: 'var(--studio-text-body)' }}>
                         Ficha creada el {formatDay(user.date_joined)}
                       </Typography>
+                      {planByUser.has(user.id) && studioChip(user.id)}
                     </TableCell>
                     <TableCell sx={{ whiteSpace: 'nowrap' }}>{phoneLink(user.phone)}</TableCell>
                     <TableCell sx={{ maxWidth: 320 }}>{emailBlock(user)}</TableCell>
@@ -667,6 +735,13 @@ export default function CustomerViewer() {
             id="tab-1"
             sx={{ minHeight: 52 }}
           />
+          <Tab
+            label={`Clientas del estudio${studioPlans === null ? '' : ` (${filteredPlans.length})`}`}
+            icon={<StorefrontOutlinedIcon />}
+            iconPosition="start"
+            id="tab-2"
+            sx={{ minHeight: 52 }}
+          />
         </SectionTabs>
       </Box>
 
@@ -682,8 +757,19 @@ export default function CustomerViewer() {
         </Stack>
       )}
 
+      {currentTab === 2 && (
+        <Stack spacing={1.5} sx={{ mb: 2 }}>
+          <StudioClientsNote />
+          <Box>
+            <Button variant="outlined" startIcon={<StorefrontOutlinedIcon />} onClick={() => navigate('/clientas/estudio/nueva')} sx={{ minHeight: 44 }}>
+              Nueva clienta del estudio
+            </Button>
+          </Box>
+        </Stack>
+      )}
+
       <Box role="tabpanel" aria-labelledby={`tab-${currentTab}`}>
-        {currentTab === 0 ? renderUsersTab() : renderGuestsTab()}
+        {currentTab === 0 ? renderUsersTab() : currentTab === 1 ? renderGuestsTab() : renderStudioTab()}
       </Box>
 
       <QuickClientCreate

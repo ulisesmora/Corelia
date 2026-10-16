@@ -1479,3 +1479,92 @@ class WaitlistEntry(TimeStampedSoftDelete):
 
     def __str__(self):
         return f"Waitlist({self.user_id} → {self.schedule_id} @ {self.start_datetime:%Y-%m-%d %H:%M} {self.status})"
+
+
+# ===========
+# CLIENTAS DEL ESTUDIO (plan mensual que se cobra en el estudio, sin Stripe)
+# ===========
+class StudioPlan(TimeStampedSoftDelete):
+    """Plan mensual de una «clienta del estudio»: lo lleva la dueña desde el
+    panel y se cobra en mano (efectivo, Bizum, datáfono o transferencia), p. ej.
+    «8 clases al mes por 60 €». Nada se cobra ni se renueva solo: cada mes la
+    dueña pulsa «Renovar» (= corte de créditos, api/utils/studio_plans.py).
+
+    - credits_pool: clases del plan con las que empezó el ciclo actual (las
+      del mes + las que se acumularon). Sirve para saber, en el corte, cuántas
+      le quedan del plan (los bonos que tenga aparte no se tocan).
+    - carry_over: qué pasa con las clases sin usar al cortar: «lose» se
+      pierden, «keep» se acumulan, «cap» se acumulan hasta carry_over_cap.
+    - next_due_date: día del próximo corte (cycle_day de cada mes).
+    - remind_client: email opcional a la clienta unos días antes («Tu mes
+      empieza el día X»). Apagado por defecto.
+    """
+    METHODS = [('cash', 'Efectivo'), ('bizum', 'Bizum'), ('card', 'Tarjeta / datáfono'), ('transfer', 'Transferencia')]
+    CARRY = [('lose', 'Se pierden'), ('keep', 'Se acumulan'), ('cap', 'Se acumulan hasta un máximo')]
+    STATUS = [('active', 'Activo'), ('paused', 'En pausa'), ('ended', 'Terminado')]
+
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='studio_plans')
+    name = models.CharField(max_length=120, blank=True, default='')
+    credits_per_month = models.PositiveIntegerField(validators=[MinValueValidator(1), MaxValueValidator(200)])
+    price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    currency = models.CharField(max_length=3, default='EUR')
+    payment_method = models.CharField(max_length=10, choices=METHODS, default='cash')
+    cycle_day = models.PositiveSmallIntegerField(default=1, validators=[MinValueValidator(1), MaxValueValidator(28)])
+    carry_over = models.CharField(max_length=5, choices=CARRY, default='lose')
+    carry_over_cap = models.PositiveIntegerField(null=True, blank=True)
+    fixed_schedules = models.ManyToManyField(RecurringSchedule, blank=True, related_name='studio_plans')
+    status = models.CharField(max_length=7, choices=STATUS, default='active', db_index=True)
+    started_on = models.DateField(null=True, blank=True)
+    next_due_date = models.DateField(null=True, blank=True, db_index=True)
+    last_renewed_at = models.DateTimeField(null=True, blank=True)
+    credits_pool = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    remind_client = models.BooleanField(default=False)
+    last_reminder_for = models.DateField(null=True, blank=True)
+    due_marked_for = models.DateField(null=True, blank=True)
+    notes = models.CharField(max_length=300, blank=True, default='')
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='+')
+
+    class Meta:
+        ordering = ['next_due_date', 'id']
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user'], name='unique_open_studio_plan',
+                condition=Q(deleted_at__isnull=True) & Q(status__in=['active', 'paused']),
+            ),
+        ]
+
+    def __str__(self):
+        return f"StudioPlan({self.user_id}: {self.credits_per_month} clases · {self.price} {self.currency})"
+
+
+class StudioPlanRenewal(TimeStampedSoftDelete):
+    """Un «corte» de un plan del estudio: lo que tenía, lo que se perdió, lo
+    que se añadió y si se cobró (Payment con el método) o queda pendiente
+    (sale en Ventas → «Quién me debe» hasta marcarlo cobrado)."""
+    plan = models.ForeignKey(StudioPlan, on_delete=models.CASCADE, related_name='renewals')
+    period_start = models.DateField()
+    period_end = models.DateField()
+    balance_before = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    leftover = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    expired = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    kept = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    added = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    balance_after = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    currency = models.CharField(max_length=3, default='EUR')
+    method = models.CharField(max_length=10, blank=True, default='')
+    payment = models.ForeignKey(Payment, on_delete=models.SET_NULL, null=True, blank=True, related_name='+')
+    paid_at = models.DateTimeField(null=True, blank=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True,
+                                   related_name='+')
+
+    class Meta:
+        ordering = ['-period_start', '-id']
+        constraints = [
+            models.UniqueConstraint(fields=['plan', 'period_start'], name='unique_studio_plan_period',
+                                    condition=Q(deleted_at__isnull=True)),
+        ]
+
+    def __str__(self):
+        return f"StudioPlanRenewal({self.plan_id} {self.period_start})"

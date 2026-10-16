@@ -208,13 +208,17 @@ def sales_rows(start: date, end: date, statuses=('succeeded',)):
         ).values_list('metadata__payment_id', 'metadata__plan_id'):
             grants[str(pid)] = plan_id
     plans = {p.id: p for p in Plan.all_objects.all()}
+    studio = _studio_concepts(payments)
 
     rows = []
     for p in payments:
         key, name, email = person_of(p)
         books = list(p.bookings.all())
         plan = plans.get(grants.get(str(p.id))) if str(p.id) in grants else None
-        if books:
+        if p.id in studio:
+            # Clientas del estudio: mes del plan o clases sueltas cobradas en mano
+            kind, concept = studio[p.id]
+        elif books:
             kind = 'classes'
             b = books[0]
             when = to_madrid_wall(b.start_datetime)
@@ -261,6 +265,28 @@ def sales_rows(start: date, end: date, statuses=('succeeded',)):
             })
     rows.sort(key=lambda r: (r['date'], r['time']), reverse=True)
     return rows, currency
+
+
+def _studio_concepts(payments):
+    """{payment_id: (kind, concepto)} de los cobros de clientas del estudio
+    (api/utils/studio_plans.py): el mes de su plan o clases sueltas en mano."""
+    from api.models import StudioPlanRenewal
+    raws = {p.id: p.raw_response for p in payments if isinstance(p.raw_response, dict)
+            and (p.raw_response.get('studio_plan_id') or p.raw_response.get('studio_credits'))}
+    if not raws:
+        return {}
+    ren = {r.id: r for r in StudioPlanRenewal.all_objects.filter(
+        id__in=[r.get('renewal_id') for r in raws.values() if r.get('renewal_id')]).select_related('plan')}
+    out = {}
+    for pid, raw in raws.items():
+        r = ren.get(raw.get('renewal_id'))
+        if r is not None:
+            title = r.plan.name or f"{r.plan.credits_per_month} clases al mes"
+            out[pid] = ('memberships', f"Plan del estudio · {title} · {MONTHS_LONG[r.period_start.month - 1]}")
+        elif raw.get('studio_credits'):
+            n = raw.get('studio_credits')
+            out[pid] = ('packs', f"{n} {'clase' if str(n) == '1' else 'clases'} en el estudio")
+    return out
 
 
 def _total(rows):
@@ -316,6 +342,20 @@ def owed_items(limit=50, include_studio=True):
                 'status': 'pay_at_studio' if upcoming else 'unpaid',
                 'status_label': 'Paga al llegar' if upcoming else 'Sin cobrar',
                 'date': when.date().isoformat() if when else '',
+            })
+    if include_studio:
+        # Clientas del estudio: meses renovados con «cobro después»
+        from api.utils.studio_plans import METHOD_LABELS, unpaid_renewals
+        for r in unpaid_renewals():
+            u = r.plan.user
+            title = r.plan.name or f"{r.plan.credits_per_month} clases al mes"
+            out.append({
+                'id': f"spr-{r.id}", 'kind': 'studio_plan', 'payment_id': None, 'subscription_id': None,
+                'renewal_id': r.id, 'method': r.method, 'method_label': METHOD_LABELS.get(r.method, ''),
+                'name': user_name(u), 'email': u.email or '',
+                'concept': f"Plan del estudio · {title} · {MONTHS_LONG[r.period_start.month - 1]}",
+                'amount': float(r.amount or 0), 'status': 'unpaid', 'status_label': 'Sin cobrar',
+                'date': r.period_start.isoformat(),
             })
     failed = list(Payment.objects.filter(status='failed', created_at__gte=since)
                   .select_related('user', 'guest__linked_user').order_by('-created_at')[:100])
@@ -659,6 +699,25 @@ def run_action(data, admin=None):
     if kind == 'mark_studio_paid':
         return _mark_studio_paid(data, admin)
 
+    if kind in ('studio_plan_paid', 'studio_plan_renew'):
+        # Clientas del estudio (api/utils/studio_plans.py): cobrar un mes
+        # pendiente o renovar el mes desde Hoy («Cobrado y renovar» / «Renovar,
+        # cobro después»)
+        from api.utils import studio_plans as sp
+        try:
+            if kind == 'studio_plan_paid':
+                r = sp.pay_renewal(data.get('renewal_id'), method=data.get('method'), admin=admin)
+                return {'done': f"Cobrado: {first_name(user_name(r.plan.user))} · {_money(r.amount, r.currency)}",
+                        'payment_id': r.payment_id}
+            r = sp.renew(data.get('plan_id'), charge=data.get('charge') or 'paid', method=data.get('method'),
+                         period_start=data.get('period_start'), admin=admin)
+        except sp.StudioPlanError as e:
+            raise DashboardError(e.code, e.message, status=e.status, **e.extra)
+        who = first_name(user_name(r.plan.user))
+        return {'done': f"Renovado: {who} empieza con {_fmt_credits(r.balance_after)}"
+                        + (f" · cobrado {_money(r.amount, r.currency)}" if r.paid_at else ' · cobro pendiente'),
+                'renewal_id': r.id}
+
     if kind in ('extend_pack', 'unextend_pack'):
         try:
             days = int(data.get('days') or 7)
@@ -960,6 +1019,7 @@ def today_payload():
         'has_bookings': Booking.objects.exists(),
         'kpis': k,
         'attention': attention_items(today, sessions=cal['occurrences']),
+        'renewals': _renewals_card(today),
         'timeline': timeline,
         'chart': bookings_14(today),
         'feed': activity_feed(),
@@ -967,6 +1027,16 @@ def today_payload():
         'web_url': web_url(),
         'published': bool(cfg.setup_completed),
     }
+
+
+def _renewals_card(today):
+    """«Renovaciones de este mes» (clientas del estudio). Opcional: nunca rompe Hoy."""
+    try:
+        from api.utils.studio_plans import today_card
+        return today_card(today)
+    except Exception:  # pragma: no cover - la tarjeta es opcional
+        logger.warning("dashboard.renewals_failed", exc_info=True)
+        return {'items': [], 'this_week': 0, 'overdue': 0, 'unpaid': 0}
 
 
 # ── Ventas ────────────────────────────────────────────────────────────────
@@ -1066,7 +1136,7 @@ def sales_summary(period='month', offset=0):
             'count': sum(1 for r in cur if r['status'] == 'succeeded'),
             'pending': round(sum(o['amount'] for o in owed), 2), 'pending_count': len(owed),
             'pending_failed': sum(1 for o in owed if o['kind'] == 'payment'),
-            'pending_studio': sum(1 for o in owed if o['kind'] == 'studio'),
+            'pending_studio': sum(1 for o in owed if o['kind'] in ('studio', 'studio_plan')),
             'packs_sold': sold(cur), 'packs_sold_prev': sold(prev),
             'subscriptions_active': sum(1 for s in subs if s.status == 'active'),
             'monthly_recurring': mrr,

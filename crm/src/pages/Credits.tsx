@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -21,7 +21,6 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Autocomplete,
   MenuItem,
   useMediaQuery,
   useTheme,
@@ -29,7 +28,10 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import PersonSearchIcon from '@mui/icons-material/PersonSearch';
+import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
+import EventAvailableOutlinedIcon from '@mui/icons-material/EventAvailableOutlined';
+import EventRepeatOutlinedIcon from '@mui/icons-material/EventRepeatOutlined';
+import StorefrontOutlinedIcon from '@mui/icons-material/StorefrontOutlined';
 import { authHeaders } from '../utils/auth';
 import { friendlyError } from '../utils/errors';
 import { PageIntro, HelpTip, EmptyState, FormStep, useConfirm, useNotify } from '../components/guide';
@@ -37,6 +39,11 @@ import GuideLink from '../components/charging/GuideLink';
 import { API_BASE_URL } from '../config';
 import { isPlaceholderEmail } from '../site/email';
 import { STUDIO_TZ as TZ } from '../site/timezone';
+import ClientPicker from './estudio/ClientPicker';
+import BookClassDialog from './estudio/BookClassDialog';
+import FixedClassDialog from './estudio/FixedClassDialog';
+import StudioPlanBlock from './estudio/StudioPlanBlock';
+import { METHODS, studioApi, type PayMethod, type StudioPlan } from './estudio/api';
 
 const MAX_ADD = 200;
 
@@ -114,6 +121,7 @@ function friendlyReference(ref: string | null): string {
     [/^blackout_/, 'Clase cerrada (vacaciones o cierre)'],
     [/^reschedule_cancel_/, 'La clase cambió de horario'],
     [/^EXP-GRANT-/, 'No los usó a tiempo'],
+    [/^STUDIO-CUT-/, 'Corte de mes: no los usó'],
     [/^Otorgado manualmente desde CRM$/, 'Añadidos a mano desde aquí'],
     [/^Ajuste manual desde CRM$/, 'Quitados a mano desde aquí'],
   ];
@@ -128,16 +136,21 @@ export default function CreditsManagement() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [searchParams, setSearchParams] = useSearchParams();
 
-  const [users, setUsers] = useState<UserOption[]>([]);
-  const [usersError, setUsersError] = useState('');
+  const navigate = useNavigate();
   const [selectedUser, setSelectedUser] = useState<UserOption | null>(null);
+  // Recién registrada aquí: tras añadirle créditos se le proponen los siguientes pasos
+  const [justCreated, setJustCreated] = useState(false);
+  const [plan, setPlan] = useState<StudioPlan | null>(null);
+  const [bookOpen, setBookOpen] = useState(false);
+  const [fixedOpen, setFixedOpen] = useState(false);
+  // ¿Te ha pagado? (opcional al añadir): apunta el cobro en Ventas
+  const [paidAmount, setPaidAmount] = useState('');
+  const [paidMethod, setPaidMethod] = useState<PayMethod>('cash');
   const [wallet, setWallet] = useState<Wallet | null>(null);
   const [walletError, setWalletError] = useState('');
   const [entries, setEntries] = useState<WalletEntry[]>([]);
   const [entriesLoading, setEntriesLoading] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [usersLoading, setUsersLoading] = useState(false);
-  const [searchUserTerm, setSearchUserTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const [openAdjust, setOpenAdjust] = useState(false);
   // Añadir o quitar: dos opciones claras en vez de un número negativo
@@ -155,28 +168,7 @@ export default function CreditsManagement() {
   const [adjustExpireMode, setAdjustExpireMode] = useState<'preset' | 'custom' | 'never'>('preset');
   const [adjustCustomDate, setAdjustCustomDate] = useState<string>('');
   const [pendingAdd, setPendingAdd] = useState(false);
-  const searchInputRef = useRef<HTMLInputElement>(null);
-  const searchTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const pageSize = 12;
-
-  const fetchUsers = useCallback(async (search = '') => {
-    setUsersLoading(true);
-    try {
-      const params = new URLSearchParams();
-      params.set('is_superuser', 'false');
-      if (search) params.set('search', search);
-      params.set('ordering', 'email');
-      const res = await fetch(`${API_BASE_URL}v1/users/?${params}`, { headers: authHeaders() });
-      if (!res.ok) throw res;
-      const data = await res.json();
-      setUsers(Array.isArray(data) ? data : data.results || []);
-      setUsersError('');
-    } catch (err) {
-      setUsersError(await friendlyError(err));
-    } finally {
-      setUsersLoading(false);
-    }
-  }, []);
 
   const fetchEntries = async (walletId: number) => {
     setEntriesLoading(true);
@@ -218,38 +210,51 @@ export default function CreditsManagement() {
     }
   }, []);
 
-  useEffect(() => {
-    fetchUsers();
-  }, [fetchUsers]);
+  const fetchPlan = useCallback((userId: number) => {
+    studioApi.planOf(userId).then(setPlan).catch(() => setPlan(null));
+  }, []);
 
-  const handleSelectUser = (user: UserOption | null) => {
+  const handleSelectUser = (user: UserOption | null, isNew = false) => {
     setSelectedUser(user);
+    setJustCreated(isNew);
+    setPlan(null);
     setCurrentPage(1);
-    if (user) fetchWallet(user.id);
+    if (user) { fetchWallet(user.id); fetchPlan(user.id); }
     else {
       setWallet(null);
       setEntries([]);
       setWalletError('');
     }
+    // La URL recuerda a la clienta (volver atrás vuelve al buscador)
+    const next = new URLSearchParams(searchParams);
+    if (user) next.set('clienta', String(user.id)); else next.delete('clienta');
+    next.delete('nueva');
+    setSearchParams(next);
   };
 
-  // Enlaces directos: ?clienta=<id> la abre; ?accion=anadir lleva al buscador y abre la ventana al elegirla
+  // Enlaces directos: ?clienta=<id> la abre; ?accion=anadir abre la ventana al elegirla; ?nueva=1 abre el alta
   useEffect(() => {
     const accion = searchParams.get('accion');
     const clienta = Number(searchParams.get('clienta'));
     if (accion === 'anadir') {
       setPendingAdd(true);
-      setTimeout(() => searchInputRef.current?.focus(), 150);
       const next = new URLSearchParams(searchParams);
       next.delete('accion');
       setSearchParams(next, { replace: true });
+    }
+    if (!clienta && selectedUser) {
+      setSelectedUser(null);
+      setWallet(null);
+      setPlan(null);
     }
     if (clienta && clienta !== selectedUser?.id) {
       fetch(`${API_BASE_URL}v1/users/${clienta}/`, { headers: authHeaders() })
         .then((r) => (r.ok ? r.json() : Promise.reject(r)))
         .then((u: UserOption) => {
-          handleSelectUser(u);
-          setSearchUserTerm(displayName(u));
+          setSelectedUser(u);
+          setCurrentPage(1);
+          fetchWallet(u.id);
+          fetchPlan(u.id);
         })
         .catch(async (e) => notify(`No se ha podido abrir la ficha de la clienta. ${await friendlyError(e)}`, 'error'));
     }
@@ -266,6 +271,8 @@ export default function CreditsManagement() {
     setAdjustExpireMode('preset');
     setAdjustExpireDays('30');
     setAdjustCustomDate('');
+    setPaidAmount('');
+    setPaidMethod('cash');
     setOpenAdjust(true);
   };
 
@@ -307,12 +314,14 @@ export default function CreditsManagement() {
   };
   const expiry = computeExpiresAt();
 
+  const paidNum = Number(paidAmount.replace(',', '.'));
+  const paidError = paidAmount.trim() && (!Number.isFinite(paidNum) || paidNum < 0) ? 'Escribe el importe con números, p. ej. 45.' : '';
   const newBalance = amountError ? null : balance + (adjustMode === 'add' ? amountNum : -amountNum);
   const clientName = displayName(selectedUser) || 'la clienta';
 
   const handleAdjust = async () => {
     setAmountTouched(true);
-    if (!wallet || amountError || expiry.error) return;
+    if (!wallet || amountError || expiry.error || paidError) return;
 
     const isAdding = adjustMode === 'add';
     const amount = isAdding ? amountNum : -amountNum;
@@ -350,25 +359,33 @@ export default function CreditsManagement() {
       // enviaba wallet: 0 y el backend devolvía error. Ahora el endpoint acepta
       // `user` y crea el monedero al vuelo.
       const target = wallet.id ? { wallet: wallet.id } : { user: wallet.user };
-      const res = await fetch(`${API_BASE_URL}v1/wallet-entries/`, {
-        method: 'POST',
-        headers: authHeaders({ 'Content-Type': 'application/json' }),
-        body: JSON.stringify({
-          ...target,
-          kind,
-          amount,
-          reference: adjustReason.trim() || (isAdding ? 'Otorgado manualmente desde CRM' : 'Ajuste manual desde CRM'),
-          expires_at,
-        }),
-      });
-      if (!res.ok) throw res;
+      if (isAdding && paidNum > 0) {
+        // Te ha pagado en mano: créditos + cobro (sale en Ventas → «Lo cobrado»)
+        await studioApi.creditSale({
+          user: wallet.user, credits: amountNum, expires_at, amount: paidNum, method: paidMethod,
+          reason: adjustReason.trim() || undefined,
+        });
+      } else {
+        const res = await fetch(`${API_BASE_URL}v1/wallet-entries/`, {
+          method: 'POST',
+          headers: authHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({
+            ...target,
+            kind,
+            amount,
+            reference: adjustReason.trim() || (isAdding ? 'Otorgado manualmente desde CRM' : 'Ajuste manual desde CRM'),
+            expires_at,
+          }),
+        });
+        if (!res.ok) throw res;
+      }
 
       const expireMsg = isAdding
         ? expires_at ? ` Caducan el ${dayFmt.format(new Date(expires_at))}.` : ' No caducan.'
         : '';
       notify(
         isAdding
-          ? `${creditsText(amountNum)} añadidos a ${clientName} ✓ Ahora tiene ${creditsText(balance + amountNum)}.${expireMsg}`
+          ? `${creditsText(amountNum)} añadidos a ${clientName} ✓ Ahora tiene ${creditsText(balance + amountNum)}.${expireMsg}${paidNum > 0 ? ' Cobro apuntado en Ventas.' : ''}`
           : `${creditsText(amountNum)} quitados a ${clientName} ✓ Ahora tiene ${creditsText(balance - amountNum)}.`,
       );
       setOpenAdjust(false);
@@ -414,164 +431,180 @@ export default function CreditsManagement() {
     </HelpTip>
   );
 
+  const nextBtn = { minHeight: 48, justifyContent: 'flex-start', textAlign: 'left' } as const;
+
   return (
     <Box>
       <PageIntro
         pageKey="credits"
         title="Créditos"
-        subtitle="Cuántas clases le quedan a cada clienta. Añade o quita."
-        actions={<GuideLink chapter="en-mano">Pagos en mano: cómo se hace</GuideLink>}
+        subtitle="Elige a la clienta y añade o quita clases en un momento."
+        actions={
+          <>
+            <GuideLink chapter="en-mano">Pagos en mano: cómo se hace</GuideLink>
+            <Button variant="outlined" startIcon={<StorefrontOutlinedIcon />} onClick={() => navigate('/clientas/estudio/nueva')}>
+              Nueva clienta del estudio
+            </Button>
+          </>
+        }
       />
 
-      <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '5fr 7fr' }, alignItems: 'start' }}>
-        <Paper sx={{ p: { xs: 2, md: 3 } }}>
-          <Typography component="h2" sx={{ display: 'block', fontWeight: 600, fontSize: '1.05rem', mb: 1.25, color: 'var(--studio-dark)' }}>
-            ¿De qué clienta?
-          </Typography>
-          {pendingAdd && !selectedUser && (
-            <Alert severity="info" sx={{ mb: 1.5, fontSize: '0.92rem' }}>
-              Primero busca a la clienta. Al elegirla se abrirá la ventana para añadir o quitar créditos.
-            </Alert>
-          )}
-          <Autocomplete
-            id="credits-client-search"
-            options={users}
-            getOptionLabel={(u) => displayName(u)}
-            renderOption={(props, u) => {
-              const { key, ...rest } = props as typeof props & { key: string };
-              return (
-                <Box component="li" key={key} {...rest} sx={{ display: 'block !important', py: 1 }}>
-                  <Typography sx={{ fontWeight: 600 }}>{personName(u) || '(Sin nombre)'}</Typography>
-                  <Typography sx={{ fontSize: '0.88rem', color: 'var(--studio-text-strong)' }}>
-                    {[u.phone, isInternal(u.email) ? '' : u.email].filter(Boolean).join(' · ') || 'Sin teléfono ni email'}
-                  </Typography>
-                </Box>
-              );
-            }}
-            loading={usersLoading}
-            loadingText="Buscando…"
-            noOptionsText={searchUserTerm.trim().length < 2 ? 'Escribe al menos 2 letras' : 'No hay ninguna clienta con ese dato'}
-            value={selectedUser}
-            onChange={(_, v) => {
-              handleSelectUser(v);
-              if (searchParams.has('clienta')) {
-                const next = new URLSearchParams(searchParams);
-                next.delete('clienta');
-                setSearchParams(next, { replace: true });
-              }
-            }}
-            onInputChange={(_, v, reason) => {
-              setSearchUserTerm(v);
-              if (reason !== 'input') return;
-              clearTimeout(searchTimer.current);
-              searchTimer.current = setTimeout(() => {
-                if (v.trim().length >= 2) fetchUsers(v.trim());
-                else if (!v.trim()) fetchUsers();
-              }, 300);
-            }}
-            filterOptions={(x) => x}
-            isOptionEqualToValue={(o, v) => o.id === v.id}
-            inputValue={searchUserTerm}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                inputRef={searchInputRef}
-                data-tour="search" label="Buscar clienta"
-                placeholder="Ej.: Marta o 612 345 678"
-                error={Boolean(usersError)}
-                helperText={usersError ? `No se ha podido buscar. ${usersError}` : 'Nombre, teléfono o email.'}
-              />
+      {!selectedUser ? (
+        <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 7fr) minmax(0, 5fr)' }, alignItems: 'start' }}>
+          <Paper sx={{ p: { xs: 2, md: 3 } }}>
+            {pendingAdd && (
+              <Alert severity="info" sx={{ mb: 1.5, fontSize: '0.92rem' }}>
+                Elige a la clienta: al tocarla se abre la ventana para añadirle créditos.
+              </Alert>
             )}
-            fullWidth
-          />
-        </Paper>
-
-        {!selectedUser ? (
-          <Paper sx={{ p: 2 }}>
-            <EmptyState
-              compact
-              icon={<PersonSearchIcon />}
-              title="Elige una clienta"
-              text="Cuando la elijas en el buscador verás aquí cuántos créditos tiene y podrás añadirle o quitarle."
+            <ClientPicker
+              newLabel="Registrarla y añadir créditos"
+              startNew={searchParams.get('nueva') === '1'}
+              onPick={(u, isNew) => {
+                if (isNew) setPendingAdd(true);
+                handleSelectUser(u, isNew);
+              }}
             />
           </Paper>
-        ) : loading ? (
-          <Paper sx={{ p: 4 }}>
-            <Stack alignItems="center" spacing={1.5} role="status">
-              <CircularProgress />
-              <Typography sx={{ color: 'text.secondary' }}>Cargando los créditos de {clientName}…</Typography>
-            </Stack>
-          </Paper>
-        ) : walletError ? (
-          <Alert
-            severity="error"
-            sx={{ alignItems: 'center' }}
-            action={
-              <Button color="inherit" startIcon={<RefreshIcon />} onClick={() => fetchWallet(selectedUser.id)} sx={{ minHeight: 44 }}>
-                Reintentar
-              </Button>
-            }
-          >
-            No se han podido cargar sus créditos. {walletError}
-          </Alert>
-        ) : wallet && (
-          <Paper sx={{ p: { xs: 2, md: 3 } }}>
-            <Typography sx={{ color: 'var(--studio-text-strong)', fontSize: '0.95rem' }}>
-              Saldo de <b>{clientName}</b> {creditsHelp}
+          <Paper sx={{ p: { xs: 2, md: 3 }, display: { xs: 'none', md: 'block' } }}>
+            <Typography component="h2" sx={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--studio-ink)', mb: 1.5 }}>
+              Dos caminos
             </Typography>
-            <Typography
-              sx={{ fontFamily: 'var(--studio-font-heading)', fontWeight: 600, color: 'var(--studio-primary-deep)', fontSize: { xs: '2.4rem', md: '3rem' }, lineHeight: 1.15 }}
-            >
-              {creditsText(balance)}
-            </Typography>
-            <Typography sx={{ color: 'var(--studio-text-strong)', fontSize: '0.95rem', mt: 0.5 }}>
-              {balance >= 1
-                ? `Le llega para ${numFmt.format(Math.floor(balance))} ${Math.floor(balance) === 1 ? 'clase' : 'clases'} de suelo${balance >= 2 ? ` o ${numFmt.format(Math.floor(balance / 2))} de máquinas` : ''}.`
-                : 'No le quedan créditos: no puede reservar hasta que compre un bono o le añadas.'}
-            </Typography>
-            {selectedUser && (selectedUser.phone || !isInternal(selectedUser.email)) && (
-              <Typography sx={{ color: 'var(--studio-text-body)', fontSize: '0.9rem', mt: 0.5 }}>
-                {[selectedUser.phone, isInternal(selectedUser.email) ? '' : selectedUser.email].filter(Boolean).join(' · ')}
+            <Stack spacing={1.5} sx={{ mb: 2 }}>
+              <Typography sx={{ color: 'var(--studio-ink)', fontSize: '0.95rem' }}>
+                <b>Buscar</b>: si ya ha venido, escribe su nombre o móvil, o tócala en la lista.
               </Typography>
-            )}
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} sx={{ mt: 2.5 }}>
-              <Button
-                variant="contained"
-                color="success"
-                size="large"
-                startIcon={<AddIcon />}
-                onClick={() => openAdjustDialog('add')}
-                sx={{ minHeight: 48 }}
-              >
-                Añadir créditos
-              </Button>
-              <Button
-                variant="outlined"
-                color="error"
-                size="large"
-                startIcon={<RemoveIcon />}
-                onClick={() => openAdjustDialog('remove')}
-                disabled={balance <= 0}
-                sx={{ minHeight: 48 }}
-              >
-                Quitar créditos
-              </Button>
-              <Button
-                variant="text"
-                startIcon={<RefreshIcon />}
-                onClick={() => fetchWallet(selectedUser.id)}
-                sx={{ minHeight: 48 }}
-              >
-                Actualizar
-              </Button>
-            </Stack>
-            {balance <= 0 && (
-              <Typography sx={{ fontSize: '0.88rem', color: 'var(--studio-text-body)', mt: 1 }}>
-                «Quitar créditos» está desactivado porque no tiene ninguno.
+              <Typography sx={{ color: 'var(--studio-ink)', fontSize: '0.95rem' }}>
+                <b>Registrar nueva</b>: si es su primera vez, nombre y móvil, y sigues aquí con sus créditos.
               </Typography>
-            )}
+            </Stack>
+            <Box sx={{ p: 1.5, borderRadius: 'var(--studio-radius-md)', background: 'var(--studio-surf2)' }}>
+              <Typography sx={{ fontSize: '0.92rem', color: 'var(--studio-ink)' }}>
+                ¿Te paga un mes fijo en el estudio, p. ej. 8 clases por 60 €?
+              </Typography>
+              <Button startIcon={<StorefrontOutlinedIcon />} onClick={() => navigate('/clientas/estudio/nueva')} sx={{ minHeight: 44, mt: 0.5 }}>
+                Hazla clienta del estudio
+              </Button>
+            </Box>
           </Paper>
-        )}
+        </Box>
+      ) : (
+        <>
+          <Button startIcon={<ArrowBackRoundedIcon />} onClick={() => handleSelectUser(null)} sx={{ minHeight: 44, mb: 1.5 }}>
+            Elegir otra clienta
+          </Button>
+          <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 5fr) minmax(0, 7fr)' }, alignItems: 'start' }}>
+            {loading ? (
+              <Paper sx={{ p: 4 }}>
+                <Stack alignItems="center" spacing={1.5} role="status">
+                  <CircularProgress />
+                  <Typography sx={{ color: 'text.secondary' }}>Cargando los créditos de {clientName}…</Typography>
+                </Stack>
+              </Paper>
+            ) : walletError ? (
+              <Alert
+                severity="error"
+                sx={{ alignItems: 'center' }}
+                action={
+                  <Button color="inherit" startIcon={<RefreshIcon />} onClick={() => fetchWallet(selectedUser.id)} sx={{ minHeight: 44 }}>
+                    Reintentar
+                  </Button>
+                }
+              >
+                No se han podido cargar sus créditos. {walletError}
+              </Alert>
+            ) : wallet && (
+              <Paper sx={{ p: { xs: 2, md: 3 } }} data-tour="balance">
+                <Typography sx={{ color: 'var(--studio-text-strong)', fontSize: '0.95rem' }}>
+                  Saldo de <b>{clientName}</b> {creditsHelp}
+                </Typography>
+                <Typography
+                  sx={{ fontFamily: 'var(--studio-font-heading)', fontWeight: 600, color: 'var(--studio-primary-deep)', fontSize: { xs: '2.4rem', md: '3rem' }, lineHeight: 1.15 }}
+                >
+                  {creditsText(balance)}
+                </Typography>
+                <Typography sx={{ color: 'var(--studio-text-strong)', fontSize: '0.95rem', mt: 0.5 }}>
+                  {balance >= 1
+                    ? `Le llega para ${numFmt.format(Math.floor(balance))} ${Math.floor(balance) === 1 ? 'clase' : 'clases'} de suelo${balance >= 2 ? ` o ${numFmt.format(Math.floor(balance / 2))} de máquinas` : ''}.`
+                    : 'No le quedan créditos: no puede reservar hasta que compre un bono o le añadas.'}
+                </Typography>
+                {(selectedUser.phone || !isInternal(selectedUser.email)) && (
+                  <Typography sx={{ color: 'var(--studio-text-body)', fontSize: '0.9rem', mt: 0.5 }}>
+                    {[selectedUser.phone, isInternal(selectedUser.email) ? '' : selectedUser.email].filter(Boolean).join(' · ')}
+                  </Typography>
+                )}
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} useFlexGap flexWrap="wrap" sx={{ mt: 2.5, '& .MuiButton-root': { whiteSpace: 'nowrap' } }}>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    size="large"
+                    startIcon={<AddIcon />}
+                    onClick={() => openAdjustDialog('add')}
+                    sx={{ minHeight: 48 }}
+                  >
+                    Añadir créditos
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    size="large"
+                    startIcon={<RemoveIcon />}
+                    onClick={() => openAdjustDialog('remove')}
+                    disabled={balance <= 0}
+                    sx={{ minHeight: 48 }}
+                  >
+                    Quitar créditos
+                  </Button>
+                  <Button
+                    variant="text"
+                    startIcon={<RefreshIcon />}
+                    onClick={() => { fetchWallet(selectedUser.id); fetchPlan(selectedUser.id); }}
+                    sx={{ minHeight: 48 }}
+                  >
+                    Actualizar
+                  </Button>
+                </Stack>
+                {balance <= 0 && (
+                  <Typography sx={{ fontSize: '0.88rem', color: 'var(--studio-text-body)', mt: 1 }}>
+                    «Quitar créditos» está desactivado porque no tiene ninguno.
+                  </Typography>
+                )}
+              </Paper>
+            )}
+
+            {wallet && !loading && !walletError && (
+              <Paper sx={{ p: { xs: 2, md: 3 } }} data-tour="next-actions">
+                <Typography component="h2" sx={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--studio-ink)', mb: 1 }}>
+                  ¿Y ahora?
+                </Typography>
+                {justCreated && (
+                  <Alert severity="success" sx={{ mb: 1.5, fontSize: '0.92rem' }}>
+                    Ficha de {clientName} creada. Añádele créditos y apúntala a su primera clase.
+                  </Alert>
+                )}
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} sx={{ mb: 2 }}>
+                  <Button variant="outlined" startIcon={<EventAvailableOutlinedIcon />} onClick={() => setBookOpen(true)} sx={{ ...nextBtn, flex: 1 }}>
+                    Apuntarla a una clase
+                  </Button>
+                  <Button variant="outlined" startIcon={<EventRepeatOutlinedIcon />} onClick={() => setFixedOpen(true)} sx={{ ...nextBtn, flex: 1 }}>
+                    Hacerla clienta frecuente
+                  </Button>
+                </Stack>
+                {plan ? (
+                  <StudioPlanBlock plan={plan} onChanged={(p) => { setPlan(p); fetchWallet(selectedUser.id); }} />
+                ) : (
+                  <Box sx={{ p: 1.5, borderRadius: 'var(--studio-radius-md)', background: 'var(--studio-surf2)' }}>
+                    <Typography sx={{ fontSize: '0.92rem', color: 'var(--studio-ink)' }}>
+                      ¿Te paga un mes fijo aquí, p. ej. 8 clases por 60 € en efectivo?
+                    </Typography>
+                    <Button startIcon={<StorefrontOutlinedIcon />} onClick={() => navigate(`/clientas/estudio/nueva?clienta=${selectedUser.id}`)} sx={{ minHeight: 44, mt: 0.5 }}>
+                      Hacerle un plan mensual en el estudio
+                    </Button>
+                  </Box>
+                )}
+              </Paper>
+            )}
+
 
         {selectedUser && wallet && !loading && !walletError && (
           <Paper sx={{ gridColumn: '1 / -1' }}>
@@ -643,7 +676,28 @@ export default function CreditsManagement() {
             )}
           </Paper>
         )}
-      </Box>
+          </Box>
+        </>
+      )}
+
+      {selectedUser && (
+        <>
+          <BookClassDialog
+            open={bookOpen}
+            client={{ ...selectedUser, name: clientName }}
+            balance={balance}
+            onClose={() => setBookOpen(false)}
+            onBooked={() => fetchWallet(selectedUser.id)}
+          />
+          <FixedClassDialog
+            open={fixedOpen}
+            client={{ ...selectedUser, name: clientName }}
+            plan={plan}
+            onClose={() => setFixedOpen(false)}
+            onDone={() => { fetchPlan(selectedUser.id); fetchWallet(selectedUser.id); }}
+          />
+        </>
+      )}
 
       <Dialog open={openAdjust} onClose={() => !adjusting && setOpenAdjust(false)} maxWidth="sm" fullWidth fullScreen={isMobile}>
         <DialogTitle sx={{ fontFamily: 'var(--studio-font-heading)', fontSize: '1.35rem' }}>
@@ -764,7 +818,27 @@ export default function CreditsManagement() {
               </FormStep>
             )}
 
-            <FormStep n={adjustMode === 'add' ? 4 : 3} title="¿Por qué? (opcional)" hint="Te ayudará a recordarlo. Aparece en sus movimientos.">
+            {adjustMode === 'add' && (
+              <FormStep n={4} title="¿Te ha pagado? (opcional)" hint="Si te lo ha pagado en mano, apúntalo: sale en Ventas → Lo cobrado.">
+                <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+                  <TextField
+                    label="Importe"
+                    value={paidAmount}
+                    onChange={(e) => setPaidAmount(e.target.value)}
+                    error={Boolean(paidError)}
+                    helperText={paidError || 'Vacío = no apuntar cobro'}
+                    slotProps={{ htmlInput: { inputMode: 'decimal', maxLength: 10 } }}
+                    sx={{ maxWidth: { sm: 180 } }}
+                  />
+                  <TextField select label="Cómo" value={paidMethod} onChange={(e) => setPaidMethod(e.target.value as PayMethod)}
+                    disabled={!(paidNum > 0)} sx={{ minWidth: 200 }}>
+                    {METHODS.map((m) => <MenuItem key={m.value} value={m.value} sx={{ minHeight: 44 }}>{m.label}</MenuItem>)}
+                  </TextField>
+                </Stack>
+              </FormStep>
+            )}
+
+            <FormStep n={adjustMode === 'add' ? 5 : 3} title="¿Por qué? (opcional)" hint="Te ayudará a recordarlo. Aparece en sus movimientos.">
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1.5 }}>
                 {REASON_EXAMPLES.map((r) => (
                   <Chip key={r} label={r} onClick={() => setAdjustReason(r)} variant={adjustReason === r ? 'filled' : 'outlined'} sx={{ minHeight: 36 }} />
@@ -808,7 +882,7 @@ export default function CreditsManagement() {
             variant="contained"
             color={adjustMode === 'add' ? 'success' : 'error'}
             onClick={handleAdjust}
-            disabled={adjusting || Boolean(amountError) || Boolean(expiry.error)}
+            disabled={adjusting || Boolean(amountError) || Boolean(expiry.error) || Boolean(paidError)}
             startIcon={adjusting ? <CircularProgress size={18} color="inherit" /> : undefined}
             sx={{ minHeight: 48, ml: '0 !important' }}
           >
