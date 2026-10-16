@@ -63,10 +63,17 @@ function useStorageGuard() {
         // El idioma elegido no es "dato corrupto": lo conservamos.
         const keepLang = localStorage.getItem('site.lang');
         const keepLangSetup = localStorage.getItem('language_setup_complete');
+        // Preferencias del panel (menú comprimido, tamaño de letra, vista del
+        // calendario…): si el panel comparte dirección con la web, no son de la web.
+        const PANEL_KEYS = /^(panel-|crm|kc[A-Z]|hoy\.)/;
+        const keepPanel = Object.keys(localStorage)
+          .filter((k) => PANEL_KEYS.test(k))
+          .map((k) => [k, localStorage.getItem(k) ?? ''] as const);
         localStorage.clear();
         localStorage.setItem(VERSION_KEY, CURRENT_VERSION);
         if (keepLang) localStorage.setItem('site.lang', keepLang);
         if (keepLangSetup) localStorage.setItem('language_setup_complete', keepLangSetup);
+        keepPanel.forEach(([k, v]) => localStorage.setItem(k, v));
       } else {
         const storedTimestamp = localStorage.getItem(TIMESTAMP_KEY);
         if (storedTimestamp && Date.now() - parseInt(storedTimestamp, 10) > MAX_SESSION_TIME_MS) {
