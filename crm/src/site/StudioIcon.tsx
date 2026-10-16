@@ -190,6 +190,26 @@ import CloudDoneRoundedIcon from '@mui/icons-material/CloudDoneRounded';
 import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
 import PhoneIphoneOutlinedIcon from '@mui/icons-material/PhoneIphoneOutlined';
 import PhoneIphoneRoundedIcon from '@mui/icons-material/PhoneIphoneRounded';
+// «Cómo se cobra» (components/charging)
+import UndoIcon from '@mui/icons-material/Undo';
+import UndoOutlinedIcon from '@mui/icons-material/UndoOutlined';
+import UndoRoundedIcon from '@mui/icons-material/UndoRounded';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import HourglassEmptyOutlinedIcon from '@mui/icons-material/HourglassEmptyOutlined';
+import HourglassEmptyRoundedIcon from '@mui/icons-material/HourglassEmptyRounded';
+import HourglassTopIcon from '@mui/icons-material/HourglassTop';
+import CreditCardIcon from '@mui/icons-material/CreditCard';
+import CreditCardOutlinedIcon from '@mui/icons-material/CreditCardOutlined';
+import CreditCardRoundedIcon from '@mui/icons-material/CreditCardRounded';
+import ConfirmationNumberIcon from '@mui/icons-material/ConfirmationNumber';
+import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
+import ConfirmationNumberRoundedIcon from '@mui/icons-material/ConfirmationNumberRounded';
+import MailIcon from '@mui/icons-material/Mail';
+import MailOutlineIcon from '@mui/icons-material/MailOutline';
+import MailOutlineRoundedIcon from '@mui/icons-material/MailOutlineRounded';
+import EditIcon from '@mui/icons-material/Edit';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import { panelLook } from '../theme';
 import { useSite } from './SiteProvider';
 
@@ -282,6 +302,14 @@ const ICONS = {
   clock: [AccessTimeIcon, AccessTimeOutlinedIcon, AccessTimeRoundedIcon, AccessTimeFilledIcon],
   saved: [CloudDoneIcon, CloudDoneOutlinedIcon, CloudDoneRoundedIcon, CloudDoneIcon],
   phone: [PhoneIphoneIcon, PhoneIphoneOutlinedIcon, PhoneIphoneRoundedIcon, PhoneIphoneIcon],
+  // «Cómo se cobra»
+  undo: [UndoIcon, UndoOutlinedIcon, UndoRoundedIcon, UndoIcon],
+  hourglass: [HourglassEmptyIcon, HourglassEmptyOutlinedIcon, HourglassEmptyRoundedIcon, HourglassTopIcon],
+  card: [CreditCardIcon, CreditCardOutlinedIcon, CreditCardRoundedIcon, CreditCardIcon],
+  ticket: [ConfirmationNumberIcon, ConfirmationNumberOutlinedIcon, ConfirmationNumberRoundedIcon, ConfirmationNumberIcon],
+  mail: [MailOutlineIcon, MailOutlineIcon, MailOutlineRoundedIcon, MailIcon],
+  // «Clases y precios» (editar en el sitio)
+  edit: [EditOutlinedIcon, EditOutlinedIcon, EditRoundedIcon, EditIcon],
 } satisfies Record<string, [IconComp, IconComp, IconComp, IconComp]>;
 
 export type StudioIconName = keyof typeof ICONS;

@@ -12,6 +12,7 @@ import EventBusyIcon from '@mui/icons-material/EventBusy';
 import PersonAddAlt1Icon from '@mui/icons-material/PersonAddAlt1';
 import AddIcon from '@mui/icons-material/Add';
 import { PageIntro, HelpTip, EmptyState, FormStep, useConfirm, useNotify } from '../components/guide';
+import GuideLink from '../components/charging/GuideLink';
 import { friendlyError } from '../utils/errors';
 import { authHeaders } from '../utils/auth';
 
@@ -730,6 +731,7 @@ export default function AssignClassesManagement() {
         pageKey="assign-classes"
         title="Clases fijas de clientas"
         subtitle="Su plaza guardada cada semana, sin que tenga que reservar."
+        actions={<GuideLink chapter="en-mano">¿Clase fija o créditos?</GuideLink>}
       />
 
       <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems="flex-start">

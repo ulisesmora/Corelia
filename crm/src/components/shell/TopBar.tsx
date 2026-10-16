@@ -11,6 +11,7 @@ import { BOTTOM_KEYS, NAV, type SectionKey } from './navigation';
 import { hasTour, startTour, useShell } from './ShellContext';
 import { StudioMark } from './Sidebar';
 import LockPopover, { type LockPop } from './LockPopover';
+import { useOpenGuide } from '../charging/chapters';
 
 const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
 
@@ -51,7 +52,7 @@ function useNewEntries(): MenuEntry[] {
     { icon: 'booked', label: 'Reserva', hint: 'Apuntar a una clienta a una clase', onClick: () => openNewClient('existing'), badge: true },
     { icon: 'addClient', label: 'Clienta', hint: 'Dar de alta una ficha', onClick: () => openNewClient('new'), badge: true },
     { icon: 'add', label: 'Clase', hint: 'Añadir una clase al horario', onClick: () => navigate('/calendar?accion=nueva'), badge: true },
-    { icon: 'plans', label: 'Bono', hint: 'Un bono o una cuota para vender', onClick: () => navigate('/plans?accion=nueva'), badge: true },
+    { icon: 'plans', label: 'Bono', hint: 'Un bono o una cuota para vender', onClick: () => navigate('/clases-y-precios?tab=precios&accion=nueva'), badge: true },
   ];
 }
 
@@ -61,12 +62,14 @@ function useHelpEntries(): MenuEntry[] {
   const { openCommand } = useShell();
   const coach = useCoach();
   const locks = useLocks();
+  const openGuide = useOpenGuide();
   const list: MenuEntry[] = [];
   if (coach.currentPage && coach.hasPageTour(coach.currentPage)) {
     const page = coach.currentPage;
-    list.push({ icon: 'play', label: 'Cómo funciona esta pantalla', hint: 'Tres pasos, en un momento', onClick: () => coach.startPage(page) });
+    list.push({ icon: 'play', label: 'Cómo funciona esta pantalla', hint: 'Paso a paso, en un momento', onClick: () => coach.startPage(page) });
   }
   if (hasTour()) list.push({ icon: 'help', label: 'Visita guiada', hint: 'Un repaso rápido del panel', onClick: startTour });
+  list.push({ icon: 'payments', label: 'Cómo se cobra', hint: 'Bonos, pagos en mano, cancelaciones y espera', onClick: () => openGuide() });
   list.push({ icon: 'search', label: 'Buscar o hacer algo', hint: `Atajo: ${isMac ? '⌘' : 'Ctrl'} + K`, onClick: () => openCommand() });
   if (locks.unfinished) {
     list.push({ icon: 'launch', label: 'Puesta en marcha', hint: 'Seguir donde lo dejaste', onClick: () => navigate(setupStepLink(locks.reached)) });
@@ -177,7 +180,7 @@ export function BottomNav({ active }: { active: SectionKey | null }) {
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [lockPop, setLockPop] = useState<LockPop | null>(null);
   const moreBtn = useRef<HTMLButtonElement>(null);
-  const moreActive = active === 'sales' || active === 'web' || active === 'settings';
+  const moreActive = active === 'catalog' || active === 'sales' || active === 'web' || active === 'settings';
   const showLock = (el: HTMLElement | null, lock: Lock) => { if (el) setLockPop({ anchor: el, lock }); };
   const more: (MenuEntry | 'divider')[] = [
     ...NAV.filter((n) => !BOTTOM_KEYS.includes(n.key)).map((n) => {
@@ -189,7 +192,7 @@ export function BottomNav({ active }: { active: SectionKey | null }) {
     }),
     'divider',
     ...(webUrl ? [{ icon: 'eye' as const, label: 'Ver mi web', onClick: () => window.open(webUrl, '_blank', 'noopener') }] : []),
-    ...helpEntries.slice(0, 2),
+    ...helpEntries.filter((e) => e.label !== 'Buscar o hacer algo').slice(0, 3),
   ];
   const tab = (key: string, label: string, icon: StudioIconName, current: boolean, onClick: (e: MouseEvent<HTMLElement>) => void, extra = {}, lock?: Lock | null) => (
     <ButtonBase

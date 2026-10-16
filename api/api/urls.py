@@ -38,6 +38,7 @@ from .views_dashboard import (
     DashboardActionView, DashboardChecklistView, DashboardDayView, DashboardSalesExportView, DashboardSalesView,
     DashboardTodayView, DashboardWebSectionView, DashboardWebView,
 )
+from .views_guide import ChargingGuideView
 from .views_site import (
     FAQItemViewSet, SiteConfigAdminView, SiteConfigCheckDomainView, SiteConfigPublicView, SiteConfigStripeView,
     SiteBadgeView, SiteConfigTestEmailView, SiteIconView, SiteOgImageView, TestimonialViewSet,
@@ -101,6 +102,8 @@ urlpatterns = [
     path('v1/dashboard/web/', DashboardWebView.as_view(), name='dashboard-web'),
     path('v1/dashboard/web/sections/', DashboardWebSectionView.as_view(), name='dashboard-web-sections'),
     path('v1/dashboard/checklist/', DashboardChecklistView.as_view(), name='dashboard-checklist'),
+    # «Cómo se cobra»: los datos reales para las explicaciones del panel (api/views_guide.py)
+    path('v1/guide/charging/', ChargingGuideView.as_view(), name='guide-charging'),
     path('v1/', include(router.urls)),  # Namespace the router URLs under 'api/'
     path('signup/', SignUpView.as_view(), name='signup'),
     path('signin/', SignInView.as_view(), name='signin'),

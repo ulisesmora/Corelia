@@ -19,6 +19,7 @@ import { NAV, sectionOf } from './shell/navigation';
 import { ShellContext } from './shell/ShellContext';
 import { useShellExtensions } from './shell/extensions';
 import { useTextSize } from './shell/textSize';
+import { ChargingGuideHost } from './charging';
 
 // ====================================================================
 // Armazón del panel (rediseño, fase 1): menú lateral en tarjeta con los
@@ -84,7 +85,8 @@ export default function MainLayout() {
   // Entrar en algo aún cerrado (por enlace o escribiendo la dirección): se explica
   const lock = locks.route(location.pathname);
   const lockedTitle = !lock ? '' : location.pathname === '/assign-classes' ? 'Clases fijas de clientas'
-    : NAV.find((n) => n.key === sectionOf(location.pathname))?.label || 'Esta sección';
+    : location.pathname === '/plans' ? 'Bonos y precios'
+      : NAV.find((n) => n.key === sectionOf(location.pathname))?.label || 'Esta sección';
   const userName = user?.name || user?.email || 'Administración';
 
   // Al cambiar de pantalla: arriba del todo
@@ -134,6 +136,8 @@ export default function MainLayout() {
           onCreated={(name) => { setNewClient(false); navigate(name ? `/clients?buscar=${encodeURIComponent(name)}` : '/clients'); }}
         />
         <InstallCrmApp />
+        {/* «Cómo se cobra» (?guia=cobros#capítulo): components/charging */}
+        <ChargingGuideHost />
       </CoachProvider>
     </ShellContext.Provider>
   );

@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useState, useEffect, useMemo } from 'react';
+import type { CatalogHandle, EmbedProps } from './catalogo/embed';
 import {
   Alert, Box, Button, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle,
   Pagination, Paper, Stack, TextField, Typography,
@@ -53,7 +54,8 @@ async function activeSchedules(query: string): Promise<ScheduleLite[]> {
 const describeSchedule = (s: ScheduleLite) =>
   `${s.class_type?.title || 'Clase'} · ${s.weekday != null ? WEEKDAYS[s.weekday] : 'día suelto'} a las ${s.start_time?.slice(0, 5)}`;
 
-export default function RoomsManagement() {
+/** Pantalla completa; `embedded`: solo sus ventanas, para «Clases y precios» (./catalogo/embed.ts). */
+const RoomsManagement = forwardRef<CatalogHandle, EmbedProps>(function RoomsManagement({ embedded = false, onChanged }, ref) {
   const confirm = useConfirm();
   const notify = useNotify();
   const [rooms, setRooms] = useState<Room[]>([]);
@@ -139,6 +141,7 @@ export default function RoomsManagement() {
       setOpenDialog(false);
       setCurrentRoom(null);
       fetchRooms();
+      onChanged?.();
     } catch (e) {
       const msg = await friendlyError(e);
       notify(/ya existe/.test(msg)
@@ -188,6 +191,7 @@ export default function RoomsManagement() {
       if (!res.ok) throw res;
       notify(`Sala «${room.name}» borrada ✓`);
       fetchRooms();
+      onChanged?.();
     } catch (e) {
       notify(await friendlyError(e), 'error');
     }
@@ -205,8 +209,11 @@ export default function RoomsManagement() {
   // Enlaces directos desde la guía de puesta en marcha (?accion=nueva)
   useActionParam('nueva', openCreate);
 
+  useImperativeHandle(ref, () => ({ create: openCreate, edit: (r) => openEdit(r as Room), remove: (r) => handleDelete(r as Room) }));
+
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      {!embedded && (<>
       <PageIntro
         pageKey="rooms"
         title="Salas"
@@ -314,6 +321,8 @@ export default function RoomsManagement() {
           )}
         </>
       )}
+
+      </>)}
 
       <Dialog open={openDialog} onClose={closeDialog} maxWidth="md" fullWidth scroll="body">
         <DialogTitle>{currentRoom?.id ? `Editar la sala «${currentRoom.name}»` : 'Añadir una sala'}</DialogTitle>
@@ -444,4 +453,6 @@ export default function RoomsManagement() {
       </Dialog>
     </Box>
   );
-}
+});
+
+export default RoomsManagement;

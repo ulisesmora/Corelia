@@ -14,6 +14,10 @@ import { useSetupProgress } from './progressContext';
 //   Ventas (pagos, bonos, cupones, créditos…) → al terminar «Bonos» (paso 7)
 //   Reservas                                  → al publicar la web (paso 8)
 //
+// «Clases y precios» está siempre abierta (tipos de clase, profesores,
+// categorías y salas, como antes en Ajustes); su pestaña «Precios y bonos»
+// sigue a Ventas: se abre al terminar «Bonos» (pages/catalogo).
+//
 // Los estudios con la web publicada lo tienen todo abierto, siempre.
 // ====================================================================
 

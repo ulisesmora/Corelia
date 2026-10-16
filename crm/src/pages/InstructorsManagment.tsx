@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useState, useEffect, useMemo } from 'react';
+import type { CatalogHandle, EmbedProps } from './catalogo/embed';
 import {
   Alert, Avatar, Box, Button, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle,
   InputAdornment, Pagination, Paper, Stack, TextField, Typography,
@@ -114,7 +115,8 @@ type EditableInstructor = {
 // COMPONENTE PRINCIPAL
 // ====================================================================
 
-export default function InstructorManagement() {
+/** Pantalla completa; `embedded`: solo sus ventanas, para «Clases y precios» (./catalogo/embed.ts). */
+const InstructorManagement = forwardRef<CatalogHandle, EmbedProps>(function InstructorManagement({ embedded = false, onChanged }, ref) {
   const confirm = useConfirm();
   const notify = useNotify();
   const [openDialog, setOpenDialog] = useState(false);
@@ -249,6 +251,7 @@ export default function InstructorManagement() {
       setOpenDialog(false);
       setCurrentInstructor(null);
       await fetchInstructors();
+      onChanged?.();
     } catch (err) {
       notify(await friendlyError(err), 'error');
     } finally {
@@ -310,6 +313,7 @@ export default function InstructorManagement() {
       if (!res.ok) throw res;
       notify(`${inst.name} borrado/a ✓`);
       await fetchInstructors();
+      onChanged?.();
     } catch (err) {
       notify(await friendlyError(err), 'error');
     }
@@ -333,8 +337,11 @@ export default function InstructorManagement() {
   // Enlaces directos desde la guía de puesta en marcha (?accion=nueva)
   useActionParam('nueva', handleOpenCreate);
 
+  useImperativeHandle(ref, () => ({ create: handleOpenCreate, edit: (i) => handleOpenEdit(i as Instructor), remove: (i) => handleDelete(i as Instructor) }));
+
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      {!embedded && (<>
       <PageIntro
         pageKey="instructors"
         title="Instructores"
@@ -442,6 +449,8 @@ export default function InstructorManagement() {
       )}
 
       {/* --- VENTANA CREAR / EDITAR --- */}
+      </>)}
+
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth scroll="body">
         <DialogTitle>{ci?.id ? `Editar a ${ci.name || 'instructor'}` : 'Añadir un instructor'}</DialogTitle>
         <DialogContent>
@@ -601,4 +610,6 @@ export default function InstructorManagement() {
       </Dialog>
     </Box>
   );
-}
+});
+
+export default InstructorManagement;

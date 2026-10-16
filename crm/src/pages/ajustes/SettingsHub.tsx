@@ -3,7 +3,7 @@
 // (lo que falta de verdad, GET /api/v1/dashboard/checklist/) y una tarjeta por
 // grupo. Cada enlace lleva a la pantalla de siempre: no se pierde ninguna.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   Box, Button, ButtonBase, Dialog, DialogActions, DialogContent, DialogTitle, FormControlLabel, InputBase, MenuItem,
   Paper, Skeleton, Switch, TextField, Typography,
@@ -21,6 +21,18 @@ import { dashApi, dashRequest, type Checklist } from '../kit/api';
 import { Card, PageHead } from '../kit/ui';
 import { visuallyHidden } from '../kit/styles';
 import { SETTING_GROUPS, searchSettings, type SettingGroup, type SettingItem } from './groups';
+import { useOpenGuide, type GuideChapter } from '../../components/charging';
+
+/** «¿Cómo funciona?» dentro de una ventana: la cierra y abre ese capítulo de «Cómo se cobra». */
+function GuideButton({ chapter, label, onClose }: { chapter: GuideChapter; label: string; onClose: () => void }) {
+  const openGuide = useOpenGuide();
+  return (
+    <Button onClick={() => { onClose(); window.setTimeout(() => openGuide(chapter), 0); }} startIcon={<StudioIcon name="help" />}
+      sx={{ minHeight: 44, mr: 'auto' }}>
+      {label}
+    </Button>
+  );
+}
 
 function WaitlistDialog({ open, onClose }: { open: boolean; onClose: () => void }) {
   const notify = useNotify();
@@ -70,7 +82,8 @@ function WaitlistDialog({ open, onClose }: { open: boolean; onClose: () => void 
           </Box>
         )}
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ flexWrap: 'wrap' }}>
+        <GuideButton chapter="espera" label="Cómo funciona" onClose={onClose} />
         <Button onClick={onClose}>Cancelar</Button>
         <Button variant="contained" onClick={save} disabled={!cfg || saving}>Guardar</Button>
       </DialogActions>
@@ -92,7 +105,10 @@ function CancelDialog({ open, onClose, hours }: { open: boolean; onClose: () => 
           calendario, eliges qué devolver a cada clienta.
         </Typography>
       </DialogContent>
-      <DialogActions><Button variant="contained" onClick={onClose}>Entendido</Button></DialogActions>
+      <DialogActions sx={{ flexWrap: 'wrap' }}>
+        <GuideButton chapter="reembolsos" label="Ver con dibujos" onClose={onClose} />
+        <Button variant="contained" onClick={onClose}>Entendido</Button>
+      </DialogActions>
     </Dialog>
   );
 }
@@ -121,6 +137,14 @@ export default function SettingsHub() {
   const [check, setCheck] = useState<Checklist | null>(null);
   const [dialog, setDialog] = useState<'waitlist' | 'cancellations' | null>(null);
   const closeDialog = useCallback(() => setDialog(null), []);
+  // ?ajuste=espera | cancelaciones abre esa ventana (enlaces desde «Cómo se cobra»)
+  const [params, setParams] = useSearchParams();
+  const ajuste = params.get('ajuste');
+  useEffect(() => {
+    if (ajuste !== 'espera' && ajuste !== 'cancelaciones') return;
+    setDialog(ajuste === 'espera' ? 'waitlist' : 'cancellations');
+    setParams((p) => { const n = new URLSearchParams(p); n.delete('ajuste'); return n; }, { replace: true });
+  }, [ajuste, setParams]);
 
   useEffect(() => { dashApi.checklist().then(setCheck).catch(() => setCheck(null)); }, []);
 

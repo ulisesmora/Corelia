@@ -232,7 +232,7 @@ export default function SalesPage() {
             </Box>
           ))}
           <Box sx={{ ...rowSx, flexWrap: 'wrap', gap: 1 }}>
-            <TonalButton size="small" onClick={() => navigate('/plans')}>{data.plans.length ? 'Editar bonos y cuotas' : 'Crear el primer bono'}</TonalButton>
+            <TonalButton size="small" onClick={() => navigate('/clases-y-precios?tab=precios')}>{data.plans.length ? 'Editar bonos y cuotas' : 'Crear el primer bono'}</TonalButton>
             <Button size="small" onClick={() => navigate('/subscriptions')}>Membresías</Button>
             <Button size="small" onClick={() => navigate('/credits')}>Créditos de clientas</Button>
             <Button size="small" onClick={() => navigate('/cuopon')}>Cupones</Button>

@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo, ReactNode } from 'react';
+import { forwardRef, useImperativeHandle, useState, useEffect, useMemo, ReactNode } from 'react';
+import type { CatalogHandle, EmbedProps } from './catalogo/embed';
 import {
   Box,
   Button,
@@ -275,7 +276,8 @@ function PlanCard({
 // 4. COMPONENTE PRINCIPAL
 // ====================================================================
 
-export default function PlanManagement() {
+/** Pantalla completa; `embedded`: solo sus ventanas, para «Clases y precios» (./catalogo/embed.ts). */
+const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManagement({ embedded = false, onChanged }, ref) {
   const confirm = useConfirm();
   const notify = useNotify();
 
@@ -361,6 +363,7 @@ export default function PlanManagement() {
 
     if (!response.ok) throw response;
     await fetchPlans();
+    onChanged?.();
   };
 
   const handleToggleActive = async (plan: Plan) => {
@@ -742,8 +745,14 @@ export default function PlanManagement() {
   // Enlaces directos desde la guía de puesta en marcha (?accion=nueva)
   useActionParam('nueva', () => handleOpenCreate('pack'));
 
+  useImperativeHandle(ref, () => ({
+    create: (kind) => handleOpenCreate(kind || 'pack'), edit: (p) => handleOpenEdit(p as Plan),
+    remove: (p) => handleDelete(p as Plan), toggle: (p) => handleToggleActive(p as Plan),
+  }));
+
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      {!embedded && (<>
       <PageIntro
         pageKey="plans"
         title="Bonos y precios"
@@ -813,6 +822,8 @@ export default function PlanManagement() {
           )}
         </>
       )}
+
+      </>)}
 
       {/* --- DIÁLOGO DE CREAR / CAMBIAR --- */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth scroll="paper">
@@ -1172,4 +1183,6 @@ export default function PlanManagement() {
       </Dialog>
     </Box>
   );
-}
+});
+
+export default PlanManagement;

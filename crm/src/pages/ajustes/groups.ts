@@ -32,10 +32,11 @@ export const SETTING_GROUPS: SettingGroup[] = [
     items: [
       { key: 'datos', label: 'Datos y logo', hint: 'Nombre, contacto, dirección, logo y NIF', icon: 'studio', path: '/ajustes', keywords: 'nombre teléfono whatsapp dirección logo nif cif razón social iva factura recibos instagram' },
       { key: 'moneda', label: 'Moneda y país', hint: 'En qué moneda cobras', icon: 'payments', path: '/ajustes', keywords: 'moneda divisa euro dólar país precios' },
-      { key: 'salas', label: 'Salas', hint: 'Espacios y aforo', icon: 'rooms', path: '/rooms', keywords: 'sala aforo capacidad' },
-      { key: 'profes', label: 'Profesoras', hint: 'Quién da las clases', icon: 'instructors', path: '/instructors', keywords: 'instructores profesores equipo monitoras' },
-      { key: 'tipos', label: 'Tipos de clase', hint: 'Pilates, yoga… y su descripción', icon: 'classTypes', path: '/classes', keywords: 'clases duración créditos precio' },
-      { key: 'categorias', label: 'Categorías', hint: 'Grupos de clases en la web', icon: 'categories', path: '/categories' },
+      // Estas cuatro (y «Bonos y cuotas») viven ahora en «Clases y precios» (pages/catalogo)
+      { key: 'tipos', label: 'Tipos de clase', hint: 'En Clases y precios', icon: 'classTypes', path: '/clases-y-precios?tab=tipos', keywords: 'clases duración créditos precio' },
+      { key: 'profes', label: 'Profesores', hint: 'En Clases y precios', icon: 'instructors', path: '/clases-y-precios?tab=profes', keywords: 'instructores profesoras equipo monitoras' },
+      { key: 'categorias', label: 'Categorías', hint: 'En Clases y precios', icon: 'categories', path: '/clases-y-precios?tab=categorias' },
+      { key: 'salas', label: 'Salas', hint: 'En Clases y precios', icon: 'rooms', path: '/clases-y-precios?tab=salas', keywords: 'sala aforo capacidad' },
       { key: 'horario', label: 'Horario semanal', hint: 'Las clases de cada semana', icon: 'schedule', path: '/calendar/horarios', keywords: 'horario semana clases fijas recurrentes' },
       { key: 'festivos', label: 'Festivos y cierres', hint: 'Vacaciones y días sin clase', icon: 'holidays', path: '/calendar/horarios?tab=cierres', keywords: 'vacaciones festivo cerrado cierre puente' },
     ],
@@ -43,7 +44,8 @@ export const SETTING_GROUPS: SettingGroup[] = [
   {
     key: 'booking', title: 'Reservas y cobros', icon: 'payments', tint: 'mat',
     items: [
-      { key: 'bonos', label: 'Bonos y cuotas', hint: 'Lo que se vende en la web', icon: 'plans', path: '/plans', keywords: 'bono cuota precio tarifa membresía plan' },
+      { key: 'bonos', label: 'Bonos y cuotas', hint: 'En Clases y precios', icon: 'plans', path: '/clases-y-precios?tab=precios', keywords: 'bono cuota precio tarifa membresía plan' },
+      { key: 'como-cobrar', label: 'Cómo se cobra', hint: 'Bonos, pagos en mano, devoluciones', icon: 'help', path: '/configuracion?guia=cobros', keywords: 'cobrar pagar créditos reembolso devolver efectivo bizum guía ayuda' },
       { key: 'pagos', label: 'Pagos online', hint: 'Cobrar con tarjeta al reservar', icon: 'payments', path: '/ajustes?tab=pagos', keywords: 'stripe tarjeta apple pay google pay cobrar' },
       { key: 'espera', label: 'Lista de espera', hint: 'Cuando una clase está llena', icon: 'agenda', action: 'waitlist', keywords: 'espera llena plaza aviso' },
       { key: 'cancelaciones', label: 'Cancelaciones', hint: 'Hasta cuándo se puede cancelar', icon: 'warning', action: 'cancellations', keywords: 'cancelar anular plazo horas devolver créditos' },

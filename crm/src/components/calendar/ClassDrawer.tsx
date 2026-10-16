@@ -18,6 +18,7 @@ import UndoIcon from '@mui/icons-material/Undo';
 import MoreVertIcon from '@mui/icons-material/MoreVert';
 import LayersOutlinedIcon from '@mui/icons-material/LayersOutlined';
 import { useConfirm } from '../guide';
+import GuideLink from '../charging/GuideLink';
 import { ApiError, calendarApi, errorText } from './api';
 import type { Attendee, Occurrence, OccurrenceDetail, WaitlistItem } from './types';
 import type { ClassTone } from './classColors';
@@ -254,7 +255,9 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
                   </Box>
                 )}
                 <Box component="fieldset" sx={{ border: 0, p: 0, m: 0, mb: 2 }}>
-                  <Typography component="legend" sx={{ fontWeight: 600, mb: 1 }}>¿Qué devolvemos?</Typography>
+                  <Typography component="legend" sx={{ fontWeight: 600, mb: 1, display: 'flex', alignItems: 'center', gap: 0.5, flexWrap: 'wrap' }}>
+                    ¿Qué devolvemos? <GuideLink chapter="reembolsos">Cómo funcionan las devoluciones</GuideLink>
+                  </Typography>
                   <RadioGroup value={refund} onChange={(e) => setRefund(e.target.value as 'credits' | 'money' | 'none')}>
                     <OptionRow value="credits" label="Devolver la clase a su bono" chip="Recomendado" hint="Quien pagó con tarjeta sin cuenta recibe el dinero." />
                     <OptionRow value="money" label="Devolver el dinero" hint="A quien pagó esta clase con tarjeta. Las de bono recuperan la clase." />
@@ -304,7 +307,10 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
                 {detail && (
                   <>
                     <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mt: 1 }}>
-                      <Typography component="h3" sx={{ fontWeight: 700 }}>Apuntadas · {detail.attendees.length}</Typography>
+                      <Typography component="h3" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                        Apuntadas · {detail.attendees.length}
+                        <GuideLink chapter="en-mano" iconOnly>Pagos en mano y clientas fijas</GuideLink>
+                      </Typography>
                       {canCheck && detail.attendees.length > 0 && (
                         <Typography variant="body2" color="text.secondary" aria-live="polite">{presentCount} han venido</Typography>
                       )}
@@ -332,7 +338,10 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
 
                     {detail.waitlist.length > 0 && (
                       <>
-                        <Typography component="h3" sx={{ fontWeight: 700, mt: 2.5 }}>Lista de espera · {detail.waitlist.length}</Typography>
+                        <Typography component="h3" sx={{ fontWeight: 700, mt: 2.5, display: 'flex', alignItems: 'center', gap: 0.25 }}>
+                          Lista de espera · {detail.waitlist.length}
+                          <GuideLink chapter="espera" iconOnly>Cómo funciona la lista de espera</GuideLink>
+                        </Typography>
                         {detail.waitlist.map((w, i) => (
                           <div className="kc-person" key={w.id}>
                             <Typography sx={{ width: 18, textAlign: 'center', fontWeight: 700, color: 'text.secondary' }}>{w.position}</Typography>
@@ -496,6 +505,7 @@ function AddClientDialog({ open, onClose, sessionRef, title, full, price, onAdde
           <Stack spacing={1} sx={{ mt: 2 }}>
             <Alert severity="info" icon={false} action={<Button onClick={() => setPick(null)}>Cambiar</Button>}><b>{name(pick)}</b><br />{pick.email}</Alert>
             {price > 0 && <FormControlLabel control={<Checkbox checked={charge} onChange={(e) => setCharge(e.target.checked)} />} label={`Descontar ${price === 1 ? '1 clase' : `${price} clases`} de su bono`} />}
+            <GuideLink chapter="en-mano" sx={{ alignSelf: 'flex-start' }}>¿Te paga en mano?</GuideLink>
             {(full || force) && <FormControlLabel control={<Checkbox checked={force} onChange={(e) => setForce(e.target.checked)} />} label="Apuntarla aunque esté llena" />}
           </Stack>
         )}

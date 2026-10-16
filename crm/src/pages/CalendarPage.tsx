@@ -2,7 +2,8 @@
 // de cada clase con quién viene, arrastrar para mover o crear, cancelar con
 // devolución y lista de espera. La gestión clásica (lista de clases
 // semanales, vacaciones y cierres, horario para imprimir) sigue en
-// /calendar/horarios (pages/Payments.tsx).
+// /calendar/horarios (pages/Payments.tsx): se llega con los botones
+// visibles «Horarios semanales», «Vacaciones y cierres» y «Más opciones».
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import { Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -14,7 +15,10 @@ import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import FullscreenIcon from '@mui/icons-material/Fullscreen';
 import FullscreenExitIcon from '@mui/icons-material/FullscreenExit';
-import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
+import TuneIcon from '@mui/icons-material/Tune';
+import EventRepeatOutlinedIcon from '@mui/icons-material/EventRepeatOutlined';
+import EditCalendarOutlinedIcon from '@mui/icons-material/EditCalendarOutlined';
+import HelpOutlineIcon from '@mui/icons-material/HelpOutline';
 import MeetingRoomOutlinedIcon from '@mui/icons-material/MeetingRoomOutlined';
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -44,6 +48,7 @@ import { useSite } from '../site/SiteProvider';
 import { panelPalette } from '../theme';
 import { HowItWorks } from '../onboarding/coach';
 import { STUDIO_TZ } from '../site/timezone';
+import { useOpenGuide } from '../components/charging';
 
 const LS_VIEW = 'kcView';
 const LS_COMPACT = 'kcCompact';
@@ -57,6 +62,8 @@ export default function CalendarPage() {
   const mobile = useMediaQuery(theme.breakpoints.down('sm'));
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  const openGuide = useOpenGuide();
+  const compactHead = useMediaQuery('(max-width:1599.95px)', { noSsr: true });
 
   const [now, setNow] = useState(() => studioNow(STUDIO_TZ));
   useEffect(() => {
@@ -323,16 +330,30 @@ export default function CalendarPage() {
   const page = (
     <Box className={`kc ${full ? 'kc-full' : ''}`} style={cssVars}
       sx={full ? { position: 'fixed', inset: 0, zIndex: 1250, bgcolor: 'background.default', overflow: 'auto', p: { xs: 1.5, md: 2.5 } } : { pb: 2 }}>
-      <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2, mt: { xs: 0.5, md: 0 } }} data-tour="page-head">
-        <Box sx={{ width: 44, height: 44, borderRadius: 3, display: 'grid', placeItems: 'center', bgcolor: alpha(theme.palette.primary.main, 0.12), color: 'primary.main', flex: 'none' }} aria-hidden="true">
-          <CalendarMonthOutlinedIcon />
+      <Stack direction="row" alignItems="center" useFlexGap flexWrap="wrap" sx={{ mb: 2, mt: { xs: 0.5, md: 0 }, columnGap: 1.5, rowGap: 1.25 }}>
+        <Stack direction="row" alignItems="center" spacing={1.5} sx={{ minWidth: 0 }} data-tour="page-head">
+          <Box sx={{ width: 44, height: 44, borderRadius: 3, display: 'grid', placeItems: 'center', bgcolor: alpha(theme.palette.primary.main, 0.12), color: 'primary.main', flex: 'none' }} aria-hidden="true">
+            <CalendarMonthOutlinedIcon />
+          </Box>
+          <Typography variant="h1" sx={{ fontSize: { xs: '1.6rem', md: '2rem' }, minWidth: 0 }}>Calendario</Typography>
+          <HowItWorks page="calendar" />
+        </Stack>
+        <Box sx={{ flex: 1, display: { xs: 'none', sm: 'block' } }} />
+        {/* Lo importante del horario, a la vista (antes escondido en «⋯») */}
+        <Box role="group" aria-label="Opciones del horario" data-tour="cal-options"
+          sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.75, order: { xs: 3, sm: 0 }, width: { xs: '100%', sm: 'auto' },
+            '& .MuiButton-root': { minHeight: 44, borderRadius: 99, px: 1.75, whiteSpace: 'nowrap', flex: { xs: '1 1 auto', sm: 'none' } } }}>
+          <Button variant="outlined" startIcon={<EventRepeatOutlinedIcon />} onClick={() => navigate('/calendar/horarios')}>
+            {mobile || compactHead ? 'Horarios' : 'Horarios semanales'}
+          </Button>
+          <Button variant="outlined" startIcon={<BeachAccessOutlinedIcon />} onClick={() => navigate('/calendar/horarios?tab=cierres')}>
+            {mobile || compactHead ? 'Vacaciones' : 'Vacaciones y cierres'}
+          </Button>
+          <Button variant="outlined" startIcon={<TuneIcon />} endIcon={<ExpandMoreIcon />} onClick={(e) => setMenuEl(e.currentTarget)}
+            aria-haspopup="menu" aria-expanded={Boolean(menuEl)}>
+            {mobile ? 'Más' : 'Más opciones'}
+          </Button>
         </Box>
-        <Typography variant="h1" sx={{ fontSize: { xs: '1.6rem', md: '2rem' }, minWidth: 0 }}>Calendario</Typography>
-        <HowItWorks page="calendar" />
-        <Box sx={{ flex: 1 }} />
-        <Tooltip title="Más opciones del horario">
-          <IconButton onClick={(e) => setMenuEl(e.currentTarget)} aria-label="Más opciones del horario" aria-haspopup="menu"><MoreHorizIcon /></IconButton>
-        </Tooltip>
         {!mobile && (
           <Tooltip title={full ? 'Salir de pantalla completa (Esc)' : 'Pantalla completa'}>
             <IconButton onClick={() => setFull((f) => !f)} aria-pressed={full} aria-label={full ? 'Salir de pantalla completa' : 'Pantalla completa'}>
@@ -357,10 +378,14 @@ export default function CalendarPage() {
     <>
       {page}
 
-      <Menu anchorEl={menuEl} open={!!menuEl} onClose={() => setMenuEl(null)}>
+      <Menu anchorEl={menuEl} open={!!menuEl} onClose={() => setMenuEl(null)} slotProps={{ list: { 'aria-label': 'Más opciones del horario' } }}>
         <MenuItem onClick={() => navigate('/calendar/horarios')}>
           <ListItemIcon><ListAltOutlinedIcon /></ListItemIcon>
           <ListItemText primary="Lista de clases semanales" secondary="Terminar una clase, cambiarla desde una fecha…" />
+        </MenuItem>
+        <MenuItem onClick={() => navigate('/calendar/horarios?accion=preparar-mes')}>
+          <ListItemIcon><EditCalendarOutlinedIcon /></ListItemIcon>
+          <ListItemText primary="Preparar el mes" secondary="Los cambios del mes que viene, paso a paso" />
         </MenuItem>
         <MenuItem onClick={() => navigate('/calendar/horarios?tab=cierres')}>
           <ListItemIcon><BeachAccessOutlinedIcon /></ListItemIcon>
@@ -375,6 +400,10 @@ export default function CalendarPage() {
           <ListItemText primary="Añadir tipos de clase" secondary="Desde plantillas (Reformer, Mat, Yoga…)" />
         </MenuItem>
         <WaitlistToggle enabled={catalog.waitlist.enabled} onChanged={(v) => { setCatalog((c) => ({ ...c, waitlist: { enabled: v } })); toast(v ? 'Lista de espera activada.' : 'Lista de espera desactivada.'); }} />
+        <MenuItem onClick={() => { setMenuEl(null); openGuide('espera'); }} sx={{ minHeight: 44 }}>
+          <ListItemIcon><HelpOutlineIcon /></ListItemIcon>
+          <ListItemText primary="Cómo funciona la lista de espera" />
+        </MenuItem>
       </Menu>
 
       <Menu anchorEl={filterEl?.el} open={!!filterEl} onClose={() => setFilterEl(null)}>

@@ -33,6 +33,7 @@ import PersonSearchIcon from '@mui/icons-material/PersonSearch';
 import { authHeaders } from '../utils/auth';
 import { friendlyError } from '../utils/errors';
 import { PageIntro, HelpTip, EmptyState, FormStep, useConfirm, useNotify } from '../components/guide';
+import GuideLink from '../components/charging/GuideLink';
 import { API_BASE_URL } from '../config';
 import { isPlaceholderEmail } from '../site/email';
 import { STUDIO_TZ as TZ } from '../site/timezone';
@@ -419,6 +420,7 @@ export default function CreditsManagement() {
         pageKey="credits"
         title="Créditos"
         subtitle="Cuántas clases le quedan a cada clienta. Añade o quita."
+        actions={<GuideLink chapter="en-mano">Pagos en mano: cómo se hace</GuideLink>}
       />
 
       <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '5fr 7fr' }, alignItems: 'start' }}>

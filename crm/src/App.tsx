@@ -28,6 +28,7 @@ import Security from './pages/Security';
 import SalesPage from './pages/ventas/SalesPage';
 import MyWebPage from './pages/miweb/MyWebPage';
 import SettingsHub from './pages/ajustes/SettingsHub';
+import CatalogPage from './pages/catalogo/CatalogPage';
 import SetupGate from './components/setup/SetupGate';
 import { GuideRedirect, ProgressOutlet } from './onboarding';
 
@@ -66,6 +67,8 @@ const App = () => (
           <Route path="/ventas" element={<SalesPage />} />
           <Route path="/mi-web" element={<MyWebPage />} />
           <Route path="/configuracion" element={<SettingsHub />} />
+          {/* Clases y precios: tipos de clase, precios y bonos, profesores, categorías y salas */}
+          <Route path="/clases-y-precios" element={<CatalogPage />} />
         </Route>
         </Route>
       </Route>

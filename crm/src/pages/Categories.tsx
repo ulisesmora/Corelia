@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useState, useEffect, useMemo } from 'react';
+import type { CatalogHandle, EmbedProps } from './catalogo/embed';
 import {
   Alert, Box, Button, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle,
   Paper, Stack, TextField, Typography,
@@ -49,7 +50,8 @@ const slugify = (text: string) =>
 
 const isHex = (c: string) => /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c);
 
-export default function CategoriesManagement() {
+/** Pantalla completa; `embedded`: solo sus ventanas, para «Clases y precios» (./catalogo/embed.ts). */
+const CategoriesManagement = forwardRef<CatalogHandle, EmbedProps>(function CategoriesManagement({ embedded = false, onChanged }, ref) {
   const theme = useTheme();
   const confirm = useConfirm();
   const notify = useNotify();
@@ -147,6 +149,7 @@ export default function CategoriesManagement() {
       setOpenDialog(false);
       setCurrent(null);
       await fetchData();
+      onChanged?.();
     } catch (e) {
       const msg = await friendlyError(e);
       notify(/ya existe/.test(msg)
@@ -185,6 +188,7 @@ export default function CategoriesManagement() {
       if (!res.ok) throw res;
       notify(`Categoría «${c.name}» borrada ✓`);
       await fetchData();
+      onChanged?.();
     } catch (e) {
       notify(await friendlyError(e), 'error');
     }
@@ -197,8 +201,11 @@ export default function CategoriesManagement() {
 
   const webPlace = current?.id ? WEB_PLACES[current.id] : undefined;
 
+  useImperativeHandle(ref, () => ({ create: openCreate, edit: (c) => openEdit(c as Category), remove: (c) => handleDelete(c as Category) }));
+
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      {!embedded && (<>
       <PageIntro
         pageKey="categories"
         title="Categorías"
@@ -303,6 +310,8 @@ export default function CategoriesManagement() {
           })}
         </Box>
       )}
+
+      </>)}
 
       <Dialog open={openDialog} onClose={closeDialog} maxWidth="sm" fullWidth scroll="body">
         <DialogTitle>{current?.id ? `Editar «${current.name}»` : 'Añadir una categoría'}</DialogTitle>
@@ -411,4 +420,6 @@ export default function CategoriesManagement() {
       </Dialog>
     </Box>
   );
-}
+});
+
+export default CategoriesManagement;

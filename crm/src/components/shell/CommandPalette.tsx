@@ -9,6 +9,7 @@ import { setupStepLink } from '../../onboarding/flow';
 import { useLocks } from '../../onboarding/locks';
 import { NAV, SALES_HUB, SETTINGS_HUB, WEB_HUB, type HubLink } from './navigation';
 import { useShell } from './ShellContext';
+import { CHAPTERS, useOpenGuide } from '../charging/chapters';
 
 // Buscador «¿Qué quieres hacer o buscar?» (⌘K / Ctrl+K): ir a cualquier
 // pantalla, acciones rápidas y buscar clientas por nombre, email o teléfono.
@@ -29,6 +30,13 @@ interface Item {
 
 interface UserHit { id: number; email: string; first_name?: string; last_name?: string; phone?: string | null }
 
+const CHAPTER_WORDS: Record<string, string> = {
+  cobros: 'clase suelta bono membresía crédito caduca tarjeta online stripe',
+  'en-mano': 'efectivo bizum en mano datáfono añadir créditos clase fija apuntar',
+  reembolsos: 'cancelar cancelación devolver reembolso devolución plazo horas',
+  espera: 'lista de espera llena plaza dar plaza',
+};
+
 const fold = (s: string) => s.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 const matches = (q: string, ...fields: (string | undefined)[]) => {
   const hay = fold(fields.filter(Boolean).join(' '));
@@ -47,6 +55,7 @@ export default function CommandPalette({ open, initialQuery = '', onClose }: { o
   const [searching, setSearching] = useState(false);
   const listRef = useRef<HTMLDivElement>(null);
   const locks = useLocks();
+  const openGuide = useOpenGuide();
 
   useEffect(() => { if (open) { setQ(initialQuery); setSel(0); } }, [open, initialQuery]);
 
@@ -73,7 +82,9 @@ export default function CommandPalette({ open, initialQuery = '', onClose }: { o
       { id: 'a-booking', group: 'Acciones', label: 'Nueva reserva', hint: 'Apuntar a una clienta a una clase', icon: 'booked', keywords: 'reservar apuntar', run: () => openNewClient('existing') },
       { id: 'a-fixed', group: 'Acciones', label: 'Darle una clase fija a una clienta', icon: 'fixedClasses', keywords: 'plaza semanal', path: '/assign-classes', run: go('/assign-classes') },
       { id: 'a-class', group: 'Acciones', label: 'Añadir una clase al horario', icon: 'add', keywords: 'nueva clase horario', path: '/calendar', run: go('/calendar?accion=nueva') },
-      { id: 'a-plan', group: 'Acciones', label: 'Crear un bono', icon: 'plans', keywords: 'nuevo bono precio cuota', path: '/plans', run: go('/plans?accion=nueva') },
+      { id: 'a-plan', group: 'Acciones', label: 'Crear un bono', icon: 'plans', keywords: 'nuevo bono precio cuota', path: '/plans', run: go('/clases-y-precios?tab=precios&accion=nueva') },
+      { id: 'a-prices', group: 'Acciones', label: 'Cambiar precios', hint: 'Clases, bonos y membresías', icon: 'payments', keywords: 'precio tarifa créditos bono cuota membresía', path: '/plans', run: go('/clases-y-precios?tab=precios') },
+      { id: 'a-guide', group: 'Acciones', label: 'Cómo se cobra', hint: 'Bonos, pagos en mano, cancelaciones y espera', icon: 'help', keywords: 'cobrar pagar ayuda guía explicación', run: () => openGuide() },
       { id: 'a-credits', group: 'Acciones', label: 'Añadir o quitar créditos', icon: 'credits', keywords: 'saldo pago en mano', path: '/credits', run: go('/credits?accion=anadir') },
       { id: 'a-notice', group: 'Acciones', label: 'Avisar a todas las clientas', icon: 'announce', keywords: 'mensaje email aviso', run: go('/mails?accion=nuevo') },
       { id: 'a-closed', group: 'Acciones', label: 'Cerrar el estudio unos días', icon: 'holidays', keywords: 'vacaciones festivo cierre', path: '/calendar', run: go('/calendar?accion=vacaciones') },
@@ -90,6 +101,11 @@ export default function CommandPalette({ open, initialQuery = '', onClose }: { o
       ...NAV.map((n) => ({ id: `n-${n.key}`, group: 'Ir a' as const, label: n.label, icon: n.icon, path: n.path, run: go(n.path) })),
       ...[...SALES_HUB, ...WEB_HUB, ...SETTINGS_HUB].flatMap((g) => g.links.map((l) => link(l, g.title))),
       ...extraSettings.map((l) => link(l, 'extra')),
+      // Capítulos de «Cómo se cobra» (salen al buscar: «reembolso», «bizum»…)
+      ...CHAPTERS.map((c) => ({
+        id: `h-${c.key}`, group: 'Ir a' as const, label: `Cómo se cobra: ${c.title.toLowerCase()}`, icon: 'help' as const,
+        keywords: CHAPTER_WORDS[c.key], run: () => openGuide(c.key),
+      })),
       ...(locks.unfinished ? [{ id: 'g-guide', group: 'Ir a' as const, label: 'Puesta en marcha', hint: 'Seguir donde lo dejaste', icon: 'launch' as const, run: go(setupStepLink(locks.reached)) }] : []),
     ];
     const term = q.trim();
@@ -104,7 +120,7 @@ export default function CommandPalette({ open, initialQuery = '', onClose }: { o
     });
     return [...clients, ...filt(actions), ...(term ? filt(pages) : filt(pages.slice(0, NAV.length)))];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [q, people, webUrl, extraSettings, locks]);
+  }, [q, people, webUrl, extraSettings, locks, openGuide]);
 
   useEffect(() => { setSel((s) => Math.min(s, Math.max(0, items.length - 1))); }, [items.length]);
   useEffect(() => {

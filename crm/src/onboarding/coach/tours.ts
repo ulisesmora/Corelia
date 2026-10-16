@@ -1,9 +1,11 @@
+import type { GuideChapter } from '../../components/charging/chapters';
+
 // ====================================================================
 // Visitas guiadas (coach marks) del panel: frases cortas que señalan algo de
 // la pantalla. Sustituyen a las tarjetas de ayuda de antes.
 //
-//   WELCOME_TOUR   5 pasos al publicar la web (y desde «?» → Visita guiada)
-//   PAGE_TOURS     «Cómo funciona» de cada pantalla (3 pasos)
+//   WELCOME_TOUR   6 pasos al publicar la web (y desde «?» → Visita guiada)
+//   PAGE_TOURS     «Cómo funciona» de cada pantalla (3 o 4 pasos)
 //   FIRST_TIPS     un consejo la primera vez que se entra en una sección,
 //                  con «Ver más» → su «Cómo funciona»
 //
@@ -11,6 +13,7 @@
 // para ordenador y el segundo para el móvil, p. ej. el menú lateral o la
 // barra de abajo). Si no hay ninguno, el texto sale en el centro.
 // Las pantallas marcan sus piezas con `data-tour="…"` (ver cada página).
+// `guide`: botón para abrir un capítulo de «Cómo se cobra» (components/charging).
 // ====================================================================
 
 export type Placement = 'right' | 'bottom' | 'top' | 'left';
@@ -20,6 +23,7 @@ export interface TourStep {
   title: string;
   text: string;
   placement?: Placement;
+  guide?: { chapter: GuideChapter; label: string };
 }
 
 const t = (name: string) => `[data-tour="${name}"]`;
@@ -28,7 +32,8 @@ const ACTIONS = [t('page-actions'), t('page-head'), 'main h1'];
 
 export const WELCOME_TOUR: TourStep[] = [
   { target: [t('nav-today'), t('bnav-today')], title: 'Tu día, en una pantalla', text: 'En Hoy ves solo lo que necesita tu atención.' },
-  { target: [t('nav-calendar'), t('bnav-calendar')], title: 'Tus clases de la semana', text: 'Toca una clase para ver quién viene.' },
+  { target: [t('nav-calendar'), t('bnav-calendar')], title: 'Tus clases de la semana', text: 'Toca una clase para ver quién viene. Horarios y vacaciones, arriba del calendario.' },
+  { target: [t('nav-catalog'), t('bnav-more')], title: 'Clases y precios', text: 'Precios, bonos, profesores y salas, en un sitio. Toca un dato y cámbialo.', guide: { chapter: 'cobros', label: 'Cómo se cobra' } },
   { target: [t('new'), t('new-m')], title: 'Crea en un toque', text: 'Una reserva, una clienta, una clase o un bono.' },
   { target: [t('nav-web'), t('bnav-more')], title: 'Tu web, siempre al día', text: 'Cambia fotos y textos y mira el resultado al momento.' },
   { target: [t('nav-settings'), t('bnav-more')], title: 'Tu estilo y tus extras', text: 'Cambia colores o activa los pagos online cuando quieras.' },
@@ -45,6 +50,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
     { target: [t('cal-views'), ...HEAD], title: 'Día, semana o mes', text: 'En Día ves tus salas una al lado de otra.' },
     { target: [t('cal-event')], title: 'Toca una clase', text: 'Verás quién viene, la lista de espera y podrás pasar lista.' },
     { target: [t('cal-filters'), t('cal-views')], title: 'Mueve y crea arrastrando', text: 'Arrastra una clase para cambiarla de hora, o arrastra en un hueco libre para crear otra.' },
+    { target: [t('cal-options'), ...HEAD], title: 'Horarios y vacaciones', text: 'Tus clases de cada semana, festivos y cierres. En «Más opciones», preparar el mes, imprimir y la lista de espera.', guide: { chapter: 'espera', label: 'Cómo va la lista de espera' } },
   ],
   bookings: [
     { target: [t('bookings-tabs'), ...HEAD], title: 'Próximas, pasadas o canceladas', text: 'Cambia de lista con un toque.' },
@@ -72,6 +78,13 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
     { target: [t('settings-groups'), t('list')], title: 'Todo agrupado', text: 'Tu estudio, cobros, clientas y tu web.' },
   ],
 
+  catalog: [
+    { target: [t('catalog-tabs'), ...HEAD], title: 'Todo en pestañas', text: 'Clases, precios, profesores, categorías y salas.' },
+    { target: [t('list')], title: 'Cambia aquí mismo', text: 'Toca un nombre o un número, escríbelo y listo: se guarda solo.' },
+    { target: [t('catalog-add'), t('list')], title: 'Añade lo que falte', text: 'Con «+ Añadir». Para fotos y textos, «Editar todo».' },
+    { target: [t('catalog-guide'), ...ACTIONS], title: '¿Cómo se cobra?', text: 'Bonos, pagos en mano, cancelaciones y lista de espera, con tus precios.', guide: { chapter: 'cobros', label: 'Abrir la guía' } },
+  ],
+
   // Pantallas de Ajustes, Ventas y Mi web
   rooms: [
     { target: ACTIONS, title: 'Añade una sala', text: 'Basta con el nombre y cuántas personas caben.' },
@@ -94,7 +107,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
     { target: HEAD, title: 'Pocas y claras', text: 'Con tres o cuatro categorías tus clientas se orientan mejor.' },
   ],
   plans: [
-    { target: ACTIONS, title: 'Crea un bono o una cuota', text: 'Clases sueltas, bonos de varias clases o una cuota mensual.' },
+    { target: ACTIONS, title: 'Crea un bono o una cuota', text: 'Clases sueltas, bonos de varias clases o una cuota mensual.', guide: { chapter: 'cobros', label: 'Cómo se cobra' } },
     { target: [t('list')], title: 'Lo que vendes', text: 'Toca uno para cambiar el precio o para cuántos días vale.' },
     { target: [t('search'), ...HEAD], title: 'Se ve al momento', text: 'Lo que cambies aquí sale en tu web en unos minutos.' },
   ],
@@ -125,7 +138,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
   ],
   credits: [
     { target: [t('search'), ...HEAD], title: 'Busca a la clienta', text: 'Verás cuántas clases le quedan.' },
-    { target: [t('list')], title: 'Añade o quita clases', text: 'Por ejemplo, cuando te paga en mano.' },
+    { target: [t('list')], title: 'Añade o quita clases', text: 'Por ejemplo, cuando te paga en mano.', guide: { chapter: 'en-mano', label: 'Pagos en mano' } },
     { target: ACTIONS, title: 'Queda apuntado', text: 'Cada cambio se guarda con su motivo.' },
   ],
   mails: [
@@ -140,7 +153,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
   ],
   'assign-classes': [
     { target: [t('search'), ...HEAD], title: 'Elige a la clienta', text: 'Búscala por nombre.' },
-    { target: [t('list')], title: 'Su clase de cada semana', text: 'Guárdale la plaza sin que tenga que reservar.' },
+    { target: [t('list')], title: 'Su clase de cada semana', text: 'Guárdale la plaza sin que tenga que reservar.', guide: { chapter: 'en-mano', label: '¿Clase fija o créditos?' } },
     { target: ACTIONS, title: 'Se reserva sola', text: 'Cada semana, mientras le queden clases.' },
   ],
   admins: [
@@ -163,6 +176,7 @@ export const FIRST_TIPS: Record<string, TourStep> = {
   web: { target: [t('web-sections'), ...HEAD], title: 'Tu web, a tu manera', text: 'Enciende secciones y mira el resultado.' },
   settings: { target: [t('settings-search'), t('search'), ...HEAD], title: 'Busca un ajuste', text: 'Más rápido que ir menú por menú.' },
   plans: { target: ACTIONS, title: 'Tus bonos y precios', text: 'Lo que vendes en la web, en un sitio.' },
+  catalog: { target: [t('list'), ...HEAD], title: 'Toca un dato para cambiarlo', text: 'Precios, créditos, minutos o aforo. Se guarda solo.' },
 };
 
 /** Clave de visita guiada de una pantalla (las de PageIntro usan la misma: pageKey). */
@@ -173,7 +187,7 @@ export function pageKeyOf(pathname: string): string | null {
     '/classes': 'class-types', '/categories': 'categories', '/plans': 'plans', '/site-images': 'site-images',
     '/ajustes': 'studio-settings', '/payments': 'payments', '/subscriptions': 'subscriptions', '/cuopon': 'coupons',
     '/credits': 'credits', '/mails': 'mails', '/membership-candidates': 'membership-candidates',
-    '/assign-classes': 'assign-classes', '/admins': 'admins', '/seguridad': 'security',
+    '/assign-classes': 'assign-classes', '/admins': 'admins', '/seguridad': 'security', '/clases-y-precios': 'catalog',
   };
   return map[pathname] ?? null;
 }

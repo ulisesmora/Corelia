@@ -4,6 +4,7 @@ import { useNotify } from '../../components/guide';
 import { loadPacks, savePack, type PackSuggestion } from '../api';
 import { useAutosave, useDebouncedSave, useStepGuard } from './autosave';
 import { FieldError } from './ui';
+import HowYouCharge from '../../components/charging/HowYouCharge';
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : String(e));
 const SYMBOL: Record<string, string> = { EUR: '€', USD: '$', GBP: '£', MXN: '$', CHF: 'CHF' };
@@ -16,6 +17,7 @@ export default function StepPacks({ onChanged }: { onChanged?: (packs: PackSugge
   const [currency, setCurrency] = useState('EUR');
   const [error, setError] = useState('');
   const seeded = useRef<Promise<unknown> | null>(null);
+  const [version, setVersion] = useState(0);
 
   const apply = (r: { packs: PackSuggestion[]; currency: string }) => {
     // «12.00» → «12» (los céntimos solo si los hay)
@@ -23,6 +25,7 @@ export default function StepPacks({ onChanged }: { onChanged?: (packs: PackSugge
     r = { ...r, packs: tidy };
     setPacks(r.packs);
     setCurrency(r.currency);
+    setVersion((v) => v + 1);
     onChanged?.(r.packs, r.currency);
   };
 
@@ -121,10 +124,13 @@ export default function StepPacks({ onChanged }: { onChanged?: (packs: PackSugge
           </Box>
         );
       })}
-      <Typography sx={{ color: 'var(--studio-muted)', fontSize: '0.88rem' }}>
-        ¿Cuotas mensuales o más bonos? Los añades luego en Ventas → Bonos y precios.
-      </Typography>
       {error && <FieldError>{error}</FieldError>}
+      <Typography sx={{ color: 'var(--studio-muted)', fontSize: '0.88rem' }}>
+        ¿Cuotas mensuales o más bonos? Los añades luego en «Clases y precios».
+      </Typography>
+      <Box sx={{ pt: 1 }}>
+        <HowYouCharge version={version} />
+      </Box>
     </Stack>
   );
 }

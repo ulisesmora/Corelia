@@ -1,4 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
+import { forwardRef, useImperativeHandle, useState, useEffect, useMemo } from 'react';
+import type { CatalogHandle, EmbedProps } from './catalogo/embed';
 import {
   Alert, Box, Button, Chip, CircularProgress, Collapse, Dialog, DialogActions, DialogContent, DialogTitle,
   InputAdornment, MenuItem, Pagination, Paper, Stack, TextField, Typography,
@@ -117,7 +118,8 @@ async function saveErrorText(e: unknown): Promise<string> {
 // COMPONENTE PRINCIPAL
 // ====================================================================
 
-export default function ClassTypeManagement() {
+/** Pantalla completa; `embedded`: solo sus ventanas, para «Clases y precios» (./catalogo/embed.ts). */
+const ClassTypeManagement = forwardRef<CatalogHandle, EmbedProps>(function ClassTypeManagement({ embedded = false, onChanged }, ref) {
   // Web pública del estudio (de sus ajustes): '' si aún no se conoce
   const webUrl = useStudioWebUrl();
   const confirm = useConfirm();
@@ -252,6 +254,7 @@ export default function ClassTypeManagement() {
       }
       if (!res.ok) throw res;
       await fetchClassTypes();
+      onChanged?.();
       notify(data.id
         ? 'Clase guardada ✓ Puede tardar unos 5 minutos en verse cambiada en la web.'
         : 'Clase creada ✓ Ahora ponle días y horas en «Calendario».');
@@ -307,6 +310,7 @@ export default function ClassTypeManagement() {
       });
       if (!response.ok) throw response;
       await fetchClassTypes();
+      onChanged?.();
       notify(`Clase «${ct.title}» borrada ✓`);
     } catch (err) {
       notify(await friendlyError(err), 'error');
@@ -388,8 +392,14 @@ export default function ClassTypeManagement() {
   useActionParam('nueva', handleOpenCreate, !categoriesLoading);
   useActionParam('plantillas', () => setTemplatesOpen(true));
 
+  useImperativeHandle(ref, () => ({
+    create: handleOpenCreate, edit: (c) => handleOpenEdit(c as ClassType), remove: (c) => handleDelete(c as ClassType),
+    templates: () => setTemplatesOpen(true),
+  }));
+
   return (
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
+      {!embedded && (<>
       <PageIntro
         pageKey="class-types"
         title="Tipos de clase"
@@ -537,6 +547,8 @@ export default function ClassTypeManagement() {
       )}
 
       {/* Ventana crear/editar */}
+      </>)}
+
       <Dialog open={openDialog} onClose={() => handleCloseDialog()} maxWidth="md" fullWidth scroll="body">
         <DialogTitle>
           {cur?.id ? `Editar «${cur.title || 'clase'}»` : 'Añadir un tipo de clase'}
@@ -744,4 +756,6 @@ export default function ClassTypeManagement() {
       <ClassTemplatesDialog open={templatesOpen} onClose={() => setTemplatesOpen(false)} onCreated={() => reloadAll()} />
     </Box>
   );
-}
+});
+
+export default ClassTypeManagement;

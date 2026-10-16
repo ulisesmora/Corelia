@@ -1,5 +1,6 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState, type KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { createPortal } from 'react-dom';
+import { useOpenGuide } from '../../components/charging/chapters';
 import { Box, Button, IconButton, Typography } from '@mui/material';
 import StudioIcon from '../../site/StudioIcon';
 import { findTarget } from './target';
@@ -66,6 +67,7 @@ export default function CoachOverlay({ steps, index, kind, extra, onNext, onPrev
   const [rect, setRect] = useState<Box4 | null>(null);
   const [pos, setPos] = useState<{ left: number; top: number } | null>(null);
   const reduced = reducedMotion();
+  const openGuide = useOpenGuide();
 
   // Seguir a la pieza señalada (al hacer scroll, al cambiar el tamaño…)
   useLayoutEffect(() => {
@@ -182,6 +184,12 @@ export default function CoachOverlay({ steps, index, kind, extra, onNext, onPrev
         <Typography id={`coach-p-${uid}`} sx={{ color: 'var(--studio-muted)', fontSize: '0.95rem', lineHeight: 1.5 }}>
           {step.text}
         </Typography>
+        {step.guide && (
+          <Button size="small" onClick={() => { const c = step.guide!.chapter; onClose(false); openGuide(c); }}
+            startIcon={<StudioIcon name="help" sx={{ fontSize: 18 }} />} sx={{ mt: 1, ml: -1, minHeight: 44, fontWeight: 700 }}>
+            {step.guide.label}
+          </Button>
+        )}
 
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2, flexWrap: 'wrap' }}>
           {total > 1 && (
