@@ -1065,9 +1065,11 @@ export default function AuthPage({ isInModal = false, initialMode = "login", ini
   return (
     <Chakra>
       <Toaster />
-      <Flex translate="no" className="notranslate" w="full" minH="100dvh" pt="60px" bg={C.cream} fontFamily={C.font}>
+      {/* Sin alto mínimo en móvil (dejaba media pantalla vacía bajo el formulario);
+          la cabecera es fija (sticky), así que tampoco hace falta el hueco de arriba. */}
+      <Flex translate="no" className="notranslate" w="full" minH={{ base: 'auto', md: 'calc(100dvh - var(--w-header-h, 68px))' }} bg={C.cream} fontFamily={C.font}>
         {/* Panel de marca (solo escritorio) */}
-        <Box display={{ base: "none", md: "block" }} position="relative" w="50%" minH="calc(100dvh - 60px)" overflow="hidden">
+        <Box display={{ base: "none", md: "block" }} position="relative" w="50%" minH="calc(100dvh - var(--w-header-h, 68px))" overflow="hidden">
           {/* Fondo con los colores de la marca (antes, vídeo del estudio) */}
           <Box position="absolute" inset={0}
             bg="linear-gradient(135deg, var(--brand-dark) 0%, var(--brand-secondary) 55%, var(--brand-primary) 100%)" />

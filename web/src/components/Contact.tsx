@@ -180,7 +180,7 @@ function ContactInner({ hideHeading = false }: { hideHeading?: boolean }) {
                   display="flex" alignItems="center" gap={4}
                   px={4} py={3.5} borderRadius="var(--radius-card)"
                   bg={C.fill(4)} border={`1px solid ${C.border}`}
-                  cursor="pointer" transition="all 0.25s ease"
+                  cursor="pointer" transition="all 0.25s ease" textTransform="none"
                   _hover={{ bg: C.fill(8), borderColor: C.borderHover }}
                 >
                   <Flex
@@ -190,14 +190,15 @@ function ContactInner({ hideHeading = false }: { hideHeading?: boolean }) {
                   >
                     <Icon name={ch.icon} size={15} color={ch.color} />
                   </Flex>
-                  <Box>
+                  {/* minW 0 + overflowWrap: un email largo baja de línea en vez de cortarse */}
+                  <Box minW={0}>
                     <Text fontFamily='var(--font-body)'
                       fontSize="10px" fontWeight={700} color={C.textLight}
                       letterSpacing="0.09em" textTransform="uppercase" mb={0.5}>
                       {ch.label}
                     </Text>
                     <Text fontFamily='var(--font-body)'
-                      fontSize="sm" color={C.fill(80)} fontWeight={600}>
+                      fontSize="sm" color={C.fill(80)} fontWeight={600} overflowWrap="anywhere">
                       {ch.value}
                     </Text>
                   </Box>

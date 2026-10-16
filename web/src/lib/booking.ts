@@ -1,7 +1,8 @@
 // Reservar una sesión del horario desde cualquier sitio de la web (portada,
-// horario, ficha de clase): la añade a «mis clases elegidas» (carrito) y lleva
-// al checkout, que ya sabe pagar con créditos, con tarjeta o pedir que entres.
-// Un solo toque en «Reservar» → confirmar en el checkout.
+// horario, ficha de clase): la añade a «Tu reserva» (carrito) y abre el panel
+// con lo elegido y «Continuar al pago». El checkout ya sabe pagar con créditos,
+// con tarjeta, pedir que entres o —sin pagos online— reservar como invitada y
+// pagar en el estudio.
 //
 // Lista de espera (api/api/views_calendar.py + utils/waitlist.py):
 //   POST /api/v1/waitlist/            {schedule_id, start_datetime} → apuntarme
@@ -60,12 +61,24 @@ export function cartItemFromSession(s: ScheduleSession, start: Date, end: Date):
   };
 }
 
-/** Añade la sesión (si no estaba) y va al checkout. */
-export function bookNow(item: CartItem): void {
+/**
+ * «Reservar» en una sesión: la añade a «Tu reserva» (si no estaba) y abre el
+ * panel lateral (components/CartDrawer.tsx) con las clases elegidas, el precio
+ * y «Continuar al pago». Así se pueden elegir varias clases antes de pagar.
+ * Si en la página no hay panel (no debería pasar), va directa al checkout.
+ */
+export function addToCart(item: CartItem): void {
   const store = useCartStore.getState();
   if (!store.items.some((i) => i.id === item.id)) store.addItem(item);
-  window.location.assign('/checkout');
+  if (typeof window !== 'undefined' && (window as Window & { __skCartPanel?: boolean }).__skCartPanel) {
+    store.openPanel();
+  } else {
+    window.location.assign('/checkout');
+  }
 }
+
+/** @deprecated Usa addToCart (antes saltaba directa al checkout). */
+export const bookNow = addToCart;
 
 // ── Lista de espera ───────────────────────────────────────────────────────
 

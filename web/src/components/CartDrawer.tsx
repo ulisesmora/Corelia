@@ -1,343 +1,207 @@
 "use client";
-
-import React, { useMemo, useEffect } from 'react';
-import {
-  Box, Text, VStack, Flex, Image, Portal, Drawer, CloseButton,
-} from '@chakra-ui/react';
-import { motion, AnimatePresence } from 'framer-motion';
+// Panel «Tu reserva»: las clases elegidas, cuándo son, lo que cuesta cada una
+// (créditos o dinero en la moneda del estudio), el total y «Continuar al pago».
+//  - Escritorio: cajón a la derecha. Móvil: hoja que sube desde abajo.
+//  - Se abre al elegir una clase (lib/booking.ts → addToCart) y desde la bolsa
+//    de la cabecera o la barra «Ver mi reserva (n)» del móvil (Navbar.tsx).
+//  - Accesible: diálogo modal (foco atrapado, ESC y clic fuera cierran, el foco
+//    vuelve a donde estaba), título y botones con nombre, aviso al quitar.
+// Estilos: .w-cart-* en styles/site.css (solo tokens de presets.css).
+import React, { useEffect, useMemo, useState } from 'react';
+import { Drawer, Portal, CloseButton } from '@chakra-ui/react';
 import { Icon } from './ui/Icon';
-import Chakra from './ChakraProvider';
 import { useCartStore, type CartItem } from './stores/car.store';
-import UserBalanceDisplay from './GetWallet';
 import { useT, formatPrice } from '../i18n';
 import { useLangStore } from './stores/lang.store';
 import { fmtDate, fmtTime } from '../utils/formatDate';
 import { tr } from '../utils/localized';
 
-import { optimizedImage, withOriginalFallback } from '../utils/img';
-const MotionBox = motion(Box as any);
-const MotionFlex = motion(Flex as any);
+const MOBILE = '(max-width: 767px)';
 
-// Paleta del carrito: solo tokens del estilo (presets.css)
-const C = {
-  accent: 'var(--accent-text)', brown: 'var(--page-text)', heading: 'var(--heading-color)',
-  textMuted: 'var(--text-muted)', textLight: 'var(--text-subtle)',
-  bg: 'var(--page-bg)', cardBg: 'var(--surface)',
-  border: 'var(--surface-border)', borderMuted: 'var(--border-neutral)',
-};
-
-function useLocale() {
-  const lang = useLangStore(s => s.lang);
-  return lang === 'en' ? 'en-GB' : 'es-ES';
-}
-
-function CartItemRow({ item, onRemove }: { item: CartItem; onRemove: () => void }) {
-  const t = useT();
-  const locale = useLocale();
-  const lang = useLangStore(s => s.lang);
-  return (
-    <MotionBox
-      layout
-      initial={{ opacity: 0, x: 32 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 32, height: 0, marginBottom: 0, overflow: 'hidden' }}
-      transition={{ duration: 0.28, ease: [0.25, 0.46, 0.45, 0.94] }}
-      className="sk-card"
-      p={3}
-      w="full"
-    >
-      <Flex gap={3} align="center">
-        {/* Thumbnail */}
-        <Box
-          w="68px" h="68px" borderRadius="var(--radius-input)" overflow="hidden"
-          flexShrink={0} bg="var(--accent-soft)"
-        >
-          {item.image ? (
-            <Image
-              src={optimizedImage(item.image, 256)} onError={withOriginalFallback(item.image)} alt={tr(item, 'title', lang)}
-              w="full" h="full" objectFit="cover"
-            />
-          ) : (
-            <Flex w="full" h="full" align="center" justify="center">
-              <Icon name="leaf" size={18} color="var(--accent)" />
-            </Flex>
-          )}
-        </Box>
-
-        {/* Info */}
-        <Flex flex={1} direction="column" gap={1} minW={0}>
-          <Text
-            fontFamily='var(--font-body)'
-            fontWeight={700} fontSize="sm" color={C.brown}
-            overflow="hidden" textOverflow="ellipsis" whiteSpace="nowrap"
-          >
-            {tr(item, 'title', lang)}
-          </Text>
-          <Text
-            fontFamily='var(--font-body)'
-            fontSize="11px" color={C.textMuted}
-          >
-            {fmtDate(item.sessionDate, locale, { weekday: 'short', day: 'numeric', month: 'short' })}
-            {' · '}
-            {fmtTime(item.sessionDate, locale, { hour: '2-digit', minute: '2-digit' })}
-          </Text>
-          <Flex gap={1.5} align="center" mt={0.5}>
-            <Box
-              px={2} py={0.5} borderRadius="full"
-              bg="var(--accent-soft)" border="1px solid var(--accent-border)"
-            >
-              <Text fontSize="10px" fontWeight={700} color={C.accent}
-                fontFamily='var(--font-body)'>
-                {item.credits} {item.credits !== 1 ? t('cart.credits') : t('cart.credit')}
-              </Text>
-            </Box>
-            {item.price > 0 && (
-              <Text fontSize="11px" color={C.textMuted}
-                fontFamily='var(--font-body)' fontWeight={600}>
-                {formatPrice(item.price, lang)}
-              </Text>
-            )}
-          </Flex>
-        </Flex>
-
-        {/* Remove */}
-        <Box
-          as="button"
-          onClick={onRemove}
-          aria-label={t('checkout.deleteLabel')}
-          w="32px" h="32px" borderRadius="full" flexShrink={0}
-          display="flex" alignItems="center" justifyContent="center"
-          bg="var(--surface-muted)" border="1px solid var(--border-neutral)"
-          cursor="pointer" transition="all 0.2s"
-          _hover={{ bg: 'var(--danger-soft)', borderColor: 'var(--danger)' }}
-        >
-          <Icon name="trash" size={11} color={C.textMuted} />
-        </Box>
-      </Flex>
-    </MotionBox>
-  );
-}
-
-function EmptyState() {
-  const t = useT();
-  return (
-    <Flex direction="column" align="center" justify="center" flex={1} py={16} gap={4}>
-      <Flex
-        w="72px" h="72px" borderRadius="full" align="center" justify="center"
-        bg="var(--accent-soft)" border="1px solid var(--accent-border)"
-      >
-        <Icon name="bag" size={24} color={C.textLight} />
-      </Flex>
-      <VStack gap={1} textAlign="center">
-        <Text fontFamily='var(--font-heading)'
-          fontSize="xl" color={C.heading} letterSpacing="0.04em">
-          {t('cart.emptyTitle')}
-        </Text>
-        <Text fontFamily='var(--font-body)'
-          fontSize="sm" color={C.textMuted} maxW="200px" lineHeight="1.6">
-          {t('cart.emptyDesc')}
-        </Text>
-      </VStack>
-    </Flex>
-  );
-}
-
-interface CartDrawerProps {
-  open: boolean;
-  onClose: () => void;
-}
-
-function CartDrawerInner({ open, onClose }: CartDrawerProps) {
-  const t = useT();
-  const lang = useLangStore(s => s.lang);
-  const items = useCartStore(s => s.items);
-  const removeItem = useCartStore(s => s.removeItem);
-  const clearCart = useCartStore(s => s.clearCart);
-
-  const totalCredits = useMemo(() => items.reduce((a, i) => a + (Number(i.credits) || 0), 0), [items]);
-  const totalPrice   = useMemo(() => items.reduce((a, i) => a + (Number(i.price)   || 0), 0), [items]);
-
+function useIsMobile(): boolean {
+  const [mobile, setMobile] = useState(() => typeof window !== 'undefined' && !!window.matchMedia?.(MOBILE).matches);
   useEffect(() => {
-    const now = new Date();
-    const current = useCartStore.getState().items;
-    const future = current.filter(i => new Date(i.sessionDate).getTime() >= now.getTime());
-    if (future.length < current.length) useCartStore.setState({ items: future });
+    const mq = window.matchMedia?.(MOBILE);
+    if (!mq) return undefined;
+    const on = () => setMobile(mq.matches);
+    on();
+    mq.addEventListener?.('change', on);
+    return () => mq.removeEventListener?.('change', on);
   }, []);
+  return mobile;
+}
+
+function hasSession(): boolean {
+  try { return !!localStorage.getItem('accessToken'); } catch { return false; }
+}
+
+const num = (v: unknown) => Number(v) || 0;
+
+/** «1 crédito», «2 créditos». */
+function creditsLabel(n: number, t: ReturnType<typeof useT>): string {
+  const v = Number.isInteger(n) ? String(n) : n.toFixed(1);
+  return `${v} ${n === 1 ? t('cart.credit') : t('cart.credits')}`;
+}
+
+function ItemRow({ item, preferCredits, onRemove }: { item: CartItem; preferCredits: boolean; onRemove: () => void }) {
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
+  const locale = lang === 'en' ? 'en-GB' : 'es-ES';
+  const title = tr(item, 'title', lang) || item.title;
+  const credits = num(item.credits);
+  const price = num(item.price);
+  const showCredits = credits > 0 && (preferCredits || price <= 0);
+  const main = showCredits ? creditsLabel(credits, t) : price > 0 ? formatPrice(price, lang, 'auto') : '';
+  const alt = showCredits && price > 0 ? t('cart.orPrice', { price: formatPrice(price, lang, 'auto') })
+    : !showCredits && credits > 0 ? t('cart.orPrice', { price: creditsLabel(credits, t) }) : '';
+  const start = new Date(item.sessionDate);
+  const end = item.sessionDateEnd ? new Date(item.sessionDateEnd) : null;
+  const hm = { hour: '2-digit', minute: '2-digit' } as const;
+
+  return (
+    <li className="w-cart-item">
+      <div className="w-cart-when" aria-hidden>
+        <small>{fmtDate(start, locale, { weekday: 'short' }).replace('.', '')}</small>
+        <b>{fmtDate(start, locale, { day: 'numeric' })}</b>
+      </div>
+      <div className="w-cart-info">
+        <b>{title}</b>
+        <span className="w-cart-date">
+          {fmtDate(start, locale, { weekday: 'long', day: 'numeric', month: 'short' })}
+          {' · '}
+          {fmtTime(start, locale, hm)}{end ? `–${fmtTime(end, locale, hm)}` : ''}
+        </span>
+        {main && (
+          <span className="w-cart-price">
+            <strong>{main}</strong>{alt && <em> {alt}</em>}
+          </span>
+        )}
+      </div>
+      <button type="button" className="w-cart-rm" onClick={onRemove} aria-label={t('cart.remove', { title })}>
+        <Icon name="trash" size={16} aria-hidden />
+      </button>
+    </li>
+  );
+}
+
+export function CartDrawer() {
+  const t = useT();
+  const lang = useLangStore((s) => s.lang);
+  const items = useCartStore((s) => s.items);
+  const open = useCartStore((s) => s.panelOpen);
+  const closePanel = useCartStore((s) => s.closePanel);
+  const removeItem = useCartStore((s) => s.removeItem);
+  const mobile = useIsMobile();
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [live, setLive] = useState('');
+  const [onCalendar, setOnCalendar] = useState(false);
+
+  // Hay panel en esta página: «Reservar» lo abre en vez de ir al checkout
+  useEffect(() => {
+    const w = window as Window & { __skCartPanel?: boolean };
+    w.__skCartPanel = true;
+    setOnCalendar(/^\/calendar\/?$/.test(window.location.pathname));
+    setLoggedIn(hasSession());
+    // Las clases que ya han empezado no se pueden reservar: fuera del carrito
+    const now = Date.now();
+    const current = useCartStore.getState().items;
+    const future = current.filter((i) => new Date(i.sessionDate).getTime() >= now);
+    if (future.length < current.length) useCartStore.setState({ items: future });
+    return () => { w.__skCartPanel = false; };
+  }, []);
+
+  useEffect(() => { if (open) { setLoggedIn(hasSession()); setLive(''); } }, [open]);
+
+  const totalCredits = useMemo(() => items.reduce((a, i) => a + num(i.credits), 0), [items]);
+  const totalPrice = useMemo(() => items.reduce((a, i) => a + num(i.price), 0), [items]);
+  // Con cuenta se paga con créditos; sin cuenta, con dinero (tarjeta o en el estudio)
+  const preferCredits = loggedIn ? totalCredits > 0 : totalPrice <= 0;
+  const mainTotal = preferCredits ? creditsLabel(totalCredits, t) : formatPrice(totalPrice, lang, 'auto');
+  const altTotal = preferCredits
+    ? (totalPrice > 0 ? t('cart.orPrice', { price: formatPrice(totalPrice, lang, 'auto') }) : '')
+    : (totalCredits > 0 ? t('cart.orPrice', { price: creditsLabel(totalCredits, t) }) : '');
+  const count = items.length;
+  const classes = count === 1 ? t('cart.classOne') : t('cart.classMany', { count });
+  const calendarHref = t('nav.items.calendar.href') || '/calendar';
+
+  const remove = (item: CartItem) => {
+    removeItem(item.id);
+    setLive(t('cart.removedLive', { title: tr(item, 'title', lang) || item.title }));
+  };
 
   return (
     <Drawer.Root
       open={open}
-      onOpenChange={({ open: o }) => { if (!o) onClose(); }}
-      placement="end"
-      size="sm"
+      onOpenChange={({ open: o }) => { if (!o) closePanel(); }}
+      placement={mobile ? 'bottom' : 'end'}
+      size={mobile ? 'full' : 'sm'}
     >
       <Portal>
-        <Drawer.Backdrop
-          bg="var(--overlay)"
-          backdropFilter="var(--surface-blur)"
-          style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
-        />
+        <Drawer.Backdrop bg="var(--overlay)" />
         <Drawer.Positioner>
           <Drawer.Content
-            bg={C.bg}
-            color={C.brown}
-            maxW="400px"
-            w="full"
+            className="w-cart"
+            aria-label={t('cart.dialogLabel')}
+            // Fondo opaco de la página (algunos estilos tienen superficies translúcidas)
+            bg="var(--page-bg)"
+            color="var(--page-text)"
             boxShadow="var(--shadow-float)"
-            display="flex"
-            flexDirection="column"
+            maxW={mobile ? '100%' : '420px'}
+            h={mobile ? 'auto' : '100%'}
+            maxH={mobile ? '88dvh' : '100%'}
+            borderTopRadius={mobile ? 'min(var(--radius-card-lg), 24px)' : 0}
+            borderBottomRadius={0}
+            fontFamily="var(--font-body)"
           >
-            {/* ── Header ── */}
-            <Drawer.Header
-              px={6} pt={6} pb={4}
-              borderBottom={`1px solid ${C.borderMuted}`}
-              bg="var(--section-bg)"
-              flexShrink={0}
-            >
-              <Flex align="center" justify="space-between">
-                <Flex align="center" gap={3}>
-                  <Text
-                    fontFamily='var(--font-heading)'
-                    fontSize="2xl" color={C.heading}
-                    letterSpacing="0.05em" lineHeight="1"
-                  >
-                    {t('cart.title')}
-                  </Text>
-                  {items.length > 0 && (
-                    <Box
-                      px={2.5} py={0.5} borderRadius="full"
-                      bg="var(--accent-soft)" border="1px solid var(--accent-border)"
-                    >
-                      <Text fontSize="11px" fontWeight={700} color={C.accent}
-                        fontFamily='var(--font-body)'>
-                        {items.length}
-                      </Text>
-                    </Box>
-                  )}
-                </Flex>
-                <Drawer.CloseTrigger asChild>
-                  <CloseButton
-                    onClick={onClose} size="sm" borderRadius="full"
-                    bg="var(--surface-muted)" border="1px solid var(--border-neutral)"
-                    color={C.brown}
-                    _hover={{ bg: 'var(--surface-strong)' }} cursor="pointer"
-                  />
-                </Drawer.CloseTrigger>
-              </Flex>
-
-              {/* Balance display */}
-              <Flex align="center" gap={2} mt={3}
-                px={3} py={2} borderRadius="var(--radius-input)"
-                bg={C.cardBg} border={`1px solid ${C.border}`}
-                backdropFilter="var(--surface-blur)"
-                style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
-              >
-                <Text fontFamily='var(--font-body)'
-                  fontSize="12px" color={C.textMuted} fontWeight={600}>
-                  {t('cart.balance')}
-                </Text>
-                <UserBalanceDisplay fontSize="sm" color={C.accent} showUnit={true} />
-              </Flex>
+            {mobile && <span className="w-cart-grip" aria-hidden />}
+            <Drawer.Header className="w-cart-head">
+              <Drawer.Title className="w-cart-title">
+                {t('cart.title')}
+                {count > 0 && <span className="w-cart-count" aria-label={classes}>{count}</span>}
+              </Drawer.Title>
+              <Drawer.CloseTrigger asChild position="static">
+                <CloseButton size="md" aria-label={t('cart.close')} />
+              </Drawer.CloseTrigger>
             </Drawer.Header>
 
-            {/* ── Body ── */}
-            <Drawer.Body
-              px={5} py={5} flex={1}
-              overflowY="auto"
-              css={{
-                '&::-webkit-scrollbar': { width: '4px' },
-                '&::-webkit-scrollbar-track': { background: 'var(--surface-muted)' },
-                '&::-webkit-scrollbar-thumb': { background: 'var(--accent-border)', borderRadius: '4px' },
-                scrollbarWidth: 'thin',
-              }}
-              display="flex"
-              flexDirection="column"
-            >
-              {items.length === 0 ? (
-                <EmptyState />
+            <Drawer.Body className="w-cart-body">
+              <p className="w-sr" role="status" aria-live="polite">{live}</p>
+              {count === 0 ? (
+                <div className="w-cart-empty">
+                  <span className="w-cart-empty-ic"><Icon name="bag" size={22} aria-hidden /></span>
+                  <b>{t('cart.emptyTitle')}</b>
+                  <p>{t('cart.emptyDesc')}</p>
+                  {onCalendar
+                    ? <button type="button" className="w-btn sk-btn" onClick={closePanel}>{t('cart.seeTimetable')}</button>
+                    : <a className="w-btn sk-btn" href={calendarHref}>{t('cart.seeTimetable')}</a>}
+                </div>
               ) : (
-                <VStack gap={3} align="stretch">
-                  <AnimatePresence mode="popLayout">
-                    {items.map(item => (
-                      <CartItemRow
-                        key={item.id}
-                        item={item}
-                        onRemove={() => removeItem(item.id)}
-                      />
-                    ))}
-                  </AnimatePresence>
-                </VStack>
+                <ul className="w-cart-list">
+                  {items.map((item) => (
+                    <ItemRow key={item.id} item={item} preferCredits={preferCredits} onRemove={() => remove(item)} />
+                  ))}
+                </ul>
               )}
             </Drawer.Body>
 
-            {/* ── Footer ── */}
-            {items.length > 0 && (
-              <Drawer.Footer
-                px={5} pt={4} pb={6}
-                borderTop={`1px solid ${C.borderMuted}`}
-                bg="var(--page-bg-alt)"
-                flexShrink={0}
-              >
-                <VStack w="full" gap={3}>
-                  {/* Summary */}
-                  <Box
-                    w="full" px={4} py={3} borderRadius="var(--radius-input)"
-                    bg={C.cardBg} border={`1px solid ${C.border}`}
-                    backdropFilter="var(--surface-blur)"
-                    style={{ WebkitBackdropFilter: 'var(--surface-blur)' }}
-                  >
-                    <Flex justify="space-between" align="center" mb={2}>
-                      <Text fontFamily='var(--font-body)'
-                        fontSize="12px" color={C.textMuted} fontWeight={600}>
-                        {t('cart.creditsToUse')}
-                      </Text>
-                      <Text fontFamily='var(--font-heading)'
-                        fontSize="lg" color={C.accent} letterSpacing="0.04em">
-                        {totalCredits} {totalCredits !== 1 ? t('cart.credits') : t('cart.credit')}
-                      </Text>
-                    </Flex>
-                    <Box w="full" h="1px" bg={C.borderMuted} mb={2} />
-                    <Flex justify="space-between" align="center">
-                      <Text fontFamily='var(--font-body)'
-                        fontSize="12px" color={C.textMuted} fontWeight={600}>
-                        {t('cart.total')}
-                      </Text>
-                      <Text fontFamily='var(--font-heading)'
-                        fontSize="xl" color={C.heading} letterSpacing="0.04em">
-                        {formatPrice(totalPrice, lang)}
-                      </Text>
-                    </Flex>
-                  </Box>
-
-                  {/* Checkout CTA */}
-                  <Box
-                    as="a" href="/checkout" w="full"
-                    className="sk-btn"
-                    display="flex" alignItems="center" justifyContent="center"
-                    h="50px"
-                    fontFamily='var(--font-body)'
-                    fontSize="sm"
-                    cursor="pointer"
-                  >
-                    {t('cart.checkout')}
-                  </Box>
-
-                  {/* Clear cart */}
-                  <Box
-                    as="button" onClick={clearCart} w="full"
-                    h="38px" borderRadius="var(--radius-button)"
-                    bg="transparent"
-                    border="1px solid var(--accent-border)"
-                    color={C.textMuted}
-                    fontFamily='var(--font-body)'
-                    fontWeight={600} fontSize="12px"
-                    cursor="pointer" transition="all 0.2s"
-                    _hover={{ bg: 'var(--accent-soft)', color: C.brown }}
-                    display="flex" alignItems="center" justifyContent="center"
-                  >
-                    {t('cart.clear')}
-                  </Box>
-                </VStack>
+            {count > 0 && (
+              <Drawer.Footer className="w-cart-foot">
+                <div className="w-cart-total">
+                  <span>{t('cart.total')} · {classes}</span>
+                  <span><strong>{mainTotal}</strong>{altTotal && <em> {altTotal}</em>}</span>
+                </div>
+                <a className="w-btn w-btn--lg w-btn--block sk-btn" href="/checkout">
+                  {t('cart.checkout')} <Icon name="arrow-right" size={16} aria-hidden />
+                </a>
+                {onCalendar ? (
+                  <button type="button" className="w-btn w-btn--block sk-btn-ghost" onClick={closePanel}>
+                    <Icon name="plus" size={14} aria-hidden /> {t('cart.addMore')}
+                  </button>
+                ) : (
+                  <a className="w-btn w-btn--block sk-btn-ghost" href={calendarHref}>
+                    <Icon name="plus" size={14} aria-hidden /> {t('cart.addMore')}
+                  </a>
+                )}
               </Drawer.Footer>
             )}
           </Drawer.Content>
@@ -347,8 +211,4 @@ function CartDrawerInner({ open, onClose }: CartDrawerProps) {
   );
 }
 
-export const CartDrawer = ({ open, onClose }: CartDrawerProps) => (
-  <Chakra>
-    <CartDrawerInner open={open} onClose={onClose} />
-  </Chakra>
-);
+export default CartDrawer;

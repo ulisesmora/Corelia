@@ -28,6 +28,10 @@ interface CartState {
   addItem: (item: CartItem) => void;
   removeItem: (itemId: string) => void;
   clearCart: () => void;
+  /** Panel «Tu reserva» (components/CartDrawer.tsx) abierto. No se guarda. */
+  panelOpen: boolean;
+  openPanel: () => void;
+  closePanel: () => void;
 }
 
 export const useCartStore = create<CartState>()(
@@ -53,10 +57,16 @@ export const useCartStore = create<CartState>()(
       },
 
       clearCart: () => set({ items: [] }),
+
+      panelOpen: false,
+      openPanel: () => set({ panelOpen: true }),
+      closePanel: () => set({ panelOpen: false }),
     }),
     {
       name: 'site-cart-storage',
       storage: createJSONStorage(() => localStorage),
+      // Solo las clases elegidas: el panel abierto no sobrevive a recargar
+      partialize: (state) => ({ items: state.items }),
 
       // Zustand v5: usar onRehydrateStorage para convertir strings de fecha
       // (JSON no preserva Date) de vuelta a objetos Date y normalizar números.

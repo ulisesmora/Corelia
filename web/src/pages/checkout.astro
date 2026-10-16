@@ -16,7 +16,7 @@ const site = await getSiteConfig();
     <PageLoader minMs={300} maxMs={4000} />
     <AppFixed client:only="react" />
 
-    <main id="contenido" style="min-height:100vh">
+    <main id="contenido" class="w-main-app">
       <CheckoutPage client:only="react"/>
     </main>
 

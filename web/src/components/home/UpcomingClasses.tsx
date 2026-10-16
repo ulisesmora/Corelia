@@ -5,7 +5,7 @@
 // Sin Chakra: clases .w-* de styles/site.css.
 import { useEffect, useMemo, useState } from 'react';
 import { API_V1 } from '../../config';
-import { bookNow, cartItemFromSession, FEW_SPOTS, type ScheduleSession } from '../../lib/booking';
+import { addToCart, cartItemFromSession, FEW_SPOTS, type ScheduleSession } from '../../lib/booking';
 import { getSiteClient } from '../../lib/site';
 import { useCartStore } from '../stores/car.store';
 import { useHydrated } from '../../utils/useHydrated';
@@ -79,7 +79,7 @@ export default function UpcomingClasses({ lang, initial, now, limit = 6 }: Props
 
   const book = (s: ScheduleSession) => {
     const tz = getSiteClient().timezone || 'Europe/Madrid';
-    bookNow(cartItemFromSession(s, toDate(s.start_datetime, tz), toDate(s.end_datetime, tz)));
+    addToCart(cartItemFromSession(s, toDate(s.start_datetime, tz), toDate(s.end_datetime, tz)));
   };
 
   return (

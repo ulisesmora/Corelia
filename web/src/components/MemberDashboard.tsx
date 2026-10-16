@@ -1130,7 +1130,7 @@ function MemberDashboardInner() {
 
   // ── Not logged in ──────────────────────────────────────────────────────────
   if (!loading && !isLoggedIn) return (
-    <Box bg={C.bg} minH="100vh" display="flex" alignItems="center" justifyContent="center" p={8}>
+    <Box bg={C.bg} minH="60vh" display="flex" alignItems="center" justifyContent="center" p={8}>
       <Card>
         <Box textAlign="center" py={4} px={2}>
           <Box w="52px" h="52px" borderRadius="full" mx="auto" mb={4}
@@ -1154,7 +1154,7 @@ function MemberDashboardInner() {
   );
 
   if (loading) return (
-    <Box bg={C.bg} minH="100vh" display="flex" alignItems="center" justifyContent="center">
+    <Box bg={C.bg} minH="60vh" display="flex" alignItems="center" justifyContent="center">
       <VStack gap={3} align="center">
         <Spinner size="xl" color={C.accent} />
         <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
@@ -1166,7 +1166,7 @@ function MemberDashboardInner() {
 
   // ── Error de carga (red/backend caído) — antes fallaba en silencio ─────────
   if (loadError) return (
-    <Box bg={C.bg} minH="100vh" display="flex" alignItems="center" justifyContent="center" p={8}>
+    <Box bg={C.bg} minH="60vh" display="flex" alignItems="center" justifyContent="center" p={8}>
       <Card>
         <Box textAlign="center" py={4} px={2}>
           <Box w="52px" h="52px" borderRadius="full" mx="auto" mb={4}
@@ -2570,7 +2570,7 @@ function MemberDashboardInner() {
   return (
     // El hueco de la barra fija «Reservar clase» del móvil lo pone la
     // cabecera (body.w-has-bar); aquí solo un respiro extra.
-    <Box bg={C.bg} minH="100vh" pb={{ base: 8, md: 16 }}>
+    <Box bg={C.bg} minH="60vh" pb={{ base: 8, md: 16 }}>
       <Toaster />
       {renderBookingDialog()}
 

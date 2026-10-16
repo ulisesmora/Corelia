@@ -16,6 +16,7 @@ from .views import (
     BookingViewSet, LeadViewSet, GoogleLoginView, ClassOccurrenceViewSet,
 )
 from .setup_guide import SetupClassTemplatesView, SetupProgressView, SetupPublishView, SetupStepView
+from .views_guest import GuestReserveView
 from .setup_flow import (
     SetupClassTypeDeleteView, SetupFlowView, SetupInstructorView, SetupPacksView, SetupTipsView, SetupWeekSlotView,
     SetupWeekView,
@@ -163,6 +164,8 @@ urlpatterns = [
     path('v1/checkout/pay-plan/', CreatePlanCheckoutSessionView.as_view(), name='payments-pay-plan/'),
     path('v1/checkout/verify-plan/', VerifyPlanPurchaseView.as_view(), name='payments-verify-plan/'),
     path('v1/checkout/reserve/', CreateBookingWithCreditsView.as_view(), name='payments-reserve/'),
+    # Invitada sin cuenta y estudio sin pagos online: reservar y pagar en el estudio
+    path('v1/checkout/guest-reserve/', GuestReserveView.as_view(), name='checkout-guest-reserve'),
     path('v1/checkleads/check-email/', CheckLeadEmailView.as_view(), name='check-lead-email'),
     path('v1/checkleads/update-by-email/', UpdateLeadByEmailView.as_view(), name='update-lead-by-email'),
     path('v1/webhooks/listener/', StripeWebhookView.as_view(), name='webhook_listener'),

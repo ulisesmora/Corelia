@@ -135,7 +135,7 @@ export default function CheckoutSuccessPage() {
 
   return (
     <Chakra>
-      <Box bg="var(--page-bg)" minH="100vh" py={12} px={{ base: 4, md: 8 }}>
+      <Box bg="var(--page-bg)" minH="60vh" py={12} px={{ base: 4, md: 8 }}>
         <Box maxW="md" mx="auto" className="sk-card" p={8}>
           {status === 'success' && (
             <VStack gap={4} textAlign="center">

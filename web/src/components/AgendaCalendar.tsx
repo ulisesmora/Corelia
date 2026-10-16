@@ -27,7 +27,7 @@ import 'react-day-picker/dist/style.css';
 import { API_ROOT } from '../config';
 import { getSiteClient } from '../lib/site';
 import {
-  bookNow, cartItemFromSession, FEW_SPOTS, joinWaitlist, loginUrl, myWaitlist, sessionKey, waitlistEnabled,
+  addToCart, cartItemFromSession, FEW_SPOTS, joinWaitlist, loginUrl, myWaitlist, sessionKey, waitlistEnabled,
   type ScheduleSession, type WaitlistEntry,
 } from '../lib/booking';
 
@@ -325,7 +325,7 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
       return;
     }
     onSelectEvent(event);
-    bookNow(cartItemFromSession(event.resource, event.start, event.end));
+    addToCart(cartItemFromSession(event.resource, event.start, event.end));
   }, [onSelectEvent, t]);
 
   const handleWaitlist = useCallback(async (event: CalendarEvent) => {
@@ -349,7 +349,7 @@ export default function AgendaCalendar({ filter, onSelectEvent, compact = false,
         // Alguien ha cancelado mientras miraba: que la reserve directamente
         toaster.create({ title: tx.wlSpace, type: 'success', duration: 3000 });
         onSelectEvent(event);
-        bookNow(cartItemFromSession(r, event.start, event.end));
+        addToCart(cartItemFromSession(r, event.start, event.end));
         break;
       case 'already_waiting':
         toaster.create({ title: tx.wlAlready, type: 'info', duration: 3500 });

@@ -44,7 +44,10 @@ export function heroView(site: SiteConfig, fallbackImage = ''): HeroView {
     };
     return {
       mode: 'illustration', background: '', preload: '', videoId: '',
-      art: renderHeroArt({ pose: site.hero_illustration, style: site.theme.style, colors, idPrefix: 'hero' }),
+      // «slice»: el dibujo (cuadrado) llena la tarjeta aunque sea apaisada
+      // (móvil) en vez de quedar en medio con huecos vacíos alrededor.
+      art: renderHeroArt({ pose: site.hero_illustration, style: site.theme.style, colors, idPrefix: 'hero' })
+        .replace('<svg ', '<svg preserveAspectRatio="xMidYMid slice" '),
       theme: heroArtTheme(site.theme.style, colors),
     };
   }
@@ -113,12 +116,17 @@ export const HERO_CSS = `
 .hero-play:focus-visible{outline:3px solid #fff;outline-offset:3px}
 .hero-play small{font-weight:400;opacity:.85;font-size:.78rem}
 .hero-sr{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+/* Móvil: portada compacta (título, una línea, botones y una tarjeta de imagen
+   de altura moderada). Altura fija de la tarjeta: sin min-height ni proporciones
+   que dejen un hueco vacío bajo la ilustración. */
 @media (max-width:859px){
-  .hero-in{grid-template-columns:1fr;gap:28px;padding-top:28px}
-  .hero-media,.hero-art{aspect-ratio:16/11;max-height:46vh}
-  .hero-art svg{object-fit:contain}
-  .hero-row{width:100%}
-  .hero-cta,.hero-ghost{flex:1 1 180px}
+  .hero-in{grid-template-columns:minmax(0,1fr);gap:20px;padding:20px var(--w-gutter,16px) 24px}
+  .hero-content{gap:12px}
+  .hero-title{font-size:clamp(1.9rem,8.2vw,2.6rem);overflow-wrap:break-word}
+  .hero-sub{font-size:1rem}
+  .hero-media,.hero-art{aspect-ratio:auto;height:clamp(150px,46vw,240px);max-height:none}
+  .hero-row{width:100%;gap:10px;margin-top:4px}
+  .hero-cta,.hero-ghost{flex:1 1 130px;min-height:50px;padding:0 16px;font-size:1rem}
   .hero-play small{display:none}
 }
 `;

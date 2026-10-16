@@ -30,10 +30,12 @@ import SpamWarning from './SpamWarning';
 import { optimizedImage, withOriginalFallback } from '../utils/img';
 import { API_ROOT } from '../config';
 import PaymentsDisabledNotice from './PaymentsDisabledNotice';
+import GuestStudioBooking from './GuestStudioBooking';
 import { paymentsEnabled } from '../utils/payments';
 import { getSiteClient } from '../lib/site';
 import { hashId, track } from '../lib/tracking';
 import { joinWaitlist } from '../lib/booking';
+import { clearSession } from '../utils/session';
 const MotionBox = motion(Box as any);
 
 // Paleta del checkout: solo tokens del estilo (presets.css). Los botones
@@ -387,6 +389,9 @@ function CheckoutPageInner() {
   const [name, setName] = useState('');
   const [guestEmail, setGuestEmail] = useState('');
   const [guestCreated, setGuestCreated] = useState(false);
+  // Reserva sin cuenta hecha (pagar en el estudio): el carrito ya está vacío
+  // pero se sigue viendo la confirmación
+  const [guestBooked, setGuestBooked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -458,6 +463,15 @@ function CheckoutPageInner() {
       const res = await fetch(`${API_BASE}wallet/my-balance/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) {
+        // Sesión caducada o de otro estudio: se sigue como invitada (antes se
+        // quedaba en «no se pudo cargar tu saldo» sin poder reservar).
+        clearSession();
+        setAuthToken(null);
+        setIsLoggedIn(false);
+        setUserBalance(null);
+        return null;
+      }
       if (!res.ok) throw new Error(t('checkout.noBalanceError'));
       const data = await res.json();
       const bal = Number(data.balance) || 0;
@@ -956,7 +970,7 @@ function CheckoutPageInner() {
       <VStack gap={5} align="stretch">
         {/* UX: con el carrito vacío no tiene sentido el formulario de pago
             («Continuar» con importe cero) — guiamos al calendario. */}
-        {items.length === 0 ? card(
+        {items.length === 0 && !guestBooked ? card(
           <Box textAlign="center" py={6}>
             <Box w="56px" h="56px" borderRadius="full" bg="var(--accent-soft)"
               display="flex" alignItems="center" justifyContent="center" mx="auto" mb={3}>
@@ -977,9 +991,10 @@ function CheckoutPageInner() {
             </Button>
           </Box>
         ) : !paymentsOn ? card(
-          // Sin pagos online: la invitada no puede pagar con tarjeta; necesita
-          // cuenta y créditos comprados en el estudio (el login va debajo).
-          <PaymentsDisabledNotice variant="guest" />
+          // Sin pagos online: la invitada reserva sin cuenta y paga en el
+          // estudio al llegar (antes solo se le decía que creara una cuenta y
+          // comprara créditos en el estudio: no podía reservar).
+          <GuestStudioBooking onBooked={() => setGuestBooked(true)} />
         ) : card(
           <>
             <Text fontFamily='var(--font-heading)' fontSize="2xl"
@@ -1038,6 +1053,14 @@ function CheckoutPageInner() {
                     ? <Spinner size="sm" color="inherit" />
                     : t('checkout.continueBtn', { price: formatPrice(totalPrice, lang) })}
                 </Button>
+                {totalPrice === 0 && (
+                  // Clases solo con precio en créditos: sin cuenta no se pueden pagar
+                  <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted}>
+                    {lang === 'en'
+                      ? 'These classes are booked with credits: log in or create your account below.'
+                      : 'Estas clases se reservan con créditos: entra o crea tu cuenta aquí debajo.'}
+                  </Text>
+                )}
               </VStack>
             ) : (
               <VStack gap={4} align="stretch">
@@ -1686,7 +1709,7 @@ function CheckoutPageInner() {
   // ── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <Box bg={C.bg} minH="100vh"
+    <Box bg={C.bg}
       pt={{ base: 8, md: 12 }} pb={16} px={{ base: 4, md: 8 }}>
       <Toaster />
       <Box maxW="1200px" mx="auto">

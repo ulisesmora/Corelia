@@ -16,7 +16,7 @@ const site = await getSiteConfig();
   <body>
     <PageLoader minMs={300} maxMs={4000} />
     <AppFixed client:only="react" />
-    <main style="min-height:100vh">
+    <main id="contenido" class="w-main-app">
       <MemberDashboard client:only="react" />
     </main>
     <Footer client:only="react" />

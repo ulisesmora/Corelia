@@ -123,13 +123,13 @@ function ClassDetailInner() {
   };
 
   if (isLoading) return (
-    <Center minH="100vh" bg={C.bg}>
+    <Center minH="60vh" bg={C.bg}>
       <Spinner size="xl" color={C.accent} borderWidth="3px" />
     </Center>
   );
 
   if (error || !classData) return (
-    <Center minH="100vh" bg={C.bg} flexDirection="column" gap={4}>
+    <Center minH="60vh" bg={C.bg} flexDirection="column" gap={4}>
       <Text fontFamily='var(--font-heading)' fontSize="3xl" color={C.brown}>
         {t('classDetail.errorNotFound')}
       </Text>
@@ -170,12 +170,12 @@ function ClassDetailInner() {
   const room = (sessions ?? []).find(s => s.room?.image)?.room ?? (sessions ?? [])[0]?.room ?? previewRoom;
 
   return (
-    <Box minH="100vh" bg={C.bg}>
+    <Box bg={C.bg}>
 
       {/* ── Desktop split layout: image left + content right ── */}
       <Flex
         direction={{ base: 'column', lg: 'row' }}
-        minH="100vh"
+        minH={{ base: "auto", lg: "100vh" }}
         align="stretch"
       >
 

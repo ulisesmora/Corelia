@@ -2136,11 +2136,17 @@ class MyWalletBalanceView(APIView):
         
 class CreateCheckoutSessionView(APIView):
     """Pago como invitada (sin cuenta): crea su ficha y la sesión de Stripe.
-    Límite por IP y captcha (si está configurado) para quien no ha entrado."""
+    Límite por IP y captcha (si está configurado) para quien no ha entrado.
+
+    Todo va en una transacción y las plazas se comprueban (con bloqueo) ANTES
+    de crear nada: si una clase está llena, o Stripe falla, no quedan pagos ni
+    reservas pendientes huérfanos. La validación del carrito y de la invitada
+    es la misma que la de «pagar en el estudio» (api/utils/guest_checkout.py)."""
     permission_classes = [AllowAny]
     throttle_classes = [scoped('checkout')]
 
     def post(self, request, *args, **kwargs):
+        from api.utils.guest_checkout import guest_details, guest_profile, validate_cart
         from api.utils.payments import current_stripe_account, payments_disabled_response, stripe_client
         client = stripe_client()
         if client is None:
@@ -2150,282 +2156,131 @@ class CreateCheckoutSessionView(APIView):
             captcha = check_captcha(request)
             if captcha:
                 return captcha
-        
-        
-        guest_email = request.data.get('email')
-        coupon_code = request.data.get('couponCode')
+
+        details, error = guest_details(request.data)
+        if error:
+            return error
+
+        coupon_code = (request.data.get('couponCode') or '').strip()
         coupon_obj = None
         if coupon_code:
             try:
                 coupon_obj = Coupon.objects.get(code=coupon_code)
-                
-                # Validaciones lógicas
-                now = timezone.now()
-                if not coupon_obj.is_active:
-                    return Response({'error': 'El cupón no está activo.'}, status=status.HTTP_400_BAD_REQUEST)
-                if now < coupon_obj.valid_from or now > coupon_obj.valid_to:
-                    return Response({'error': 'El cupón ha caducado o no es válido.'}, status=status.HTTP_400_BAD_REQUEST)
-                
-                # Opcional: Validar límite de uso global
-                if coupon_obj.usage_limit and coupon_obj.redemptions.count() >= coupon_obj.usage_limit:
-                     return Response({'error': 'Este cupón ha agotado sus usos.'}, status=status.HTTP_400_BAD_REQUEST)
-
             except Coupon.DoesNotExist:
                 return Response({'error': 'El cupón no existe.'}, status=status.HTTP_404_NOT_FOUND)
-        if not guest_email:
-            return Response(
-                {'error': 'Se requieren detalles del invitado (guest_details) con un email.'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-        cart_items = request.data.get('cart_items')
-        
-        # --- 1. Validación básica del carrito ---
-        if not cart_items or not isinstance(cart_items, list):
-            return Response(
-                {'error': 'La solicitud debe contener una lista de items.'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
-            
-        session_ids = [item.get('id_source') for item in cart_items if item.get('id_source')]
-        
-        if not session_ids:
-             return Response(
-                {'error': 'No se encontraron IDs de sesión válidos en el carrito.'}, 
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            now = timezone.now()
+            if not coupon_obj.is_active:
+                return Response({'error': 'El cupón no está activo.'}, status=status.HTTP_400_BAD_REQUEST)
+            if (coupon_obj.valid_from and now < coupon_obj.valid_from) or (coupon_obj.valid_to and now > coupon_obj.valid_to):
+                return Response({'error': 'El cupón ha caducado o no es válido.'}, status=status.HTTP_400_BAD_REQUEST)
+            if coupon_obj.usage_limit and coupon_obj.redemptions.count() >= coupon_obj.usage_limit:
+                return Response({'error': 'Este cupón ha agotado sus usos.'}, status=status.HTTP_400_BAD_REQUEST)
 
-        # --- 2. Obtener los datos de la Base de Datos de forma segura ---
-        # .in_bulk() es muy eficiente. Crea un dict: {id: schedule_object}
-        # .select_related('class_type') pre-carga los datos de ClassType (para el precio)
-        schedules_map = RecurringSchedule.objects.filter(
-            id__in=session_ids
-        ).select_related('class_type').in_bulk()
-
-        line_items = []
-        bookings_to_create_data = [] 
-        total_price_eur = decimal.Decimal(0)
         # Todo el dinero va en la moneda del estudio (Ajustes → Mi estudio)
         currency = stripe_currency()
-        
         try:
-            guest_email = guest_email.lower()
-            guest_name = request.data.get('name') # Opcional: obtener el nombre
-            phone = request.data.get('phone')
-            
-            # Usamos get_or_create para evitar duplicados
-            guest_profile, create = GuestProfile.objects.get_or_create(
-                email=guest_email,
-                defaults={'name': guest_name, 'phone': phone} # 'name' o los campos que tengas
-            )
-            logger.info("checkout.guest guest_id=%s email=%s created=%s", guest_profile.public_id, guest_email, create)
+            with transaction.atomic():
+                guest, created = guest_profile(details['email'], details['name'], details['phone'])
+                logger.info("checkout.guest guest_id=%s created=%s", guest.public_id, created)
 
-            # --- 3. Construir line_items iterando sobre el carrito del cliente ---
-            for item in cart_items:
-                session_id = item.get('id_source')
-                schedule = schedules_map.get(session_id) # Busca en nuestro mapa seguro
+                lines, error = validate_cart(request.data.get('cart_items'), guest=guest, lock=True)
+                if error:
+                    transaction.set_rollback(True)
+                    return error
 
-                # Si el ID enviado por el cliente no existe en la BD, rechazamos
-                if not schedule:
-                    return Response(
-                        {'error': f'La sesión con id {session_id} no es válida o no existe.'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # Vigencia del horario + excepciones (vacaciones/cierres/privadas)
-                unavailable = slot_unavailable_reason(schedule, item.get('sessionDate'))
-                if unavailable:
-                    return Response(
-                        {'error': f'"{schedule.class_type.title}": {UNAVAILABLE_MESSAGES[unavailable]}'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # --- 4. Lógica de Precios (100% Backend) ---
-                
-                # Usar el precio override si existe, si no, el precio default del ClassType
-                price_decimal = schedule.price_eur_override
-                if price_decimal is None:
-                    price_decimal = schedule.class_type.default_price_eur
-
-                # Validar que la clase tenga precio
-                if price_decimal is None or price_decimal <= 0:
-                    return Response(
-                        {'error': f'La clase "{schedule.class_type.title}" no tiene precio y no se puede comprar con tarjeta.'},
-                        status=status.HTTP_400_BAD_REQUEST
-                    )
-
-                # Stripe quiere un entero en la unidad mínima de la moneda
-                # (céntimos; las monedas sin decimales como CLP, tal cual)
-                total_price_eur += price_decimal
-                price_in_cents = to_stripe_amount(price_decimal, currency)
-
-                # --- 5. Construir un nombre descriptivo para la pasarela ---
-                product_name = schedule.class_type.title
-                try:
-                    # Añadir la fecha/hora de la sesión para claridad del usuario
-                    session_date_str = item.get('sessionDate')
-                    session_date_obj = datetime.fromisoformat(session_date_str.replace('Z', '+00:00'))
-                    # En hora de Madrid: la web manda el instante en UTC ("...Z")
-                    # y con strftime directo salía 2 horas antes en Stripe.
-                    if session_date_obj.tzinfo is not None:
-                        session_date_obj = session_date_obj.astimezone(MADRID_TZ)
-                    product_name += f" ({session_date_obj.strftime('%d-%m-%Y %H:%M')})"
-                except Exception:
-                    # Fallback si la fecha no viene o está mal formada
-                    product_name += f" (ID: {session_id})"
-                
-                
-                
-
-                # --- 6. Añadir el item a la lista para Stripe ---
-                line_items.append({
-                    'price_data': {
-                        'currency': currency,
-                        'product_data': {
-                            'name': product_name,
-                            # Opcional: puedes añadir la imagen del item.get('image') aquí
-                            # 'images': [item.get('image')] if item.get('image') else [],
-                        },
-                        'unit_amount': price_in_cents,
-                    },
-                    'quantity': 1, # Como dijiste, la cantidad siempre es 1
-                })
-            
-                bookings_to_create_data.append({
-                    'occurrence_id': item.get('id_source'),
-                    'start_datetime': item.get('sessionDate'),
-                    'end_datetime': item.get('sessionDateEnd')
-                })
-                
-                
-                
-
-            # Si después de todo el proceso, no hay items (ej. todos eran 0€)
-            if not line_items:
-                return Response(
-                    {'error': 'No hay items válidos para procesar el pago.'}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
-            stripe_discounts = []
-            final_payment_amount = total_price_eur  # Valor por defecto sin descuento
-
-            if coupon_obj:
-                try:
-                    # Creamos un cupón temporal en Stripe
-                    stripe_coupon_params = {
-                        'duration': 'once',
-                        'name': f"Cupón: {coupon_obj.code}"
-                    }
-
-                    if coupon_obj.discount_type == 'percent':
-                        stripe_coupon_params['percent_off'] = float(coupon_obj.value)
-                        # Calculamos el nuevo total para guardar en BD
-                        discount_amount = total_price_eur * (coupon_obj.value / 100)
-                        final_payment_amount = total_price_eur - discount_amount
-
-                    elif coupon_obj.discount_type == 'amount':
-                        stripe_coupon_params['amount_off'] = to_stripe_amount(coupon_obj.value, currency)
-                        stripe_coupon_params['currency'] = currency
-                        final_payment_amount = total_price_eur - coupon_obj.value
-
-                    # Crear cupón en Stripe
-                    stripe_coupon = client.v1.coupons.create(params=stripe_coupon_params)
-                    stripe_discounts.append({'coupon': stripe_coupon.id})
-
-                except Exception as e:
-                    logger.error(f"Error cupón Stripe: {e}")
-                    return Response({'error': 'Error procesando descuento.'}, status=500)
-
-            # Evitar montos negativos en BD
-            if final_payment_amount < 0: final_payment_amount = 0
-
-        # --- 4. Crear el Payment PENDIENTE ---
-            new_payment = Payment.objects.create(
-                guest=guest_profile,
-                amount_eur=final_payment_amount,
-                status='pending', # <-- ESTADO PENDIENTE
-                currency=currency.upper(),
-                method='stripe',
-                stripe_account=stripe_account,
-            )
-            
-            if coupon_obj:
-                CouponRedemption.objects.create(
-                    coupon=coupon_obj,
-                    guest=guest_profile,
-                    payment=new_payment,
-                    times_used=1,
-                    metadata={'original_price': str(total_price_eur)}
-                )
-
-        # --- 5. Verificar capacidad y crear Bookings PENDIENTES ---
-            for booking_data in bookings_to_create_data:
-                occ_id = booking_data['occurrence_id']
-                schedule_obj = schedules_map.get(int(occ_id) if occ_id else occ_id)
-                if schedule_obj:
-                    reserved_count = Booking.objects.filter(
-                        occurrence_id=schedule_obj.id,
-                        start_datetime=booking_data['start_datetime'],
-                        status__in=['reserved', 'attended'],
-                    ).count()
-                    # Las plazas ofrecidas a la lista de espera también cuentan
-                    from api.utils.waitlist import full_class_payload, seats_taken, wall_date as _wl_date
-                    slot_day = _wl_date(booking_data['start_datetime'])
-                    if slot_day is not None:
-                        reserved_count = max(reserved_count, seats_taken(schedule_obj, slot_day))
-                    if reserved_count >= schedule_obj.capacity_max:
+                line_items = []
+                total = decimal.Decimal(0)
+                for line in lines:
+                    title = line.schedule.class_type.title
+                    if line.price is None or line.price <= 0:
+                        transaction.set_rollback(True)
                         return Response(
-                            {'error': f'La clase "{schedule_obj.class_type.title}" está completa para el horario seleccionado.',
-                             **full_class_payload(schedule_obj, booking_data['start_datetime'])},
+                            {'error': f'La clase "{title}" no tiene precio y no se puede comprar con tarjeta.',
+                             'code': 'no_price'},
                             status=status.HTTP_400_BAD_REQUEST,
                         )
-                Booking.objects.create(
-                    guest=guest_profile,
-                    payment=new_payment,
-                    occurrence_id=booking_data['occurrence_id'],
-                    start_datetime=booking_data['start_datetime'],
-                    end_datetime=booking_data['end_datetime'],
-                    status='pending',
+                    total += line.price
+                    # Nombre en la pasarela con la fecha en la hora del estudio
+                    when = to_madrid_wall(line.start)
+                    line_items.append({
+                        'price_data': {
+                            'currency': currency,
+                            'product_data': {'name': f"{title} ({when:%d-%m-%Y %H:%M})" if when else title},
+                            # Unidad mínima de la moneda (céntimos; CLP tal cual)
+                            'unit_amount': to_stripe_amount(line.price, currency),
+                        },
+                        'quantity': 1,
+                    })
+
+                stripe_discounts = []
+                final_amount = total
+                if coupon_obj:
+                    params = {'duration': 'once', 'name': f"Cupón: {coupon_obj.code}"}
+                    if coupon_obj.discount_type == 'percent':
+                        params['percent_off'] = float(coupon_obj.value)
+                        final_amount = total - total * (coupon_obj.value / 100)
+                    elif coupon_obj.discount_type == 'amount':
+                        params['amount_off'] = to_stripe_amount(coupon_obj.value, currency)
+                        params['currency'] = currency
+                        final_amount = total - coupon_obj.value
+                    stripe_coupon = client.v1.coupons.create(params=params)
+                    stripe_discounts.append({'coupon': stripe_coupon.id})
+                final_amount = max(final_amount, decimal.Decimal(0))
+
+                payment = Payment.objects.create(
+                    guest=guest, amount_eur=final_amount, status='pending',
+                    currency=currency.upper(), method='stripe', stripe_account=stripe_account,
                 )
+                if coupon_obj:
+                    CouponRedemption.objects.create(
+                        coupon=coupon_obj, guest=guest, payment=payment, times_used=1,
+                        metadata={'original_price': str(total)},
+                    )
+                # Reservas PENDIENTES: el webhook las confirma al cobrar
+                for line in lines:
+                    Booking.objects.create(
+                        guest=guest, payment=payment, occurrence_id=line.schedule.id,
+                        start_datetime=line.start, end_datetime=line.end, status='pending',
+                    )
 
+                session_params = {
+                    'ui_mode': 'embedded_page',
+                    'line_items': line_items,
+                    'mode': 'payment',
+                    'customer_email': guest.email,
+                    'tax_id_collection': {'enabled': False},
+                    'invoice_creation': {'enabled': True},
+                    'metadata': {'local_payment_id': payment.id},
+                    'return_url': web_url('/checkout') + '/success?session_id={CHECKOUT_SESSION_ID}',
+                }
+                if stripe_discounts:
+                    session_params['discounts'] = stripe_discounts
+                # Cuenta conectada: reservas sin métodos de pago asíncronos (OXXO,
+                # Multibanco…), que dejarían la plaza retenida días sin cobrar.
+                if stripe_account and settings.STRIPE_CONNECT_BOOKING_PMC:
+                    session_params['payment_method_configuration'] = settings.STRIPE_CONNECT_BOOKING_PMC
+                checkout_session = client.v1.checkout.sessions.create(
+                    params=session_params,
+                    options={'idempotency_key': f"checkout_{payment.id}_{uuid.uuid4().hex[:8]}"},
+                )
+                logger.info("checkout.guest.session payment_id=%s bookings=%s amount=%s %s",
+                            payment.id, len(lines), final_amount, currency)
 
-            # --- 7. Crear la Sesión de Checkout en Stripe ---
-            session_params = {
-                'ui_mode': 'embedded_page',
-                'line_items': line_items,
-                'mode': 'payment',
-                'customer_email': guest_email,
-                'discounts': stripe_discounts if stripe_discounts else None,
-                'tax_id_collection': {'enabled': False},
-                'invoice_creation': {'enabled': True},
-                'metadata': {'local_payment_id': new_payment.id},
-                'return_url': web_url('/checkout') + '/success?session_id={CHECKOUT_SESSION_ID}',
-            }
-            # Cuenta conectada: reservas sin métodos de pago asíncronos (OXXO,
-            # Multibanco…), que dejarían la plaza retenida días sin cobrar.
-            if stripe_account and settings.STRIPE_CONNECT_BOOKING_PMC:
-                session_params['payment_method_configuration'] = settings.STRIPE_CONNECT_BOOKING_PMC
-            checkout_session = client.v1.checkout.sessions.create(
-                params=session_params,
-                options={'idempotency_key': f"checkout_{new_payment.id}_{uuid.uuid4().hex[:8]}"},
-            )
-            
             return Response({'clientSecret': checkout_session.client_secret}, status=status.HTTP_201_CREATED)
 
         except stripe.StripeError as e:
-            # Captura errores específicos de Stripe
-            logger.error(f"Stripe Error: {e.user_message if hasattr(e, 'user_message') else str(e)}")
+            logger.error("checkout.guest.stripe_error %s", getattr(e, 'user_message', None) or str(e))
             return Response(
-                {'error': 'Ocurrió un error al procesar el pago con Stripe.'}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {'error': 'Ocurrió un error al procesar el pago con Stripe.'},
+                status=status.HTTP_502_BAD_GATEWAY,
             )
-        except Exception as e:
-            # Captura cualquier otro error (ej. parseo de fecha, etc.)
-            logger.error(f"Error creando checkout session: {e}")
+        except Exception:
+            logger.exception("checkout.guest.error")
             return Response(
-                {'error': 'No se pudo crear la sesión de pago.'}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+                {'error': 'No se pudo crear la sesión de pago.'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-            
+
 
 
 def _session_amount(session) -> dict:
@@ -3641,6 +3496,13 @@ class CreateBookingWithCreditsView(APIView):
         bookings_to_create_data = [] # Lista para los datos del booking
 
         for item in cart_items:
+            # Los eventos sueltos («E_…») no son horarios: su id_source es de un
+            # Event y antes se reservaba la clase que tuviera ese mismo número.
+            if str(item.get('id') or '').startswith('E_'):
+                return Response(
+                    {'error': 'Este evento no se puede reservar online: escríbenos y te guardamos plaza.', 'code': 'event'},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
             schedule = schedules_map.get(item.get('id_source'))
             if not schedule:
                 return Response(

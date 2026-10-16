@@ -218,7 +218,7 @@ export default function ResetPasswordPage(_props: ResetPasswordPageProps) {
 
   return (
     <Chakra>
-      <Flex translate="no" className="notranslate" w="full" minH="100dvh" pt="60px" bg={C.cream}
+      <Flex translate="no" className="notranslate" w="full" minH={{ base: 'auto', md: 'calc(100dvh - var(--w-header-h, 68px))' }} bg={C.cream}
         fontFamily={C.font} justify="center" align={{ base: 'flex-start', md: 'center' }} px={4} pb={10}>
         <Box className="sk-card" w="full" maxW="480px" mt={{ base: 6, md: 10 }}
           px={{ base: 5, md: 8 }} py={{ base: 6, md: 8 }}>

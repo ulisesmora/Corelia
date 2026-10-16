@@ -3,7 +3,9 @@
 //  - Escritorio: logo · 5 enlaces (Clases, Horario, Precios, Equipo, Contacto)
 //    · idioma · cuenta · «Reservar clase» (la acción principal, siempre visible).
 //  - Móvil: logo · cuenta · menú (hoja con los 5 enlaces + «Más») y una barra
-//    fija abajo con «Reservar clase» (o «Ver mi reserva» si ya hay clases elegidas).
+//    fija abajo con «Reservar clase» (o «Ver mi reserva (n)» si ya hay clases elegidas).
+//  - La bolsa (con el número de clases) y «Ver mi reserva» abren el panel
+//    «Tu reserva» (CartDrawer), que también se abre al elegir una clase.
 // Estilos: .w-hd / .w-bar en styles/site.css (solo tokens del estilo visual).
 import React, { useEffect, useMemo, useState } from 'react';
 import { Drawer, Portal, CloseButton } from '@chakra-ui/react';
@@ -87,9 +89,9 @@ export default function Navbar(_props: NavbarProps = {}) {
   const t = useT();
   const lang = useLangStore((s) => s.lang);
   const cartCount = useCartStore((s) => s.items.length);
+  const openCart = useCartStore((s) => s.openPanel);
   const [path, setPath] = useState('');
   const [menuOpen, setMenuOpen] = useState(false);
-  const [cartOpen, setCartOpen] = useState(false);
 
   useEffect(() => { setPath(norm(window.location.pathname)); }, []);
 
@@ -117,7 +119,7 @@ export default function Navbar(_props: NavbarProps = {}) {
     document.body.classList.toggle('w-has-bar', !hideBar);
   }, [hideBar, path]);
 
-  const bookHref = cartCount > 0 ? '/checkout' : '/calendar';
+  const bookHref = '/calendar';
   const homeHref = t('nav.items.home.href') || '/';
 
   return (
@@ -136,17 +138,21 @@ export default function Navbar(_props: NavbarProps = {}) {
 
           <div className="w-hd-actions">
             <div className="w-hd-desk"><LangToggle /></div>
-            {cartCount > 0 && !onCheckout && (
-              <button type="button" className="w-hd-icon" onClick={() => setCartOpen(true)}
+            {!onCheckout && (
+              <button type="button" className="w-hd-icon w-hd-bag" onClick={openCart} aria-haspopup="dialog"
                 aria-label={`${t('nav.a11y.cart')}: ${cartCount}`}>
                 <Icon name="bag" aria-hidden />
-                <span className="w-hd-badge" aria-hidden>{cartCount}</span>
+                {cartCount > 0 && <span className="w-hd-badge" aria-hidden>{cartCount}</span>}
               </button>
             )}
             <AuthEntrypoint scrolled linkColor="" />
-            <a className="w-btn w-btn--sm sk-btn w-hd-desk" href={bookHref}>
-              {cartCount > 0 ? t('nav.cta.cart') : bookLabel}
-            </a>
+            {cartCount > 0 ? (
+              <button type="button" className="w-btn w-btn--sm sk-btn w-hd-desk" onClick={openCart} aria-haspopup="dialog">
+                {t('nav.cta.cart')}
+              </button>
+            ) : (
+              <a className="w-btn w-btn--sm sk-btn w-hd-desk" href={bookHref}>{bookLabel}</a>
+            )}
             <Drawer.Root open={menuOpen} placement="end" size="sm" onOpenChange={(e) => setMenuOpen(e.open)}>
               <Drawer.Trigger asChild>
                 <button type="button" className="w-hd-icon w-hd-menu" aria-label={t('nav.a11y.toggleNav')}>
@@ -182,7 +188,14 @@ export default function Navbar(_props: NavbarProps = {}) {
                       <LangToggle />
                     </Drawer.Body>
                     <Drawer.Footer>
-                      <a className="w-btn w-btn--lg w-btn--block sk-btn" href={bookHref}>{cartCount > 0 ? t('nav.cta.cart') : bookLabel}</a>
+                      {cartCount > 0 ? (
+                        <button type="button" className="w-btn w-btn--lg w-btn--block sk-btn"
+                          onClick={() => { setMenuOpen(false); openCart(); }}>
+                          {`${t('nav.cta.cart')} (${cartCount})`}
+                        </button>
+                      ) : (
+                        <a className="w-btn w-btn--lg w-btn--block sk-btn" href={bookHref}>{bookLabel}</a>
+                      )}
                     </Drawer.Footer>
                     <Drawer.CloseTrigger asChild>
                       <CloseButton size="md" aria-label={lang === 'en' ? 'Close' : 'Cerrar'} />
@@ -198,14 +211,21 @@ export default function Navbar(_props: NavbarProps = {}) {
       {/* Móvil: la acción principal siempre a mano */}
       {path && !hideBar && (
         <div className="w-bar">
-          <a className="w-btn sk-btn" href={bookHref}>
-            <Icon name={cartCount > 0 ? 'bag' : 'calendar-plus'} aria-hidden />
-            {cartCount > 0 ? `${t('nav.cta.cart')} (${cartCount})` : bookLabel}
-          </a>
+          {cartCount > 0 ? (
+            <button type="button" className="w-btn sk-btn" onClick={openCart} aria-haspopup="dialog">
+              <Icon name="bag" aria-hidden />
+              {`${t('nav.cta.cart')} (${cartCount})`}
+            </button>
+          ) : (
+            <a className="w-btn sk-btn" href={bookHref}>
+              <Icon name="calendar-plus" aria-hidden />
+              {bookLabel}
+            </a>
+          )}
         </div>
       )}
 
-      <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} />
+      {!onCheckout && <CartDrawer />}
       {/* Solo si el estudio tiene WhatsApp en la config */}
       <WhatsAppButton message={t('whatsapp.message')} label={t('whatsapp.helpLabel')} />
       <LanguageModal />
