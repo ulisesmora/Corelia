@@ -90,12 +90,21 @@ def _booking_title(booking):
     return 'Clase'
 
 
+def _cobro_en_estudio(payment) -> bool:
+    """Cobro apuntado por el estudio al marcar «Cobrado» una reserva «pagar en
+    el estudio» (Ventas → «Quién me debe»): sin email automático."""
+    raw = payment.raw_response if isinstance(payment.raw_response, dict) else {}
+    return raw.get('source') == 'pay_at_studio'
+
+
 @receiver(post_save, sender=Payment)
 def send_payment_confirmation_email(sender, instance: Payment, **kwargs):
     """Recibo de un pago de RESERVAS con tarjeta (invitada o clienta con
     cuenta). Los pagos de bonos/cuotas (sin reservas) los cubre el signal de
     abajo."""
     if instance.guest_id is None and instance.user_id is None:
+        return
+    if _cobro_en_estudio(instance):
         return
     if instance.status == 'succeeded':
         
@@ -162,6 +171,9 @@ def send_plan_purchase_confirmation_email(sender, instance: Payment, **kwargs):
         return
 
     if not instance.user:
+        return
+
+    if _cobro_en_estudio(instance):
         return
 
     # Pago de reservas con tarjeta (clase o evento): ya lo cubre el recibo de arriba

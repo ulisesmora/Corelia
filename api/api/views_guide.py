@@ -6,8 +6,11 @@ para que las explicaciones del panel usen SUS números, no ejemplos inventados.
 
 Devuelve la moneda, el precio de la clase suelta, el plazo para cancelar
 (BOOKING_CANCEL_MIN_HOURS), la lista de espera (activada, oferta automática y
-minutos para aceptar), si se cobra online y un ejemplo de cada cosa que se
-vende (bono, membresía y créditos por tipo de clase).
+minutos para aceptar), si se cobra online, las «Formas de cobro» de Ajustes →
+Cobros (`options`: tarjeta, pagar en el estudio, invitadas, qué se vende
+online, formas de pago en el estudio; api/utils/payment_options.py) y un
+ejemplo de cada cosa que se vende (bono, membresía y créditos por tipo de
+clase).
 """
 from decimal import Decimal
 
@@ -46,6 +49,7 @@ def _plan(plan):
 
 def charging_facts() -> dict:
     from api.utils.locale import normalize_currency
+    from api.utils.payment_options import payment_options
     from api.utils.payments import payments_status
 
     cfg = get_site_config()
@@ -72,6 +76,8 @@ def charging_facts() -> dict:
         'waitlist': {'enabled': wl.enabled, 'auto_offer': wl.auto_offer, 'claim_minutes': wl.claim_minutes},
         # provider: 'keys' (claves propias) | 'connect' («Conectar pagos») | '' (sin cobro online)
         'payments': {'enabled': bool(pay['ready']), 'provider': (pay['provider'] or '') if pay['ready'] else ''},
+        # Lo que la web ofrece de verdad (Ajustes → Cobros → «Formas de cobro»)
+        'options': payment_options(cfg, bool(pay['ready'])),
         'class_types': [
             {'id': t.id, 'title': t.title, 'credits': _num(t.default_price_credits), 'price': _num(t.default_price_eur)}
             for t in types

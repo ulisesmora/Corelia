@@ -180,7 +180,8 @@ class PayAtStudioTests(GuestCheckoutBase):
     def test_not_available_when_the_studio_charges_online(self):
         with mock.patch('api.utils.payments.payments_enabled', return_value=True):
             r = self.c.post(RESERVE, {**self.guest(), 'cart_items': [self.item()]}, format='json')
-        self.assertEqual((r.status_code, r.json()['code']), (409, 'pay_online'))
+        # Automático: con tarjeta en la web no se paga en el estudio (antes code='pay_online')
+        self.assertEqual((r.status_code, r.json()['code'], r.json()['card']), (409, 'pay_at_studio_disabled', True))
         self.assertFalse(Booking.objects.exists())
 
     def test_rejects_times_that_are_not_a_session_of_the_class(self):

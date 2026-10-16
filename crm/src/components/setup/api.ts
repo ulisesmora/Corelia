@@ -19,6 +19,31 @@ export interface CountryOption {
   timezone: string;
 }
 
+export type StudioPayMethod = 'cash' | 'bizum' | 'card' | 'transfer';
+
+/** «Formas de cobro» efectivas (GET /api/v1/site-config/ → payment_options). */
+export interface PaymentOptions {
+  online_ready: boolean;
+  card: boolean;
+  drop_in_online: boolean;
+  packs_online: boolean;
+  memberships_online: boolean;
+  guest_booking: boolean;
+  pay_at_studio: { auto: boolean; enabled: boolean; guests: boolean; clients: boolean };
+  credits: boolean;
+  studio_methods: StudioPayMethod[];
+  studio_note: string;
+  studio_note_en: string;
+  client_fixed_classes: boolean;
+}
+
+/** Campos de «Formas de cobro» que se guardan desde el panel. */
+export const PAYMENT_OPTION_FIELDS = [
+  'online_card_enabled', 'pay_at_studio_enabled', 'pay_at_studio_guests', 'pay_at_studio_clients',
+  'guest_booking_enabled', 'sell_drop_in_online', 'sell_packs_online', 'sell_memberships_online',
+  'studio_payment_methods', 'studio_payment_note', 'studio_payment_note_en', 'client_fixed_classes',
+] as const;
+
 /** Ajustes completos del estudio tal y como los devuelve GET /api/v1/site-config/ (admin). */
 export interface StudioSettings {
   studio_name: string;
@@ -108,6 +133,23 @@ export interface StudioSettings {
   email_from_name: string;
   payments_enabled: boolean;
   stripe_publishable_key: string;
+  // «Formas de cobro» (Ajustes → Cobros; api/utils/payment_options.py)
+  online_card_enabled: boolean;
+  /** null = automático: solo cuando la web no cobra con tarjeta */
+  pay_at_studio_enabled: boolean | null;
+  pay_at_studio_guests: boolean;
+  pay_at_studio_clients: boolean;
+  guest_booking_enabled: boolean;
+  sell_drop_in_online: boolean;
+  sell_packs_online: boolean;
+  sell_memberships_online: boolean;
+  studio_payment_methods: StudioPayMethod[];
+  studio_payment_note: string;
+  studio_payment_note_en: string;
+  /** Las clientas eligen sus clases fijas en la web (si no, solo el estudio) */
+  client_fixed_classes: boolean;
+  /** Solo lectura: lo que la web ofrece de verdad con estos ajustes */
+  payment_options: PaymentOptions;
   setup_completed: boolean;
   /** Solo lectura («Conectar pagos»): '' | 'keys' | 'connect' */
   payments_provider: '' | 'keys' | 'connect';
@@ -142,7 +184,7 @@ export type StudioSettingsPatch = Partial<Omit<StudioSettings,
   | 'default_web_url' | 'default_api_url' | 'push_devices' | 'push_clients'
   | 'payments_enabled' | 'stripe_publishable_key' | 'hero_video_poster_url' | 'hero_video_id'
   | 'payments_provider' | 'stripe_account_id'
-  | 'locale_options' | 'payment_currencies'>> & { smtp_password?: string };
+  | 'locale_options' | 'payment_currencies' | 'payment_options'>> & { smtp_password?: string };
 
 async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
   const res = await fetch(`${API_BASE_URL}${path}`, {

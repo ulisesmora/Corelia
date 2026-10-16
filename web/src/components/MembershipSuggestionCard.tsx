@@ -5,6 +5,7 @@ import { useLangStore } from './stores/lang.store';
 import { planDisplayName } from '../utils/planUtils';
 import { API_ROOT } from '../config';
 import { formatPrice } from '../i18n';
+import { clientFixedClasses } from '../utils/payments';
 
 const API = `${API_ROOT}/`;
 
@@ -126,9 +127,11 @@ export default function MembershipSuggestionCard({
   const [s, setS] = useState<MembershipSuggestion | null>(null);
   const [hidden, setHidden] = useState(false);
 
-  useEffect(() => { fetchMembershipSuggestion().then(setS); }, []);
+  useEffect(() => { if (clientFixedClasses()) fetchMembershipSuggestion().then(setS); }, []);
 
-  const visible = !!s && s.show && !!s.plan && !hidden;
+  // Habla de clases fijas y de venir cada semana: solo si el estudio deja que
+  // las clientas elijan sus clases fijas en la web (si no, es cosa del panel)
+  const visible = clientFixedClasses() && !!s && s.show && !!s.plan && !hidden;
   const channel = variant === 'checkout' ? 'checkout' : 'app';
   useEffect(() => { if (visible && s) logEvent('shown', channel, s); }, [visible]); // eslint-disable-line
 

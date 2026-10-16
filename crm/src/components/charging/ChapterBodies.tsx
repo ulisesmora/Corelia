@@ -4,7 +4,7 @@
 import { Box, Button, Typography } from '@mui/material';
 import StudioIcon from '../../site/StudioIcon';
 import type { GuideChapter } from './chapters';
-import { creditsText, daysText, minutesText, periodText, price, type ChargingFacts } from './facts';
+import { creditsText, daysText, defaultOptions, methodsText, minutesText, periodText, price, type ChargingFacts } from './facts';
 import { Block, Choices, CancelWindow, Flow, Note, Options, Tiles, Value } from './visuals';
 
 export interface ChapterProps {
@@ -19,9 +19,21 @@ const lead = { fontSize: '1rem', color: 'var(--studio-muted)', lineHeight: 1.5 }
 
 // ── a) Cómo cobras ───────────────────────────────────────────────────────
 
+/** Dónde se cambian las formas de cobro (Ajustes → Cobros). */
+const OPTIONS_PATH = '/ajustes?tab=pagos#formas-de-cobro';
+
 export function HowYouChargeChapter({ facts: f, go, open }: ChapterProps) {
   const pack = f.pack;
   const sub = f.subscription;
+  const o = f.options || defaultOptions(f.payments.enabled);
+  const methods = methodsText(f);
+  const studioWho = o.pay_at_studio.guests && o.pay_at_studio.clients ? 'Invitadas y clientas con cuenta'
+    : o.pay_at_studio.guests ? 'Invitadas (sin cuenta)' : o.pay_at_studio.clients ? 'Clientas con cuenta' : '';
+  const dropInText = o.drop_in_online
+    ? 'Paga solo esa clase, con tarjeta, al reservar.'
+    : o.pay_at_studio.guests ? 'Reserva sin cuenta y paga esa clase al llegar.'
+      : o.pay_at_studio.clients ? 'Reserva con su cuenta y paga esa clase al llegar.'
+        : 'Hoy no se vende suelta en la web: reservan con créditos.';
   return (
     <>
       <Typography sx={lead}>Tus clientas pagan de una de estas tres formas.</Typography>
@@ -29,15 +41,15 @@ export function HowYouChargeChapter({ facts: f, go, open }: ChapterProps) {
         <Tiles items={[
           {
             icon: 'ticket', tint: 'reformer', title: 'Clase suelta',
-            text: f.payments.enabled ? 'Paga solo esa clase, con tarjeta, al reservar.' : 'Reserva sin cuenta y paga esa clase al llegar.',
+            text: dropInText,
             value: <Value>{price(f, f.drop_in_price)}</Value>,
           },
           {
-            icon: 'plans', tint: 'mat', title: 'Bono', text: 'Compra varias clases de una vez.',
+            icon: 'plans', tint: 'mat', title: 'Bono', text: o.packs_online ? 'Compra varias clases de una vez, en tu web.' : 'Compra varias clases de una vez, en el estudio.',
             value: <Value>{pack ? `${pack.credits} clases · ${price(f, pack.price)}` : 'Ej.: 10 clases'}</Value>,
           },
           {
-            icon: 'subscriptions', tint: 'barre', title: 'Membresía', text: 'Paga sola cada mes y recibe sus clases.',
+            icon: 'subscriptions', tint: 'barre', title: 'Membresía', text: o.memberships_online ? 'Paga sola cada mes (se contrata en tu web).' : 'Paga cada mes (se contrata en el estudio).',
             value: <Value>{sub ? `${price(f, sub.price)} ${periodText(sub.interval, sub.interval_count)}` : 'Ej.: 8 clases al mes'}</Value>,
           },
         ]} />
@@ -77,12 +89,33 @@ export function HowYouChargeChapter({ facts: f, go, open }: ChapterProps) {
 
       <Block title="Cómo te pagan" icon="payments" id="g-pay">
         <Options label="Formas de pago" items={[
-          { icon: 'card', title: 'Online, con tarjeta', text: 'Al comprar o reservar en tu web. El dinero llega a tu cuenta de Stripe.', chip: f.payments.enabled ? 'Activado' : undefined },
-          { icon: 'payments', title: 'En el estudio', text: 'Efectivo, Bizum o datáfono. Tú le añades los créditos.' },
+          {
+            icon: 'card', title: 'Online, con tarjeta',
+            text: o.card
+              ? `En tu web: ${[o.drop_in_online && 'clase suelta', o.packs_online && 'bonos', o.memberships_online && 'membresías'].filter(Boolean).join(', ') || 'nada a la venta ahora'}. El dinero llega a tu cuenta de Stripe.`
+              : f.payments.enabled ? 'Conectado, pero apagado en «Formas de cobro».' : 'Al comprar o reservar en tu web. El dinero llega a tu cuenta de Stripe.',
+            chip: o.card ? 'Activado' : undefined,
+          },
+          {
+            icon: 'payments', title: 'Pagar en el estudio',
+            text: studioWho
+              ? `${studioWho} reservan y pagan al llegar${methods ? ` (${methods})` : ''}. Salen en Ventas → «Quién me debe» hasta que las marques como cobradas.`
+              : `Apagado al reservar en la web. Si te compran un bono en mano${methods ? ` (${methods})` : ''}, le añades los créditos.`,
+            chip: studioWho ? 'Activado' : undefined,
+          },
+          {
+            icon: 'clients', title: 'Reservar sin cuenta',
+            text: o.guest_booking ? 'Las invitadas reservan dejando sus datos.' : 'Apagado: para reservar tienen que entrar con su cuenta.',
+            chip: o.guest_booking ? 'Activado' : undefined,
+          },
         ]} />
+        {o.studio_note && <Note>Nota para tus clientas: «{o.studio_note}»</Note>}
         <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', mt: 1.25 }}>
+          <Button variant="contained" size="small" onClick={() => go(OPTIONS_PATH)} startIcon={<StudioIcon name="settings" />} sx={{ minHeight: 44 }}>
+            Cambiar formas de cobro
+          </Button>
           {!f.payments.enabled && (
-            <Button variant="contained" size="small" onClick={() => go('/ajustes?tab=pagos')} startIcon={<StudioIcon name="card" />} sx={{ minHeight: 44 }}>
+            <Button variant="outlined" size="small" onClick={() => go('/ajustes?tab=pagos')} startIcon={<StudioIcon name="card" />} sx={{ minHeight: 44 }}>
               Activar pagos online
             </Button>
           )}
@@ -117,8 +150,10 @@ export function InPersonChapter({ facts: f, go }: ChapterProps) {
         <Choices label="Qué herramienta usar" rows={[
           { icon: 'credits', when: 'Viene de vez en cuando', use: 'Añadir créditos' },
           {
-            icon: 'fixedClasses', when: 'Viene siempre el mismo día y hora', use: 'Clase fija',
-            hint: 'Su plaza queda guardada cada semana, sin reservar.',
+            icon: 'fixedClasses', when: 'Clienta frecuente: viene siempre el mismo día y hora', use: 'Clase fija',
+            hint: f.options?.client_fixed_classes
+              ? 'Su plaza queda guardada cada semana. También pueden elegirlas ellas en la web.'
+              : 'Para tus clientas frecuentes: le guardas la plaza cada semana. Lo gestionas tú; la web no lo explica.',
             action: { label: 'Ir a Clases fijas', onClick: () => go('/assign-classes') },
           },
           {

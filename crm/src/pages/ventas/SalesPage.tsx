@@ -4,7 +4,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Link, Skeleton, Typography,
+  Alert, Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Link, Menu, MenuItem, Skeleton, Typography,
 } from '@mui/material';
 import AccountBalanceWalletOutlinedIcon from '@mui/icons-material/AccountBalanceWalletOutlined';
 import ConfirmationNumberOutlinedIcon from '@mui/icons-material/ConfirmationNumberOutlined';
@@ -38,9 +38,12 @@ function readPeriod(): Period {
 function kpisOf(d: SalesData): Kpi[] {
   const k = d.kpis;
   const trend = (v: number) => (v > 0 ? 'up' : v < 0 ? 'down' : 'flat') as 'up' | 'down' | 'flat';
+  const studio = k.pending_studio || 0;
+  const subsOwed = k.pending_count - k.pending_failed - studio;
   const owedHint = k.pending_count
     ? [k.pending_failed && `${k.pending_failed} ${k.pending_failed === 1 ? 'pago fallido' : 'pagos fallidos'}`,
-      k.pending_count - k.pending_failed && `${k.pending_count - k.pending_failed} ${k.pending_count - k.pending_failed === 1 ? 'cuota sin cobrar' : 'cuotas sin cobrar'}`]
+      subsOwed > 0 && `${subsOwed} ${subsOwed === 1 ? 'cuota sin cobrar' : 'cuotas sin cobrar'}`,
+      studio > 0 && `${studio} ${studio === 1 ? 'paga en el estudio' : 'pagan en el estudio'}`]
       .filter(Boolean).join(' · ')
     : 'Nadie te debe nada';
   return [
@@ -112,6 +115,8 @@ export default function SalesPage() {
   const [exporting, setExporting] = useState(false);
   const [receipt, setReceipt] = useState<CollectedRow | null>(null);
   const [sent, setSent] = useState<Record<string, boolean>>({});
+  // «Cobrado» de una reserva «pagar en el estudio»: elegir cómo pagó
+  const [payMenu, setPayMenu] = useState<{ el: HTMLElement; row: OwedRow } | null>(null);
 
   const load = useCallback((p: Period) => {
     setError('');
@@ -151,6 +156,17 @@ export default function SalesPage() {
     }
   };
 
+  const markPaid = async (o: OwedRow, method: string) => {
+    setPayMenu(null);
+    try {
+      const r = await dashApi.action({ kind: 'mark_studio_paid', booking_id: o.booking_id, method });
+      notify(r.done);
+      load(period);
+    } catch (e) {
+      notify(e instanceof Error ? e.message : String(e), 'error');
+    }
+  };
+
   const cur = data?.currency || 'EUR';
   const receipts = (data?.collected || []).filter((r) => r.status === 'succeeded');
   const tabs: { value: TabKey; label: string }[] = [
@@ -164,7 +180,7 @@ export default function SalesPage() {
   if (data) {
     if (tab === 'owed') {
       body = data.owed.length === 0 ? (
-        <EmptyBox icon={<SentimentSatisfiedAltRoundedIcon />} title="Nadie te debe nada" text="Aquí aparecen los pagos que fallan y las cuotas que Stripe no ha podido cobrar, con un botón para reenviar el enlace de pago." />
+        <EmptyBox icon={<SentimentSatisfiedAltRoundedIcon />} title="Nadie te debe nada" text="Aquí aparecen los pagos que fallan, las cuotas que Stripe no ha podido cobrar (con un botón para reenviar el enlace de pago) y las reservas para pagar en el estudio hasta que las marques como cobradas." />
       ) : data.owed.map((o) => (
         <Box key={o.id} sx={rowWrap}>
           <Avatar name={o.name} size={34} ring={false} />
@@ -174,10 +190,13 @@ export default function SalesPage() {
           </Box>
           <Box sx={rowRight}>
             <Amount v={o.amount} currency={cur} />
-            <Tag tone={o.status === 'failed' ? 'bad' : 'warn'}>{o.status_label}</Tag>
-            {sent[o.id]
-              ? <Tag tone="ok">Enviado</Tag>
-              : <TonalButton size="small" onClick={() => resend(o)} aria-label={`Reenviar enlace de pago a ${o.name}`}>Reenviar</TonalButton>}
+            <Tag tone={o.status === 'failed' ? 'bad' : o.status === 'pay_at_studio' ? 'n' : 'warn'}>{o.status_label}</Tag>
+            {o.kind === 'studio'
+              ? <TonalButton size="small" onClick={(e) => setPayMenu({ el: e.currentTarget, row: o })}
+                  aria-haspopup="menu" aria-label={`Marcar como cobrado: ${o.name}, ${o.concept}`}>Cobrado</TonalButton>
+              : sent[o.id]
+                ? <Tag tone="ok">Enviado</Tag>
+                : <TonalButton size="small" onClick={() => resend(o)} aria-label={`Reenviar enlace de pago a ${o.name}`}>Reenviar</TonalButton>}
           </Box>
         </Box>
       ));
@@ -300,6 +319,13 @@ export default function SalesPage() {
       </Box>
 
       {data && <ReceiptDialog row={receipt} data={data} onClose={() => setReceipt(null)} />}
+      <Menu anchorEl={payMenu?.el} open={!!payMenu} onClose={() => setPayMenu(null)}
+        MenuListProps={{ 'aria-label': '¿Cómo te ha pagado?' }}>
+        <MenuItem disabled sx={{ fontSize: '0.82rem', opacity: '1 !important', color: 'var(--studio-muted)' }}>¿Cómo te ha pagado?</MenuItem>
+        {[['cash', 'Efectivo'], ['bizum', 'Bizum'], ['card', 'Tarjeta / datáfono'], ['transfer', 'Transferencia']].map(([k, label]) => (
+          <MenuItem key={k} onClick={() => payMenu && markPaid(payMenu.row, k)} sx={{ minHeight: 44 }}>{label}</MenuItem>
+        ))}
+      </Menu>
     </Box>
   );
 }

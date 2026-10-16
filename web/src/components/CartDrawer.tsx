@@ -15,6 +15,7 @@ import { useT, formatPrice } from '../i18n';
 import { useLangStore } from './stores/lang.store';
 import { fmtDate, fmtTime } from '../utils/formatDate';
 import { tr } from '../utils/localized';
+import { paymentOptions, studioMethodsText, studioPayNote } from '../utils/payments';
 
 const MOBILE = '(max-width: 767px)';
 
@@ -124,6 +125,18 @@ export function CartDrawer() {
   const classes = count === 1 ? t('cart.classOne') : t('cart.classMany', { count });
   const calendarHref = t('nav.items.calendar.href') || '/calendar';
 
+  // Cómo podrá pagar, según «Formas de cobro» del estudio (la elección se hace en el pago)
+  const en = lang === 'en';
+  const o = paymentOptions();
+  const ways: { key: string; icon: 'tag' | 'credit-card' | 'store' | 'user-circle'; label: string }[] = [];
+  if (loggedIn && totalCredits > 0) ways.push({ key: 'credits', icon: 'tag', label: en ? 'Your credits' : 'Tus créditos' });
+  if (totalPrice > 0 && o.drop_in_online && (loggedIn || o.guest_booking)) ways.push({ key: 'card', icon: 'credit-card', label: en ? 'Card now' : 'Tarjeta ahora' });
+  if (loggedIn ? o.pay_at_studio.clients : o.pay_at_studio.guests) ways.push({ key: 'studio', icon: 'store', label: en ? 'At the studio' : 'En el estudio' });
+  if (!loggedIn && !ways.length) ways.push({ key: 'account', icon: 'user-circle', label: en ? 'With your account' : 'Con tu cuenta' });
+  const studioWay = ways.some((w) => w.key === 'studio');
+  const studioMethods = studioWay ? studioMethodsText(lang) : '';
+  const studioNote = studioWay ? studioPayNote(lang) : '';
+
   const remove = (item: CartItem) => {
     removeItem(item.id);
     setLive(t('cart.removedLive', { title: tr(item, 'title', lang) || item.title }));
@@ -190,6 +203,16 @@ export function CartDrawer() {
                   <span>{t('cart.total')} · {classes}</span>
                   <span><strong>{mainTotal}</strong>{altTotal && <em> {altTotal}</em>}</span>
                 </div>
+                <ul className="w-cart-pay" aria-label={en ? 'How you can pay' : 'Cómo puedes pagar'} data-testid="cart-pay-ways">
+                  {ways.map((w) => (
+                    <li key={w.key} data-way={w.key}><Icon name={w.icon} size={13} aria-hidden /> {w.label}</li>
+                  ))}
+                </ul>
+                {(studioMethods || studioNote) && (
+                  <p className="w-cart-pay-note">
+                    {en ? 'At the studio' : 'En el estudio'}{studioMethods ? `: ${studioMethods}.` : '.'}{studioNote ? ` ${studioNote}` : ''}
+                  </p>
+                )}
                 <a className="w-btn w-btn--lg w-btn--block sk-btn" href="/checkout">
                   {t('cart.checkout')} <Icon name="arrow-right" size={16} aria-hidden />
                 </a>

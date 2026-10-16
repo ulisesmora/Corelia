@@ -266,6 +266,22 @@ class SiteConfigSerializer(serializers.ModelSerializer):
                            'Pega el identificador del píxel de Meta: solo números, entre 10 y 20 cifras '
                            '(Administrador de eventos → Orígenes de datos).')
 
+    # ── Formas de cobro ──
+    def validate_studio_payment_methods(self, value):
+        from api.utils.payment_options import STUDIO_METHOD_KEYS, clean_methods
+        if not isinstance(value, list):
+            raise serializers.ValidationError('Elige las formas de pago de la lista.')
+        if any(str(v or '').strip().lower() not in STUDIO_METHOD_KEYS for v in value):
+            raise serializers.ValidationError(
+                'Elige las formas de pago de la lista (efectivo, Bizum, tarjeta o transferencia).')
+        return clean_methods(value)
+
+    def validate_studio_payment_note(self, value):
+        return ' '.join((value or '').split())
+
+    def validate_studio_payment_note_en(self, value):
+        return ' '.join((value or '').split())
+
     def get_has_smtp_password(self, obj):
         return bool(obj.smtp_password)
 
@@ -351,9 +367,13 @@ def _hero_payload(cfg: SiteConfig) -> dict:
 def public_config_payload(cfg: SiteConfig) -> dict:
     from api.utils.locale import normalize_country, normalize_currency
     from api.utils.palettes import public_theme_slugs
+    from api.utils.payment_options import public_payment_options
     from api.utils.payments import payments_enabled, publishable_key, stripe_account_for_js
     vapid_public, _ = ensure_vapid_keys(cfg)
-    enabled = payments_enabled()
+    options = public_payment_options(cfg, payments_enabled())
+    # «Pagos online» para la web = tarjeta OFRECIDA (Stripe listo y el estudio
+    # no la ha apagado en «Formas de cobro»)
+    enabled = options['card']
     payload = {
         'studio_name': cfg.studio_name,
         'tagline': cfg.tagline,
@@ -418,6 +438,9 @@ def public_config_payload(cfg: SiteConfig) -> dict:
         'timezone': settings.STUDIO_TIMEZONE,
         'cancel_min_hours': settings.BOOKING_CANCEL_MIN_HOURS,
         'payments_enabled': enabled,
+        # «Formas de cobro» (api/utils/payment_options.py): qué ofrece la web
+        # al reservar y al comprar
+        'payment_options': options,
         # Con «Conectar pagos», la clave publicable de la plataforma (+ stripe_account abajo)
         'stripe_publishable_key': publishable_key() if enabled else '',
         'google_login_enabled': bool(cfg.google_client_id),
@@ -484,6 +507,9 @@ class SiteConfigAdminView(APIView):
         from api.utils.locale import locale_options
         data['locale_options'] = locale_options()
         data['payment_currencies'] = _payment_currencies()
+        # «Formas de cobro»: lo que la web ofrece de verdad con estos ajustes
+        from api.utils.payment_options import payment_options
+        data['payment_options'] = payment_options(cfg)
         return Response(data)
 
     def patch(self, request):

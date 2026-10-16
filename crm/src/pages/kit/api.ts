@@ -137,9 +137,11 @@ export interface TodayData {
 
 export interface OwedRow {
   id: string;
-  kind: 'payment' | 'subscription';
+  /** studio = reserva «pagar en el estudio» aún sin cobrar */
+  kind: 'payment' | 'subscription' | 'studio';
   payment_id: number | null;
   subscription_id: number | null;
+  booking_id?: number | null;
   name: string;
   email: string;
   concept: string;
@@ -177,7 +179,7 @@ export interface SalesData {
   compare_label: string;
   kpis: {
     revenue: number; revenue_prev: number; revenue_change_pct: number | null; count: number;
-    pending: number; pending_count: number; pending_failed: number;
+    pending: number; pending_count: number; pending_failed: number; pending_studio?: number;
     packs_sold: number; packs_sold_prev: number;
     subscriptions_active: number; monthly_recurring: number; refunded: number;
   };

@@ -26,9 +26,11 @@ interface StripeEmbeddedFormProps {
   name: string;
   phone: string;
   couponCode: string;
+  /** Clienta con sesión: el pago y las reservas van a su nombre (sin captcha). */
+  authToken?: string | null;
 }
 
-const StripeEmbeddedForm = ({ items, currency, email, name, phone, couponCode }: StripeEmbeddedFormProps) => {
+const StripeEmbeddedForm = ({ items, currency, email, name, phone, couponCode, authToken }: StripeEmbeddedFormProps) => {
   const t = useT();
   const lang = useLangStore((s) => s.lang) === 'en' ? 'en' : 'es';
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -41,7 +43,7 @@ const StripeEmbeddedForm = ({ items, currency, email, name, phone, couponCode }:
   const requestSeqRef = useRef(0);
   // Casilla de seguridad (Turnstile) antes de crear la sesión de pago como
   // invitada, si el estudio la tiene configurada. Cada token vale una vez.
-  const captchaKey = getSiteClient().turnstile_site_key;
+  const captchaKey = authToken ? '' : getSiteClient().turnstile_site_key;
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaReset, setCaptchaReset] = useState(0);
   // Datos con los que se creó la sesión actual: si cambian (p. ej. se aplica
@@ -58,7 +60,7 @@ const StripeEmbeddedForm = ({ items, currency, email, name, phone, couponCode }:
     try {
       const response = await fetch(`${API_V1}/checkout/create-session/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) },
         // El servidor calcula el total a partir de los IDs del carrito
         body: JSON.stringify({
            cart_items: items,
@@ -102,7 +104,7 @@ const StripeEmbeddedForm = ({ items, currency, email, name, phone, couponCode }:
     // un fetchedRef bloqueaba cualquier refetch: si el usuario aplicaba el cupón
     // con este formulario ya montado, la sesión de Stripe se quedaba SIN el
     // descuento. Ahora un cambio de cupón regenera la sesión de pago.
-  }, [items, currency, email, name, phone, couponCode, signature]);
+  }, [items, currency, email, name, phone, couponCode, signature, authToken]);
 
   useEffect(() => {
     if (disabled) return; // sin pagos online no se crea sesión de Stripe

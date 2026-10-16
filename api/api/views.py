@@ -2155,10 +2155,20 @@ class CreateCheckoutSessionView(APIView):
 
     def post(self, request, *args, **kwargs):
         from api.utils.guest_checkout import guest_details, guest_profile, validate_cart
+        from api.utils.payment_options import option_error, payment_options
         from api.utils.payments import current_stripe_account, payments_disabled_response, stripe_client
         client = stripe_client()
         if client is None:
             return payments_disabled_response()
+        # «Formas de cobro» (Ajustes → Cobros): tarjeta en la web, clase suelta
+        # online y reservar sin cuenta
+        opts = payment_options(online_ready=True)
+        if not opts['card']:
+            return option_error('card_disabled')
+        if not opts['drop_in_online']:
+            return option_error('drop_in_not_online')
+        if not request.user.is_authenticated and not opts['guest_booking']:
+            return option_error('guest_booking_disabled')
         stripe_account = current_stripe_account() or ''
         if not request.user.is_authenticated:
             captcha = check_captcha(request)
@@ -2372,8 +2382,18 @@ class CreatePlanCheckoutSessionView(APIView):
         try:
             # 3. Obtener el Plan
             plan = Plan.objects.get(id=plan_id, is_active=True)
-        except Plan.DoesNotExist:
+        except (Plan.DoesNotExist, ValueError, TypeError):
             return Response({'error': 'El plan no existe o no está activo.'}, status=status.HTTP_404_NOT_FOUND)
+
+        # «Formas de cobro»: tarjeta en la web y qué se vende online
+        from api.utils.payment_options import option_error, payment_options
+        opts = payment_options(online_ready=True)
+        if not opts['card']:
+            return option_error('card_disabled')
+        if plan.type == 'sub' and not opts['memberships_online']:
+            return option_error('memberships_not_online')
+        if plan.type != 'sub' and not opts['packs_online']:
+            return option_error('packs_not_online')
 
         # 4. Validar precio base
         if plan.price_eur is None or plan.price_eur <= 0:
@@ -3236,12 +3256,16 @@ class StripeWebhookView(APIView):
         from api.utils.push import send_push_to_user
         user = subscription.user
         plan_name = subscription.plan.name
+        # La reserva automática solo se menciona a quien tiene clases fijas
+        # (las asigna el estudio): a las demás no se les explica nada de eso.
+        fixed = _has_fixed_classes(user)
         try:
             send_push_to_user(
                 user,
                 title='⚠️ Problema con tu suscripción',
-                body=f'No pudimos cobrar tu plan {plan_name}. Actualiza tu método de '
-                     f'pago para que tus clases se sigan reservando automáticamente.',
+                body=(f'No pudimos cobrar tu plan {plan_name}. Actualiza tu método de '
+                      f'pago para que tus clases se sigan reservando automáticamente.' if fixed else
+                      f'No pudimos cobrar tu plan {plan_name}. Revisa tu método de pago.'),
                 url='/dashboard?tab=suscripcion',
             )
         except Exception:
@@ -3256,9 +3280,10 @@ class StripeWebhookView(APIView):
                         'headline': 'No pudimos procesar tu pago',
                         'intro_copy': (
                             f'El cobro de tu plan {plan_name} no se pudo completar. '
-                            f'Stripe lo reintentará automáticamente, pero mientras tanto '
-                            f'tus clases NO se reservarán de forma automática. '
-                            f'Revisa tu método de pago desde tu panel para reactivarlo.'
+                            + ('Stripe lo reintentará automáticamente, pero mientras tanto '
+                               'tus clases NO se reservarán de forma automática. ' if fixed else
+                               'Stripe lo reintentará automáticamente. ')
+                            + 'Revisa tu método de pago desde tu panel para reactivarlo.'
                         ),
                         'cta_text': 'Revisar mi suscripción',
                         'cta_url': web_url('/dashboard?tab=suscripcion'),
@@ -3288,12 +3313,14 @@ class StripeWebhookView(APIView):
         if not already_canceled:
             from api.utils.push import send_push_to_user
             user = subscription.user
+            fixed = _has_fixed_classes(user)
             try:
                 send_push_to_user(
                     user,
                     title='Tu suscripción ha finalizado',
-                    body='Tus clases ya no se reservarán automáticamente. '
-                         'Tus preferencias se guardan por si quieres volver. 💛',
+                    body=('Tus clases ya no se reservarán automáticamente. '
+                          'Tus preferencias se guardan por si quieres volver. 💛' if fixed else
+                          'Gracias por estos meses. Tus créditos siguen valiendo hasta que caduquen. 💛'),
                     url='/prices',
                 )
             except Exception:
@@ -3307,11 +3334,11 @@ class StripeWebhookView(APIView):
                             'name': user.first_name or '',
                             'headline': 'Tu suscripción ha finalizado',
                             'intro_copy': (
-                                f'Tu plan {subscription.plan.name} ha llegado a su fin y tus '
-                                f'clases ya no se reservarán automáticamente. Hemos guardado '
-                                f'tus clases favoritas: si vuelves a suscribirte, todo seguirá '
-                                f'donde lo dejaste. Los créditos que ya tengas siguen siendo '
-                                f'válidos hasta su caducidad.'
+                                f'Tu plan {subscription.plan.name} ha llegado a su fin'
+                                + (' y tus clases ya no se reservarán automáticamente. Hemos guardado '
+                                   'tus clases de cada semana: si vuelves a suscribirte, todo seguirá '
+                                   'donde lo dejaste.' if fixed else '.')
+                                + ' Los créditos que ya tengas siguen siendo válidos hasta su caducidad.'
                             ),
                             'cta_text': 'Ver planes',
                             'cta_url': web_url('/prices'),
@@ -3739,10 +3766,40 @@ class CreateStripeSubscriptionView(APIView):
             )
 
 
+def _has_fixed_classes(user) -> bool:
+    """¿Tiene clases fijas (plaza guardada cada semana, las asigna el estudio)?"""
+    return UserClassPreference.objects.filter(user=user, is_active=True).exists()
+
+
 class UserClassPreferenceViewSet(viewsets.ModelViewSet):
+    """Clases fijas (plaza guardada cada semana). Es una herramienta del
+    estudio: las asigna el panel (for_user / for_user_delete, solo
+    administradoras). La clienta puede VER las suyas (my-class-preferences,
+    GET); elegirlas o cambiarlas ella misma desde la web solo si el estudio lo
+    enciende (SiteConfig.client_fixed_classes, apagado por defecto): si no,
+    403 code='fixed_classes_admin_only'."""
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     ordering_fields = ['created_at', 'schedule__weekday', 'schedule__start_time']
+    ADMIN_ACTIONS = ('for_user', 'for_user_delete')
+    CLIENT_WRITES = ('create', 'update', 'partial_update', 'destroy')
+
+    def get_permissions(self):
+        # Las rutas users/<id>/class-preferences/ se montan a mano en urls.py
+        # (sin router), así que el permission_classes de @action no se aplica:
+        # se exige aquí.
+        if self.action in self.ADMIN_ACTIONS:
+            return [IsAdminUser()]
+        return super().get_permissions()
+
+    def initial(self, request, *args, **kwargs):
+        super().initial(request, *args, **kwargs)
+        if self.action in self.CLIENT_WRITES and not request.user.is_staff:
+            from api.utils.payment_options import CODES
+            from api.utils.site import get_site_config
+            if not get_site_config().client_fixed_classes:
+                from rest_framework.exceptions import PermissionDenied
+                raise PermissionDenied({'error': CODES['fixed_classes_admin_only'], 'code': 'fixed_classes_admin_only'})
 
     def get_queryset(self):
         # Only expose truly recurring schedules — non-recurrent sessions and

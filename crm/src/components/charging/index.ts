@@ -3,6 +3,7 @@
 export { default as ChargingGuide, ChargingGuideHost } from './ChargingGuide';
 export { default as GuideLink } from './GuideLink';
 export { default as HowYouCharge } from './HowYouCharge';
+export { default as PaymentOptionsCard } from './PaymentOptionsCard';
 export { CHAPTERS, guideHref, useOpenGuide, chapterFromLocation } from './chapters';
 export type { GuideChapter } from './chapters';
 export { useChargingFacts, invalidateChargingFacts } from './facts';

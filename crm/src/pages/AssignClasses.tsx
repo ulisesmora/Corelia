@@ -730,7 +730,7 @@ export default function AssignClassesManagement() {
       <PageIntro
         pageKey="assign-classes"
         title="Clases fijas de clientas"
-        subtitle="Su plaza guardada cada semana, sin que tenga que reservar."
+        subtitle="Para tus clientas frecuentes: su plaza guardada cada semana, sin que tenga que reservar. Lo gestionas tú desde aquí."
         actions={<GuideLink chapter="en-mano">¿Clase fija o créditos?</GuideLink>}
       />
 

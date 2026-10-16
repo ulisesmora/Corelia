@@ -16,7 +16,7 @@ import PlanFinder, { dropInPrice, idealFrequency, type FinderPlan } from './Plan
 import { API_ROOT } from '../config';
 import { useSite, whatsappUrl } from '../lib/site';
 import PaymentsDisabledNotice from './PaymentsDisabledNotice';
-import { paymentsEnabled } from '../utils/payments';
+import { clientFixedClasses, paymentOptions, paymentsEnabled } from '../utils/payments';
 import { cancelMinHours } from '../utils/cancelPolicy';
 import { useHydrated } from '../utils/useHydrated';
 
@@ -174,7 +174,13 @@ function PackCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; h
             : `${plan.credits} ${plan.credits === 1 ? 'credit' : 'credits'} for your classes${plan.expireDays ? `, to use within ${plan.expireDays} days` : ''}. No auto-renewal.`)}
         </Text>
 
-        {/* Recomendada: botón principal; el resto, secundario de contorno */}
+        {/* Recomendada: botón principal; el resto, secundario de contorno.
+            Si el estudio no vende bonos online («Formas de cobro»): cómo comprarlo. */}
+        {!paymentOptions().packs_online && paymentsEnabled() ? (
+          <a className="w-btn w-btn--block sk-btn-ghost" href="#comprar-en-estudio" style={{ minHeight: 48 }}>
+            <Icon name="store" size={13} aria-hidden /> {es ? 'Se compra en el estudio' : 'Bought at the studio'}
+          </a>
+        ) : (
         <Button
           className={plan.recommended || highlighted ? 'sk-btn' : 'sk-btn-ghost'}
           onClick={() => { window.location.href = `/checkout?tab=credits&plan_id=${plan.id}`; }}
@@ -187,6 +193,7 @@ function PackCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; h
           {t('plans.buyBtn')}
           <Icon name="arrow-right" size={11} />
         </Button>
+        )}
       </Box>
     </MotionBox>
   );
@@ -216,7 +223,8 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
         months === 1
           ? `${plan.credits} créditos al mes para tus clases`
           : `${plan.credits} clases cada ${months} meses (≈ ${round(perMonthCredits)} al mes)`,
-        'Tus clases fijas se reservan solas',
+        // Las clases fijas solo se explican si las clientas las eligen en la web
+        clientFixedClasses() ? 'Tus clases fijas se reservan solas' : 'Reserva tus clases cuando quieras',
         months === 1 ? 'Se renueva cada mes' : `Se cobra cada ${months} meses · créditos válidos ${plan.renewalDays || months * 30} días`,
         'Sin permanencia · cancela cuando quieras',
       ]
@@ -224,7 +232,7 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
         months === 1
           ? `${plan.credits} credits a month for your classes`
           : `${plan.credits} classes every ${months} months (≈ ${round(perMonthCredits)} a month)`,
-        'Your regular classes book themselves',
+        clientFixedClasses() ? 'Your regular classes book themselves' : 'Book your classes whenever you like',
         months === 1 ? 'Renews monthly' : `Billed every ${months} months · credits valid ${plan.renewalDays || months * 30} days`,
         'No commitment · cancel anytime',
       ];
@@ -323,6 +331,11 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
           ))}
         </Box>
 
+        {!paymentOptions().memberships_online && paymentsEnabled() ? (
+          <a className="w-btn w-btn--block sk-btn-ghost" href="#comprar-en-estudio" style={{ minHeight: 50 }}>
+            <Icon name="store" size={13} aria-hidden /> {es ? 'Se contrata en el estudio' : 'Sign up at the studio'}
+          </a>
+        ) : (
         <Button
           className="sk-btn"
           onClick={() => { window.location.href = `/checkout?tab=subscription&plan_id=${plan.id}`; }}
@@ -334,6 +347,7 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
           {es ? `Elegir ${planDisplayName(plan, lang)}` : `Choose ${planDisplayName(plan, lang)}`}
           <Icon name="arrow-right" size={12} />
         </Button>
+        )}
       </Box>
     </MotionBox>
   );
@@ -487,7 +501,7 @@ function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
             {subs.map(plan => <SubCard key={plan.id} plan={plan} dropIn={dropIn} highlighted={highlightId === plan.id} />)}
           </SimpleGrid>
           <p className="w-muted w-small" style={{ marginTop: 'var(--w-5)' }}>
-            {t('plans.subFooter')}{paymentsEnabled() ? ` ${t('plans.subFooterPay')}` : ''}
+            {t('plans.subFooter')}{paymentOptions().memberships_online ? ` ${t('plans.subFooterPay')}` : ''}
           </p>
         </div>
       )}
@@ -522,7 +536,14 @@ function PlansContent({ packs, subs }: { packs: Plan[]; subs: Plan[] }) {
           (debajo de los precios: primero lo que cuesta, después cómo pagarlo) */}
       {!paymentsEnabled() && hasPlans && (
         <Box className="sk-card" maxW="720px" mt={10} p={{ base: 5, md: 6 }} style={{ borderColor: 'var(--accent-border)' }}>
-          <PaymentsDisabledNotice />
+          <PaymentsDisabledNotice id="comprar-en-estudio" />
+        </Box>
+      )}
+      {/* Con tarjeta en la web, pero el estudio vende algo solo en persona */}
+      {paymentsEnabled() && ((packs.length > 0 && !paymentOptions().packs_online) || (subs.length > 0 && !paymentOptions().memberships_online)) && (
+        <Box className="sk-card" maxW="720px" mt={10} p={{ base: 5, md: 6 }} style={{ borderColor: 'var(--accent-border)' }}>
+          <PaymentsDisabledNotice id="comprar-en-estudio"
+            offline={{ packs: packs.length > 0 && !paymentOptions().packs_online, memberships: subs.length > 0 && !paymentOptions().memberships_online }} />
         </Box>
       )}
 

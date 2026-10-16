@@ -1,9 +1,11 @@
 "use client";
-// Reservar SIN cuenta cuando el estudio no cobra online (sin Stripe): la
-// invitada deja su email, nombre y teléfono y paga en el estudio al llegar.
-// Antes, en ese caso el checkout solo decía «crea tu cuenta y compra créditos
-// en el estudio» y quien no tenía cuenta no podía reservar.
-// API: POST /api/v1/checkout/guest-reserve/ (api/api/views_guest.py).
+// «Pagar en el estudio»: guardar la plaza ahora y pagar al llegar, si el
+// estudio lo tiene encendido en Ajustes → Cobros («Formas de cobro»).
+//  - Invitada (sin cuenta): deja email, nombre y teléfono.
+//    API: POST /api/v1/checkout/guest-reserve/
+//  - Clienta con cuenta (`account`): sin formulario.
+//    API: POST /api/v1/checkout/studio-reserve/
+// (api/api/views_guest.py). Enseña las formas de pago y la nota del estudio.
 import React, { useState } from 'react';
 import { Alert, Box, Button, Field, Input, Spinner, Text, VStack } from '@chakra-ui/react';
 import { PhoneInput } from 'react-international-phone';
@@ -19,6 +21,7 @@ import { getSiteClient } from '../lib/site';
 import { fmtDate, fmtTime } from '../utils/formatDate';
 import { tr } from '../utils/localized';
 import { track } from '../lib/tracking';
+import { studioMethodsText, studioPayNote } from '../utils/payments';
 
 const COPY = {
   es: {
@@ -26,7 +29,11 @@ const COPY = {
     intro: 'Guarda tu plaza ahora y paga en el estudio al llegar.',
     submit: (p: string) => `Reservar y pagar en el estudio · ${p}`,
     submitFree: 'Reservar mi plaza',
-    payAt: 'Pagas en el estudio al llegar (efectivo o tarjeta, según el estudio).',
+    payAt: 'Pagas en el estudio al llegar.',
+    payAtHow: (m: string) => `Pagas en el estudio al llegar, en ${m}.`,
+    clientTitle: 'Pagar en el estudio',
+    clientIntro: 'Guardamos tu plaza y pagas al llegar.',
+    mine: 'Ver mis reservas',
     doneTitle: '¡Plaza reservada!',
     doneDesc: (email: string) => `Te hemos enviado la confirmación a ${email}.`,
     toPay: (p: string) => `A pagar en el estudio: ${p}`,
@@ -34,14 +41,18 @@ const COPY = {
     account: 'Crear mi cuenta (opcional)',
     accountHint: 'Con cuenta puedes ver y cancelar tus reservas y comprar bonos.',
     error: 'No se ha podido reservar. Inténtalo de nuevo.',
-    payOnline: 'Este estudio cobra las reservas online. Recarga la página para pagar con tarjeta.',
+    payOnline: 'Este estudio ya no admite pagar en el estudio. Recarga la página para ver cómo reservar.',
   },
   en: {
     title: 'Book without an account',
     intro: 'Save your spot now and pay at the studio when you arrive.',
     submit: (p: string) => `Book and pay at the studio · ${p}`,
     submitFree: 'Book my spot',
-    payAt: 'You pay at the studio when you arrive (cash or card, depending on the studio).',
+    payAt: 'You pay at the studio when you arrive.',
+    payAtHow: (m: string) => `You pay at the studio when you arrive, by ${m}.`,
+    clientTitle: 'Pay at the studio',
+    clientIntro: "We'll save your spot and you pay when you arrive.",
+    mine: 'See my bookings',
     doneTitle: 'Spot booked!',
     doneDesc: (email: string) => `We've sent the confirmation to ${email}.`,
     toPay: (p: string) => `To pay at the studio: ${p}`,
@@ -49,13 +60,19 @@ const COPY = {
     account: 'Create my account (optional)',
     accountHint: 'With an account you can see and cancel your bookings and buy class packs.',
     error: "We couldn't book it. Please try again.",
-    payOnline: 'This studio takes payment online. Reload the page to pay by card.',
+    payOnline: "This studio doesn't take payment at the studio any more. Reload the page to see how to book.",
   },
 };
 
 interface Done { email: string; total: number; items: CartItem[] }
 
-export default function GuestStudioBooking({ onBooked }: { onBooked?: () => void } = {}) {
+export default function GuestStudioBooking({ onBooked, account, hideTitle = false }: {
+  onBooked?: () => void;
+  /** Clienta con sesión: reserva a su nombre, sin formulario */
+  account?: { token: string; email?: string | null };
+  /** Sin título propio (va debajo de «¿Cómo quieres pagar?») */
+  hideTitle?: boolean;
+} = {}) {
   const t = useT();
   const lang = useLangStore((s) => s.lang) === 'en' ? 'en' : 'es';
   const L = COPY[lang];
@@ -73,9 +90,12 @@ export default function GuestStudioBooking({ onBooked }: { onBooked?: () => void
   const [captchaReset, setCaptchaReset] = useState(0);
 
   const total = items.reduce((a, i) => a + (Number(i.price) || 0), 0);
+  const methods = studioMethodsText(lang);
+  const note = studioPayNote(lang);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (account) return submitAccount();
     if (!name.trim() || name.trim().length < 2 || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim())) {
       setError(t('checkout.guestAllFields'));
       return;
@@ -98,7 +118,7 @@ export default function GuestStudioBooking({ onBooked }: { onBooked?: () => void
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(data.code === 'pay_online' ? L.payOnline : (data.error || L.error));
+        setError(data.code === 'pay_at_studio_disabled' || data.code === 'pay_online' ? L.payOnline : (data.error || L.error));
         return;
       }
       const snapshot = [...items];
@@ -111,6 +131,34 @@ export default function GuestStudioBooking({ onBooked }: { onBooked?: () => void
     } finally {
       setBusy(false);
       if (captchaKey) { setCaptcha(''); setCaptchaReset((n) => n + 1); }
+    }
+  };
+
+  // Clienta con cuenta: mismas reservas, a su nombre
+  const submitAccount = async () => {
+    if (!account) return;
+    setError(null);
+    setBusy(true);
+    try {
+      const res = await fetch(`${API_V1}/checkout/studio-reserve/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${account.token}` },
+        body: JSON.stringify({ cart_items: items }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(data.code === 'pay_at_studio_disabled' ? L.payOnline : (data.error || data.detail || L.error));
+        return;
+      }
+      const snapshot = [...items];
+      for (const it of snapshot) track('book', { class_name: it.title });
+      onBooked?.();
+      clearCart();
+      setDone({ email: String(data.email || account.email || ''), total: Number(data.total) || 0, items: snapshot });
+    } catch {
+      setError(L.error);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -134,22 +182,55 @@ export default function GuestStudioBooking({ onBooked }: { onBooked?: () => void
           ))}
         </Box>
         {done.total > 0 && (
-          <Text fontWeight={700} color="var(--accent-text)" mb={4}>{L.toPay(formatPrice(done.total, lang))}</Text>
+          <Text fontWeight={700} color="var(--accent-text)" mb={1}>{L.toPay(formatPrice(done.total, lang))}</Text>
         )}
-        <SpamWarning variant="booking" email={done.email} />
+        {(methods || note) && (
+          <Text fontSize="sm" color="var(--text-muted)" mb={4}>{[methods && (lang === 'en' ? `By ${methods}.` : `En ${methods}.`), note].filter(Boolean).join(' ')}</Text>
+        )}
+        {done.email && <SpamWarning variant="booking" email={done.email} />}
         <VStack gap={2} mt={5}>
           <a className="w-btn w-btn--block sk-btn" href="/calendar">{L.more}</a>
-          <a className="w-btn w-btn--block sk-btn-ghost" href="/login">{L.account}</a>
-          <Text fontSize="xs" color="var(--text-muted)">{L.accountHint}</Text>
+          {account
+            ? <a className="w-btn w-btn--block sk-btn-ghost" href="/dashboard?tab=agenda">{L.mine}</a>
+            : <>
+              <a className="w-btn w-btn--block sk-btn-ghost" href="/login">{L.account}</a>
+              <Text fontSize="xs" color="var(--text-muted)">{L.accountHint}</Text>
+            </>}
         </VStack>
       </Box>
     );
   }
 
+  const payAtLine = (
+    <Text fontSize="xs" color="var(--text-muted)" display="flex" gap={2} alignItems="flex-start" data-testid="pay-at-studio-how">
+      <Icon name="store" size={14} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} />
+      <span>{methods ? L.payAtHow(methods) : L.payAt}{note ? ` ${note}` : ''}</span>
+    </Text>
+  );
+
+  if (account) {
+    return (
+      <VStack as="form" gap={3} align="stretch" onSubmit={submit} noValidate>
+        {!hideTitle && <Text as="h2" fontFamily="var(--font-heading)" fontSize="2xl" color="var(--heading-color)">{L.clientTitle}</Text>}
+        {!hideTitle && <Text fontSize="sm" color="var(--text-muted)">{L.clientIntro}</Text>}
+        {error && (
+          <Alert.Root status="error" borderRadius="var(--radius-input)">
+            <Alert.Description fontFamily="var(--font-body)">{error}</Alert.Description>
+          </Alert.Root>
+        )}
+        {!hideTitle && payAtLine}
+        <Button type="submit" w="full" h="48px" className="sk-btn" fontFamily="var(--font-body)"
+          disabled={busy || items.length === 0} aria-busy={busy} data-testid="studio-reserve-btn">
+          {busy ? <Spinner size="sm" color="inherit" /> : total > 0 ? L.submit(formatPrice(total, lang)) : L.submitFree}
+        </Button>
+      </VStack>
+    );
+  }
+
   return (
     <>
-      <Text as="h2" fontFamily="var(--font-heading)" fontSize="2xl" color="var(--heading-color)" mb={1}>{L.title}</Text>
-      <Text fontSize="sm" color="var(--text-muted)" mb={4}>{L.intro}</Text>
+      {!hideTitle && <Text as="h2" fontFamily="var(--font-heading)" fontSize="2xl" color="var(--heading-color)" mb={1}>{L.title}</Text>}
+      {!hideTitle && <Text fontSize="sm" color="var(--text-muted)" mb={4}>{L.intro}</Text>}
       <VStack as="form" gap={3} align="stretch" onSubmit={submit} noValidate>
         {error && (
           <Alert.Root status="error" borderRadius="var(--radius-input)">
@@ -186,9 +267,8 @@ export default function GuestStudioBooking({ onBooked }: { onBooked?: () => void
           </Box>
         </Field.Root>
         {captchaKey && <Turnstile siteKey={captchaKey} lang={lang} onToken={setCaptcha} resetKey={captchaReset} />}
-        <Text fontSize="xs" color="var(--text-muted)" display="flex" gap={2} alignItems="flex-start">
-          <Icon name="store" size={14} aria-hidden style={{ flexShrink: 0, marginTop: 2 }} /> {L.payAt}
-        </Text>
+        {/* Con «¿Cómo quieres pagar?» encima, las formas y la nota ya se ven ahí */}
+        {!hideTitle && payAtLine}
         <Button type="submit" w="full" h="48px" className="sk-btn" fontFamily="var(--font-body)"
           disabled={busy || items.length === 0 || (!!captchaKey && !captcha)} aria-busy={busy}>
           {busy ? <Spinner size="sm" color="inherit" /> : total > 0 ? L.submit(formatPrice(total, lang)) : L.submitFree}

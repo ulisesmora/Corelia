@@ -26,7 +26,10 @@ async function newPage(width, opts = {}) {
     await ctx.addInitScript(() => {
       let v;
       Object.defineProperty(window, '__SITE__', { configurable: true,
-        get() { return v; }, set(x) { v = { ...x, payments_enabled: true, stripe_publishable_key: 'pk_test_mock' }; } });
+        get() { return v; }, set(x) { v = { ...x, payments_enabled: true, stripe_publishable_key: 'pk_test_mock',
+          // «Formas de cobro» como un estudio con tarjeta (y sin pagar en el estudio)
+          payment_options: { ...x.payment_options, card: true, drop_in_online: true, packs_online: true, memberships_online: true,
+            pay_at_studio: { guests: false, clients: false } } }; } });
     });
   }
   const page = await ctx.newPage();

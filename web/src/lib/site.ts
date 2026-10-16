@@ -69,6 +69,33 @@ export interface SiteContent {
   about_image_url: string;
 }
 
+/** Formas de pago en el estudio que se enseñan a las clientas. */
+export type StudioPayMethod = 'cash' | 'bizum' | 'card' | 'transfer';
+
+/**
+ * «Formas de cobro» (Ajustes → Cobros del panel; api/utils/payment_options.py):
+ * lo que la web ofrece DE VERDAD al reservar y al comprar.
+ */
+export interface PaymentOptions {
+  /** Pago con tarjeta en la web (Stripe listo y el estudio lo ofrece). */
+  card: boolean;
+  /** Pagar cada clase con tarjeta al reservar (clase suelta). */
+  drop_in_online: boolean;
+  packs_online: boolean;
+  memberships_online: boolean;
+  /** Reservar sin cuenta (invitadas). */
+  guest_booking: boolean;
+  /** «Pagar en el estudio»: quién puede. */
+  pay_at_studio: { guests: boolean; clients: boolean };
+  /** Reservar con créditos (clientas con cuenta): siempre. */
+  credits: boolean;
+  studio_methods: StudioPayMethod[];
+  studio_note: string;
+  studio_note_en: string;
+  /** Las clientas eligen sus clases fijas en la web (si no, solo el estudio). */
+  client_fixed_classes: boolean;
+}
+
 export interface SiteConfig {
   /** URL pública de la web (dominio propio del panel o WEB_URL del servidor). */
   site_url: string;
@@ -93,6 +120,8 @@ export interface SiteConfig {
   timezone: string;
   cancel_min_hours: number;
   payments_enabled: boolean;
+  /** «Formas de cobro»: ver PaymentOptions. */
+  payment_options: PaymentOptions;
   stripe_publishable_key: string;
   /** «Conectar pagos» (Stripe Connect): cuenta del estudio (acct_…) para
    *  loadStripe(pk, {stripeAccount}). '' con las claves de siempre. */
@@ -198,6 +227,19 @@ export const DEFAULT_SITE: SiteConfig = {
   timezone: 'Europe/Madrid',
   cancel_min_hours: 8,
   payments_enabled: false,
+  payment_options: {
+    card: false,
+    drop_in_online: false,
+    packs_online: false,
+    memberships_online: false,
+    guest_booking: true,
+    pay_at_studio: { guests: true, clients: false },
+    credits: true,
+    studio_methods: [],
+    studio_note: '',
+    studio_note_en: '',
+    client_fixed_classes: false,
+  },
   stripe_publishable_key: '',
   stripe_account: '',
   google_login_enabled: false,
@@ -308,6 +350,43 @@ const tracking = (key: keyof typeof TRACKING_PATTERNS, v: unknown): string => {
 };
 
 /** Mezcla lo que llega del API con los valores por defecto y lo valida. */
+const PAY_METHODS: readonly StudioPayMethod[] = ['cash', 'bizum', 'card', 'transfer'];
+
+/**
+ * «Formas de cobro» del API. Con un API antiguo (sin payment_options) se
+ * deduce lo de siempre: con tarjeta se vende todo online; sin tarjeta, las
+ * invitadas pagan en el estudio.
+ */
+function paymentOptions(raw: unknown, card: boolean): PaymentOptions {
+  const o = (raw && typeof raw === 'object' ? raw : null) as Record<string, any> | null;
+  if (!o) {
+    return {
+      ...DEFAULT_SITE.payment_options,
+      card, drop_in_online: card, packs_online: card, memberships_online: card,
+      pay_at_studio: { guests: !card, clients: false },
+    };
+  }
+  const b = (v: unknown, d: boolean) => (typeof v === 'boolean' ? v : d);
+  const text = (v: unknown) => (typeof v === 'string' ? v.trim().slice(0, 140) : '');
+  const pas = (o.pay_at_studio && typeof o.pay_at_studio === 'object' ? o.pay_at_studio : {}) as Record<string, unknown>;
+  const isCard = b(o.card, card) && card;
+  return {
+    card: isCard,
+    drop_in_online: isCard && b(o.drop_in_online, true),
+    packs_online: isCard && b(o.packs_online, true),
+    memberships_online: isCard && b(o.memberships_online, true),
+    guest_booking: b(o.guest_booking, true),
+    pay_at_studio: { guests: b(pas.guests, !isCard), clients: b(pas.clients, false) },
+    credits: true,
+    studio_methods: Array.isArray(o.studio_methods)
+      ? PAY_METHODS.filter((m) => (o.studio_methods as unknown[]).includes(m))
+      : [],
+    studio_note: text(o.studio_note),
+    studio_note_en: text(o.studio_note_en),
+    client_fixed_classes: o.client_fixed_classes === true,
+  };
+}
+
 export function normalizeSite(raw: unknown): SiteConfig {
   const r = (raw && typeof raw === 'object' ? raw : {}) as Record<string, any>;
   const d = DEFAULT_SITE;
@@ -379,6 +458,7 @@ export function normalizeSite(raw: unknown): SiteConfig {
     timezone: validTimeZone(str(r.timezone)) || d.timezone,
     cancel_min_hours: Number.isFinite(hours) && hours >= 0 ? hours : d.cancel_min_hours,
     payments_enabled: r.payments_enabled === true,
+    payment_options: paymentOptions(r.payment_options, r.payments_enabled === true),
     stripe_publishable_key: str(r.stripe_publishable_key),
     stripe_account: /^acct_[A-Za-z0-9]+$/.test(str(r.stripe_account)) ? str(r.stripe_account) : '',
     google_login_enabled: r.google_login_enabled === true && !!str(r.google_client_id),

@@ -320,6 +320,28 @@ a.w-cal-title:hover { text-decoration: underline; text-underline-offset: .2em; }
 /* Solo para lectores de pantalla */
 .w-sr { position: absolute !important; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 
+/* ── «¿Cómo quieres pagar?» (components/PayMethodChooser.tsx) ─────────────── */
+.w-pay { display: grid; gap: var(--w-2); margin: 0 0 var(--w-4); padding: 0; border: 0; min-width: 0; }
+.w-pay-legend { padding: 0; margin-bottom: var(--w-2); font-family: var(--font-heading); font-size: 1.15rem; color: var(--heading-color); }
+.w-pay-opt { position: relative; display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: var(--w-3); min-height: 56px; padding: var(--w-3); border-radius: var(--radius-card); border: 2px solid var(--border-neutral); background: var(--surface); cursor: pointer; transition: border-color .18s ease, background .18s ease; }
+.w-pay-opt:hover { border-color: var(--accent-border); }
+.w-pay-opt.is-on { border-color: var(--accent); background: var(--accent-soft); }
+.w-pay-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; pointer-events: none; }
+.w-pay-opt:has(input:focus-visible) { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+.w-pay-ic { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-text); }
+.w-pay-opt.is-on .w-pay-ic { background: var(--accent); color: var(--on-primary); }
+.w-pay-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.w-pay-txt b { color: var(--page-text); font-size: .98rem; }
+.w-pay-txt small { color: var(--text-muted); font-size: .84rem; line-height: 1.4; overflow-wrap: anywhere; }
+.w-pay-end { display: inline-flex; align-items: center; gap: var(--w-2); }
+.w-pay-amt { font-weight: 700; color: var(--accent-text); white-space: nowrap; }
+.w-pay-dot { width: 20px; height: 20px; flex: none; border-radius: 50%; border: 2px solid var(--input-border); background: var(--surface); }
+.w-pay-opt.is-on { box-shadow: 0 0 0 3px var(--accent-soft); }
+.w-pay-opt.is-on .w-pay-dot { border-color: var(--accent); background: radial-gradient(circle, var(--accent) 0 5px, var(--surface) 6px); }
+.w-cart-pay { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.w-cart-pay li { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border-neutral); color: var(--page-text); font-size: .8rem; }
+.w-cart-pay-note { margin: 0; font-size: .82rem; color: var(--text-muted); }
+
 /* ── Panel «Tu reserva» (components/CartDrawer.tsx) ───────────────────────── */
 .w-cart { font-family: var(--font-body); }
 .w-cart :is(a, button) { font-family: inherit; text-transform: none; }

@@ -1216,6 +1216,47 @@ class SiteConfig(models.Model):
     stripe_connect_status = models.JSONField(default=dict, blank=True)
     stripe_connected_at = models.DateTimeField(null=True, blank=True)
 
+    # ── Formas de cobro (Ajustes → Cobros → «Formas de cobro») ──
+    # Qué ofrece la web al reservar y al comprar. Lo efectivo (lo que de verdad
+    # se ofrece, según Stripe y estos interruptores) lo calcula
+    # api/utils/payment_options.py; la web y las rutas de pago lo respetan.
+    STUDIO_PAYMENT_METHODS = [
+        ('cash', 'Efectivo'),
+        ('bizum', 'Bizum'),
+        ('card', 'Tarjeta / datáfono'),
+        ('transfer', 'Transferencia'),
+    ]
+    online_card_enabled = models.BooleanField(
+        default=True,
+        help_text='Ofrecer el pago con tarjeta en la web (solo si los pagos online están conectados).')
+    # None = automático (como antes): encendido solo si la web no cobra con tarjeta
+    pay_at_studio_enabled = models.BooleanField(
+        null=True, blank=True, default=None,
+        help_text='«Pagar en el estudio». Vacío = automático: solo cuando la web no cobra con tarjeta.')
+    pay_at_studio_guests = models.BooleanField(
+        default=True, help_text='Pueden pagar en el estudio las invitadas (sin cuenta).')
+    pay_at_studio_clients = models.BooleanField(
+        default=False, help_text='Pueden pagar en el estudio las clientas con cuenta.')
+    guest_booking_enabled = models.BooleanField(
+        default=True, help_text='Se puede reservar sin cuenta (como invitada).')
+    sell_drop_in_online = models.BooleanField(
+        default=True, help_text='Clase suelta: se puede pagar cada clase con tarjeta al reservar.')
+    sell_packs_online = models.BooleanField(default=True, help_text='Los bonos se pueden comprar en la web.')
+    sell_memberships_online = models.BooleanField(
+        default=True, help_text='Las membresías se pueden contratar en la web.')
+    studio_payment_methods = models.JSONField(
+        default=list, blank=True,
+        help_text='Cómo se puede pagar en el estudio (cash, bizum, card, transfer). Vacío = sin especificar.')
+    studio_payment_note = models.CharField(
+        max_length=140, blank=True, default='',
+        help_text='Nota corta para quien paga en el estudio, p. ej. «Paga al llegar, 5 min antes».')
+    studio_payment_note_en = models.CharField(max_length=140, blank=True, default='')
+    # Clases fijas: herramienta del estudio (Clases fijas en el panel). Solo si
+    # se enciende, las clientas pueden elegir sus clases fijas desde la web.
+    client_fixed_classes = models.BooleanField(
+        default=False,
+        help_text='Las clientas con membresía eligen sus clases fijas en la web. Apagado = solo las asigna el estudio.')
+
     # ── Avisos push (VAPID): se generan solas la primera vez ──
     vapid_public_key = models.CharField(max_length=200, blank=True, default='')
     vapid_private_key = EncryptedTextField(blank=True, default='')

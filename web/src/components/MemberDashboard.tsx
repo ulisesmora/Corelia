@@ -1,5 +1,6 @@
 "use client";
 
+import { clientFixedClasses } from '../utils/payments';
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import {
   Box, Flex, Text, VStack, Button, Spinner,
@@ -663,7 +664,7 @@ function BookingCard({ booking, onCancel, cancelingId, cancelLabel }: {
 }
 
 // ── Preference card ───────────────────────────────────────────────────────────
-function PrefCard({ pref, onRemove }: { pref: ClassPreference; onRemove: (id: number) => void }) {
+function PrefCard({ pref, onRemove }: { pref: ClassPreference; onRemove?: (id: number) => void }) {
   const t = useT();
   const lang = useLangStore(s => s.lang);
 
@@ -688,11 +689,13 @@ function PrefCard({ pref, onRemove }: { pref: ClassPreference; onRemove: (id: nu
             {pref.room_name && ` · ${tr(pref, 'room_name', lang)}`}
           </Text>
         </Box>
-        <IconButton aria-label={t('dashboard.clases.removePref')} size="xs" variant="ghost"
-          color={C.textMuted} _hover={{ color: C.danger }}
-          onClick={() => onRemove(pref.id)}>
-          <Icon name="trash" size={10} />
-        </IconButton>
+        {onRemove && (
+          <IconButton aria-label={t('dashboard.clases.removePref')} size="xs" variant="ghost"
+            color={C.textMuted} _hover={{ color: C.danger }}
+            onClick={() => onRemove(pref.id)}>
+            <Icon name="trash" size={10} />
+          </IconButton>
+        )}
       </Flex>
     </MotionBox>
   );
@@ -1127,6 +1130,12 @@ function MemberDashboardInner() {
   }, [locale]);
 
   const existingScheduleIds = useMemo(() => new Set(preferences.map(p => p.schedule)), [preferences]);
+  // Clases fijas: herramienta del estudio. La clienta las elige aquí solo si el
+  // estudio lo enciende (Ajustes → Cobros); si no, ve las suyas (si tiene) y
+  // el reemplazo cuando el estudio cierra una, sin explicaciones ni «Añadir».
+  const fixed = clientFixedClasses();
+  const showClasesTab = fixed || preferences.some(p => p.is_active) || !!replacement?.needs_replacement;
+  const visibleTabs = TABS.filter(x => x.key !== 'clases' || showClasesTab);
 
   // ── Not logged in ──────────────────────────────────────────────────────────
   if (!loading && !isLoggedIn) return (
@@ -1281,9 +1290,11 @@ function MemberDashboardInner() {
                   </Text>
                 )}
                 <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted} mt={2}>
-                  {en
-                    ? `${upcomingBookings.length} upcoming · ${favs} regular ${favs === 1 ? 'class' : 'classes'}`
-                    : `${upcomingBookings.length} próximas · ${favs} ${favs === 1 ? 'clase fija' : 'clases fijas'}`}
+                  {en ? `${upcomingBookings.length} upcoming` : `${upcomingBookings.length} próximas`}
+                  {/* Sus clases fijas solo si las tiene (o si el estudio deja elegirlas en la web) */}
+                  {(fixed || favs > 0) && (en
+                    ? ` · ${favs} regular ${favs === 1 ? 'class' : 'classes'}`
+                    : ` · ${favs} ${favs === 1 ? 'clase fija' : 'clases fijas'}`)}
                 </Text>
               </Box>
               <Flex direction={{ base: 'row', md: 'column' }} gap={2} flexShrink={0} wrap="wrap">
@@ -1584,7 +1595,7 @@ function MemberDashboardInner() {
 
       {/* Sin suscripción activa las favoritas NO se reservan solas: decirlo
           claro con su vía de solución, en vez de dejar que lo descubra sola. */}
-      {!subscription && preferences.length > 0 && (
+      {fixed && !subscription && preferences.length > 0 && (
         <Box p={4} borderRadius="var(--radius-card)"
           bg="var(--accent-soft)" border={`1px solid ${C.borderStrong}`}>
           <Text fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" color={C.brown} mb={1}>
@@ -1610,7 +1621,7 @@ function MemberDashboardInner() {
             </Text>
           </Flex>
           <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted} mb={3}>
-            {t('dashboard.clases.pastDueDesc')}
+            {t(fixed ? 'dashboard.clases.pastDueDescFixed' : 'dashboard.clases.pastDueDesc')}
           </Text>
           <Button size="sm" h="34px" borderRadius="var(--radius-button)" color={C.onStatus}
             bg={C.warning} _hover={{ opacity: 0.9 }}
@@ -1621,6 +1632,29 @@ function MemberDashboardInner() {
         </Box>
       )}
 
+      {/* Clases fijas como herramienta del estudio: la clienta ve SUS plazas
+          (las asigna el estudio), sin poder añadir ni quitar y sin explicaciones */}
+      {!fixed && (
+        <>
+          {preferences.some(p => p.is_active) && (
+            <Box bg="var(--accent-soft)" borderRadius="var(--radius-card)" p={4}
+              border={`1px solid ${C.borderStrong}`} data-testid="fixed-readonly">
+              <Text fontFamily='var(--font-heading)' fontSize="lg"
+                color={C.brown} letterSpacing="0.04em" mb={1}>
+                {t('dashboard.clases.fixedTitle')}
+              </Text>
+              <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} lineHeight="1.65" mb={3}>
+                {t('dashboard.clases.fixedBody')}
+              </Text>
+              <VStack gap={2} align="stretch">
+                {preferences.filter(p => p.is_active).map(p => <PrefCard key={p.id} pref={p} />)}
+              </VStack>
+            </Box>
+          )}
+        </>
+      )}
+
+      {fixed && (<>
       <Box bg="var(--accent-soft)" borderRadius="var(--radius-card)" p={4}
         border={`1px solid ${C.borderStrong}`}>
         <Text fontFamily='var(--font-heading)' fontSize="lg"
@@ -1628,7 +1662,7 @@ function MemberDashboardInner() {
           {t('dashboard.clases.infoTitle')}
         </Text>
         <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} lineHeight="1.65">
-          {t('dashboard.clases.infoBody')}
+          {t('dashboard.clases.infoBodyFixed')}
         </Text>
       </Box>
 
@@ -1739,6 +1773,7 @@ function MemberDashboardInner() {
           </MotionBox>
         )}
       </AnimatePresence>
+      </>)}
     </VStack>
   );
 
@@ -1961,7 +1996,7 @@ function MemberDashboardInner() {
             </Text>
             <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={5}
               maxW="260px" mx="auto">
-              {t('dashboard.subscription.noSubDesc')}
+              {t(fixed ? 'dashboard.subscription.noSubDescFixed' : 'dashboard.subscription.noSubDesc')}
             </Text>
             <Button className="sk-btn" h="42px"
               fontFamily='var(--font-body)' fontWeight={700} fontSize="sm" px={6}
@@ -1974,7 +2009,7 @@ function MemberDashboardInner() {
       )}
 
       {/* ── Next Week Auto-booking Preview ─────────────────────────────── */}
-      {subscription && !subscription.cancel_at_period_end && (() => {
+      {fixed && subscription && !subscription.cancel_at_period_end && (() => {
         const activePrefs = preferences.filter(p => p.is_active);
         const totalCreditsPerClass = activePrefs.reduce((s, p) => s + (p.credits_per_class ?? 1), 0);
         const monthlyNeeded = Math.ceil(totalCreditsPerClass * 4.33);
@@ -2334,7 +2369,7 @@ function MemberDashboardInner() {
       })()}
 
       {/* Auto-booking paused notice (when cancel_at_period_end) */}
-      {subscription && subscription.cancel_at_period_end && (
+      {subscription && subscription.cancel_at_period_end && (fixed || preferences.some(p => p.is_active)) && (
         <Box p={4} borderRadius="var(--radius-card)"
           bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 30%, transparent)">
           <Flex align="center" gap={2} mb={1}>
@@ -2360,7 +2395,7 @@ function MemberDashboardInner() {
         {[
           { step: '01', title: t('dashboard.subscription.step01Title'), desc: t('dashboard.subscription.step01Desc') },
           { step: '02', title: t('dashboard.subscription.step02Title'), desc: t('dashboard.subscription.step02Desc') },
-          { step: '03', title: t('dashboard.subscription.step03Title'), desc: t('dashboard.subscription.step03Desc') },
+          { step: '03', title: t(fixed ? 'dashboard.subscription.step03TitleFixed' : 'dashboard.subscription.step03Title'), desc: t(fixed ? 'dashboard.subscription.step03DescFixed' : 'dashboard.subscription.step03Desc') },
         ].map(({ step, title, desc }, idx) => (
           <Flex key={step} gap={3} mb={idx < 2 ? 3 : 0} align="flex-start">
             <Box flexShrink={0} w="30px" h="30px" borderRadius="full"
@@ -2408,7 +2443,10 @@ function MemberDashboardInner() {
       <SimpleGrid columns={2} gap={3}>
         {[
           { label: t('dashboard.perfil.statsAttended'), value: pastBookings.filter(b => b.status === 'attended').length },
-          { label: t('dashboard.perfil.statsFavorites'), value: preferences.filter(p => p.is_active).length },
+          // Clases fijas: solo si las tiene o si el estudio deja elegirlas en la web
+          ...(fixed || preferences.some(p => p.is_active)
+            ? [{ label: t('dashboard.perfil.statsFavorites'), value: preferences.filter(p => p.is_active).length }]
+            : [{ label: t('dashboard.agenda.stats.upcoming'), value: upcomingBookings.length }]),
         ].map(({ label, value }) => (
           <Card key={label} p={4}>
             <Text fontFamily='var(--font-body)' fontSize="10px" color={C.textMuted}
@@ -2613,7 +2651,7 @@ function MemberDashboardInner() {
                   {t('dashboard.clases.pastDueTitle')}
                 </Text>
                 <Text fontFamily='var(--font-body)' fontSize="xs" color={C.textMuted}>
-                  {t('dashboard.clases.pastDueDesc')}
+                  {t(fixed ? 'dashboard.clases.pastDueDescFixed' : 'dashboard.clases.pastDueDesc')}
                 </Text>
               </Box>
               <Button size="xs" h="32px" px={4} borderRadius="var(--radius-button)" color={C.onStatus} flexShrink={0}
@@ -2635,7 +2673,7 @@ function MemberDashboardInner() {
             boxShadow="var(--shadow-card)" backdropFilter="var(--surface-blur)"
             overflowX="auto"
             css={{ scrollbarWidth: 'none', '&::-webkit-scrollbar': { display: 'none' } }}>
-            {TABS.map(t => (
+            {visibleTabs.map(t => (
               <Button key={t.key} size="sm" borderRadius="var(--radius-button)"
                 px={{ base: 3, md: 4 }} flexShrink={0} flex={{ base: 1, md: '0 0 auto' }}
                 minH="44px"
@@ -2663,7 +2701,8 @@ function MemberDashboardInner() {
             initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.22 } as any}>
             {tab === 'agenda'      && renderAgenda()}
-            {tab === 'clases'      && renderClases()}
+            {tab === 'clases'      && showClasesTab && renderClases()}
+            {tab === 'clases'      && !showClasesTab && renderAgenda()}
             {tab === 'suscripcion' && renderSuscripcion()}
             {tab === 'perfil'      && renderPerfil()}
           </MotionBox>

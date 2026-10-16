@@ -626,14 +626,29 @@ MEMBERSHIP_EMAIL_MAX_TOTAL = 3       # nunca más de 3 en total sin respuesta
 MEMBERSHIP_DISMISS_COOLDOWN_DAYS = 21
 
 
+def _fixed_classes_for_clients() -> bool:
+    """¿Se habla de clases fijas con las clientas? Solo si el estudio deja que
+    las elijan en la web (Ajustes → Cobros, SiteConfig.client_fixed_classes).
+    Si no, las clases fijas son una herramienta del panel y los avisos no las
+    explican ni las venden."""
+    from api.utils.site import get_site_config
+    return bool(get_site_config().client_fixed_classes)
+
+
 def _membership_message(user, a):
-    """Texto personal con SU clase fija y SU ahorro real."""
+    """Texto personal con SU ahorro real (y su clase fija solo si el estudio
+    deja que las clientas elijan sus clases fijas en la web)."""
     plan = a['plan']
-    slot = a['fixed_slots'][0] if a['fixed_slots'] else None
-    habit = (f"Llevas {a['weeks_active']} semanas viniendo {slot['label']}"
-             if slot else f"Llevas {a['weeks_active']} de las últimas {a['window_weeks']} semanas viniendo a {studio_name()}")
-    auto = (f"tu plaza de {slot['label']} se reserva sola cada semana" if slot
-            else "tus clases fijas se reservan solas cada semana")
+    fixed = _fixed_classes_for_clients()
+    slot = a['fixed_slots'][0] if (fixed and a['fixed_slots']) else None
+    if fixed:
+        habit = (f"Llevas {a['weeks_active']} semanas viniendo {slot['label']}"
+                 if slot else f"Llevas {a['weeks_active']} de las últimas {a['window_weeks']} semanas viniendo a {studio_name()}")
+        auto = (f"tu plaza de {slot['label']} se reserva sola cada semana" if slot
+                else "tus clases fijas se reservan solas cada semana")
+    else:
+        habit = ''
+        auto = 'tus clases de cada mes quedan pagadas de una vez'
     if plan['price_per_class'] < a['current_price_per_class']:
         # Solo hablamos de precio si de verdad le sale más barato
         from api.utils.locale import money
@@ -641,9 +656,11 @@ def _membership_message(user, a):
                       f"(ahora pagas {money(a['current_price_per_class'])})")
         saving = (f", unos {money(int(a['saving_per_month']), trim=True)} menos al mes" if a['saving_per_month'] >= 5 else '')
         body = f"{price_line}{saving}, y {auto}."
-    else:
+    elif fixed:
         # Si no ahorra, el valor es la comodidad: no prometemos lo que no es
         body = f"Con la membresía {plan['name']}, {auto}: sin tener que acordarte de reservar ni quedarte sin sitio."
+    else:
+        body = f"Con la membresía {plan['name']}, {auto}, sin estar pendiente de recargar bonos."
     return habit, f"{body} Sin permanencia: cancelas cuando quieras."
 
 
@@ -675,8 +692,11 @@ def send_membership_suggestions():
             continue
 
         habit, body = _membership_message(user, a)
+        fixed = _fixed_classes_for_clients()
+        headline = 'Tu plaza, guardada cada semana' if fixed else f"La membresía de {studio_name()}"
+        intro = f"{habit}. {body}" if habit else body
         plan = a['plan']
-        prefer = ','.join(str(s['schedule_id']) for s in a['fixed_slots'])
+        prefer = ','.join(str(s['schedule_id']) for s in a['fixed_slots']) if fixed else ''
         cta_url = (web_url(f"/checkout?tab=subscription&plan_id={plan['id']}")
                    + (f"&prefer={prefer}" if prefer else ''))
         try:
@@ -685,12 +705,13 @@ def send_membership_suggestions():
                 template_id='generic-notice',
                 dynamic_data={
                     'name': user.first_name or '',
-                    'headline': 'Tu plaza, guardada cada semana',
-                    'intro_copy': f"{habit}. {body}",
+                    'headline': headline,
+                    'intro_copy': intro,
                     'cta_text': f"Ver la membresía {plan['name']}",
                     'cta_url': cta_url,
                 },
-                subject=f"{user.first_name or 'Hola'}, te guardamos tu plaza cada semana",
+                subject=(f"{user.first_name or 'Hola'}, te guardamos tu plaza cada semana" if fixed
+                         else f"{user.first_name or 'Hola'}, ¿te cuento cómo funciona la membresía?"),
             )
         except Exception:
             logger.warning("membership.email_failed user_id=%s", user.id, exc_info=True)
@@ -703,8 +724,9 @@ def send_membership_suggestions():
         )
         if user.push_subscriptions.exists():
             try:
-                send_push_to_user(user, title='Tu plaza, guardada cada semana',
-                                  body=f"{habit}. Con la membresía se reserva sola.",
+                send_push_to_user(user, title=headline,
+                                  body=(f"{habit}. Con la membresía se reserva sola." if fixed
+                                        else f"Con la membresía {plan['name']} tus clases del mes quedan pagadas."),
                                   url=cta_url.replace(web_url(), ''))
                 MembershipNudge.objects.create(user=user, channel='push', action='sent', plan_id=plan['id'],
                                                segment=a['segment'])

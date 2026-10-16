@@ -46,7 +46,8 @@ export const SETTING_GROUPS: SettingGroup[] = [
     items: [
       { key: 'bonos', label: 'Bonos y cuotas', hint: 'En Clases y precios', icon: 'plans', path: '/clases-y-precios?tab=precios', keywords: 'bono cuota precio tarifa membresía plan' },
       { key: 'como-cobrar', label: 'Cómo se cobra', hint: 'Bonos, pagos en mano, devoluciones', icon: 'help', path: '/configuracion?guia=cobros', keywords: 'cobrar pagar créditos reembolso devolver efectivo bizum guía ayuda' },
-      { key: 'pagos', label: 'Pagos online', hint: 'Cobrar con tarjeta al reservar', icon: 'payments', path: '/ajustes?tab=pagos', keywords: 'stripe tarjeta apple pay google pay cobrar' },
+      { key: 'formas-cobro', label: 'Formas de cobro', hint: 'Tarjeta, pagar en el estudio, invitadas', icon: 'payments', path: '/ajustes?tab=pagos#formas-de-cobro', keywords: 'pagar en el estudio efectivo bizum datáfono transferencia invitadas sin cuenta clase suelta bonos membresías online clases fijas' },
+      { key: 'pagos', label: 'Pagos online', hint: 'Conectar Stripe para cobrar con tarjeta', icon: 'card', path: '/ajustes?tab=pagos', keywords: 'stripe tarjeta apple pay google pay cobrar conectar' },
       { key: 'espera', label: 'Lista de espera', hint: 'Cuando una clase está llena', icon: 'agenda', action: 'waitlist', keywords: 'espera llena plaza aviso' },
       { key: 'cancelaciones', label: 'Cancelaciones', hint: 'Hasta cuándo se puede cancelar', icon: 'warning', action: 'cancellations', keywords: 'cancelar anular plazo horas devolver créditos' },
       { key: 'cupones', label: 'Cupones de descuento', hint: 'Códigos con descuento', icon: 'coupons', path: '/cuopon', keywords: 'descuento promoción código' },

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { dashRequest } from '../../pages/kit/api';
 import { useSite } from '../../site/SiteProvider';
 import { formatMoney } from '../../site/money';
+import type { PaymentOptions } from '../setup/api';
 
 // Datos reales del estudio para las explicaciones de «Cómo se cobra»
 // (GET /api/v1/guide/charging/, api/api/views_guide.py). Mientras llegan (o
@@ -24,6 +25,8 @@ export interface ChargingFacts {
   cancel_min_hours: number;
   waitlist: { enabled: boolean; auto_offer: boolean; claim_minutes: number };
   payments: { enabled: boolean; provider: '' | 'keys' | 'connect' };
+  /** «Formas de cobro» efectivas (Ajustes → Cobros) */
+  options: PaymentOptions;
   class_types: { id: number; title: string; credits: string; price: string }[];
   credits_vary: boolean;
   pack: PlanFact | null;
@@ -64,6 +67,7 @@ export function useChargingFacts(active = true, version: unknown = 0): { facts: 
     cancel_min_hours: config.cancel_min_hours || 8,
     waitlist: { enabled: true, auto_offer: true, claim_minutes: 120 },
     payments: { enabled: Boolean(config.payments_enabled), provider: '' },
+    options: defaultOptions(Boolean(config.payments_enabled)),
     class_types: [],
     credits_vary: false,
     pack: null,
@@ -71,6 +75,24 @@ export function useChargingFacts(active = true, version: unknown = 0): { facts: 
     counts: { packs: 0, subscriptions: 0, class_types: 0 },
   };
   return { facts: facts || fallback, ready: Boolean(facts) };
+}
+
+/** Mientras no llegan los datos: lo de siempre (con tarjeta se vende todo online). */
+export function defaultOptions(card: boolean): PaymentOptions {
+  return {
+    online_ready: card, card, drop_in_online: card, packs_online: card, memberships_online: card,
+    guest_booking: true, pay_at_studio: { auto: true, enabled: !card, guests: !card, clients: false },
+    credits: true, studio_methods: [], studio_note: '', studio_note_en: '', client_fixed_classes: false,
+  };
+}
+
+const METHOD_WORDS: Record<string, string> = { cash: 'efectivo', bizum: 'Bizum', card: 'tarjeta', transfer: 'transferencia' };
+
+/** «efectivo, Bizum o tarjeta» (o '' si no lo ha elegido). */
+export function methodsText(f: ChargingFacts): string {
+  const w = (f.options?.studio_methods || []).map((m) => METHOD_WORDS[m] || m);
+  if (w.length <= 1) return w[0] || '';
+  return `${w.slice(0, -1).join(', ')} o ${w[w.length - 1]}`;
 }
 
 // ── Formatos ─────────────────────────────────────────────────────────────

@@ -262,8 +262,26 @@ def validate_cart(cart_items, guest=None, user=None, lock=False,
     return lines, None
 
 
+METHOD_WORDS = {'cash': 'efectivo', 'bizum': 'Bizum', 'card': 'tarjeta', 'transfer': 'transferencia'}
+
+
+def studio_payment_hint() -> tuple[str, str]:
+    """«en efectivo o Bizum. Paga al llegar, 5 min antes.» (o '') según
+    «Formas de cobro»."""
+    from api.utils.payment_options import payment_options
+
+    o = payment_options()
+    words = [METHOD_WORDS[m] for m in o['studio_methods']]
+    how = ''
+    if words:
+        how = ' en ' + (words[0] if len(words) == 1 else ', '.join(words[:-1]) + ' o ' + words[-1])
+    note = f" {o['studio_note']}" if o['studio_note'] else ''
+    return how, note
+
+
 def notify_guest_reservation(bookings, total, currency) -> None:
-    """Email a la invitada que reservó para pagar en el estudio. Nunca lanza."""
+    """Email a quien reservó para pagar en el estudio (invitada o clienta con
+    cuenta). Nunca lanza."""
     from api.utils.booking_notify import GENERIC_TEMPLATE, _booking_line
     from api.utils.emailing import send_templated_email
     from api.utils.locale import money
@@ -272,23 +290,25 @@ def notify_guest_reservation(bookings, total, currency) -> None:
     try:
         if not bookings:
             return
-        guest = bookings[0].guest
-        if guest is None or not guest.email:
+        person = bookings[0].guest or bookings[0].user
+        if person is None or not person.email:
             return
+        name = getattr(person, 'name', None) or getattr(person, 'first_name', '') or ''
         lines = [_booking_line(b) for b in bookings]
         n = len(lines)
         studio = get_site_config().studio_name
-        to_pay = f' Pagas {money(total, currency)} en el estudio al llegar.' if total and total > 0 else ''
+        how, note = studio_payment_hint()
+        to_pay = f' Pagas {money(total, currency)}{how} en el estudio al llegar.' if total and total > 0 else ''
         send_templated_email(
-            to_email=guest.email,
+            to_email=person.email,
             template_id=GENERIC_TEMPLATE,
             dynamic_data={
-                'name': guest.name or '',
+                'name': name,
                 'headline': 'Reserva confirmada',
                 'intro_copy': (
                     (f'Tu plaza está guardada: {lines[0]}.' if n == 1
                      else f'Tus {n} plazas están guardadas: {" · ".join(lines)}.')
-                    + to_pay
+                    + to_pay + (note if to_pay else '')
                     + f' Si no puedes venir, avisa a {studio} con tiempo para que otra persona pueda aprovechar la plaza.'
                 ),
                 'cta_text': 'Ver el horario',

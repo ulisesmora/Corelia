@@ -12,12 +12,13 @@ import HeroSection from '../components/setup/HeroSection';
 import MarketingSection, { MARKETING_FIELDS } from '../components/setup/MarketingSection';
 import TestimonialEditor from '../components/setup/TestimonialEditor';
 import PaymentsSection from '../components/setup/PaymentsSection';
+import PaymentOptionsCard from '../components/charging/PaymentOptionsCard';
 import StudioSection from '../components/setup/StudioSection';
 import StyleSection from '../components/setup/StyleSection';
 import { loadSettings, saveSettings, STYLE_FIELDS, type StudioSettings as Settings } from '../components/setup/api';
 import { useSite } from '../site/SiteProvider';
 
-// Pestañas: 0 Mi estudio · 1 Aspecto · 2 Portada · 3 Textos · 4 Preguntas · 5 Opiniones · 6 Google y anuncios · 7 Emails · 8 Avisos al móvil · 9 Pagos · 10 Acceso con Google · 11 Dominio
+// Pestañas: 0 Mi estudio · 1 Aspecto · 2 Portada · 3 Textos · 4 Preguntas · 5 Opiniones · 6 Google y anuncios · 7 Emails · 8 Avisos al móvil · 9 Cobros (formas de cobro + pagos online) · 10 Acceso con Google · 11 Dominio
 const STUDIO_FIELDS = [
   'studio_name', 'logo_url', 'icon_url', 'phone', 'whatsapp', 'contact_email', 'instagram',
   'address', 'city', 'postal_code', 'area_served', 'maps_url', 'country', 'currency', 'legal_name', 'tax_id',
@@ -30,12 +31,15 @@ const CONTENT_FIELDS = [
 const FORM_TABS: Record<number, readonly string[]> = { 0: STUDIO_FIELDS, 1: STYLE_FIELDS, 2: HERO_FIELDS, 3: CONTENT_FIELDS, 6: MARKETING_FIELDS };
 // ?tab=… (enlaces desde la guía de puesta en marcha), en el orden de las pestañas
 const TAB_KEYS = ['estudio', 'aspecto', 'portada', 'textos', 'preguntas', 'opiniones', 'google', 'emails', 'avisos', 'pagos', 'acceso-google', 'dominio'] as const;
+// Alias: ?tab=cobros también abre «Cobros»
+const TAB_ALIASES: Record<string, (typeof TAB_KEYS)[number]> = { cobros: 'pagos' };
 /** Ajustes del estudio: lo mismo que el asistente de bienvenida, en pestañas. */
 export default function StudioSettings() {
   const notify = useNotify();
   const site = useSite();
   const [params, setParams] = useSearchParams();
-  const tab = Math.max(0, TAB_KEYS.indexOf((params.get('tab') || '') as (typeof TAB_KEYS)[number]));
+  const rawTab = params.get('tab') || '';
+  const tab = Math.max(0, TAB_KEYS.indexOf((TAB_ALIASES[rawTab] || rawTab) as (typeof TAB_KEYS)[number]));
   const setTab = (i: number) => setParams((prev) => {
     const p = new URLSearchParams(prev);
     if (i === 0) p.delete('tab'); else p.set('tab', TAB_KEYS[i]);
@@ -95,7 +99,7 @@ export default function StudioSettings() {
         <Tab label="Google y anuncios" />
         <Tab label="Emails" />
         <Tab label="Avisos al móvil" />
-        <Tab label="Pagos online" />
+        <Tab label="Cobros" />
         <Tab label="Acceso con Google" />
         <Tab label="Tu dominio" />
       </SectionTabs>
@@ -110,7 +114,13 @@ export default function StudioSettings() {
         {tab === 6 && <MarketingSection value={settings} onChange={(p) => setSettings({ ...settings, ...p })} />}
         {tab === 7 && <EmailSection value={settings} onSaved={onSaved} />}
         {tab === 8 && <PushSection value={settings} />}
-        {tab === 9 && <PaymentsSection value={settings} onSaved={onSaved} />}
+        {tab === 9 && (
+          <Stack spacing={3}>
+            {/* «Formas de cobro»: qué ofrece la web (tarjeta, en el estudio, invitadas, qué se vende online) */}
+            <PaymentOptionsCard onSaved={onSaved} />
+            <PaymentsSection value={settings} onSaved={onSaved} />
+          </Stack>
+        )}
         {tab === 10 && <GoogleSection value={settings} onSaved={onSaved} />}
         {tab === 11 && <DomainSection value={settings} onSaved={onSaved} />}
         {isForm && (

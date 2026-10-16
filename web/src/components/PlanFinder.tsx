@@ -1,5 +1,6 @@
 "use client";
 
+import { clientFixedClasses } from '../utils/payments';
 import { useEffect, useMemo, useState } from 'react';
 import { Box, Flex, Text, Button, SimpleGrid } from '@chakra-ui/react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -151,11 +152,12 @@ const T = {
     classesMonth: (n: number) => `≈ ${n} clases al mes`,
     perClass: (p: string, d: string) => `${p} por clase (suelta: ${d})`,
     saving: (s: string) => `Ahorras ${s} al mes`,
-    whySub: 'Como vienes con regularidad, la membresía te sale más barata y además te guarda tu plaza sola cada semana.',
+    whySub: 'Con tu ritmo, la membresía te sale más barata por clase y tus créditos llegan solos cada mes.',
+    whySubFixed: 'Como vienes con regularidad, la membresía te sale más barata y además te guarda tu plaza sola cada semana.',
     extra: (n: number, d: string) => `Es la opción más económica para ti. Para las ${n} ${n === 1 ? 'clase' : 'clases'} de más al mes, añade un bono cuando lo necesites (desde ${d} por clase).`,
     whyPack: 'Como tu ritmo cambia cada semana, un bono te da libertad: compras cuando lo necesitas, sin renovaciones.',
     subPerks: [
-      'Tus clases fijas se reservan solas cada domingo',
+      'Tus créditos se renuevan solos cada mes',
       'Recordatorio 2 h antes de cada clase',
       'Sin permanencia: cancela cuando quieras',
     ],
@@ -199,11 +201,12 @@ const T = {
     classesMonth: (n: number) => `≈ ${n} classes a month`,
     perClass: (p: string, d: string) => `${p} per class (drop-in: ${d})`,
     saving: (s: string) => `You save ${s} a month`,
-    whySub: 'Since you come regularly, the membership is cheaper and it saves your spot automatically every week.',
+    whySub: 'At your pace, the membership is cheaper per class and your credits arrive every month.',
+    whySubFixed: 'Since you come regularly, the membership is cheaper and it saves your spot automatically every week.',
     extra: (n: number, d: string) => `It's the most economical option for you. For the ${n} extra ${n === 1 ? 'class' : 'classes'} a month, add a class pack when needed (from ${d} per class).`,
     whyPack: 'Since your rhythm changes, a class pack gives you freedom: buy when you need it, no renewals.',
     subPerks: [
-      'Your regular classes are booked every Sunday',
+      'Your credits renew every month',
       'Reminder 2 h before each class',
       'No commitment: cancel anytime',
     ],
@@ -479,7 +482,7 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
                 </Flex>
 
                 <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} lineHeight="1.65" mb={result.extraClasses > 0 ? 2 : 4}>
-                  {result.isSub ? tx.whySub : tx.whyPack}
+                  {result.isSub ? (clientFixedClasses() ? tx.whySubFixed : tx.whySub) : tx.whyPack}
                 </Text>
                 {result.extraClasses > 0 && (
                   <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} lineHeight="1.65" mb={4}
@@ -489,7 +492,10 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
                 )}
 
                 <Box as="ul" listStyleType="none" m={0} p={0} mb={5}>
-                  {(result.isSub ? tx.subPerks : tx.packPerks).map((perk, i) => (
+                  {(result.isSub
+                    // Las clases fijas solo se mencionan si las clientas las eligen en la web
+                    ? (clientFixedClasses() ? [lang === 'en' ? 'Your regular classes are booked every Sunday' : 'Tus clases fijas se reservan solas cada domingo', ...tx.subPerks.slice(1)] : tx.subPerks)
+                    : tx.packPerks).map((perk, i) => (
                     <Flex as="li" key={i} align="center" gap={2.5} mb={2}>
                       <Flex w="20px" h="20px" borderRadius="full" bg="var(--success-soft)" align="center" justify="center" flexShrink={0}>
                         <Icon name="check" size={9} color="var(--success)" />

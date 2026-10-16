@@ -269,10 +269,54 @@ def _total(rows):
 
 # ── Quién me debe ─────────────────────────────────────────────────────────
 
-def owed_items(limit=50):
-    """Pagos fallidos (sin otro pago bueno después) y cuotas con el cobro pendiente."""
+STUDIO_OWED_DAYS = 45
+
+
+def studio_owed_bookings(limit=100):
+    """Reservas «pagar en el estudio» (web: invitadas o clientas con cuenta,
+    api/views_guest.py) que aún no se han cobrado: con precio, sin pago y sin
+    cancelar, desde hace STUDIO_OWED_DAYS días en adelante (las de clases que
+    aún no han llegado también: «paga al llegar»)."""
+    since = timezone.now() - timedelta(days=STUDIO_OWED_DAYS)
+    qs = (Booking.objects.filter(metadata__pay_at_studio=True, payment__isnull=True,
+                                 status__in=ACTIVE, start_datetime__gte=since)
+          .exclude(metadata__has_key='paid_at')
+          .select_related('user', 'guest__linked_user', 'occurrence__class_type', 'event')
+          .order_by('start_datetime'))
+    out = []
+    for b in qs[:limit * 2]:
+        try:
+            amount = Decimal(str((b.metadata or {}).get('price') or 0))
+        except Exception:
+            amount = Decimal(0)
+        if amount <= 0:
+            continue
+        out.append((b, amount))
+        if len(out) >= limit:
+            break
+    return out
+
+
+def owed_items(limit=50, include_studio=True):
+    """Pagos fallidos (sin otro pago bueno después), cuotas con el cobro
+    pendiente y reservas para pagar en el estudio aún sin cobrar."""
     since = timezone.now() - timedelta(days=45)
     out = []
+    if include_studio:
+        now = timezone.now()
+        for b, amount in studio_owed_bookings():
+            _, name, email = person_of(b)
+            when = to_madrid_wall(b.start_datetime)
+            upcoming = b.start_datetime > now
+            out.append({
+                'id': f"bk-{b.id}", 'kind': 'studio', 'payment_id': None, 'subscription_id': None,
+                'booking_id': b.id, 'name': name, 'email': email,
+                'concept': f"{booking_title(b)} · {when.day}/{when.month} {when:%H:%M}" if when else booking_title(b),
+                'amount': float(amount),
+                'status': 'pay_at_studio' if upcoming else 'unpaid',
+                'status_label': 'Paga al llegar' if upcoming else 'Sin cobrar',
+                'date': when.date().isoformat() if when else '',
+            })
     failed = list(Payment.objects.filter(status='failed', created_at__gte=since)
                   .select_related('user', 'guest__linked_user').order_by('-created_at')[:100])
     if failed:
@@ -425,7 +469,7 @@ def attention_items(today=None, sessions=None):
             near_empty.append((o, d, start))
 
     # 2) Pagos fallidos y cuotas sin cobrar
-    for row in owed_items(limit=3):
+    for row in owed_items(limit=3, include_studio=False):
         title = f"Pago fallido · {row['name']}" if row['kind'] == 'payment' else f"Cuota sin cobrar · {row['name']}"
         payload = {'kind': 'resend_payment_link'}
         payload['payment_id' if row['kind'] == 'payment' else 'subscription_id'] = \
@@ -524,6 +568,46 @@ def _send_notice(person, headline, intro, cta_text, cta_url, subject, push_title
     return sent
 
 
+def _mark_studio_paid(data, admin=None):
+    """«Cobrado» en una reserva «pagar en el estudio»: crea el Payment (método
+    elegido: efectivo, Bizum, tarjeta/datáfono o transferencia) y lo enlaza a
+    la reserva. Sale en «Lo cobrado» y deja de salir en «Quién me debe»."""
+    from api.utils.calendar_ops import person_name
+    from api.utils.locale import studio_currency
+    from api.utils.payment_options import STUDIO_METHOD_KEYS
+
+    method = str(data.get('method') or 'cash').strip().lower()
+    if method not in STUDIO_METHOD_KEYS:
+        raise DashboardError('bad_request', 'Elige cómo te ha pagado: efectivo, Bizum, tarjeta o transferencia.')
+    with transaction.atomic():
+        b = (Booking.objects.select_for_update(of=('self',)).select_related('user', 'guest')
+             .filter(pk=data.get('booking_id'), metadata__pay_at_studio=True).first())
+        if b is None:
+            raise DashboardError('not_found', 'No encontramos esa reserva.', status=404)
+        if b.payment_id or (b.metadata or {}).get('paid_at'):
+            raise DashboardError('already_paid', 'Esa reserva ya está cobrada.', status=409)
+        meta = dict(b.metadata or {})
+        try:
+            amount = Decimal(str(meta.get('price') or 0))
+        except Exception:
+            amount = Decimal(0)
+        currency = (meta.get('currency') or studio_currency()).upper()
+        payment = Payment.objects.create(
+            user=b.user, guest=None if b.user_id else b.guest, amount_eur=amount, currency=currency,
+            method=method, status='succeeded',
+            raw_response={'source': 'pay_at_studio', 'booking_id': b.id, 'by_admin': getattr(admin, 'id', None)},
+        )
+        meta['paid_at'] = timezone.now().isoformat()
+        meta['paid_method'] = method
+        b.payment = payment
+        b.metadata = meta
+        b.save(update_fields=['payment', 'metadata', 'updated_at'])
+    logger.info("dashboard.mark_studio_paid booking=%s payment=%s method=%s admin=%s",
+                b.id, payment.id, method, getattr(admin, 'id', None))
+    who = person_name(b.user or b.guest) if (b.user or b.guest) else 'Clienta'
+    return {'done': f"Cobrado: {first_name(who)} · {_money(amount, currency)}", 'payment_id': payment.id}
+
+
 def run_action(data, admin=None):
     """Ejecuta el botón de un aviso de «Hoy». Devuelve {'done': texto, 'undo'?: {...}}."""
     from api.utils.site import studio_name, web_url
@@ -571,6 +655,9 @@ def run_action(data, admin=None):
                     data.get('subscription_id'), getattr(admin, 'id', None))
         from api.utils.calendar_ops import person_name
         return {'done': f"Enlace de pago enviado a {first_name(person_name(person))}"}
+
+    if kind == 'mark_studio_paid':
+        return _mark_studio_paid(data, admin)
 
     if kind in ('extend_pack', 'unextend_pack'):
         try:
@@ -979,6 +1066,7 @@ def sales_summary(period='month', offset=0):
             'count': sum(1 for r in cur if r['status'] == 'succeeded'),
             'pending': round(sum(o['amount'] for o in owed), 2), 'pending_count': len(owed),
             'pending_failed': sum(1 for o in owed if o['kind'] == 'payment'),
+            'pending_studio': sum(1 for o in owed if o['kind'] == 'studio'),
             'packs_sold': sold(cur), 'packs_sold_prev': sold(prev),
             'subscriptions_active': sum(1 for s in subs if s.status == 'active'),
             'monthly_recurring': mrr,

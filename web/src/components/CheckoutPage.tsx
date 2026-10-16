@@ -31,7 +31,8 @@ import { optimizedImage, withOriginalFallback } from '../utils/img';
 import { API_ROOT } from '../config';
 import PaymentsDisabledNotice from './PaymentsDisabledNotice';
 import GuestStudioBooking from './GuestStudioBooking';
-import { paymentsEnabled } from '../utils/payments';
+import { clientFixedClasses, paymentOptions, paymentsEnabled } from '../utils/payments';
+import PayMethodChooser, { payChoiceCopy, type PayChoice, type PayMethod } from './PayMethodChooser';
 import { getSiteClient } from '../lib/site';
 import { hashId, track } from '../lib/tracking';
 import { joinWaitlist } from '../lib/booking';
@@ -365,6 +366,10 @@ function CheckoutPageInner() {
   const t = useT();
   // Pagos online con tarjeta (Stripe) activados en la config del estudio
   const paymentsOn = paymentsEnabled();
+  // «Formas de cobro» del estudio (Ajustes → Cobros): qué se ofrece aquí
+  const opts = paymentOptions();
+  // Clases fijas: solo si el estudio deja que las clientas las elijan en la web
+  const fixedForClients = clientFixedClasses();
   const lang = useLangStore(s => s.lang);
   const items = useCartStore(s => s.items);
   const clearCart = useCartStore(s => s.clearCart);
@@ -392,6 +397,10 @@ function CheckoutPageInner() {
   // Reserva sin cuenta hecha (pagar en el estudio): el carrito ya está vacío
   // pero se sigue viendo la confirmación
   const [guestBooked, setGuestBooked] = useState(false);
+  // Forma de pago elegida (solo se pregunta si hay más de una)
+  const [guestMethod, setGuestMethod] = useState<PayMethod | null>(null);
+  const [userMethod, setUserMethod] = useState<PayMethod | null>(null);
+  const [studioBooked, setStudioBooked] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -583,7 +592,7 @@ function CheckoutPageInner() {
           if (cartHasItems && newBalance !== null && newBalance >= totalCreditsRef.current) {
             setSubStep('cart');
           } else {
-            setSubStep('enroll');
+            setSubStep(clientFixedClasses() ? 'enroll' : 'done');
           }
         } else {
           const cart = totalCreditsRef.current;
@@ -952,6 +961,22 @@ function CheckoutPageInner() {
     </Box>
   );
 
+  // ── Formas de pago disponibles («Formas de cobro») ─────────────────────────
+  const guestCanCard = opts.drop_in_online && opts.guest_booking;
+  const guestCanStudio = opts.pay_at_studio.guests;
+  const guestPay: PayMethod = guestMethod === 'studio' && guestCanStudio ? 'studio'
+    : guestMethod === 'card' && guestCanCard ? 'card'
+      : guestCanCard ? 'card' : 'studio';
+  // Con cuenta: créditos si le llegan; si no, lo primero que haya
+  const userOrder: PayMethod[] = [];
+  if (items.length > 0 && canReserve) userOrder.push('credits');
+  if (items.length > 0 && opts.drop_in_online && totalPrice > 0) userOrder.push('card');
+  if (items.length > 0 && opts.pay_at_studio.clients) userOrder.push('studio');
+  if (!canReserve && opts.packs_online) userOrder.push('pack');
+  // Tras reservar para pagar en el estudio el carrito se vacía: se sigue viendo la confirmación
+  const userPay: PayMethod | null = studioBooked ? 'studio'
+    : userMethod && userOrder.includes(userMethod) ? userMethod : (userOrder[0] || null);
+
   // ── Credits tab ───────────────────────────────────────────────────────────
 
   const renderCreditsTab = () => {
@@ -990,13 +1015,34 @@ function CheckoutPageInner() {
               {lang === 'en' ? 'View calendar' : 'Ver calendario'}
             </Button>
           </Box>
-        ) : !paymentsOn ? card(
-          // Sin pagos online: la invitada reserva sin cuenta y paga en el
-          // estudio al llegar (antes solo se le decía que creara una cuenta y
-          // comprara créditos en el estudio: no podía reservar).
-          <GuestStudioBooking onBooked={() => setGuestBooked(true)} />
+        ) : !opts.guest_booking ? card(
+          // «Reservar sin cuenta» apagado: hay que entrar (tarjeta debajo)
+          <Box textAlign="center" py={2} data-testid="guest-booking-off">
+            <Icon name="user-circle" size={28} color={C.accentDark} style={{ margin: '0 auto 8px' }} />
+            <Text fontFamily='var(--font-heading)' fontSize="2xl" color={C.heading} letterSpacing="0.04em" mb={1}>
+              {lang === 'en' ? 'Book with your account' : 'Reserva con tu cuenta'}
+            </Text>
+            <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted}>
+              {lang === 'en'
+                ? 'This studio takes bookings from clients with an account. Log in or create yours in a minute.'
+                : 'En este estudio se reserva con tu cuenta. Entra o créala en un momento aquí debajo.'}
+            </Text>
+          </Box>
+        ) : !guestCanCard && !guestCanStudio ? card(
+          <PaymentsDisabledNotice variant="guest" />
         ) : card(
           <>
+            {guestCanCard && guestCanStudio && !guestCreated && !guestBooked && (
+              <PayMethodChooser lang={lang} value={guestPay} onChange={setGuestMethod}
+                choices={(['card', 'studio'] as PayMethod[]).map((k) => ({
+                  key: k, ...payChoiceCopy(k, lang), amount: totalPrice > 0 ? formatPrice(totalPrice, lang) : undefined,
+                }))} />
+            )}
+            {guestPay === 'studio' ? (
+              // Pagar en el estudio: guarda la plaza y paga al llegar
+              <GuestStudioBooking onBooked={() => setGuestBooked(true)} hideTitle={guestCanCard} />
+            ) : (
+            <>
             <Text fontFamily='var(--font-heading)' fontSize="2xl"
               color={C.heading} letterSpacing="0.04em" mb={4}>
               {guestCreated ? t('checkout.guestStep2') : t('checkout.guestTitle')}
@@ -1074,6 +1120,8 @@ function CheckoutPageInner() {
                   couponCode={appliedCoupon?.code} />
               </VStack>
             )}
+            </>
+            )}
           </>
         )}
         {card(
@@ -1091,7 +1139,44 @@ function CheckoutPageInner() {
       </VStack>
     );
 
-    if (canReserve) return card(
+    // ── Con cuenta: ¿cómo paga? (créditos, tarjeta, en el estudio o un bono) ──
+    const userChoices: PayChoice[] = [];
+    const credits = `${totalCredits} ${totalCredits === 1 ? t('cart.credit') : t('cart.credits')}`;
+    if (items.length > 0 && canReserve) {
+      userChoices.push({ key: 'credits', ...payChoiceCopy('credits', lang, { balance: `${userBalance ?? 0} ${t('cart.credits')}` }), amount: credits });
+    }
+    if (items.length > 0 && opts.drop_in_online && totalPrice > 0) {
+      userChoices.push({ key: 'card', ...payChoiceCopy('card', lang), amount: formatPrice(totalPrice, lang) });
+    }
+    if (items.length > 0 && opts.pay_at_studio.clients) {
+      userChoices.push({ key: 'studio', ...payChoiceCopy('studio', lang), amount: totalPrice > 0 ? formatPrice(totalPrice, lang) : undefined });
+    }
+    if (!canReserve && opts.packs_online) {
+      userChoices.push({ key: 'pack', ...payChoiceCopy('pack', lang) });
+    }
+    const chooser = items.length > 0 && userChoices.length > 1 && (
+      <PayMethodChooser lang={lang} value={userPay as PayMethod} onChange={setUserMethod} choices={userChoices} />
+    );
+
+    if (userPay === 'card') return card(
+      <>
+        {chooser}
+        <StripeEmbeddedForm items={items} currency={getSiteClient().currency.toLowerCase()}
+          name="" email={userEmail || ''} phone="" couponCode={appliedCoupon?.code} authToken={authToken} />
+      </>
+    );
+
+    if (userPay === 'studio') return card(
+      <>
+        {chooser}
+        <GuestStudioBooking account={{ token: authToken || '', email: userEmail }} hideTitle={!!chooser}
+          onBooked={() => setStudioBooked(true)} />
+      </>
+    );
+
+    if (canReserve && userPay === 'credits') return card(
+      <>
+      {chooser}
       <Box textAlign="center" py={2}>
         <Box w="56px" h="56px" borderRadius="full" bg="var(--accent-soft)"
           display="flex" alignItems="center" justifyContent="center" mx="auto" mb={3}>
@@ -1105,14 +1190,18 @@ function CheckoutPageInner() {
           {t('checkout.balanceOkDesc', { balance: userBalance?.toFixed(2) ?? '0' })}
         </Text>
       </Box>
+      </>
     );
 
-    // Sin pagos online: los bonos se compran en el estudio
-    if (!paymentsOn) return card(<PaymentsDisabledNotice />);
+    // Sin bonos online («Formas de cobro» o sin pagos con tarjeta): se compran en el estudio
+    if (userPay !== 'pack') return card(
+      paymentsOn ? <PaymentsDisabledNotice offline={{ packs: true, memberships: false }} /> : <PaymentsDisabledNotice />
+    );
 
     return card(
       !showPackPayment ? (
         <>
+          {chooser}
           <FlowStepper step={1} labels={lang === 'en' ? ['Pack', 'Payment', 'Book'] : ['Bono', 'Pago', 'Reservar']} ariaLabel={lang === 'en' ? 'Progress' : 'Progreso'} />
           {/* Regular comprando otro bono: el mejor momento para comparar */}
           <Box mb={4}>
@@ -1268,7 +1357,7 @@ function CheckoutPageInner() {
               // Solo avanzar si la reserva se completó de verdad — antes se
               // avanzaba igual y el fallo quedaba invisible.
               const ok = await handleCreditBooking(undefined, true);
-              if (ok) setSubStep('enroll');
+              if (ok) setSubStep(fixedForClients ? 'enroll' : 'done');
             }}>
             {isSubmitting ? <Spinner size="sm" color="inherit" /> : (
               <Flex align="center" gap={2}>
@@ -1279,14 +1368,15 @@ function CheckoutPageInner() {
           </Button>
           <Button w="full" h="40px" borderRadius="var(--radius-button)" variant="ghost"
             color={C.textMuted} fontFamily='var(--font-body)' fontWeight={600} fontSize="sm"
-            onClick={() => setSubStep('enroll')}>
-            {t('checkout.subActivatedCartSkip')}
+            onClick={() => setSubStep(fixedForClients ? 'enroll' : 'done')}>
+            {t(fixedForClients ? 'checkout.subActivatedCartSkipFixed' : 'checkout.subActivatedCartSkip')}
           </Button>
         </VStack>
       </VStack>
     );
 
-    if (subStep === 'enroll') return card(
+    // Elegir clases fijas: solo si el estudio deja que las clientas las elijan
+    if (subStep === 'enroll' && fixedForClients) return card(
       <>
         <Box mb={5}>
           <Text fontFamily='var(--font-heading)' fontSize="2xl"
@@ -1372,7 +1462,21 @@ function CheckoutPageInner() {
           </Box>
         )}
 
-        {/* Auto-booking timeline — how it works from here */}
+        {/* Sin clases fijas para clientas: siguiente paso = reservar con sus créditos */}
+        {!fixedForClients && (
+          <Flex align="flex-start" gap={3} p={4} borderRadius="var(--radius-card)" border={`1px solid ${C.border}`}
+            bg="var(--accent-soft)" data-testid="sub-done-next">
+            <Icon name="calendar" size={16} color={C.accentDark} style={{ flexShrink: 0, marginTop: 2 }} />
+            <Text fontFamily='var(--font-body)' fontSize="sm" color={C.brown} lineHeight="1.55">
+              {lang === 'en'
+                ? 'Your credits are in your account. Pick your classes in the timetable and book them whenever you like.'
+                : 'Tus créditos ya están en tu cuenta. Elige tus clases en el horario y resérvalas cuando quieras.'}
+            </Text>
+          </Flex>
+        )}
+
+        {/* Auto-booking timeline — how it works from here (solo con clases fijas en la web) */}
+        {fixedForClients && (
         <Box borderRadius="var(--radius-card)" border={`1px solid ${C.border}`} overflow="hidden">
           <Box px={4} py={3} bg="var(--accent-soft)"
             borderBottom={`1px solid ${C.border}`}>
@@ -1471,9 +1575,16 @@ function CheckoutPageInner() {
             ))}
           </VStack>
         </Box>
+        )}
 
         {/* CTA */}
-        <Button w="full" h="46px" className="sk-btn"
+        {!fixedForClients && (
+          <a className="w-btn w-btn--block sk-btn" href="/calendar" style={{ minHeight: 46 }}>
+            <Icon name="calendar" size={13} aria-hidden />
+            {lang === 'en' ? 'Book my classes' : 'Reservar mis clases'}
+          </a>
+        )}
+        <Button w="full" h="46px" className={fixedForClients ? 'sk-btn' : 'sk-btn-ghost'}
           fontFamily='var(--font-body)'
           onClick={() => { window.location.href = '/dashboard?tab=suscripcion'; }}>
           <Flex align="center" gap={2}>
@@ -1484,8 +1595,10 @@ function CheckoutPageInner() {
       </VStack>
     );
 
-    // Sin pagos online no se pueden contratar membresías desde la web
-    if (!paymentsOn) return card(<PaymentsDisabledNotice />);
+    // Sin membresías online («Formas de cobro» o sin pagos con tarjeta): en el estudio
+    if (!opts.memberships_online && !activeSubscription) return card(
+      paymentsOn ? <PaymentsDisabledNotice offline={{ packs: false, memberships: true }} /> : <PaymentsDisabledNotice />
+    );
 
     if (subStep === 'pay' && selectedSubId) return card(
       <>
@@ -1600,7 +1713,7 @@ function CheckoutPageInner() {
           {t('checkout.subTitle')}
         </Text>
         <Text fontFamily='var(--font-body)' fontSize="sm" color={C.textMuted} mb={5}>
-          {t('checkout.subDesc')}
+          {t(fixedForClients ? 'checkout.subDescFixed' : 'checkout.subDesc')}
         </Text>
 
         {/* ── How it works explainer ── */}
@@ -1627,7 +1740,7 @@ function CheckoutPageInner() {
             {([
               { n: '01', title: t('dashboard.subscription.step01Title'), desc: t('dashboard.subscription.step01Desc') },
               { n: '02', title: t('dashboard.subscription.step02Title'), desc: t('dashboard.subscription.step02Desc') },
-              { n: '03', title: t('dashboard.subscription.step03Title'), desc: t('dashboard.subscription.step03Desc') },
+              { n: '03', title: t(fixedForClients ? 'dashboard.subscription.step03TitleFixed' : 'dashboard.subscription.step03Title'), desc: t(fixedForClients ? 'dashboard.subscription.step03DescFixed' : 'dashboard.subscription.step03Desc') },
             ] as const).map((step, i, arr) => (
               <Flex key={step.n} align="flex-start" gap={3} mb={i < arr.length - 1 ? 3 : 0}>
                 {/* Number circle + connecting line */}
@@ -1766,7 +1879,7 @@ function CheckoutPageInner() {
                   {isLoggedIn && !(activeSubscription && subStep === 'select') && (
                     <SubscriptionStepper
                       step={subStep === 'select' ? 1 : subStep === 'pay' ? 2 : subStep === 'done' ? 4 : 3}
-                      lang={lang}
+                      lang={lang} fixedClasses={fixedForClients}
                     />
                   )}
                   {renderSubscriptionTab()}
@@ -1862,7 +1975,7 @@ function CheckoutPageInner() {
               )}
 
               {/* Credit warning */}
-              {showCreditWarning && (
+              {showCreditWarning && (userPay === 'pack' || userPay === null) && (
                 <Flex align="flex-start" gap={2} mt={3} p={3} borderRadius="var(--radius-input)"
                   bg="var(--warning-soft)" border="1px solid color-mix(in srgb, var(--warning) 25%, transparent)">
                   <Icon name="warning" size={14} color="var(--warning)" style={{ flexShrink: 0, marginTop: 2 }} />
@@ -1919,7 +2032,7 @@ function CheckoutPageInner() {
               </Box>
 
               {/* Reserve button */}
-              {isLoggedIn && (
+              {isLoggedIn && (userPay === 'credits' || userPay === 'pack' || userPay === null) && !studioBooked && (
                 <Button ref={reserveButtonRef as any} w="full" h="50px" mt={4}
                   // .sk-btn ya atenúa el botón deshabilitado (sin saldo suficiente)
                   className="sk-btn"
@@ -2112,10 +2225,11 @@ function CheckoutPageInner() {
 }
 
 // ── Indicador de pasos del alta de membresía ─────────────────────────────────
-function SubscriptionStepper({ step, lang }: { step: 1 | 2 | 3 | 4; lang: string }) {
+function SubscriptionStepper({ step, lang, fixedClasses }: { step: 1 | 2 | 3 | 4; lang: string; fixedClasses: boolean }) {
+  // «Tus clases» (elegir clases fijas) solo si el estudio deja elegirlas en la web
   const labels = lang === 'en'
-    ? ['Plan', 'Payment', 'Your classes', 'Done']
-    : ['Plan', 'Pago', 'Tus clases', '¡Listo!'];
+    ? ['Plan', 'Payment', fixedClasses ? 'Your classes' : 'Book', 'Done']
+    : ['Plan', 'Pago', fixedClasses ? 'Tus clases' : 'Reservar', '¡Listo!'];
   return <FlowStepper step={step} labels={labels} ariaLabel={lang === 'en' ? 'Progress' : 'Progreso'} />;
 }
 

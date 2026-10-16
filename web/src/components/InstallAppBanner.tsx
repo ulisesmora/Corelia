@@ -1,5 +1,6 @@
 "use client";
 
+import { clientFixedClasses } from '../utils/payments';
 import { useEffect, useState } from 'react';
 import { useLangStore, type Lang } from './stores/lang.store';
 import { slotLabel } from './MembershipSuggestionCard';
@@ -192,7 +193,8 @@ const TXT = {
 
 function regularHeadline(lang: Lang): { title: string; sub: string } | null {
   try {
-    const slot = localStorage.getItem('domFixedSlot');
+    // «Tu clase de los martes» solo si el estudio habla de clases fijas con las clientas
+    const slot = clientFixedClasses() ? localStorage.getItem('domFixedSlot') : null;
     if (!slot) return null;
     const L = TXT[lang];
     return { title: L.regularTitle(slotLabel(slot, lang)), sub: L.regularSub };

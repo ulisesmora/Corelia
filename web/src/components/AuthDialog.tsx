@@ -10,6 +10,7 @@
  * - Con sesión: avatar con menú (mis clases, preferencias, suscripción, salir).
  */
 
+import { clientFixedClasses } from '../utils/payments';
 import React, { useState, useEffect, useMemo, useCallback, Suspense, lazy } from 'react';
 import { Button, Menu, Avatar, Dialog, Portal, chakra, Box, Flex, Spinner } from '@chakra-ui/react';
 import { Icon } from './ui/Icon';
@@ -137,9 +138,12 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
                 <Menu.Item value="calendar" asChild {...itemStyle}>
                   <a href="/dashboard?tab=agenda">{tx.myCalendar}</a>
                 </Menu.Item>
-                <Menu.Item value="preferences" asChild {...itemStyle}>
-                  <a href="/dashboard?tab=clases">{tx.preferences}</a>
-                </Menu.Item>
+                {/* «Mis clases» (clases fijas): solo si el estudio deja elegirlas en la web */}
+                {clientFixedClasses() && (
+                  <Menu.Item value="preferences" asChild {...itemStyle}>
+                    <a href="/dashboard?tab=clases">{tx.preferences}</a>
+                  </Menu.Item>
+                )}
                 <Menu.Item value="subscription" asChild {...itemStyle}>
                   <a href="/dashboard?tab=suscripcion">{tx.subscription}</a>
                 </Menu.Item>
