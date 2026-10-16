@@ -14,7 +14,9 @@ import { useNotify } from '../guide';
 import {
   loadSettings, PAYMENT_OPTION_FIELDS, saveSettings, type StudioPayMethod, type StudioSettings,
 } from '../setup/api';
-import { invalidateChargingFacts } from './facts';
+import { useOpenGuide } from './chapters';
+import { invalidateChargingFacts, useChargingFacts } from './facts';
+import TwoWorlds from './TwoWorlds';
 
 type Form = Pick<StudioSettings, (typeof PAYMENT_OPTION_FIELDS)[number]>;
 
@@ -93,7 +95,11 @@ export default function PaymentOptionsCard({ compact = false, onSaved }: {
   const navigate = useNavigate();
   const notify = useNotify();
   const site = useSite();
+  const openGuide = useOpenGuide();
   const [saved, setSaved] = useState<StudioSettings | null>(null);
+  const [version, setVersion] = useState(0);
+  // Cabecera «Dos formas de cobrar» (solo la versión completa, en Ajustes → Cobros)
+  const { facts } = useChargingFacts(!compact, version);
   const [form, setForm] = useState<Form | null>(null);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -133,6 +139,7 @@ export default function PaymentOptionsCard({ compact = false, onSaved }: {
       setSaved(s);
       setForm(pick(s));
       invalidateChargingFacts();
+      setVersion((v) => v + 1);
       await site.refresh?.();
       onSaved?.(s);
       notify('Guardado ✓ Tu web ya enseña estas formas de cobro.');
@@ -156,13 +163,25 @@ export default function PaymentOptionsCard({ compact = false, onSaved }: {
         <StudioIcon name="payments" aria-hidden sx={{ color: 'var(--studio-primary-text)' }} />
         <Typography id={`${id}-h`} component="h2" sx={{ fontWeight: 700, fontSize: '1.05rem', color: 'var(--studio-ink)' }}>Formas de cobro</Typography>
       </Box>
-      <Typography sx={{ fontSize: '0.9rem', color: 'var(--studio-muted)', mt: 0.5 }}>
-        Elige cómo pueden pagar y reservar tus clientas en tu web. Lo que apuntas tú desde el panel no cambia.
-      </Typography>
+      {compact ? (
+        <Typography sx={{ fontSize: '0.9rem', color: 'var(--studio-muted)', mt: 0.5 }}>
+          Elige cómo pueden pagar y reservar tus clientas en tu web. Lo que apuntas tú desde el panel no cambia.
+        </Typography>
+      ) : (
+        <>
+          <Typography sx={{ fontSize: '0.9rem', color: 'var(--studio-muted)', mt: 0.5, mb: 1.5 }}>
+            Tienes dos tipos de clientas. Puedes tener las dos a la vez.
+          </Typography>
+          <TwoWorlds variant="compact" facts={facts} go={navigate} open={openGuide} />
+          <Typography sx={{ fontSize: '0.9rem', color: 'var(--studio-muted)', mt: 2 }}>
+            Aquí eliges qué ofrece tu web. Lo que apuntas tú desde el panel no cambia.
+          </Typography>
+        </>
+      )}
 
-      <Section title="Con tarjeta, en tu web" id={`${id}-card`}>
+      <Section title="1 · Clientas online: con tarjeta, en tu web" id={`${id}-card`}>
         <Row icon="card" title="Pago con tarjeta en la web"
-          hint={onlineReady ? 'Al reservar o comprar, pagan con tarjeta, Apple Pay o Google Pay.' : 'Primero conecta los pagos online (más abajo en Ajustes → Cobros).'}
+          hint={onlineReady ? 'Al reservar o comprar, pagan con tarjeta, Apple Pay o Google Pay.' : 'Primero activa los pagos online (más abajo, «Pagos online»: te guiamos paso a paso).'}
           control={sw(form.online_card_enabled && onlineReady, (v) => set({ online_card_enabled: v }), 'Pago con tarjeta en la web', !onlineReady)}
           disabled={!onlineReady} />
         {[
@@ -175,7 +194,7 @@ export default function PaymentOptionsCard({ compact = false, onSaved }: {
         ))}
       </Section>
 
-      <Section title="Pagar en el estudio" id={`${id}-studio`}>
+      <Section title="2 · En el estudio: reservan en la web y pagan al llegar" id={`${id}-studio`}>
         <Box sx={{ py: 1.25 }}>
           <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--studio-ink)' }}>Guardar la plaza y pagar al llegar</Typography>
           <Typography sx={{ fontSize: '0.82rem', color: 'var(--studio-muted)' }}>

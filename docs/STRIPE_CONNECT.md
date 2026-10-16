@@ -1,7 +1,8 @@
 # «Conectar pagos» con Stripe Connect
 
 Por defecto cada estudio cobra con **sus propias claves de Stripe**: las pega en el panel
-(Ajustes → Pagos online) y el aviso de pagos (webhook) se crea solo. Así sigue funcionando
+(Ajustes → Cobros → «Avanzado», solo si la instalación no tiene Connect) y el aviso de
+pagos (webhook) se crea solo. Así sigue funcionando
 si no configuras nada de esta página.
 
 «Conectar pagos» es la alternativa para quien instala Corelia **para otros** (una agencia,
@@ -29,19 +30,36 @@ A ti, como plataforma, no te cuesta nada («Stripe gestiona los precios»).
 | Apple Pay / Google Pay | Al activarse la cuenta, Corelia registra los dominios de la web (y su versión con/sin `www`) y del panel en la cuenta del estudio; otra vez si cambias de dominio en el panel. |
 | Avisos | Un endpoint «Connect» de tu plataforma → `https://TU_API/api/v1/webhooks/connect/`. |
 
-El estudio ve en **Ajustes → Pagos online** (y en el asistente de bienvenida) una tarjeta
-«Conectar pagos» según el estado de su cuenta:
+El estudio ve en **Ajustes → Cobros → Pagos online** una guía de la mano, con «Conectar
+pagos» como **único camino** (nada de copiar claves):
 
-| Estado | Qué ve |
-|---|---|
-| sin cuenta | ventajas, país de su negocio (no se puede cambiar después) y **Conectar pagos** |
-| alta a medias | **Continuar en Stripe** |
-| Stripe revisando | «Stripe está revisando tus datos…» y **Comprobar** |
-| faltan datos | **Completar datos en Stripe** |
-| activa | «Pagos conectados», etiqueta «Modo prueba» si es de prueba, **Abrir mi Stripe** y **Desconectar** |
+- **Qué es Stripe** en llano: qué es, para qué, cuánto cuesta (la comisión de Stripe de su
+  país; Corelia 0 %), qué necesita (DNI/NIE o datos de la empresa, IBAN, móvil, ~10 min) y
+  que nunca vemos tarjetas ni claves del banco.
+- **Cuatro pasos**: 1 Prepara tus datos (lista para marcar) → 2 Conecta con Stripe (qué le
+  pedirá Stripe pantalla a pantalla: tipo de negocio, actividad «Gimnasios / estudios de
+  fitness», su web, el nombre del extracto…) → 3 Stripe lo revisa → 4 ¡Listo! (pago de
+  prueba, dónde ver el dinero, devoluciones).
+- **«¿Prefieres no cobrar online?»** (todo en el estudio, con créditos) y unas **preguntas
+  frecuentes**.
 
-Las claves de siempre quedan en «Avanzado: usar mis propias claves de Stripe». La guía de
-puesta en marcha marca «Pagos con tarjeta» hecho cuando la cuenta puede cobrar.
+Según el estado de su cuenta (`payments_status().state`):
+
+| Estado | Qué ve | Qué tiene que hacer |
+|---|---|---|
+| `none` | «Sin conectar», pasos 1 y 2 | marcar sus datos, elegir país y **Conectar pagos** |
+| `onboarding` | «Alta a medias», paso 2 | **Continuar en Stripe** (o «Ya terminé: comprobar») |
+| `pending` | «Stripe lo revisa», paso 3; el panel vuelve a mirar solo cada 20 s (y pregunta a Stripe cada 5 min) | nada |
+| `restricted` | «Faltan datos», paso 3 con la lista de `requirements_due` traducida (DNI, IBAN, web, condiciones…) | **Completar datos en Stripe** |
+| `active` | «Cobrando» (+ «Modo prueba» si es de prueba), paso 4 | pago de prueba; **Abrir mi Stripe**; **Desconectar** |
+| `mismatch` | «Revisar»: la cuenta es de otro modo (prueba / real) | **Desconectar** y volver a conectar |
+
+Las claves de siempre solo aparecen, plegadas, en «Avanzado (instalación propia sin
+Connect)» cuando la instalación **no** tiene Connect, y se pueden quitar del todo con
+`STRIPE_KEYS_FALLBACK_ENABLED=0` (el API rechaza entonces pegar claves nuevas; las ya
+guardadas siguen cobrando y se pueden desconectar). Un estudio que ya cobraba con claves
+las ve en «Tus claves de Stripe de antes» para poder desconectarlas. La guía de puesta en
+marcha marca «Pagos con tarjeta» hecho cuando la cuenta puede cobrar.
 
 ## 1. En Stripe (empieza en modo prueba)
 
@@ -93,6 +111,7 @@ Hazlo primero con el interruptor **Modo de prueba** activado; luego repite en re
 | `STRIPE_CONNECT_BOOKING_PMC` | Opcional: `pmc_…` de la configuración «Reservas» del paso 4. |
 | `STRIPE_CONNECT_COUNTRIES` | Opcional: países donde se ofrece, ISO-2 separados por comas. Por defecto los de Corelia donde Stripe abre cuentas: `ES,PT,FR,DE,IT,NL,BE,AT,LU,FI,GR,IE,GB,CH,LI,US,CA,MX,BR` ([stripe.com/global](https://stripe.com/global)). |
 | `STRIPE_CONNECT_AVAILABILITY_CHECK` | Opcional: ruta a una función `f(site_config) -> bool` que decide si a este estudio se le ofrece «Conectar pagos» (para activarlo poco a poco). Solo decide si se puede **empezar**: una cuenta ya conectada sigue cobrando. |
+| `STRIPE_KEYS_FALLBACK_ENABLED` | Opcional (por defecto `1`). `0` = el panel no ofrece pegar claves propias de Stripe (plan B sin Connect). Para un servicio gestionado donde todos usan «Conectar pagos». |
 | `PANEL_URL` | Opcional: dirección del panel a la que se vuelve desde Stripe. Por defecto la del API (donde se sirve el panel) o el dominio propio del panel. En desarrollo con Vite: `http://localhost:5173`. |
 
 «Conectar pagos» solo aparece si están la clave secreta **y** la publicable y son del mismo
@@ -100,7 +119,7 @@ modo. Sin ellas, el panel y la web son exactamente los de siempre.
 
 ## 3. Probar (modo prueba)
 
-1. Panel → Ajustes → Pagos online → **Conectar pagos** → elige el país → en Stripe, usa los
+1. Panel → Ajustes → Cobros → Pagos online → **Conectar pagos** → elige el país → en Stripe, usa los
    datos de prueba que ofrece el propio formulario (el botón de rellenar con datos de prueba).
 2. Al volver, la tarjeta pasa a «Stripe está revisando…» o directamente a «Pagos
    conectados · Modo prueba».
@@ -136,7 +155,7 @@ que ya tenía). Lo que pasa en la transición:
   nuevos en la cuenta conectada y, si un plan tenía un `stripe_price_id` de la cuenta
   antigua, cobra con el importe del plan.
 - Durante un tiempo el estudio tendrá saldo, transferencias e informes en dos cuentas.
-- Si vuelve a conectar claves en «Avanzado», la web vuelve a cobrar con ellas.
+- Mientras sigan conectadas las claves de antes («Tus claves de Stripe de antes» en el panel), la web cobra con ellas: desconéctalas para cobrar con la cuenta conectada.
 
 Más adelante se podría añadir el alta por OAuth para enlazar la cuenta que el estudio ya
 tiene; hoy no está.

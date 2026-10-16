@@ -31,8 +31,9 @@ interface Item {
 interface UserHit { id: number; email: string; first_name?: string; last_name?: string; phone?: string | null }
 
 const CHAPTER_WORDS: Record<string, string> = {
-  cobros: 'clase suelta bono membresía crédito caduca tarjeta online stripe',
-  'en-mano': 'efectivo bizum en mano datáfono añadir créditos clase fija apuntar',
+  cobros: 'cobrar dos formas online estudio clientas resumen',
+  online: 'clase suelta bono membresía crédito caduca tarjeta online stripe web renovación recibo',
+  'en-estudio': 'efectivo bizum en mano datáfono añadir créditos clase fija apuntar corte mensualidad estudio',
   reembolsos: 'cancelar cancelación devolver reembolso devolución plazo horas',
   espera: 'lista de espera llena plaza dar plaza',
 };

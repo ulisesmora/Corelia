@@ -607,7 +607,11 @@ class SiteConfigStripeView(APIView):
     permission_classes = [IsAdminUser]
 
     def post(self, request):
-        from api.utils.payments import connect_stripe
+        from api.utils.payments import connect_stripe, keys_fallback_enabled
+        if not keys_fallback_enabled():
+            return Response({'error': 'En esta instalación los pagos se activan con «Conectar pagos», '
+                                      'sin pegar claves de Stripe.', 'code': 'keys_disabled'},
+                            status=status.HTTP_403_FORBIDDEN)
         secret = (request.data.get('secret_key') or '').strip()
         publishable = (request.data.get('publishable_key') or '').strip()
         if not publishable.startswith(('pk_live_', 'pk_test_')):

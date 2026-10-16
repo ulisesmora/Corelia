@@ -149,6 +149,13 @@ def _effective(cfg) -> tuple:
     return '', False, False
 
 
+def keys_fallback_enabled() -> bool:
+    """¿Se ofrece pegar las claves propias de Stripe (plan B sin Connect)?
+    STRIPE_KEYS_FALLBACK_ENABLED (por defecto sí). No afecta a claves ya
+    guardadas: siguen cobrando y se pueden desconectar."""
+    return bool(getattr(settings, 'STRIPE_KEYS_FALLBACK_ENABLED', True))
+
+
 def payments_status(cfg=None) -> dict:
     """Todo lo que el panel (y la guía) necesitan saber de los pagos online."""
     cfg = cfg or get_site_config()
@@ -162,6 +169,8 @@ def payments_status(cfg=None) -> dict:
         'live': live,
         'requirements_due': _requirements_due(st) if cfg.stripe_account_id else [],
         'account_id': cfg.stripe_account_id,
+        # El panel ofrece «Avanzado: usar mis propias claves» (solo sin Connect)
+        'keys_fallback': keys_fallback_enabled(),
     }
 
 

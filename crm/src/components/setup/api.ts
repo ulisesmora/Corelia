@@ -252,6 +252,8 @@ export interface PaymentsStatus {
   has_keys: boolean;
   /** Las claves se eligieron como forma de cobro */
   keys_provider: boolean;
+  /** Se ofrece pegar claves propias (plan B sin Connect; STRIPE_KEYS_FALLBACK_ENABLED) */
+  keys_fallback: boolean;
 }
 
 /** A qué pantalla del panel se vuelve desde Stripe (lista cerrada en el API) */

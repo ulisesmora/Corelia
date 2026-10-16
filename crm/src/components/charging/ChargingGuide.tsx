@@ -2,13 +2,15 @@ import { useEffect, useRef, type ComponentType } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Button, ButtonBase, Drawer, IconButton, Typography, useMediaQuery } from '@mui/material';
 import StudioIcon from '../../site/StudioIcon';
-import { CHAPTERS, GUIDE_PARAM, chapterFromLocation, type GuideChapter } from './chapters';
-import { HowYouChargeChapter, InPersonChapter, RefundsChapter, WaitlistChapter, type ChapterProps } from './ChapterBodies';
+import { CHAPTERS, GUIDE_PARAM, canonicalChapter, chapterFromLocation, type GuideChapter } from './chapters';
+import { InStudioChapter, OnlineChapter, OverviewChapter, RefundsChapter, WaitlistChapter, type ChapterProps } from './ChapterBodies';
 import { useChargingFacts } from './facts';
 
 const BODIES: Record<GuideChapter, ComponentType<ChapterProps>> = {
-  cobros: HowYouChargeChapter,
-  'en-mano': InPersonChapter,
+  cobros: OverviewChapter,
+  online: OnlineChapter,
+  'en-estudio': InStudioChapter,
+  'en-mano': InStudioChapter, // nombre antiguo
   reembolsos: RefundsChapter,
   espera: WaitlistChapter,
 };
@@ -42,14 +44,14 @@ interface Props {
   onGo: (path: string) => void;
 }
 
-/** Panel lateral (hoja de abajo en el móvil) con los 4 capítulos. */
+/** Panel lateral (hoja de abajo en el móvil) con los 5 capítulos. */
 export default function ChargingGuide({ chapter, onClose, onChapter, onGo }: Props) {
   const open = chapter !== null;
   const mobile = useMediaQuery('(max-width:599.95px)', { noSsr: true });
   const { facts } = useChargingFacts(open);
   const bodyRef = useRef<HTMLDivElement>(null);
   const headRef = useRef<HTMLHeadingElement>(null);
-  const current = chapter || 'cobros';
+  const current = canonicalChapter(chapter || 'cobros');
   const idx = CHAPTERS.findIndex((c) => c.key === current);
   const meta = CHAPTERS[idx];
   const Body = BODIES[current];
@@ -105,14 +107,14 @@ export default function ChargingGuide({ chapter, onClose, onChapter, onGo }: Pro
           </IconButton>
         </Box>
         <Box role="tablist" aria-label="Capítulos" onKeyDown={onTabsKey}
-          sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'repeat(4, minmax(0, 1fr))' }, gap: 0.75, mt: 1.5 }}>
+          sx={{ display: 'grid', gridTemplateColumns: { xs: 'repeat(3, minmax(0, 1fr))', sm: 'repeat(5, minmax(0, 1fr))' }, gap: 0.75, mt: 1.5 }}>
           {CHAPTERS.map((c) => {
             const on = c.key === current;
             return (
               <ButtonBase key={c.key} data-c={c.key} role="tab" aria-selected={on} aria-controls="cg-panel" tabIndex={on ? 0 : -1}
                 onClick={() => goChapter(c.key)}
                 sx={{
-                  display: 'flex', flexDirection: { xs: 'row', sm: 'column' }, gap: 0.5, minHeight: 44, px: 1, py: 0.75,
+                  display: 'flex', flexDirection: 'column', gap: 0.25, minHeight: 44, px: 1, py: 0.75,
                   borderRadius: 'var(--studio-radius-md)', fontSize: '0.8rem', fontWeight: 700, fontFamily: 'var(--studio-font-body)', lineHeight: 1.15,
                   color: on ? 'var(--studio-on-primary)' : 'var(--studio-ink)', background: on ? 'var(--studio-primary-fill)' : 'var(--studio-surf2)',
                   '&:hover': { background: on ? 'var(--studio-primary-fill)' : 'var(--studio-p-soft)' },

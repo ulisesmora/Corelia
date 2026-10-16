@@ -1,15 +1,20 @@
 import { useId, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Box, ButtonBase, Collapse, Typography } from '@mui/material';
 import StudioIcon from '../../site/StudioIcon';
-import { creditsText, daysText, defaultOptions, methodsText, periodText, price, useChargingFacts } from './facts';
+import { useOpenGuide } from './chapters';
+import { creditsText, daysText, defaultOptions, periodText, price, useChargingFacts } from './facts';
 import PaymentOptionsCard from './PaymentOptionsCard';
+import TwoWorlds from './TwoWorlds';
 import { Badge, Note, Value, type Tint } from './visuals';
 
 /**
- * «Así cobrarás»: resumen compacto de cómo pagan las clientas (clase suelta,
- * bono, membresía) con un «Ver cómo funciona» desplegable. Va en el paso 7
- * de la puesta en marcha y en «Clases y precios» → Precios y bonos.
- * `onGuide`: enlace a la guía completa (solo dentro del panel).
+ * «Así cobrarás»: las dos formas de cobrar (clientas online / del estudio,
+ * <TwoWorlds/>), lo que vendes (clase suelta, bono, membresía) y un «Ver
+ * cómo funciona» desplegable. Va en el paso 7 de la puesta en marcha y en
+ * «Clases y precios» → Precios y bonos.
+ * `onGuide`: enlace a la guía completa (solo dentro del panel; sin él, como
+ * en la puesta en marcha, no hay botones que lleven a otras pantallas).
  * «Formas de cobro» (tarjeta, pagar en el estudio, invitadas, qué se vende
  * online) se cambian aquí mismo, sin salir (PaymentOptionsCard compacta).
  */
@@ -24,6 +29,8 @@ export default function HowYouCharge({ onGuide, defaultOpen = false, version }: 
   const [open, setOpen] = useState(defaultOpen);
   const [editing, setEditing] = useState(false);
   const id = useId();
+  const navigate = useNavigate();
+  const openGuide = useOpenGuide();
   const pack = f.pack;
   const sub = f.subscription;
   const o = f.options || defaultOptions(f.payments.enabled);
@@ -33,9 +40,6 @@ export default function HowYouCharge({ onGuide, defaultOpen = false, version }: 
     { icon: 'plans', tint: 'mat', title: 'Bono', text: `${pack ? `${pack.credits} clases · ${price(f, pack.price)}` : 'Varias clases'} · ${where(o.packs_online)}` },
     { icon: 'subscriptions', tint: 'barre', title: 'Membresía', text: `${sub ? `${price(f, sub.price)} ${periodText(sub.interval, sub.interval_count)}` : 'Cada mes'} · ${where(o.memberships_online)}` },
   ];
-  const studioWho = o.pay_at_studio.guests && o.pay_at_studio.clients ? 'invitadas y clientas con cuenta'
-    : o.pay_at_studio.guests ? 'invitadas (sin cuenta)' : o.pay_at_studio.clients ? 'clientas con cuenta' : '';
-  const methods = methodsText(f);
 
   return (
     <Box component="section" aria-labelledby={`${id}-h`} data-tour="how-you-charge" sx={{
@@ -46,6 +50,10 @@ export default function HowYouCharge({ onGuide, defaultOpen = false, version }: 
         <StudioIcon name="payments" aria-hidden sx={{ color: 'var(--studio-primary-text)' }} />
         <Typography id={`${id}-h`} component="h2" sx={{ fontWeight: 700, fontSize: '1rem', color: 'var(--studio-ink)' }}>Así cobrarás</Typography>
       </Box>
+      <TwoWorlds variant="compact" facts={f} go={onGuide ? navigate : undefined} open={onGuide ? openGuide : undefined} />
+      <Typography component="h3" sx={{ fontWeight: 700, fontSize: '0.8rem', letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--studio-muted)', mt: 2, mb: 0.75 }}>
+        Lo que vendes
+      </Typography>
       <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0, display: 'grid', gap: 1, gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 150px), 1fr))' }}>
         {tiles.map((t) => (
           <Box component="li" key={t.title} sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1, borderRadius: 'var(--studio-radius-md)', background: 'var(--studio-surf2)', minWidth: 0 }}>
@@ -106,18 +114,12 @@ export default function HowYouCharge({ onGuide, defaultOpen = false, version }: 
             <Badge icon="clock" size={32} />
             <span><b>Los bonos caducan</b> {pack?.expire_days ? <>(el de {pack.credits} clases, a los <Value>{daysText(pack.expire_days)}</Value>)</> : 'al tiempo que elijas'}. Lo que no use, se pierde.</span>
           </Box>
-          <Box component="li" sx={line}>
-            <Badge icon="card" size={32} />
-            <span><b>Online:</b> {o.card ? 'paga con tarjeta en tu web.' : f.payments.enabled ? 'la tarjeta está apagada en «Formas de cobro».' : 'paga con tarjeta en tu web (actívalo luego en Ajustes → Cobros).'}</span>
-          </Box>
-          <Box component="li" sx={line}>
-            <Badge icon="payments" size={32} />
-            <span>
-              <b>En el estudio:</b>{' '}
-              {studioWho ? <>reservan y pagan al llegar ({studioWho}){methods ? `, en ${methods}` : ''}. </> : null}
-              Si te compran un bono en mano{methods ? '' : ' (efectivo, Bizum…)'}, le añades los créditos en «Créditos».
-            </span>
-          </Box>
+          {!o.card && (
+            <Box component="li" sx={line}>
+              <Badge icon="card" size={32} />
+              <span><b>Online:</b> {f.payments.enabled ? 'la tarjeta está apagada en «Formas de cobro».' : 'activa los pagos online cuando quieras, en Ajustes → Cobros. Te guiamos paso a paso.'}</span>
+            </Box>
+          )}
         </Box>
         {onGuide && (
           <ButtonBase onClick={onGuide} sx={{

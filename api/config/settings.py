@@ -370,6 +370,11 @@ STRIPE_CONNECT_COUNTRIES = [c.upper() for c in env_list(
     'ES,PT,FR,DE,IT,NL,BE,AT,LU,FI,GR,IE,GB,CH,LI,US,CA,MX,BR',
 )]
 STRIPE_CONNECT_BOOKING_PMC = env('STRIPE_CONNECT_BOOKING_PMC', '')
+# Plan B sin Connect: el estudio pega sus propias claves de Stripe (Ajustes →
+# Cobros → «Avanzado»). 0 = no se ofrece (p. ej. en un servicio gestionado,
+# donde todos cobran con «Conectar pagos»). Las claves ya guardadas siguen
+# cobrando y se pueden desconectar.
+STRIPE_KEYS_FALLBACK_ENABLED = env_bool('STRIPE_KEYS_FALLBACK_ENABLED', True)
 # Dirección del panel a la que se vuelve desde Stripe (vacío = la del API, que
 # es donde se sirve el panel; en desarrollo con Vite: http://localhost:5173).
 PANEL_URL = (env('PANEL_URL') or API_URL).rstrip('/')
