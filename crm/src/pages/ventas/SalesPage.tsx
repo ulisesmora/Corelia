@@ -242,7 +242,7 @@ export default function SalesPage() {
               <Box sx={midSx}>
                 <Typography sx={{ fontWeight: 700, fontSize: '0.94rem', color: 'var(--studio-ink)' }}>{p.name}</Typography>
                 <Typography sx={{ fontSize: '0.82rem', color: 'var(--studio-muted)' }}>
-                  {p.type === 'sub' ? `Cuota · ${p.subscribers} ${p.subscribers === 1 ? 'clienta' : 'clientas'}` : `${p.credits} ${p.credits === 1 ? 'clase' : 'clases'}`}
+                  {p.type === 'sub' ? `Cuota · ${p.subscribers} ${p.subscribers === 1 ? 'cliente' : 'clientes'}` : `${p.credits} ${p.credits === 1 ? 'clase' : 'clases'}`}
                   {' · '}{p.sold ? `${p.sold} ${p.sold === 1 ? 'vendido' : 'vendidos'} (${fmtMoney(p.revenue, cur)})` : 'sin ventas en el periodo'}
                 </Typography>
               </Box>
