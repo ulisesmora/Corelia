@@ -1,4 +1,4 @@
-"""Pantallas de resumen del panel (solo administradoras).
+"""Pantallas de resumen del panel (solo administración).
 
   GET  /api/v1/dashboard/today/                 «Hoy»: cifras, avisos, día, gráfico, actividad, extras
   GET  /api/v1/dashboard/day/?date=AAAA-MM-DD   «Hoy en el estudio» de otro día

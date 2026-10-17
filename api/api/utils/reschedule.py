@@ -105,7 +105,7 @@ def move_bookings_to(old_schedule, new_schedule, new_start_time, new_end_time,
                 notifications.append((person, old_schedule.class_type.title, old_dt, new_start))
 
     for person, title, old_dt, new_dt in notifications:
-        if hasattr(person, 'push_subscriptions'):  # invitadas: solo email
+        if hasattr(person, 'push_subscriptions'):  # invitados: solo email
             send_schedule_change_push(person, title, old_dt, new_dt)
         _notify_change_email(person, title, old_dt, new_dt)
 
@@ -147,7 +147,7 @@ def cancel_future_bookings(schedule, from_date, reason="Cambio de calendario"):
                 )
                 refunded += 1
             elif booking.guest_id:
-                # Invitada: pagó con tarjeta → reembolso Stripe tras el commit
+                # Invitado: pagó con tarjeta → reembolso Stripe tras el commit
                 guest_refunds.append(booking)
             booking.status = 'canceled'
             booking.save(update_fields=['status', 'updated_at'])

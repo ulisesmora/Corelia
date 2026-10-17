@@ -175,7 +175,7 @@ interface BookingRow {
 /**
  * Cuenta las reservas activas que caen en un rango (hora de Madrid,
  * [desde, hasta) ). Si se pasa scheduleId, solo las de esa clase.
- * Solo lectura: sirve para decir "hay 4 clientas apuntadas" antes de guardar.
+ * Solo lectura: sirve para decir "hay 4 reservas" antes de guardar.
  */
 export async function fetchAffectedBookings(opts: {
   fromWall: string; // "YYYY-MM-DDTHH:MM"
@@ -207,21 +207,21 @@ export function AffectedSummary({ affected, when }: { affected: AffectedBookings
     return (
       <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1.5 }}>
         <CircularProgress size={18} />
-        <Typography sx={{ fontSize: '0.95rem' }}>Comprobando si hay clientas apuntadas {when}…</Typography>
+        <Typography sx={{ fontSize: '0.95rem' }}>Comprobando si hay gente apuntada {when}…</Typography>
       </Stack>
     );
   }
   if (affected.failed) {
     return (
       <Alert severity="warning" sx={{ mb: 1.5 }}>
-        No hemos podido comprobar cuántas clientas hay apuntadas {when}. Elige igualmente qué hacer por si las hay.
+        No hemos podido comprobar cuántas reservas hay {when}. Elige igualmente qué hacer por si las hay.
       </Alert>
     );
   }
   if (affected.count === 0) {
     return (
       <Alert severity="success" sx={{ mb: 1.5 }}>
-        No hay ninguna clienta apuntada {when}. Nadie se verá afectada.
+        No hay ninguna reserva {when}. No afecta a nadie.
       </Alert>
     );
   }
@@ -675,7 +675,7 @@ export default function BlackoutsManagement({ schedules, preset, onPresetConsume
       const data = await res.json();
       const extra =
         data.cancelled > 0
-          ? ` Se han cancelado ${data.cancelled} ${data.cancelled === 1 ? 'reserva' : 'reservas'}, se ha devuelto el dinero o crédito (${data.refunded}) y se ha avisado a cada clienta.`
+          ? ` Se han cancelado ${data.cancelled} ${data.cancelled === 1 ? 'reserva' : 'reservas'}, se ha devuelto el dinero o crédito (${data.refunded}) y se ha avisado a cada cliente.`
           : '';
       notify(`Cierre guardado: nadie podrá reservar en esas fechas.${extra}`, 'success');
       setOpenDialog(false);
@@ -704,10 +704,10 @@ export default function BlackoutsManagement({ schedules, preset, onPresetConsume
               <b>dos clases</b> en la web: la de la hora de siempre y la movida.
             </p>
           ) : (
-            <p>Las clientas podrán volver a reservar en esas fechas.</p>
+            <p>Tus clientes podrán volver a reservar en esas fechas.</p>
           )}
           <p style={{ marginBottom: 0 }}>
-            Las reservas que se cancelaron al cerrar <b>no vuelven solas</b>: si alguna clienta quiere venir, tendrá
+            Las reservas que se cancelaron al cerrar <b>no vuelven solas</b>: si alguien quiere venir, tendrá
             que reservar otra vez.
           </p>
         </>
@@ -1066,7 +1066,7 @@ export default function BlackoutsManagement({ schedules, preset, onPresetConsume
             )}
           </FormStep>
 
-          <FormStep n={3} title="¿Por qué se cierra?" hint="Solo para que tú lo recuerdes: las clientas no ven la nota.">
+          <FormStep n={3} title="¿Por qué se cierra?" hint="Solo para que tú lo recuerdes: tus clientes no ven la nota.">
             <ToggleButtonGroup
               value={kind}
               exclusive
@@ -1088,10 +1088,10 @@ export default function BlackoutsManagement({ schedules, preset, onPresetConsume
             />
           </FormStep>
 
-          <FormStep n={4} title="¿Y las clientas que ya tienen reserva esos días?">
+          <FormStep n={4} title="¿Y quien ya tiene reserva esos días?">
             {!range || scheduleMissing ? (
               <Typography sx={{ color: 'text.secondary' }}>
-                Cuando elijas {scheduleMissing ? 'la clase y ' : ''}las fechas te diremos si hay alguien apuntada.
+                Cuando elijas {scheduleMissing ? 'la clase y ' : ''}las fechas te diremos si hay reservas.
               </Typography>
             ) : (
               <>
@@ -1102,11 +1102,11 @@ export default function BlackoutsManagement({ schedules, preset, onPresetConsume
                       selected={existing === 'cancel'}
                       onClick={() => setExisting('cancel')}
                       recommended={kind !== 'private'}
-                      title="Cancelar sus reservas, devolverles lo pagado y avisarlas"
+                      title="Cancelar las reservas, devolver lo pagado y avisar a cada cliente"
                       text={
                         <>
-                          Se cancelan, a las clientas se les devuelve el crédito a su cuenta y a las invitadas que
-                          pagaron con tarjeta se les devuelve el dinero a la tarjeta. Cada una recibe un aviso por
+                          Se cancelan, a los clientes se les devuelve el crédito a su cuenta y a quien
+                          pagó con tarjeta se le devuelve el dinero a la tarjeta. Cada persona recibe un aviso por
                           email, WhatsApp y notificación al móvil. <b>No se puede deshacer.</b>
                         </>
                       }
@@ -1115,7 +1115,7 @@ export default function BlackoutsManagement({ schedules, preset, onPresetConsume
                       selected={existing === 'keep'}
                       onClick={() => setExisting('keep')}
                       title="Mantener sus reservas"
-                      text="Las que ya están apuntadas siguen apuntadas y no se les avisa de nada; solo se impide que se apunte nadie más. Útil si esas personas sí vienen (por ejemplo, el grupo privado)."
+                      text="Quien ya tiene reserva la conserva y no se le avisa de nada; solo se impide que se apunte nadie más. Útil si esas personas sí vienen (por ejemplo, el grupo privado)."
                     />
                     {submitted && errors.existing && (
                       <Typography sx={{ color: 'error.main', fontSize: '0.9rem' }}>{errors.existing}</Typography>
@@ -1134,7 +1134,7 @@ export default function BlackoutsManagement({ schedules, preset, onPresetConsume
                 existing === 'cancel' ? (
                   <>
                     Las <b>reservas que ya había{affected.failed ? '' : ` (${affected.count})`}</b> se cancelarán, se
-                    devolverá lo pagado y se avisará a cada clienta.
+                    devolverá lo pagado y se avisará a cada cliente.
                   </>
                 ) : existing === 'keep' ? (
                   <>Las reservas que ya había se mantienen y no se avisa a nadie.</>

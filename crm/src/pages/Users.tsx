@@ -170,7 +170,7 @@ export default function Admins() {
             Su usuario se borra para siempre y no se puede deshacer. Si más adelante vuelve a necesitar acceso,
             tendrás que crearlo de nuevo con «Añadir administrador».
           </p>
-          <p style={{ marginBottom: 0 }}>Las clientas, las clases y las reservas no se tocan.</p>
+          <p style={{ marginBottom: 0 }}>Los clientes, las clases y las reservas no se tocan.</p>
         </>
       ),
       confirmText: 'Sí, quitarle el acceso',
@@ -386,14 +386,14 @@ export default function Admins() {
         <DialogContent>
           <Box component="form" noValidate onSubmit={(e) => { e.preventDefault(); handleCreate(); }}>
             <Alert severity="warning" sx={{ mb: 2.5, fontSize: '0.92rem' }}>
-              Tendrá acceso completo: podrá ver los datos de todas las clientas y cambiar créditos, pagos y horario.
+              Tendrá acceso completo: podrá ver los datos de todos los clientes y cambiar créditos, pagos y horario.
             </Alert>
             <Stack spacing={2.5}>
               <TextField
                 label="Nombre (opcional)"
                 value={form.name}
                 onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
-                helperText="Ej.: Laura. Solo sirve para reconocerla en esta lista."
+                helperText="Ej.: Laura o Álex. Solo sirve para reconocer a esa persona en esta lista."
                 fullWidth
                 autoFocus
                 slotProps={{ htmlInput: { maxLength: 150 } }}

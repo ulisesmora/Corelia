@@ -146,8 +146,8 @@ class UserViewSet(viewsets.ModelViewSet):
     
     def get_permissions(self):
         # Antes list/retrieve eran públicos: cualquiera descargaba las fichas
-        # de todas las clientas. Ahora: listar = solo administración; ver una
-        # ficha = administración o la propia clienta (ver get_queryset).
+        # de todos los clientes. Ahora: listar = solo administración; ver una
+        # ficha = administración o el propio cliente (ver get_queryset).
         if self.action == 'retrieve':
             permission_classes = [permissions.IsAuthenticated]
         else:
@@ -213,7 +213,7 @@ class SignUpView(APIView):
 
     
 class SignUpClientView(APIView):
-    """Registro de clientas.
+    """Registro de clientes.
 
     - Público (web/app): email y contraseña obligatorios. La cuenta queda
       ACTIVA al momento (verificación suave): devolvemos la sesión para que
@@ -286,7 +286,7 @@ class SignUpClientView(APIView):
         user.save(update_fields=['is_staff', 'is_superuser', 'password', 'created_by_admin'])
 
         if is_admin:
-            return Response({"message": "Clienta creada", "email": email, "user_id": user.id},
+            return Response({"message": "Cliente creado", "email": email, "user_id": user.id},
                             status=status.HTTP_201_CREATED)
 
         # Sesión inmediata (verificación suave)
@@ -335,7 +335,7 @@ class SignInView(APIView):
 
 
 class SignInViewClient(APIView):
-    """POST /api/signinClient/ {email, password[, turnstile_token]} — entrada de clientas.
+    """POST /api/signinClient/ {email, password[, turnstile_token]} — entrada de clientes.
     Mismos límites, bloqueo y captcha que el panel. Una cuenta del panel aquí
     recibe la misma respuesta que una contraseña incorrecta (antes un mensaje
     distinto delataba que la contraseña de un administrador era buena)."""
@@ -574,7 +574,7 @@ class GuestProfileViewSet(SoftDeleteModelViewSet):
     search_fields = ["email", "name"]
 
     def get_permissions(self):
-        # Antes list/retrieve eran públicos (datos de 236 invitadas: email,
+        # Antes list/retrieve eran públicos (datos de 236 invitados: email,
         # teléfono, fecha de nacimiento). Ahora solo administración.
         if self.action == 'claim':
             return [permissions.IsAuthenticated()]
@@ -707,7 +707,7 @@ class RecurringScheduleViewSet(SoftDeleteModelViewSet):
         return RecurringScheduleWriteSerializer
 
     def perform_destroy(self, instance):
-        # DELETE desde el CRM: antes solo hacía soft-delete y las clientas se
+        # DELETE desde el CRM: antes solo hacía soft-delete y los clientes se
         # quedaban con reservas pagadas de una clase que desaparecía del
         # calendario, sin reembolso ni aviso. Ahora cancela las reservas
         # futuras (reembolso + email/WhatsApp/push) y activa el flujo de
@@ -738,7 +738,7 @@ class RecurringScheduleViewSet(SoftDeleteModelViewSet):
         capacity_min, capacity_max, price_credits_override, price_eur_override,
         override_instructor, class_type.
 
-        Si el cambio NO altera sala/día/hora (p. ej. solo la profesora o las
+        Si el cambio NO altera sala/día/hora (p. ej. solo el instructor o las
         plazas), también vale: la regla vieja queda con fecha de fin y la BD
         solo exige una regla ABIERTA por sala/día/hora.
         """
@@ -994,7 +994,7 @@ class PaymentViewSet(SoftDeleteModelViewSet):
         Instancia y devuelve la lista de permisos que esta vista requiere.
         """
         # Antes el detalle era AllowAny: /v1/payments/<id>/ exponía los datos de
-        # la clienta a cualquiera. Solo lo usa el CRM.
+        # el cliente a cualquiera. Solo lo usa el CRM.
         permission_classes = [IsAdminUser]
         
         return [permission() for permission in permission_classes]
@@ -1006,7 +1006,7 @@ class CreditWalletViewSet(SoftDeleteModelViewSet):
     filterset_fields = ["user"]
 
     def get_permissions(self):
-        # Ver un monedero: la propia clienta o el estudio (antes era público:
+        # Ver un monedero: el propio cliente o el estudio (antes era público:
         # bastaba ir probando ids). El resto de acciones, solo el estudio.
         if self.action == 'retrieve':
             return [permissions.IsAuthenticated()]
@@ -1226,7 +1226,7 @@ class CouponViewSet(SoftDeleteModelViewSet):
 
 class CouponRedemptionViewSet(SoftDeleteModelViewSet):
     # Antes todo era público (listar/crear/borrar canjes). Ahora solo
-    # administración, salvo check-usage (lo usa el checkout de invitadas).
+    # administración, salvo check-usage (lo usa el checkout de invitados).
     permission_classes = [IsAdminUser]
 
     def get_permissions(self):
@@ -1323,7 +1323,7 @@ class BookingViewSet(SoftDeleteModelViewSet):
         qs = super().get_queryset()
         user = self.request.user
         if self.action in ('list', 'retrieve', 'cancel') and not (user.is_staff or user.is_superuser):
-            return qs.filter(user=user)  # cada clienta solo ve SUS reservas
+            return qs.filter(user=user)  # cada cliente solo ve SUS reservas
         return qs
 
     def get_serializer_class(self):
@@ -1364,7 +1364,7 @@ class BookingViewSet(SoftDeleteModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Plazo: la clienta puede cancelar hasta N horas antes (settings.
+        # Plazo: el cliente puede cancelar hasta N horas antes (settings.
         # BOOKING_CANCEL_MIN_HOURS). El estudio (CRM) puede cancelar siempre.
         if not request.user.is_staff:
             min_hours = settings.BOOKING_CANCEL_MIN_HOURS
@@ -1421,7 +1421,7 @@ class BookingViewSet(SoftDeleteModelViewSet):
 
                 response_message = "Reserva cancelada."
 
-                # 4b. Reembolsar créditos si la clase tenía un coste (las invitadas
+                # 4b. Reembolsar créditos si la clase tenía un coste (los invitados
                 # pagaron con tarjeta: se les devuelve en Stripe tras la transacción)
                 if credits_to_refund and credits_to_refund > 0 and booking.user_id:
                     try:
@@ -1455,7 +1455,7 @@ class BookingViewSet(SoftDeleteModelViewSet):
                 from api.utils.guest_refund import refund_guest_booking_stripe
                 if refund_guest_booking_stripe(booking, reason='admin_cancellation'):
                     response_message = "Reserva cancelada. Se le devuelve el pago a su tarjeta."
-            # Si la cancela el estudio (no ella misma), se le avisa siempre
+            # Si la cancela el estudio (no el propio cliente), se le avisa siempre
             if person and booking.user_id != request.user.id:
                 title = (booking.occurrence.class_type.title if booking.occurrence
                          else (booking.event.title if booking.event else "Clase"))
@@ -1558,7 +1558,7 @@ class BookingViewSet(SoftDeleteModelViewSet):
                                 refunded_count += 1
                         except Exception as e:
                             logger.error(f"Error refunding user {booking.user.id}: {e}")
-                    # 2b. Invitada: pagó con tarjeta → reembolso Stripe tras cancelar
+                    # 2b. Invitado: pagó con tarjeta → reembolso Stripe tras cancelar
                     if booking.guest_id:
                         guest_refund_queue.append(booking)
 
@@ -1567,7 +1567,7 @@ class BookingViewSet(SoftDeleteModelViewSet):
                     booking.save(update_fields=['status', 'updated_at'])
                     cancelled_count += 1
 
-                    # 4. Preparar notificación (usuaria o invitada)
+                    # 4. Preparar notificación (usuario o invitado)
                     person = booking.user or booking.guest
                     if person:
                         notifications_queue.append({
@@ -1576,7 +1576,7 @@ class BookingViewSet(SoftDeleteModelViewSet):
                             'title': booking.occurrence.class_type.title if booking.occurrence else "Clase"
                         })
             
-            # --- REEMBOLSO STRIPE A INVITADAS (fuera de la transacción) ---
+            # --- REEMBOLSO STRIPE A INVITADOS (fuera de la transacción) ---
             from api.utils.guest_refund import refund_guest_booking_stripe
             for gbooking in guest_refund_queue:
                 if refund_guest_booking_stripe(gbooking, reason='session_cancellation'):
@@ -1600,7 +1600,7 @@ class BookingViewSet(SoftDeleteModelViewSet):
                     notify_cancellation_email(user_obj, class_title, session_date)
                 except Exception as e:
                     logger.error(f"Error enviando Email a {user_obj.email}: {e}")
-                # 3. Push (faltaba: este flujo avisaba solo por email/WhatsApp; invitadas sin push)
+                # 3. Push (faltaba: este flujo avisaba solo por email/WhatsApp; invitados sin push)
                 if hasattr(user_obj, 'push_subscriptions'):
                     send_cancellation_push(user_obj, class_title, session_date)
             return Response({
@@ -1729,7 +1729,7 @@ class GoogleLoginView(APIView):
 
     «Iniciar sesión con Google» (Google Identity Services). La web obtiene de
     Google un ID token firmado y aquí se verifica contra el Client ID del
-    estudio (Ajustes → Acceso con Google). Si la clienta no tenía cuenta, se
+    estudio (Ajustes → Acceso con Google). Si el cliente no tenía cuenta, se
     crea; si ya la tenía con ese email, entra en la suya. Sin Firebase ni
     claves secretas: el Client ID es público.
     """
@@ -1776,7 +1776,7 @@ class GoogleLoginView(APIView):
             created = True
         elif user.is_staff:
             # El panel tiene su propio acceso: una cuenta de administración
-            # no entra como clienta por la web. Así Google tampoco puede
+            # no entra como cliente por la web. Así Google tampoco puede
             # saltarse la verificación en dos pasos del panel.
             return Response({"detail": "Esta cuenta es de administración: entra desde el panel."},
                             status=status.HTTP_403_FORBIDDEN)
@@ -2139,17 +2139,17 @@ class MyWalletBalanceView(APIView):
         return Response({"balance": current_balance})
         
 class CreateCheckoutSessionView(APIView):
-    """Pago como invitada (sin cuenta): crea su ficha y la sesión de Stripe.
+    """Pago como invitado (sin cuenta): crea su ficha y la sesión de Stripe.
     Límite por IP y captcha (si está configurado) para quien no ha entrado.
 
     Todo va en una transacción y las plazas se comprueban (con bloqueo) ANTES
     de crear nada: si una clase está llena, o Stripe falla, no quedan pagos ni
-    reservas pendientes huérfanos. La validación del carrito y de la invitada
+    reservas pendientes huérfanos. La validación del carrito y del invitado
     es la misma que la de «pagar en el estudio» (api/utils/guest_checkout.py).
 
     Sirve para clases del horario y eventos sueltos (con su precio), y también
-    para una clienta con cuenta (sesión iniciada): entonces el pago y las
-    reservas van a su nombre y no hacen falta los datos de invitada."""
+    para un cliente con cuenta (sesión iniciada): entonces el pago y las
+    reservas van a su nombre y no hacen falta los datos de invitado."""
     permission_classes = [AllowAny]
     throttle_classes = [scoped('checkout')]
 
@@ -2823,14 +2823,14 @@ class StripeWebhookView(APIView):
     def _notify_unconfirmed_bookings(self, items):
         """Push + email a quien pagó una reserva que no pudo confirmarse
         (la clase se llenó mientras pagaba, o el horario desapareció).
-        Cubre usuarias registradas (push+email) e invitadas (solo email).
+        Cubre usuarios registrados (push+email) e invitados (solo email).
         El dinero se devuelve en Stripe; aquí solo avisamos. Nunca lanza."""
         from api.utils.push import send_push_to_user
         from api.utils.availability import to_madrid_wall
         for user, class_title, start_dt in items:
             wall = to_madrid_wall(start_dt)
             cuando = f' del {wall:%d/%m a las %H:%M}' if wall else ''
-            if hasattr(user, 'push_subscriptions'):  # las invitadas no tienen push
+            if hasattr(user, 'push_subscriptions'):  # los invitados no tienen push
                 try:
                     send_push_to_user(
                         user,
@@ -2973,14 +2973,14 @@ class StripeWebhookView(APIView):
                 )
 
             # Avisar a quien pagó pero se quedó sin plaza (antes: refund mudo —
-            # la clienta creía tener la reserva y se enteraba en el estudio).
+            # el cliente creía tener la reserva y se enteraba en el estudio).
             if not_confirmed:
                 transaction.on_commit(
                     lambda items=list(not_confirmed): self._notify_unconfirmed_bookings(items)
                 )
 
             # Confirmación de reserva: solo push. El email ya lo manda el recibo
-            # del Payment (signal, plantilla de invitada con el detalle del pago);
+            # del Payment (signal, plantilla de invitado con el detalle del pago);
             # con los dos activos llegaban 2 emails por la misma reserva.
             if confirmed_bookings:
                 from api.utils.booking_notify import notify_booking_confirmation
@@ -3250,7 +3250,7 @@ class StripeWebhookView(APIView):
             subscription.id, new_status, cancel_at_period_end,
         )
 
-        # Aviso al pasar a impago: sin él, la clienta solo nota que sus clases
+        # Aviso al pasar a impago: sin él, el cliente solo nota que sus clases
         # dejaron de auto-reservarse "sin motivo". Solo en la TRANSICIÓN
         # (old != past_due) para no repetir con cada webhook de Stripe.
         if new_status == 'past_due' and old_status != 'past_due':
@@ -3518,9 +3518,9 @@ class VerifyPlanPurchaseView(APIView):
 
         logger.info(f"Suscripción creada (verify): user={user_id}, plan={plan.name}, stripe_sub={subscription_stripe_id}")
 class CreateBookingWithCreditsView(APIView):
-    """Reserva con créditos de una clienta con cuenta (clases del horario y
+    """Reserva con créditos de un cliente con cuenta (clases del horario y
     eventos sueltos). Todo en una transacción con el monedero y las sesiones
-    bloqueados. La validación es la misma que la de las invitadas
+    bloqueados. La validación es la misma que la de los invitados
     (api/utils/guest_checkout.py:validate_cart): cada línea tiene que ser una
     sesión real (día y hora de la clase, o el inicio del evento), activa, sin
     cierre, que no haya empezado, con plaza (las ofertas de la lista de espera
@@ -3539,8 +3539,8 @@ class CreateBookingWithCreditsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        # Monedero con LOCK: serializa peticiones concurrentes de la misma
-        # usuaria para que la comprobación de saldo sea fiable.
+        # Monedero con LOCK: serializa peticiones concurrentes del mismo
+        # usuario para que la comprobación de saldo sea fiable.
         try:
             wallet = CreditWallet.objects.select_for_update().get(user=user)
         except CreditWallet.DoesNotExist:
@@ -3779,8 +3779,8 @@ def _has_fixed_classes(user) -> bool:
 class UserClassPreferenceViewSet(viewsets.ModelViewSet):
     """Clases fijas (plaza guardada cada semana). Es una herramienta del
     estudio: las asigna el panel (for_user / for_user_delete, solo
-    administradoras). La clienta puede VER las suyas (my-class-preferences,
-    GET); elegirlas o cambiarlas ella misma desde la web solo si el estudio lo
+    administración). El cliente puede VER las suyas (my-class-preferences,
+    GET); elegirlas o cambiarlas por su cuenta desde la web solo si el estudio lo
     enciende (SiteConfig.client_fixed_classes, apagado por defecto): si no,
     403 code='fixed_classes_admin_only'."""
     permission_classes = [IsAuthenticated]
@@ -4249,7 +4249,7 @@ class CancelAllUserBookingsView(APIView):
             user_id, cancelled, refunded, request.user.id,
         )
 
-        # Avisar a la clienta (antes: cancelación masiva muda)
+        # Avisar al cliente (antes: cancelación masiva muda)
         if cancelled:
             from api.utils.push import send_push_to_user
             try:
@@ -4397,7 +4397,7 @@ class ScheduleBlackoutViewSet(SoftDeleteModelViewSet):
                 if person:
                     users_to_notify.append((person, schedule.class_type.title, booking.start_datetime))
 
-        # Reembolso Stripe a invitadas (fuera de la transacción)
+        # Reembolso Stripe a invitados (fuera de la transacción)
         from api.utils.guest_refund import refund_guest_booking_stripe
         for booking in guest_refund_queue:
             if refund_guest_booking_stripe(booking, reason='blackout'):
@@ -4409,7 +4409,7 @@ class ScheduleBlackoutViewSet(SoftDeleteModelViewSet):
                 send_whatsapp_cancellation(user, class_title, start_dt)
             except Exception:
                 logger.warning("blackout.notify_failed pk=%s", user.pk, exc_info=True)
-            # Push al móvil (además de email/WhatsApp) — invitadas sin push
+            # Push al móvil (además de email/WhatsApp) — invitados sin push
             if hasattr(user, 'push_subscriptions'):
                 from api.utils.push import send_cancellation_push
                 send_cancellation_push(user, class_title, start_dt)
@@ -4443,14 +4443,14 @@ class SiteImageViewSet(SoftDeleteModelViewSet):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# RECOMENDACIÓN DE MEMBRESÍA A CLIENTAS REGULARES
+# RECOMENDACIÓN DE MEMBRESÍA A CLIENTES REGULARES
 # ─────────────────────────────────────────────────────────────────────────────
 
 APP_NUDGE_COOLDOWN_DAYS = 21
 
 
 class MembershipSuggestionView(APIView):
-    """GET /v1/me/membership-suggestion/ → análisis de la clienta y si hay que
+    """GET /v1/me/membership-suggestion/ → análisis del cliente y si hay que
     mostrarle la tarjeta (regular, sin membresía, sin haberla descartado hace
     poco). Lo usan el panel, el checkout y la pantalla de éxito de reserva."""
     permission_classes = [IsAuthenticated]
@@ -4490,7 +4490,7 @@ class MembershipNudgeEventView(APIView):
 class DashboardStatsView(APIView):
     """GET /v1/stats/dashboard/ (admin) → cifras del panel de Inicio del CRM:
     ventas del mes frente al mismo tramo del mes anterior, altas, primeras
-    clases, cuántas vuelven, clases más/menos llenas y clientas que han
+    clases, cuántas vuelven, clases más/menos llenas y clientes que han
     dejado de venir."""
     permission_classes = [IsAdminUser]
 
@@ -4542,7 +4542,7 @@ class MembershipCandidateContactedView(APIView):
     def post(self, request, user_id):
         user = User.objects.filter(id=user_id).first()
         if not user:
-            return Response({'error': 'Clienta no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Cliente no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
         MembershipNudge.objects.create(user=user, channel='crm', action='contacted',
                                        plan_id=request.data.get('plan_id') or None)
         return Response({'status': 'ok', 'contacted_at': timezone.now()})
@@ -4600,15 +4600,15 @@ class ResendVerificationView(APIView):
 
 
 class AdminVerifyUserView(APIView):
-    """POST /v1/users/<id>/verify-email/ (admin) — el estudio confirma a mano a una
-    clienta que conoce en persona."""
+    """POST /v1/users/<id>/verify-email/ (admin) — el estudio confirma a mano a un
+    cliente que conoce en persona."""
     permission_classes = [IsAdminUser]
 
     def post(self, request, user_id):
         from api.utils.verification import mark_verified
         user = User.objects.filter(id=user_id).first()
         if not user:
-            return Response({'error': 'Clienta no encontrada.'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Cliente no encontrado.'}, status=status.HTTP_404_NOT_FOUND)
         mark_verified(user)
         logger.info("verification.manual user_id=%s admin_id=%s", user.id, request.user.id)
         return Response({'status': 'ok', 'is_verified': True})

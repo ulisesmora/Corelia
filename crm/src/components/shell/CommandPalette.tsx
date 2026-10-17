@@ -12,12 +12,12 @@ import { useShell } from './ShellContext';
 import { CHAPTERS, useOpenGuide } from '../charging/chapters';
 
 // Buscador «¿Qué quieres hacer o buscar?» (⌘K / Ctrl+K): ir a cualquier
-// pantalla, acciones rápidas y buscar clientas por nombre, email o teléfono.
+// pantalla, acciones rápidas y buscar clientes por nombre, email o teléfono.
 // Teclado: ↑ ↓ para moverse, Intro para abrir, Esc para cerrar.
 
 interface Item {
   id: string;
-  group: 'Clientas' | 'Acciones' | 'Ir a';
+  group: 'Clientes' | 'Acciones' | 'Ir a';
   label: string;
   hint?: string;
   icon?: StudioIconName;
@@ -31,7 +31,7 @@ interface Item {
 interface UserHit { id: number; email: string; first_name?: string; last_name?: string; phone?: string | null }
 
 const CHAPTER_WORDS: Record<string, string> = {
-  cobros: 'cobrar dos formas online estudio clientas resumen',
+  cobros: 'cobrar dos formas online estudio clientes resumen',
   online: 'clase suelta bono membresía crédito caduca tarjeta online stripe web renovación recibo',
   'en-estudio': 'efectivo bizum en mano datáfono añadir créditos clase fija apuntar corte mensualidad estudio',
   reembolsos: 'cancelar cancelación devolver reembolso devolución plazo horas',
@@ -60,7 +60,7 @@ export default function CommandPalette({ open, initialQuery = '', onClose }: { o
 
   useEffect(() => { if (open) { setQ(initialQuery); setSel(0); } }, [open, initialQuery]);
 
-  // Clientas: búsqueda en el API (a partir de 2 letras)
+  // Clientes: búsqueda en el API (a partir de 2 letras)
   useEffect(() => {
     const term = q.trim();
     if (!open || term.length < 2) { setPeople([]); setSearching(false); return undefined; }
@@ -79,21 +79,21 @@ export default function CommandPalette({ open, initialQuery = '', onClose }: { o
   const go = (path: string) => () => navigate(path);
   const items = useMemo<Item[]>(() => {
     const actions: Item[] = [
-      { id: 'a-client', group: 'Acciones', label: 'Nueva clienta', icon: 'addClient', keywords: 'alta ficha', run: () => openNewClient('new') },
-      { id: 'a-studio-client', group: 'Acciones', label: 'Nueva clienta del estudio', hint: 'Te paga en mano: clases sueltas o un mes fijo', icon: 'studio', keywords: 'plan mensual efectivo bizum en mano mensualidad renovar corte alta', path: '/clientas/estudio/nueva', run: go('/clientas/estudio/nueva') },
-      { id: 'a-booking', group: 'Acciones', label: 'Nueva reserva', hint: 'Apuntar a una clienta a una clase', icon: 'booked', keywords: 'reservar apuntar', run: () => openNewClient('existing') },
-      { id: 'a-fixed', group: 'Acciones', label: 'Darle una clase fija a una clienta', icon: 'fixedClasses', keywords: 'plaza semanal', path: '/assign-classes', run: go('/assign-classes') },
+      { id: 'a-client', group: 'Acciones', label: 'Nuevo cliente', icon: 'addClient', keywords: 'alta ficha', run: () => openNewClient('new') },
+      { id: 'a-studio-client', group: 'Acciones', label: 'Nuevo cliente del estudio', hint: 'Te paga en mano: clases sueltas o un mes fijo', icon: 'studio', keywords: 'plan mensual efectivo bizum en mano mensualidad renovar corte alta', path: '/clientas/estudio/nueva', run: go('/clientas/estudio/nueva') },
+      { id: 'a-booking', group: 'Acciones', label: 'Nueva reserva', hint: 'Apuntar a alguien a una clase', icon: 'booked', keywords: 'reservar apuntar', run: () => openNewClient('existing') },
+      { id: 'a-fixed', group: 'Acciones', label: 'Darle una clase fija a un cliente', icon: 'fixedClasses', keywords: 'plaza semanal', path: '/assign-classes', run: go('/assign-classes') },
       { id: 'a-class', group: 'Acciones', label: 'Añadir una clase al horario', icon: 'add', keywords: 'nueva clase horario', path: '/calendar', run: go('/calendar?accion=nueva') },
       { id: 'a-plan', group: 'Acciones', label: 'Crear un bono', icon: 'plans', keywords: 'nuevo bono precio cuota', path: '/plans', run: go('/clases-y-precios?tab=precios&accion=nueva') },
       { id: 'a-prices', group: 'Acciones', label: 'Cambiar precios', hint: 'Clases, bonos y membresías', icon: 'payments', keywords: 'precio tarifa créditos bono cuota membresía', path: '/plans', run: go('/clases-y-precios?tab=precios') },
       { id: 'a-guide', group: 'Acciones', label: 'Cómo se cobra', hint: 'Bonos, pagos en mano, cancelaciones y espera', icon: 'help', keywords: 'cobrar pagar ayuda guía explicación', run: () => openGuide() },
       { id: 'a-credits', group: 'Acciones', label: 'Añadir o quitar créditos', icon: 'credits', keywords: 'saldo pago en mano', path: '/credits', run: go('/credits?accion=anadir') },
-      { id: 'a-notice', group: 'Acciones', label: 'Avisar a todas las clientas', icon: 'announce', keywords: 'mensaje email aviso', run: go('/mails?accion=nuevo') },
+      { id: 'a-notice', group: 'Acciones', label: 'Avisar a todos tus clientes', icon: 'announce', keywords: 'mensaje email aviso', run: go('/mails?accion=nuevo') },
       { id: 'a-closed', group: 'Acciones', label: 'Cerrar el estudio unos días', icon: 'holidays', keywords: 'vacaciones festivo cierre', path: '/calendar', run: go('/calendar?accion=vacaciones') },
       { id: 'a-style', group: 'Acciones', label: 'Cambiar colores y estilo', icon: 'style', keywords: 'paleta tema letra', run: go('/ajustes?tab=aspecto') },
     ];
     if (webUrl) {
-      actions.push({ id: 'a-web', group: 'Acciones', label: 'Ver mi web como clienta', icon: 'eye', run: () => window.open(webUrl, '_blank', 'noopener') });
+      actions.push({ id: 'a-web', group: 'Acciones', label: 'Ver mi web como cliente', icon: 'eye', run: () => window.open(webUrl, '_blank', 'noopener') });
     }
     const link = (l: HubLink, i: string): Item => ({
       id: `g-${i}-${l.path}`, group: 'Ir a', label: l.label, hint: l.hint, icon: l.icon, keywords: l.keywords, path: l.external ? undefined : l.path.split('?')[0],
@@ -116,7 +116,7 @@ export default function CommandPalette({ open, initialQuery = '', onClose }: { o
     const clients: Item[] = people.map((u) => {
       const name = nameOf(u) || u.email;
       return {
-        id: `c-${u.id}`, group: 'Clientas', label: name, hint: name === u.email ? u.phone || '' : u.email,
+        id: `c-${u.id}`, group: 'Clientes', label: name, hint: name === u.email ? u.phone || '' : u.email,
         initials: initialsOf(name), run: go(`/clients?buscar=${encodeURIComponent(name)}`),
       };
     });
@@ -182,7 +182,7 @@ export default function CommandPalette({ open, initialQuery = '', onClose }: { o
       <Box ref={listRef} id="cmd-list" role="listbox" aria-label="Resultados" sx={{ overflow: 'auto', p: 1 }}>
         {items.length === 0 && (
           <Typography sx={{ p: 2.5, color: 'var(--studio-muted)' }}>
-            {searching ? 'Buscando…' : 'Nada por aquí. Prueba con el nombre de una clienta, «bono» o «salas».'}
+            {searching ? 'Buscando…' : 'Nada por aquí. Prueba con el nombre de un cliente, «bono» o «salas».'}
           </Typography>
         )}
         {items.map((it, i) => {

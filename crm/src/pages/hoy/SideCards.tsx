@@ -78,10 +78,10 @@ export function QuickCard() {
   const { openNewClient } = useShell();
   const Q: { icon: typeof LayersOutlinedIcon; label: string; tint: Tint; run: () => void }[] = [
     { icon: EventAvailableOutlinedIcon, label: 'Nueva reserva', tint: 'reformer', run: () => openNewClient('existing') },
-    { icon: PersonAddAlt1OutlinedIcon, label: 'Nueva clienta', tint: 'yoga', run: () => openNewClient('new') },
+    { icon: PersonAddAlt1OutlinedIcon, label: 'Nuevo cliente', tint: 'yoga', run: () => openNewClient('new') },
     { icon: LayersOutlinedIcon, label: 'Crear clase', tint: 'mat', run: () => navigate('/calendar?accion=nueva') },
     { icon: CreditCardOutlinedIcon, label: 'Cobrar en mano', tint: 'privada', run: () => navigate('/credits?accion=anadir') },
-    { icon: CampaignOutlinedIcon, label: 'Avisar a clientas', tint: 'barre', run: () => navigate('/mails?accion=nuevo') },
+    { icon: CampaignOutlinedIcon, label: 'Avisar a clientes', tint: 'barre', run: () => navigate('/mails?accion=nuevo') },
     { icon: LanguageRoundedIcon, label: 'Mi web', tint: 'reformer', run: () => navigate('/mi-web') },
   ];
   return (

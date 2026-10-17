@@ -1,8 +1,8 @@
-// «Nueva clienta del estudio» (/clientas/estudio/nueva): asistente de 5 pasos
-// para dar de alta a una clienta que paga en el estudio (efectivo, Bizum…):
+// «Nuevo cliente del estudio» (/clientas/estudio/nueva): asistente de 5 pasos
+// para dar de alta a un cliente que paga en el estudio (efectivo, Bizum…):
 //   1 ¿Quién es?  2 ¿Cómo viene?  3 Detalles  4 ¿Le reservas ya?  5 Resumen
 // Clases sueltas → créditos (+ cobro en mano). Plan mensual / clase fija →
-// StudioPlan (api/views_studio_plans.py), que la dueña renueva cada mes.
+// StudioPlan (api/views_studio_plans.py), que el estudio renueva cada mes.
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -185,13 +185,13 @@ export default function NewStudioClientWizard() {
       for (const s of chosenSessions) {
         try {
           await studioApi.addToClass(s.schedule_id as number, s.date, client.id, 'credits');
-          out.push(`Apuntada a ${s.title} · ${dayLabel(s.date, today).toLowerCase()} ${s.start.slice(11, 16)}.`);
+          out.push(`Reserva hecha: ${s.title} · ${dayLabel(s.date, today).toLowerCase()} ${s.start.slice(11, 16)}.`);
         } catch (e) {
           out.push(`No se pudo apuntar a ${s.title} (${dayLabel(s.date, today).toLowerCase()}): ${e instanceof Error ? e.message : String(e)}`);
         }
       }
       setDone(out);
-      notify(`${first} ya es clienta del estudio ✓`);
+      notify(`${first} ya es cliente del estudio ✓`);
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -210,13 +210,13 @@ export default function NewStudioClientWizard() {
       <Box sx={{ maxWidth: 640, mx: 'auto', pb: 4 }}>
         <Paper sx={{ p: { xs: 2.5, sm: 3.5 }, textAlign: 'center' }}>
           <CheckCircleRoundedIcon sx={{ fontSize: 56, color: 'var(--studio-ok)' }} aria-hidden />
-          <Typography variant="h1" sx={{ fontSize: { xs: '1.5rem', sm: '1.8rem' }, mt: 1 }}>{first} ya está lista</Typography>
+          <Typography variant="h1" sx={{ fontSize: { xs: '1.5rem', sm: '1.8rem' }, mt: 1 }}>Todo listo para {first}</Typography>
           <Box component="ul" sx={{ textAlign: 'left', mt: 2, mb: 3, pl: 2.5, color: 'var(--studio-ink)', '& li': { mb: 0.75 } }}>
             {done.map((l) => <li key={l}>{l}</li>)}
           </Box>
           <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, gap: 1.25, justifyContent: 'center' }}>
             <Button variant="contained" onClick={() => navigate(`/credits?clienta=${client?.id}`)} sx={{ minHeight: 48 }}>Ver su ficha de créditos</Button>
-            <Button variant="outlined" onClick={reset} sx={{ minHeight: 48 }}>Dar de alta a otra</Button>
+            <Button variant="outlined" onClick={reset} sx={{ minHeight: 48 }}>Dar de alta a otra persona</Button>
             <Button onClick={() => navigate('/')} sx={{ minHeight: 48 }}>Ir a Hoy</Button>
           </Box>
         </Paper>
@@ -228,7 +228,7 @@ export default function NewStudioClientWizard() {
     <Box sx={{ maxWidth: 760, mx: 'auto', pb: { xs: 12, sm: 4 } }}>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flexWrap: 'wrap', mb: 1 }}>
         <Typography variant="h1" data-tour="page-head" sx={{ fontSize: { xs: '1.55rem', md: '2rem' }, flex: 1, minWidth: 0 }}>
-          Nueva clienta del estudio
+          Nuevo cliente del estudio
         </Typography>
         <HowItWorks page="studio-client-new" />
       </Box>
@@ -264,7 +264,7 @@ export default function NewStudioClientWizard() {
               </Box>
             </Box>
           ) : (
-            <ClientPicker newLabel="Registrarla" onPick={(u, nw) => { setClient(u); setIsNew(nw); setStep(1); }} />
+            <ClientPicker newLabel="Dar de alta" onPick={(u, nw) => { setClient(u); setIsNew(nw); setStep(1); }} />
           )
         )}
 
@@ -347,7 +347,7 @@ export default function NewStudioClientWizard() {
                 </Q>
                 {realEmail && (
                   <FormControlLabel sx={{ minHeight: 44 }} control={<Switch checked={remind} onChange={(e) => setRemind(e.target.checked)} />}
-                    label="Avisarla por email 3 días antes («Tu mes empieza el día X»)" />
+                    label="Enviarle un aviso por email 3 días antes («Tu mes empieza el día X»)" />
                 )}
               </>
             )}
@@ -386,7 +386,7 @@ export default function NewStudioClientWizard() {
               </Q>
             )}
             {kind !== 'fixed' && (
-              <Q title="¿La apuntas ya a alguna clase? (opcional)" hint={`Gasta sus créditos: empieza con ${creditsText(startCredits || 0)}.`}>
+              <Q title="¿Le reservas ya alguna clase? (opcional)" hint={`Gasta sus créditos: empieza con ${creditsText(startCredits || 0)}.`}>
                 {sessions === null ? [0, 1, 2].map((i) => <Skeleton key={i} height={48} />) : sessions.length === 0 ? (
                   <Typography sx={{ color: 'var(--studio-muted)' }}>No hay clases en las próximas dos semanas.</Typography>
                 ) : (
@@ -420,7 +420,7 @@ export default function NewStudioClientWizard() {
           <Box data-tour="wizard-summary">
             <Typography component="h3" sx={{ fontWeight: 700, color: 'var(--studio-ink)', mb: 1.5 }}>Así queda</Typography>
             <Box component="dl" sx={{ m: 0, display: 'grid', gridTemplateColumns: { xs: 'minmax(0, 1fr)', sm: '160px 1fr' }, gap: { xs: 0.25, sm: 1 }, '& dt': { color: 'var(--studio-muted)', fontSize: '0.88rem', mt: { xs: 1, sm: 0 } }, '& dd': { m: 0, color: 'var(--studio-ink)', fontWeight: 600 } }}>
-              <dt>Clienta</dt><dd>{name}{isNew ? ' (ficha nueva)' : ''}</dd>
+              <dt>Cliente</dt><dd>{name}{isNew ? ' (ficha nueva)' : ''}</dd>
               {kind === 'credits' ? (
                 <>
                   <dt>Clases sueltas</dt><dd>{creditsText(Number(credits))} · {expires ? `caducan en ${EXPIRES.find((e) => e.value === expires)?.label}` : 'no caducan'}</dd>

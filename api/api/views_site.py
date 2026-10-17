@@ -525,7 +525,7 @@ class SiteConfigAdminView(APIView):
         data['default_api_url'] = settings.API_URL
         from api.utils.emailing import email_enabled
         data['email_ready'] = email_enabled()
-        # Avisos al móvil: cuántas clientas los tienen activados (app instalada)
+        # Avisos al móvil: cuántos clientes los tienen activados (app instalada)
         from api.models import PushSubscription
         subs = PushSubscription.objects.all()
         data['push_devices'] = subs.count()
@@ -915,7 +915,7 @@ def panel_manifest(request):
         'name': f'{cfg.studio_name} · Panel',
         # iOS/Android cortan a ~12 caracteres; el icono oscuro ya distingue el panel
         'short_name': full if len(full) <= 12 else 'Panel',
-        'description': f'Panel de {cfg.studio_name}: reservas, clientas, horarios y ventas',
+        'description': f'Panel de {cfg.studio_name}: reservas, clientes, horarios y ventas',
         'start_url': '/',
         'scope': '/',
         'display': 'standalone',

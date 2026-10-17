@@ -3,8 +3,8 @@ Flujo de "tu clase habitual ya no existe" para suscriptoras con auto-reserva.
 
 Cuando una clase recurrente desaparece del horario (se elimina desde el CRM,
 se termina con apply_from end_only, o la auto-reserva descubre que la regla
-ya no está vigente), las preferencias que apuntaban a ella se desactivan y a
-cada afectada se le ofrecen hasta 3 alternativas (misma categoría) durante
+ya no está vigente), las preferencias que apuntaban a ella se desactivan y
+a cada persona afectada se le ofrecen hasta 3 alternativas (misma categoría) durante
 7 días, avisándola por email y push. La web muestra el banner de reemplazo
 vía /v1/my-replacement-status/ y reserva con /v1/choose-replacement/.
 """
@@ -54,8 +54,8 @@ def _alternatives_for(schedule, limit=3):
 
 def retire_schedule_preferences(schedule, reason_text, notify=True):
     """Desactiva las preferencias de auto-reserva de `schedule`, marca a cada
-    usuaria con el flag de reemplazo (con alternativas) y la avisa por email
-    y push. Devuelve cuántas usuarias fueron afectadas.
+    usuario con el flag de reemplazo (con alternativas) y lo avisa por email
+    y push. Devuelve cuántos usuarios fueron afectados.
 
     `reason_text` es la frase en llano para el aviso, p. ej.
     "ya no está en el horario" o "termina el 30/09".

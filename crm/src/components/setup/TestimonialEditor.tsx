@@ -10,7 +10,7 @@ import { deleteTestimonial, listTestimonials, saveTestimonial, type Testimonial 
 
 const EMPTY: Testimonial = { author: '', text: '', text_en: '', rating: 5, source: '', photo_url: '', order: 0, is_active: true };
 
-/** Opiniones reales de clientas para la portada (siempre con su permiso). */
+/** Opiniones reales de clientes para la portada (siempre con su permiso). */
 export default function TestimonialEditor() {
   const notify = useNotify();
   const confirm = useConfirm();
@@ -50,7 +50,7 @@ export default function TestimonialEditor() {
   return (
     <Stack spacing={2}>
       <Typography color="text.secondary">
-        Copia aquí opiniones reales (por ejemplo, tus reseñas de Google), siempre con permiso de la clienta.
+        Copia aquí opiniones reales (por ejemplo, tus reseñas de Google), siempre con permiso de quien la escribió.
         Si no añades ninguna, la sección no aparece en la web.
       </Typography>
       {items.length === 0 && !editing && <Alert severity="info">Todavía no hay opiniones.</Alert>}

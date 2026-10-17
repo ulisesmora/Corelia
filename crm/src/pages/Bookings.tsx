@@ -372,8 +372,8 @@ export default function BookingViewer() {
               Si pagó la clase con créditos, se le devuelven a su cuenta. Si se la apuntaste tú desde
               «Clases fijas», no se devuelve nada (no gastó créditos).
             </li>
-            <li><b>Le llega un aviso automático</b> por email (y por WhatsApp y en el móvil si los tiene). Si es una invitada que pagó con tarjeta, se le devuelve el dinero.</li>
-            <li>No se puede deshacer: para volver a apuntarla habría que reservar de nuevo.</li>
+            <li><b>Le llega un aviso automático</b> por email (y por WhatsApp y en el móvil si los tiene). Si reservó sin cuenta y pagó con tarjeta, se le devuelve el dinero.</li>
+            <li>No se puede deshacer: para recuperar la plaza habría que reservar de nuevo.</li>
           </Box>
         </>
       ),
@@ -435,10 +435,10 @@ export default function BookingViewer() {
       message: (
         <Box component="ul" sx={{ pl: 2.5, m: 0, '& li': { mb: 0.6 } }}>
           <li>Se anulan {n === 1 ? 'la reserva' : `las ${n} reservas`} de esta clase. <b>Solo este día</b>: las demás semanas siguen igual.</li>
-          <li>A las clientas con cuenta se les devuelven los créditos de la clase.</li>
-          <li>A las invitadas que pagaron con tarjeta se les devuelve el dinero automáticamente.</li>
+          <li>A los clientes con cuenta se les devuelven los créditos de la clase.</li>
+          <li>A quien pagó con tarjeta sin cuenta se le devuelve el dinero automáticamente.</li>
           <li>
-            Todas reciben un <b>email</b> avisando; también un <b>WhatsApp</b> si tienen teléfono (ese mensaje dice
+            Todas las personas reciben un <b>email</b> avisando; también un <b>WhatsApp</b> si tienen teléfono (ese mensaje dice
             que se cancela por no llegar al mínimo de personas) y una notificación en el móvil si tienen la app.
           </li>
           <li>
@@ -755,7 +755,7 @@ export default function BookingViewer() {
                   <TableRow sx={{ backgroundColor: theme.palette.grey[100] }}>
                     <TableCell>Día y hora</TableCell>
                     <TableCell>Clase</TableCell>
-                    <TableCell>Clienta</TableCell>
+                    <TableCell>Cliente</TableCell>
                     <TableCell>Estado</TableCell>
                     <TableCell>Contactar</TableCell>
                     <TableCell>Qué puedes hacer</TableCell>
@@ -841,7 +841,7 @@ export default function BookingViewer() {
       </Stack>
 
       <Typography sx={{ fontSize: '0.95rem', color: 'var(--studio-text-strong)', mb: 1.5 }}>
-        👉 <b>Pulsa una clase</b> para ver quién viene, llamarlas o cancelar una reserva.
+        👉 <b>Pulsa una clase</b> para ver quién viene, llamar o cancelar una reserva.
       </Typography>
 
       {calendarError && (

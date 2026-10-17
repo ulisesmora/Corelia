@@ -7,7 +7,7 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 // Vacío = en la web inglesa se muestra el texto en español. Solo edición: nada
 // se traduce solo.
 
-export const EN_HELP = 'Lo que verán las clientas que tienen la web en inglés. Si lo dejas vacío, verán el texto en español.';
+export const EN_HELP = 'Lo que verá quien tenga la web en inglés. Si lo dejas vacío, verán el texto en español.';
 
 /** [texto en español, texto en inglés] */
 export type EnglishPair = [string | null | undefined, string | null | undefined];

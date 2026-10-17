@@ -3,7 +3,7 @@ import { Box, Stack, Typography } from '@mui/material';
 
 interface Props {
   n: number;
-  /** Pregunta sencilla: "¿A qué clienta?" */
+  /** Pregunta sencilla: "¿A qué cliente?" */
   title: string;
   hint?: ReactNode;
   children: ReactNode;

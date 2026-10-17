@@ -73,7 +73,7 @@ router.register(r'site-images', SiteImageViewSet)
 router.register(r'blackouts', ScheduleBlackoutViewSet)
 router.register(r'faqs', FAQItemViewSet)
 router.register(r'testimonials', TestimonialViewSet)
-# Clientas del estudio: planes mensuales cobrados en el estudio (api/views_studio_plans.py)
+# Clientes del estudio: planes mensuales cobrados en el estudio (api/views_studio_plans.py)
 router.register(r'studio-plans', StudioPlanViewSet, basename='studio-plan')
 
 urlpatterns = [
@@ -179,7 +179,7 @@ urlpatterns = [
     path('v1/checkout/pay-plan/', CreatePlanCheckoutSessionView.as_view(), name='payments-pay-plan/'),
     path('v1/checkout/verify-plan/', VerifyPlanPurchaseView.as_view(), name='payments-verify-plan/'),
     path('v1/checkout/reserve/', CreateBookingWithCreditsView.as_view(), name='payments-reserve/'),
-    # Reservar y pagar en el estudio (invitadas / clientas con cuenta), según «Formas de cobro»
+    # Reservar y pagar en el estudio (invitados / clientes con cuenta), según «Formas de cobro»
     path('v1/checkout/guest-reserve/', GuestReserveView.as_view(), name='checkout-guest-reserve'),
     path('v1/checkout/studio-reserve/', StudioReserveView.as_view(), name='checkout-studio-reserve'),
     path('v1/checkleads/check-email/', CheckLeadEmailView.as_view(), name='check-lead-email'),

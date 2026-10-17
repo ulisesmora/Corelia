@@ -21,7 +21,7 @@ const PROVIDERS = [
 ];
 
 /**
- * Emails a las clientas (confirmaciones, avisos, recordatorios) desde la
+ * Emails a los clientes (confirmaciones, avisos, recordatorios) desde la
  * cuenta del propio estudio. Primero se prueba y, si llega, se activa.
  */
 export default function EmailSection({ value, onSaved }: Props) {
@@ -93,7 +93,7 @@ export default function EmailSection({ value, onSaved }: Props) {
   return (
     <Stack spacing={3}>
       <Typography color="text.secondary">
-        Con los emails activados, tus clientas reciben la confirmación de cada reserva, los avisos si cambia o se
+        Con los emails activados, tus clientes reciben la confirmación de cada reserva, los avisos si cambia o se
         cancela una clase y los recordatorios. <b>Sin activarlos todo funciona igual</b>: las reservas, el panel
         y los avisos al móvil de quien tenga la app.
       </Typography>
@@ -165,7 +165,7 @@ export default function EmailSection({ value, onSaved }: Props) {
           </Stack>
           <TextField label="Enviar como (dirección)" type="email" value={fromAddress}
             onChange={(e) => setFromAddress(e.target.value)} placeholder="hola@tuestudio.com" fullWidth
-            helperText="La dirección que verán tus clientas. Vacío = el usuario." />
+            helperText="La dirección que verán tus clientes. Vacío = el usuario." />
         </Stack>
       )}
 

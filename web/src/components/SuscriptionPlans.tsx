@@ -223,7 +223,7 @@ function SubCard({ plan, dropIn, highlighted }: { plan: Plan; dropIn: number; hi
         months === 1
           ? `${plan.credits} créditos al mes para tus clases`
           : `${plan.credits} clases cada ${months} meses (≈ ${round(perMonthCredits)} al mes)`,
-        // Las clases fijas solo se explican si las clientas las eligen en la web
+        // Las clases fijas solo se explican si los clientes las eligen en la web
         clientFixedClasses() ? 'Tus clases fijas se reservan solas' : 'Reserva tus clases cuando quieras',
         months === 1 ? 'Se renueva cada mes' : `Se cobra cada ${months} meses · créditos válidos ${plan.renewalDays || months * 30} días`,
         'Sin permanencia · cancela cuando quieras',

@@ -117,7 +117,7 @@ def _source_icon(cfg):
 
 def render_icon(cfg, size: int, maskable: bool = False, panel: bool = False) -> bytes:
     """panel=True: variante del panel de administración (fondo oscuro de la
-    marca) para no confundirla con la app de las clientas en el móvil."""
+    marca) para no confundirla con la app de los clientes en el móvil."""
     key = ('icon', size, maskable, panel, cfg.updated_at)
     if key in _cache:
         return _cache[key]

@@ -31,7 +31,7 @@ export default function ContentSection({ value, onChange, onBusyChange }: Props)
     <Stack spacing={3}>
       <Typography color="text.secondary">
         Estos textos se leen en tu web y también los usan Google y los asistentes de IA (ChatGPT, Gemini…) para
-        entender qué ofreces. Escribe como hablarías a una clienta nueva: qué clases das, para quién y dónde.
+        entender qué ofreces. Escribe como hablarías a un cliente nuevo: qué clases das, para quién y dónde.
       </Typography>
 
       <Typography variant="h6">Portada</Typography>

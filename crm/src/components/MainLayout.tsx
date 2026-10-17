@@ -25,8 +25,8 @@ import { ChargingGuideHost } from './charging';
 // ====================================================================
 // Armazón del panel (rediseño, fase 1): menú lateral en tarjeta con los
 // colores de la paleta, barra superior con el buscador ⌘K, «Ver como
-// clienta», ayuda y «+ Nuevo»; en el móvil, barra de abajo (Hoy, Calendario,
-// Reservas, Clientas, Más) y «+» arriba. El mapa de secciones vive en
+// cliente», ayuda y «+ Nuevo»; en el móvil, barra de abajo (Hoy, Calendario,
+// Reservas, Clientes, Más) y «+» arriba. El mapa de secciones vive en
 // ./shell/navigation.ts y las distribuciones añaden lo suyo en
 // ./shell/extensions.tsx (sin tocar este archivo).
 //
@@ -88,7 +88,7 @@ export default function MainLayout() {
   const active = sectionOf(location.pathname, location.search);
   // Entrar en algo aún cerrado (por enlace o escribiendo la dirección): se explica
   const lock = locks.route(location.pathname);
-  const lockedTitle = !lock ? '' : location.pathname === '/assign-classes' ? 'Clases fijas de clientas'
+  const lockedTitle = !lock ? '' : location.pathname === '/assign-classes' ? 'Clases fijas de clientes'
     : location.pathname === '/plans' ? 'Bonos y precios'
       : NAV.find((n) => n.key === sectionOf(location.pathname))?.label || 'Esta sección';
   const userName = user?.name || user?.email || 'Administración';

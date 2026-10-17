@@ -1,4 +1,4 @@
-// «Formas de cobro»: cómo pueden pagar y reservar las clientas en la web.
+// «Formas de cobro»: cómo pueden pagar y reservar tus clientes en la web.
 // Va en Ajustes → Cobros (completa), en «Así cobrarás» (paso 7 de la puesta
 // en marcha y Clases y precios → Precios, compacta) y se enlaza desde la guía
 // «Cómo se cobra». Guarda en SiteConfig (PATCH /api/v1/site-config/) y el API
@@ -165,12 +165,12 @@ export default function PaymentOptionsCard({ compact = false, onSaved }: {
       </Box>
       {compact ? (
         <Typography sx={{ fontSize: '0.9rem', color: 'var(--studio-muted)', mt: 0.5 }}>
-          Elige cómo pueden pagar y reservar tus clientas en tu web. Lo que apuntas tú desde el panel no cambia.
+          Elige cómo pueden pagar y reservar tus clientes en tu web. Lo que apuntas tú desde el panel no cambia.
         </Typography>
       ) : (
         <>
           <Typography sx={{ fontSize: '0.9rem', color: 'var(--studio-muted)', mt: 0.5, mb: 1.5 }}>
-            Tienes dos tipos de clientas. Puedes tener las dos a la vez.
+            Tienes dos tipos de clientes. Puedes tener los dos a la vez.
           </Typography>
           <TwoWorlds variant="compact" facts={facts} go={navigate} open={openGuide} />
           <Typography sx={{ fontSize: '0.9rem', color: 'var(--studio-muted)', mt: 2 }}>
@@ -179,7 +179,7 @@ export default function PaymentOptionsCard({ compact = false, onSaved }: {
         </>
       )}
 
-      <Section title="1 · Clientas online: con tarjeta, en tu web" id={`${id}-card`}>
+      <Section title="1 · Clientes online: con tarjeta, en tu web" id={`${id}-card`}>
         <Row icon="card" title="Pago con tarjeta en la web"
           hint={onlineReady ? 'Al reservar o comprar, pagan con tarjeta, Apple Pay o Google Pay.' : 'Primero activa los pagos online (más abajo, «Pagos online»: te guiamos paso a paso).'}
           control={sw(form.online_card_enabled && onlineReady, (v) => set({ online_card_enabled: v }), 'Pago con tarjeta en la web', !onlineReady)}
@@ -207,10 +207,10 @@ export default function PaymentOptionsCard({ compact = false, onSaved }: {
             <FormControlLabel value="off" control={<Radio size="small" />} label="No" />
           </RadioGroup>
         </Box>
-        <Row icon="clients" title="Invitadas (sin cuenta)" hint="Dejan nombre, email y teléfono." disabled={!e.studio || !form.guest_booking_enabled}
-          control={sw(form.pay_at_studio_guests, (v) => set({ pay_at_studio_guests: v }), 'Invitadas pueden pagar en el estudio', !e.studio || !form.guest_booking_enabled)} />
-        <Row icon="addClient" title="Clientas con cuenta" hint="Reservan sin gastar créditos y pagan al llegar." disabled={!e.studio}
-          control={sw(form.pay_at_studio_clients, (v) => set({ pay_at_studio_clients: v }), 'Clientas con cuenta pueden pagar en el estudio', !e.studio)} />
+        <Row icon="clients" title="Invitados (sin cuenta)" hint="Dejan nombre, email y teléfono." disabled={!e.studio || !form.guest_booking_enabled}
+          control={sw(form.pay_at_studio_guests, (v) => set({ pay_at_studio_guests: v }), 'Los invitados pueden pagar en el estudio', !e.studio || !form.guest_booking_enabled)} />
+        <Row icon="addClient" title="Clientes con cuenta" hint="Reservan sin gastar créditos y pagan al llegar." disabled={!e.studio}
+          control={sw(form.pay_at_studio_clients, (v) => set({ pay_at_studio_clients: v }), 'Los clientes con cuenta pueden pagar en el estudio', !e.studio)} />
         <Box sx={{ py: 1.25, borderTop: '1px solid var(--studio-border-color)' }}>
           <Typography sx={{ fontWeight: 700, fontSize: '0.95rem', color: 'var(--studio-ink)', mb: 0.75 }}>Cómo te pueden pagar allí</Typography>
           <Box role="group" aria-label="Formas de pago en el estudio" sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
@@ -223,7 +223,7 @@ export default function PaymentOptionsCard({ compact = false, onSaved }: {
               );
             })}
           </Box>
-          <TextField size="small" fullWidth label="Nota para tus clientas (opcional)" placeholder="Paga al llegar, 5 min antes"
+          <TextField size="small" fullWidth label="Nota para tus clientes (opcional)" placeholder="Paga al llegar, 5 min antes"
             value={form.studio_payment_note} onChange={(ev) => set({ studio_payment_note: ev.target.value.slice(0, 140) })}
             inputProps={{ maxLength: 140 }} sx={{ mt: 1.5 }} helperText="Sale en la web al elegir «Pagar en el estudio» y en el email de la reserva." />
           {!compact && (
@@ -235,17 +235,17 @@ export default function PaymentOptionsCard({ compact = false, onSaved }: {
       </Section>
 
       <Section title="Reservas" id={`${id}-booking`}>
-        <Row icon="clients" title="Reservar sin cuenta (invitadas)"
+        <Row icon="clients" title="Reservar sin cuenta (invitados)"
           hint={form.guest_booking_enabled ? 'Cualquiera reserva dejando sus datos.' : 'Para reservar tienen que entrar o crear su cuenta.'}
           control={sw(form.guest_booking_enabled, (v) => set({ guest_booking_enabled: v }), 'Reservar sin cuenta')} />
-        <Row icon="fixedClasses" title="Las clientas eligen sus clases fijas en la web"
-          hint="Apagado (recomendado): las clases fijas son para tus clientas frecuentes y se las asignas tú en «Clases fijas». La web no las explica."
-          control={sw(form.client_fixed_classes, (v) => set({ client_fixed_classes: v }), 'Las clientas eligen sus clases fijas en la web')} />
+        <Row icon="fixedClasses" title="Tus clientes eligen sus clases fijas en la web"
+          hint="Apagado (recomendado): las clases fijas son para tus clientes frecuentes y se las asignas tú en «Clases fijas». La web no las explica."
+          control={sw(form.client_fixed_classes, (v) => set({ client_fixed_classes: v }), 'Tus clientes eligen sus clases fijas en la web')} />
       </Section>
 
       <Box aria-live="polite" sx={{ mt: 2, p: 1.5, borderRadius: 'var(--studio-radius-md)', border: '1px dashed var(--studio-border-strong)', display: 'grid', gap: 0.75 }}>
         <Typography sx={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--studio-ink)' }}>Así lo verán en tu web</Typography>
-        <Ways label="Invitadas" items={[
+        <Ways label="Invitados" items={[
           { on: e.guests && e.dropIn, text: 'Tarjeta ahora' },
           { on: e.studioGuests, text: 'En el estudio' },
         ]} />

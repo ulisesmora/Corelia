@@ -134,13 +134,13 @@ export interface TodayData {
   extras: Extra[];
   web_url: string;
   published: boolean;
-  /** «Renovaciones de este mes» (clientas del estudio) */
+  /** «Renovaciones de este mes» (clientes del estudio) */
   renewals?: RenewalsCardData;
 }
 
 export interface OwedRow {
   id: string;
-  /** studio = reserva «pagar en el estudio» aún sin cobrar · studio_plan = mes de una clienta del estudio sin cobrar */
+  /** studio = reserva «pagar en el estudio» aún sin cobrar · studio_plan = mes de un cliente del estudio sin cobrar */
   kind: 'payment' | 'subscription' | 'studio' | 'studio_plan';
   payment_id: number | null;
   subscription_id: number | null;

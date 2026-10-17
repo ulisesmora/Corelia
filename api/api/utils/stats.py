@@ -3,8 +3,8 @@
 Todo se agrupa por fecha de Madrid. Los datos son pocos (miles de filas), así
 que se agregan en Python: más legible que encadenar anotaciones por zona horaria.
 
-"Persona" = usuaria registrada o invitada (si la invitada se vinculó a una
-cuenta, cuenta como esa usuaria), para no contar dos veces a la misma clienta.
+"Persona" = usuario registrado o invitado (si el invitado se vinculó a una
+cuenta, cuenta como ese usuario), para no contar dos veces al mismo cliente.
 """
 from collections import Counter, defaultdict
 from datetime import date, datetime, timedelta
@@ -64,8 +64,8 @@ def _person_name(b: Booking) -> str:
         u = b.user
         return f"{u.first_name or ''} {u.last_name or ''}".strip() or u.email
     if b.guest_id and b.guest:
-        return b.guest.name or b.guest.email or 'Invitada'
-    return 'Clienta'
+        return b.guest.name or b.guest.email or 'Invitado'
+    return 'Cliente'
 
 
 def _booking_title(b: Booking) -> str:
@@ -181,7 +181,7 @@ def dashboard_stats(now: datetime | None = None, months: int = 6) -> dict:
     sales_prev, _, _ = sales_between(prev_month, prev_same_day)
     sales_prev_full, _, _ = sales_between(prev_month, this_month - timedelta(days=1))
 
-    # ── Clientas nuevas ──────────────────────────────────────────────────────
+    # ── Clientes nuevos ──────────────────────────────────────────────────────
     clients = User.objects.filter(is_staff=False, is_superuser=False)
     joined = [
         (_mdate(u.date_joined), u) for u in clients.filter(date_joined__gte=_aware(oldest) - timedelta(days=31))
@@ -278,7 +278,7 @@ def dashboard_stats(now: datetime | None = None, months: int = 6) -> dict:
         for (w, h), n in slots.most_common(5)
     ]
 
-    # ── Clientas que han dejado de venir ─────────────────────────────────────
+    # ── Clientes que han dejado de venir ─────────────────────────────────────
     future_people = {_person(b) for b in attended if _mdate(b.start_datetime) > today}
     at_risk = []
     for p, days in visits_by_person.items():
@@ -287,7 +287,7 @@ def dashboard_stats(now: datetime | None = None, months: int = 6) -> dict:
         if len(before) >= 3 and not recent and p not in future_people:
             phone, email = contacts.get(p, (None, None))
             at_risk.append({
-                'name': names.get(p, 'Clienta'),
+                'name': names.get(p, 'Cliente'),
                 'phone': phone,
                 'email': email if email and not is_placeholder_email(email) else None,
                 'last_visit': max(d for d in days if d <= today).isoformat(),

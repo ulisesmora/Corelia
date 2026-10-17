@@ -105,11 +105,11 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 # Zona horaria del estudio: horarios, recordatorios y tareas nocturnas.
 STUDIO_TIMEZONE = env('STUDIO_TIMEZONE', 'Europe/Madrid')
 
-# Plazo mínimo para que una clienta cancele su reserva (el estudio puede siempre).
+# Plazo mínimo para que un cliente cancele su reserva (el estudio puede siempre).
 # La web lo recibe de /api/v1/site-config/public/ para mostrar el mismo valor.
 BOOKING_CANCEL_MIN_HOURS = int(env('BOOKING_CANCEL_MIN_HOURS', '8'))
 
-# Dominio inventado para clientas dadas de alta en el panel sin email.
+# Dominio inventado para clientes dados de alta en el panel sin email.
 # .invalid es un dominio reservado: nunca se le envía nada.
 PLACEHOLDER_EMAIL_DOMAIN = env('PLACEHOLDER_EMAIL_DOMAIN', 'sin-email.invalid')
 
@@ -195,17 +195,17 @@ REST_FRAMEWORK = {
 # RATE_LIMITS_ENABLED=0 los apaga todos (no recomendado en producción).
 RATE_LIMITS_ENABLED = env_bool('RATE_LIMITS_ENABLED', True)
 _THROTTLE_DEFAULTS = {
-    'login': '10/m',                # entrar (panel, clientas, Google) por IP
+    'login': '10/m',                # entrar (panel, clientes, Google) por IP
     'login_email': '30/h',          # entrar, por cuenta (además del bloqueo de abajo)
     'two_factor': '10/m',           # segundo paso (código de 6 dígitos) por IP
     'two_factor_manage': '20/h',    # activar/desactivar la verificación en dos pasos, por usuario
-    'signup': '20/h',               # crear cuenta de clienta, por IP
+    'signup': '20/h',               # crear cuenta de cliente, por IP
     'password_reset': '10/h',       # pedir el enlace de nueva contraseña, por IP
     'password_reset_email': '3/h',  # … y por email
     'password_reset_confirm': '20/h',
     'email_verify': '20/h',         # códigos/enlaces de verificación de email, por IP o usuario
     'email_verify_email': '5/h',    # reenviar el código, por email
-    'checkout': '30/h',             # pago como invitada (crea ficha y sesión de Stripe), por IP
+    'checkout': '30/h',             # pago como invitado (crea ficha y sesión de Stripe), por IP
     'public_form': '30/h',          # formularios públicos (contacto, preferencias, cupones)
     'test_email': '10/h',           # email de prueba del panel, por usuario
     'stripe_connect': '30/h',       # «Conectar pagos»: enlaces de Stripe y comprobar estado, por usuario
@@ -238,7 +238,7 @@ TWO_FACTOR_ISSUER = env('TWO_FACTOR_ISSUER', '')  # vacío = nombre del estudio
 
 SPECTACULAR_SETTINGS = {'TITLE': 'Corelia API', 'VERSION': '1.0.0'}
 
-# Sesiones largas a propósito (las clientas usan la app instalada en el móvil y
+# Sesiones largas a propósito (los clientes usan la app instalada en el móvil y
 # no queremos pedirles la contraseña cada semana), pero firmadas con la
 # SECRET_KEY de cada instalación y sin caducidad infinita.
 SIMPLE_JWT = {
@@ -381,7 +381,7 @@ STRIPE_KEYS_FALLBACK_ENABLED = env_bool('STRIPE_KEYS_FALLBACK_ENABLED', True)
 PANEL_URL = (env('PANEL_URL') or API_URL).rstrip('/')
 
 # WhatsApp automático (servidor whatsmeow propio, avanzado). Sin él, el
-# panel usa enlaces wa.me para escribir a las clientas.
+# panel usa enlaces wa.me para escribir a los clientes.
 WHATSAPP_OUTBOX_URL = env('WHATSAPP_OUTBOX_URL', '')
 
 # IndexNow (aviso a Bing cuando cambian las clases). Clave publicada en la web.
@@ -464,7 +464,7 @@ CELERY_BEAT_SCHEDULE = {
         'task': 'api.tasks.expire_waitlist_offers',
         'schedule': crontab(minute='*/10'),
     },
-    # 07:30 — clientas del estudio: marcar los planes que vencen (salen en Hoy) y aviso opcional
+    # 07:30 — clientes del estudio: marcar los planes que vencen (salen en Hoy) y aviso opcional
     'clientas-estudio-renovaciones': {
         'task': 'api.tasks.studio_plans_daily',
         'schedule': crontab(minute=30, hour=7),

@@ -47,7 +47,7 @@ export default function MoveDialog({ occurrence: o, to, rooms, onClose, onMoved 
       });
       onMoved(
         `${o.title} movida al ${when(to.date, newStart)}${newRoom ? ` (${newRoom.name})` : ''}.` +
-        (r.notified ? ` Avisamos a ${r.notified} clienta${r.notified === 1 ? '' : 's'}.` : ''),
+        (r.notified ? ` Avisamos a ${r.notified} cliente${r.notified === 1 ? '' : 's'}.` : ''),
         r.undo,
       );
     } catch (e) {

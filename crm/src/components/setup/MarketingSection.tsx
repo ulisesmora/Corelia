@@ -138,7 +138,7 @@ export default function MarketingSection({ value, onChange }: Props) {
       {/* ── 1. Ficha de Google ── */}
       <Block title="1. Tu ficha de Google" chip={ok(Boolean(v('google_business_url')), 'Conectada', 'Sin conectar')}>
         <Typography color="text.secondary">
-          Es lo que más te trae clientas nuevas: aparece cuando alguien busca «pilates cerca de mí» o mira Google Maps,
+          Es lo que más te trae clientes nuevos: aparece cuando alguien busca «pilates cerca de mí» o mira Google Maps,
           y los asistentes de IA la usan para recomendar estudios. Al conectarla, tu web y tu ficha se «reconocen»
           entre sí en Google.
         </Typography>
@@ -212,12 +212,12 @@ export default function MarketingSection({ value, onChange }: Props) {
       {/* ── 4. Publicidad y analítica ── */}
       <Block title="4. Publicidad y analítica" chip={ok(hasAds, 'Activa', 'Sin configurar')}>
         <Typography color="text.secondary">
-          Si haces anuncios en Google o en Instagram/Facebook, conéctalos aquí para saber cuántas clientas te traen.
+          Si haces anuncios en Google o en Instagram/Facebook, conéctalos aquí para saber cuántos clientes te traen.
           Tu web avisa sola a Google y a Meta cuando alguien <b>se registra</b>, <b>compra un bono</b>,
           {' '}<b>reserva una clase</b> o <b>te escribe</b>.
         </Typography>
         <Alert severity="info">
-          Por ley (RGPD), tu web mostrará un aviso de cookies y solo activará esta medición si la visitante acepta.
+          Por ley (RGPD), tu web mostrará un aviso de cookies y solo activará esta medición si quien la visita acepta.
           Lo hace sola: no tienes que hacer nada.
         </Alert>
 
@@ -257,7 +257,7 @@ export default function MarketingSection({ value, onChange }: Props) {
             label="Etiqueta de «Registro» (opcional)" value={v('google_ads_signup_label')} fullWidth placeholder="XyZ12_ab"
             onChange={(e) => onLabel('google_ads_signup_label', e.target.value)}
             error={err('google_ads_signup_label')}
-            helperText={err('google_ads_signup_label') ? RULES.google_ads_signup_label.hint : 'Clientas nuevas que crean su cuenta.'}
+            helperText={err('google_ads_signup_label') ? RULES.google_ads_signup_label.hint : 'Clientes nuevos que crean su cuenta.'}
           />
         </Stack>
 

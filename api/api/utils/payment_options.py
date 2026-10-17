@@ -17,11 +17,11 @@ Lo efectivo:
   pay_at_studio      {'guests', 'clients'}: «Pagar en el estudio».
                      pay_at_studio_enabled = None (por defecto) → automático:
                      encendido solo si la web no cobra con tarjeta (lo de
-                     antes). Las invitadas además necesitan guest_booking.
-  credits            reservar con créditos (clientas con cuenta): siempre.
+                     antes). Los invitados además necesitan guest_booking.
+  credits            reservar con créditos (clientes con cuenta): siempre.
 
-Ninguna opción toca lo que hace el estudio desde el panel (apuntar a una
-clienta, añadir créditos, cobrar una membresía a mano…).
+Ninguna opción toca lo que hace el estudio desde el panel (apuntar a un
+cliente, añadir créditos, cobrar una membresía a mano…).
 """
 from __future__ import annotations
 

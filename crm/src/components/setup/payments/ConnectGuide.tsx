@@ -182,7 +182,7 @@ export default function ConnectGuide({ status, setStatus, value, onSaved, return
             { key: 'iban', title: 'El IBAN de tu cuenta del banco', hint: 'Donde quieres recibir el dinero. A tu nombre o al de tu empresa.' },
             { key: 'phone', title: 'Tu móvil', hint: 'Stripe te manda un código por SMS.' },
             { key: 'web', title: 'La dirección de tu web', hint: webUrl ? <>Stripe te la pide: <CopyChip text={webUrl} label="la dirección de tu web" /></> : 'Stripe te la pide.' },
-            { key: 'time', title: 'Unos 10 minutos tranquila' },
+            { key: 'time', title: 'Unos 10 minutos con calma' },
           ]} />
           {state === 'none' && (
             <Button variant="contained" onClick={() => setReady(true)} endIcon={<StudioIcon name="next" />} sx={{ mt: 1.5, minHeight: 48 }}>
@@ -206,7 +206,7 @@ export default function ConnectGuide({ status, setStatus, value, onSaved, return
           </Typography>
           <ScreenTips label="Qué te pedirá Stripe" rows={[
             { title: 'Email y móvil', text: 'Te llega un código por SMS para confirmar que eres tú.' },
-            { title: 'Tipo de negocio', text: <>¿Autónoma? Elige <b>«Persona física»</b> (o «Autónomo»). ¿Tienes SL u otra sociedad? Elige <b>«Empresa»</b>.</> },
+            { title: 'Tipo de negocio', text: <>¿Trabajas por tu cuenta? Elige <b>«Persona física»</b> (o «Autónomo»). ¿Tienes SL u otra sociedad? Elige <b>«Empresa»</b>.</> },
             { title: 'Tus datos', text: 'Nombre, fecha de nacimiento, dirección y DNI o NIE, igual que en tu documento.' },
             {
               title: 'Tu negocio',
@@ -220,10 +220,10 @@ export default function ConnectGuide({ status, setStatus, value, onSaved, return
             },
             {
               title: 'Nombre en el extracto (descriptor)',
-              text: <>Es lo que verá tu clienta en el extracto de su banco. Pon el de tu estudio, p. ej. <CopyChip text={descriptor} label="el nombre para el extracto" />, para que lo reconozca y no reclame el cargo.</>,
+              text: <>Es lo que verá tu cliente en el extracto de su banco. Pon el de tu estudio, p. ej. <CopyChip text={descriptor} label="el nombre para el extracto" />, para que lo reconozca y no reclame el cargo.</>,
             },
             { title: 'Cuenta del banco', text: 'Tu IBAN. Ahí te llega el dinero.' },
-            { title: 'Revisar y enviar', text: 'Comprueba el resumen y acepta. Vuelves aquí sola.' },
+            { title: 'Revisar y enviar', text: 'Comprueba el resumen y acepta. Vuelves aquí automáticamente.' },
           ]} />
           <Typography sx={{ fontSize: '0.84rem', color: 'var(--studio-muted)', mt: 1.25, display: 'flex', gap: 0.75 }}>
             <StudioIcon name="tip" aria-hidden sx={{ fontSize: 18 }} />

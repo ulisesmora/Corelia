@@ -14,7 +14,7 @@ const EMPTY: FAQItem = { question: '', answer: '', question_en: '', answer_en: '
 const PAGE_LABEL = { both: 'Portada y precios', home: 'Portada', prices: 'Precios' };
 
 /**
- * Preguntas frecuentes de la web. Además de ayudar a tus clientas, son lo
+ * Preguntas frecuentes de la web. Además de ayudar a tus clientes, son lo
  * que más usan Google y los asistentes de IA para recomendar un negocio.
  */
 export default function FaqEditor() {

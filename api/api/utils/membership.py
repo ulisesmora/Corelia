@@ -1,7 +1,7 @@
 """
-Detección de clientas regulares y recomendación de membresía.
+Detección de clientes regulares y recomendación de membresía.
 
-Una clienta es "regular" si en las últimas 8 semanas ha venido al menos 4
+Un cliente es "regular" si en las últimas 8 semanas ha venido al menos 4
 semanas distintas, o si repite la MISMA clase (mismo horario) 3+ semanas.
 Para cada regular sin suscripción calculamos, con SU historial real:
   - cuántas clases/créditos consume al mes y sus clases fijas,
@@ -77,7 +77,7 @@ def pick_membership(subs, needed_per_month, top_up_rate):
 
 
 def _current_price_per_credit(user, drop_in):
-    """Lo que la clienta paga hoy por crédito, según sus últimos bonos (90 días)."""
+    """Lo que el cliente paga hoy por crédito, según sus últimos bonos (90 días)."""
     from api.models import CreditLedgerEntry, Plan
     since = timezone.now() - timedelta(days=90)
     grants = CreditLedgerEntry.objects.filter(
@@ -97,7 +97,7 @@ def _current_price_per_credit(user, drop_in):
 
 
 def analyze_user(user, now=None, catalog=None):
-    """Devuelve el análisis de la clienta, o None si no aplica (staff,
+    """Devuelve el análisis del cliente, o None si no aplica (staff,
     suscripción activa, sin actividad…). `eligible` indica si es regular."""
     from api.models import Booking, Subscription
     from api.utils.availability import to_madrid_wall
@@ -206,7 +206,7 @@ def analyze_user(user, now=None, catalog=None):
 
 
 def candidates(now=None):
-    """Todas las regulares sin membresía, con su análisis (para CRM y email)."""
+    """Todos los clientes regulares sin membresía, con su análisis (para CRM y email)."""
     from api.models import Booking, User
     now = now or timezone.now()
     user_ids = (

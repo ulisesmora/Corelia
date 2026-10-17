@@ -1,7 +1,7 @@
 """
 Calendario del panel (crm/src/pages/CalendarPage.tsx) y lista de espera.
 
-Panel (solo administradoras):
+Panel (solo administración):
   GET  /api/v1/calendar/?start=YYYY-MM-DD&end=YYYY-MM-DD[&catalog=1]
   GET  /api/v1/calendar/occurrence/?schedule=ID&date=YYYY-MM-DD
   POST /api/v1/calendar/occurrence/move/         {schedule, date, new_date?, new_start, new_end?, new_room?, notify?, force?}
@@ -17,7 +17,7 @@ Panel (solo administradoras):
   POST /api/v1/waitlist/<id>/remove/
   GET/PATCH /api/v1/waitlist/settings/           (GET es público: {enabled})
 
-Web (clientas con sesión):
+Web (clientes con sesión):
   GET  /api/v1/waitlist/                          mis entradas activas
   POST /api/v1/waitlist/                          {schedule_id, start_datetime}  → apuntarme
   POST /api/v1/waitlist/<id>/leave/               borrarme
@@ -193,7 +193,7 @@ class CalendarAddClientView(_SessionAction):
     def run(self, request, schedule, d, data):
         client = User.objects.filter(pk=data.get('user')).first() if str(data.get('user') or '').isdigit() else None
         if client is None:
-            raise ops.CalendarError('bad_user', 'Elige una clienta.')
+            raise ops.CalendarError('bad_user', 'Elige un cliente.')
         booking = ops.add_client_to_occurrence(
             schedule, d, client, charge=data.get('charge') or 'credits', force=_truthy(data.get('force'), False),
             notify=_truthy(data.get('notify')), admin=request.user,
@@ -253,7 +253,7 @@ def _entry_json(e, position=None):
 
 
 class WaitlistView(APIView):
-    """La clienta: ver sus listas de espera y apuntarse a una."""
+    """El cliente: ver sus listas de espera y apuntarse a una."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):

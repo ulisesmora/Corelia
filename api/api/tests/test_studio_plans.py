@@ -1,4 +1,4 @@
-"""Clientas del estudio: plan mensual cobrado en el estudio (api/utils/studio_plans.py,
+"""Clientes del estudio: plan mensual cobrado en el estudio (api/utils/studio_plans.py,
 api/views_studio_plans.py) y su integración con Hoy y Ventas."""
 from datetime import date, time, timedelta
 from decimal import Decimal
@@ -349,7 +349,7 @@ class DailyTaskTests(Base):
         self.assertFalse(send.called)
         plan.refresh_from_db()
         self.assertEqual(plan.due_marked_for, self.today)
-        # Aviso solo si la dueña lo enciende
+        # Aviso solo si el estudio lo enciende
         StudioPlan.objects.filter(pk=plan.pk).update(remind_client=True, next_due_date=self.today + timedelta(days=2))
         with patch('api.utils.emailing.send_templated_email', return_value=True) as send:
             self.assertEqual(sp.daily()['reminded'], 1)

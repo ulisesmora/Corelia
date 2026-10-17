@@ -34,7 +34,7 @@ BAD_CODE = 'El código no es correcto o ya ha caducado. Escribe el que se ve aho
 BAD_RECOVERY = 'Ese código de recuperación no es válido o ya se ha usado.'
 
 
-# ── Piezas comunes de la entrada (panel y clientas) ──────────────────────────
+# ── Piezas comunes de la entrada (panel y clientes) ──────────────────────────
 
 _DUMMY_HASH = None
 

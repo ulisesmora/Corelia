@@ -1,6 +1,6 @@
-"""Clientas del estudio: plan mensual que se cobra en el estudio (sin Stripe).
+"""Clientes del estudio: plan mensual que se cobra en el estudio (sin Stripe).
 
-La dueña vende, p. ej., «8 clases al mes por 60 € en efectivo». Nada se cobra
+El estudio vende, p. ej., «8 clases al mes por 60 € en efectivo». Nada se cobra
 ni se renueva solo: cada mes pulsa «Renovar» y se hace el CORTE de créditos.
 
 Corte (renew):
@@ -48,7 +48,7 @@ logger = logging.getLogger(__name__)
 
 # Se puede renovar desde unos días antes del corte (p. ej. paga el 28 el mes siguiente)
 RENEW_WINDOW_DAYS = 7
-# Aviso opcional a la clienta: días antes del corte
+# Aviso opcional al cliente: días antes del corte
 REMIND_DAYS_BEFORE = 3
 MONTHS_LONG = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto',
                'septiembre', 'octubre', 'noviembre', 'diciembre']
@@ -271,7 +271,7 @@ def set_status(plan_id, action, admin=None) -> StudioPlan:
         try:
             plan.save(update_fields=['status', 'next_due_date', 'updated_at'])
         except IntegrityError:
-            raise StudioPlanError('already_open', 'Esta clienta ya tiene otro plan del estudio abierto.', status=409)
+            raise StudioPlanError('already_open', 'Este cliente ya tiene otro plan del estudio abierto.', status=409)
     logger.info("studio_plan.%s plan=%s admin=%s", action, plan.id, getattr(admin, 'id', None))
     return plan
 
@@ -365,7 +365,7 @@ def today_card(t: date | None = None) -> dict:
 
 def daily(t: date | None = None) -> dict:
     """Marca los planes que vencen hoy o antes (salen en Hoy) y, solo si la
-    dueña lo encendió en el plan, avisa a la clienta unos días antes. No cobra
+    el estudio lo encendió en el plan, avisa al cliente unos días antes. No cobra
     ni renueva nada."""
     from api.utils.emailing import send_templated_email
     from api.utils.site import studio_name, web_url

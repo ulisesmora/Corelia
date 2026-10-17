@@ -78,7 +78,7 @@ function ReceiptDialog({ row, data, onClose }: { row: CollectedRow | null; data:
           {s.address && <Typography sx={{ fontSize: '0.88rem' }}>{s.address}</Typography>}
           <Box sx={{ my: 1.5, borderTop: '1px dashed var(--studio-border-strong)' }} />
           <Typography sx={{ fontSize: '0.9rem' }}>Recibo nº <b>{row.receipt_no}</b> · {shortDate(row.date)} {row.time}</Typography>
-          <Typography sx={{ fontSize: '0.9rem' }}>Clienta: <b>{row.name}</b>{row.email ? ` (${row.email})` : ''}</Typography>
+          <Typography sx={{ fontSize: '0.9rem' }}>Cliente: <b>{row.name}</b>{row.email ? ` (${row.email})` : ''}</Typography>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, mt: 1.5 }}>
             <Typography>{row.concept}<br /><Typography component="span" sx={{ fontSize: '0.82rem', color: 'var(--studio-muted)' }}>{row.method}</Typography></Typography>
             <Typography sx={{ fontWeight: 700, whiteSpace: 'nowrap' }}>{fmtMoney(row.amount, data.currency)}</Typography>
@@ -255,7 +255,7 @@ export default function SalesPage() {
           <Box sx={{ ...rowSx, flexWrap: 'wrap', gap: 1 }}>
             <TonalButton size="small" onClick={() => navigate('/clases-y-precios?tab=precios')}>{data.plans.length ? 'Editar bonos y cuotas' : 'Crear el primer bono'}</TonalButton>
             <Button size="small" onClick={() => navigate('/subscriptions')}>Membresías</Button>
-            <Button size="small" onClick={() => navigate('/credits')}>Créditos de clientas</Button>
+            <Button size="small" onClick={() => navigate('/credits')}>Créditos de clientes</Button>
             <Button size="small" onClick={() => navigate('/cuopon')}>Cupones</Button>
           </Box>
         </>

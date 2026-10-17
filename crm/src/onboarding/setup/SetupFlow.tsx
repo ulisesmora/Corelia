@@ -34,10 +34,10 @@ import { StepHead } from './ui';
 // ====================================================================
 
 const HEADS: { title: string; subtitle: string }[] = [
-  { title: '¿Cómo se llama tu estudio?', subtitle: 'Así te verán tus clientas en tu web y en la app.' },
+  { title: '¿Cómo se llama tu estudio?', subtitle: 'Así te verán tus clientes en tu web y en la app.' },
   { title: 'Elige tu estilo', subtitle: 'Tu web y tu panel se verán así. Puedes cambiarlo cuando quieras.' },
   { title: '¿Dónde das las clases?', subtitle: 'Añade tus salas y cuántas personas caben.' },
-  { title: '¿Quién da las clases?', subtitle: 'Tus clientas verán su nombre en el horario.' },
+  { title: '¿Quién da las clases?', subtitle: 'Tus clientes verán su nombre en el horario.' },
   { title: '¿Qué clases ofreces?', subtitle: 'Elige todas las que quieras. Luego puedes cambiarlas.' },
   { title: 'Tu semana tipo', subtitle: 'Toca un hueco para poner una clase. Se repite cada semana.' },
   { title: 'Tus bonos', subtitle: 'Te sugerimos estos. Ajusta el precio y elige cuáles ofrecer.' },

@@ -7,11 +7,11 @@ import type { StudioIconName } from '../../site/StudioIcon';
 // cualquier pantalla del panel con la dirección:
 //
 //   ?guia=cobros               → primer capítulo («Dos formas de cobrar»)
-//   ?guia=cobros#online        → clientas online (Stripe se encarga)
-//   ?guia=cobros#en-estudio    → clientas del estudio (las gestionas tú)
+//   ?guia=cobros#online        → clientes online (Stripe se encarga)
+//   ?guia=cobros#en-estudio    → clientes del estudio (los gestionas tú)
 //   ?guia=cobros#reembolsos    → un capítulo concreto
 //
-// #en-mano (enlace antiguo) abre «Clientas del estudio».
+// #en-mano (enlace antiguo) abre «Clientes del estudio».
 //
 // (la lee <ChargingGuideHost/>, en MainLayout). Así se puede enlazar desde
 // el «?», el buscador ⌘K, las visitas guiadas, Ajustes o cualquier botón.
@@ -37,8 +37,8 @@ export interface ChapterMeta {
 
 export const CHAPTERS: ChapterMeta[] = [
   { key: 'cobros', title: 'Dos formas de cobrar', short: 'Resumen', icon: 'payments' },
-  { key: 'online', title: 'Clientas online', short: 'Online', icon: 'web' },
-  { key: 'en-estudio', title: 'Clientas del estudio', short: 'En el estudio', icon: 'studio' },
+  { key: 'online', title: 'Clientes online', short: 'Online', icon: 'web' },
+  { key: 'en-estudio', title: 'Clientes del estudio', short: 'En el estudio', icon: 'studio' },
   { key: 'reembolsos', title: 'Cancelaciones y devoluciones', short: 'Cancelar', icon: 'undo' },
   { key: 'espera', title: 'Lista de espera', short: 'Espera', icon: 'hourglass' },
 ];

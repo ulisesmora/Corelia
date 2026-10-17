@@ -1,4 +1,4 @@
-// «Apuntarla a una clase»: elige una de las próximas clases y si la paga con
+// «Reservarle una clase»: elige una de las próximas clases y si la paga con
 // sus créditos o va sin cobrar. Usa la misma ruta que el calendario
 // (POST v1/calendar/occurrence/add-client/).
 import { useEffect, useMemo, useState } from 'react';
@@ -29,7 +29,7 @@ export default function BookClassDialog({ open, client, balance, onClose, onBook
   const [charge, setCharge] = useState<'credits' | 'free'>('credits');
   const [saving, setSaving] = useState(false);
   const today = isoOf(new Date());
-  const name = client.name || client.first_name || 'la clienta';
+  const name = client.name || client.first_name || 'esta persona';
 
   useEffect(() => {
     if (!open) return;
@@ -59,7 +59,7 @@ export default function BookClassDialog({ open, client, balance, onClose, onBook
     setError('');
     try {
       await studioApi.addToClass(pick.schedule_id, pick.date, client.id, charge);
-      notify(`${name} apuntada a ${pick.title} · ${dayLabel(pick.date, today).toLowerCase()} ${pick.start.slice(11, 16)} ✓`);
+      notify(`${name}: reserva hecha en ${pick.title} · ${dayLabel(pick.date, today).toLowerCase()} ${pick.start.slice(11, 16)} ✓`);
       onBooked?.();
       onClose();
     } catch (e) {
@@ -118,7 +118,7 @@ export default function BookClassDialog({ open, client, balance, onClose, onBook
             ]} />
             {notEnough && (
               <Alert severity="warning" sx={{ mt: 1.5 }}>
-                No le llega: le quedan {creditsText(balance)}. Añádele créditos antes o apúntala «Sin cobrar».
+                No le llega: le quedan {creditsText(balance)}. Añádele créditos antes o elige «Sin cobrar».
               </Alert>
             )}
           </Box>
@@ -129,7 +129,7 @@ export default function BookClassDialog({ open, client, balance, onClose, onBook
         <Button variant="outlined" onClick={onClose} disabled={saving} sx={{ minHeight: 48 }}>Cancelar</Button>
         <Button variant="contained" onClick={book} disabled={!pick || saving || Boolean(notEnough)} sx={{ minHeight: 48, ml: '0 !important' }}
           startIcon={saving ? <CircularProgress size={18} color="inherit" /> : undefined}>
-          {pick ? `Apuntarla a ${pick.title}` : 'Elige una clase'}
+          {pick ? `Reservar ${pick.title}` : 'Elige una clase'}
         </Button>
       </DialogActions>
     </Dialog>

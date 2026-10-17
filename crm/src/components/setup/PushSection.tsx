@@ -20,7 +20,7 @@ const AUTOMATIC = [
 
 /**
  * Avisos al móvil (notificaciones push). Funcionan solos y gratis: aquí se
- * explican, se ve cuántas clientas los tienen y se imprime un cartel con QR
+ * explican, se ve cuántos clientes los tienen y se imprime un cartel con QR
  * para que instalen la app desde el estudio.
  */
 export default function PushSection({ value }: { value: StudioSettings }) {
@@ -68,10 +68,10 @@ export default function PushSection({ value }: { value: StudioSettings }) {
       <Stack direction="row" spacing={1.5} alignItems="flex-start">
         <NotificationsActiveOutlinedIcon color="primary" sx={{ fontSize: 36, mt: 0.5 }} />
         <Box>
-          <Typography variant="h6">Tus clientas reciben avisos en el móvil</Typography>
+          <Typography variant="h6">Tus clientes reciben avisos en el móvil</Typography>
           <Typography color="text.secondary">
             Como los de WhatsApp, pero de tu estudio. <b>Ya están funcionando</b>: no tienes que configurar nada y son
-            gratis (no son SMS). Solo hace falta que cada clienta instale la app desde tu web y acepte los avisos;
+            gratis (no son SMS). Solo hace falta que cada cliente instale la app desde tu web y acepte los avisos;
             la web se lo ofrece y le explica cómo, en iPhone y en Android.
           </Typography>
         </Box>
@@ -79,8 +79,8 @@ export default function PushSection({ value }: { value: StudioSettings }) {
 
       <Alert severity={value.push_clients ? 'success' : 'info'}>
         {value.push_clients
-          ? <><b>{value.push_clients}</b> {value.push_clients === 1 ? 'clienta tiene' : 'clientas tienen'} los avisos activados ({value.push_devices} {value.push_devices === 1 ? 'dispositivo' : 'dispositivos'}).</>
-          : <>Todavía ninguna clienta ha activado los avisos. El cartel de abajo ayuda mucho: ponlo en la recepción.</>}
+          ? <><b>{value.push_clients}</b> {value.push_clients === 1 ? 'cliente tiene' : 'clientes tienen'} los avisos activados ({value.push_devices} {value.push_devices === 1 ? 'dispositivo' : 'dispositivos'}).</>
+          : <>Todavía ningún cliente ha activado los avisos. El cartel de abajo ayuda mucho: ponlo en la recepción.</>}
       </Alert>
 
       <Box>
@@ -104,7 +104,7 @@ export default function PushSection({ value }: { value: StudioSettings }) {
           <Box sx={{ flex: 1 }}>
             <Typography fontWeight={700}>Cartel para el estudio</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-              Un A4 con tu logo y un código QR: tus clientas lo escanean con la cámara, instalan la app y activan los avisos.
+              Un A4 con tu logo y un código QR: tus clientes lo escanean con la cámara, instalan la app y activan los avisos.
             </Typography>
             <Button variant="contained" startIcon={<PrintOutlinedIcon />} onClick={printPoster} disabled={!qr}>Imprimir cartel</Button>
           </Box>
@@ -115,9 +115,9 @@ export default function PushSection({ value }: { value: StudioSettings }) {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2} alignItems={{ sm: 'center' }}>
           <CampaignOutlinedIcon color="primary" sx={{ fontSize: 32 }} />
           <Box sx={{ flex: 1 }}>
-            <Typography fontWeight={700}>¿Quieres avisar de algo a todas?</Typography>
+            <Typography fontWeight={700}>¿Quieres avisar de algo a todo el mundo?</Typography>
             <Typography variant="body2" color="text.secondary">
-              Un taller, unas vacaciones, una plaza libre… En «Avisos a clientas» escribes el mensaje y eliges si sale
+              Un taller, unas vacaciones, una plaza libre… En «Avisos a clientes» escribes el mensaje y eliges si sale
               por email, al móvil o por los dos.
             </Typography>
           </Box>

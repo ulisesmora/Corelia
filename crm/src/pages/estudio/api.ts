@@ -1,4 +1,4 @@
-// Clientas del estudio (plan mensual que se cobra en el estudio, sin Stripe) y
+// Clientes del estudio (plan mensual que se cobra en el estudio, sin Stripe) y
 // atajos de «Créditos». API: api/api/views_studio_plans.py.
 import { API_BASE_URL } from '../../config';
 import { authHeaders } from '../../utils/auth';

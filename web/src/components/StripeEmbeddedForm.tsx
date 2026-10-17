@@ -26,7 +26,7 @@ interface StripeEmbeddedFormProps {
   name: string;
   phone: string;
   couponCode: string;
-  /** Clienta con sesión: el pago y las reservas van a su nombre (sin captcha). */
+  /** Cliente con sesión: el pago y las reservas van a su nombre (sin captcha). */
   authToken?: string | null;
 }
 
@@ -42,7 +42,7 @@ const StripeEmbeddedForm = ({ items, currency, email, name, phone, couponCode, a
   // vuelo, la respuesta obsoleta se descarta (gana siempre la última).
   const requestSeqRef = useRef(0);
   // Casilla de seguridad (Turnstile) antes de crear la sesión de pago como
-  // invitada, si el estudio la tiene configurada. Cada token vale una vez.
+  // invitado, si el estudio la tiene configurada. Cada token vale una vez.
   const captchaKey = authToken ? '' : getSiteClient().turnstile_site_key;
   const [captchaToken, setCaptchaToken] = useState('');
   const [captchaReset, setCaptchaReset] = useState(0);

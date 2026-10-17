@@ -5,7 +5,7 @@ import type { StudioIconName } from '../../site/StudioIcon';
 // del móvil, las páginas índice (Ventas, Mi web, Ajustes) y el buscador ⌘K
 // salen de aquí. Toda pantalla del panel tiene que estar en algún sitio.
 //
-//   Día a día: Hoy · Calendario · Reservas · Clientas
+//   Día a día: Hoy · Calendario · Reservas · Clientes
 //   Negocio:   Clases y precios · Ventas · Mi web
 //   Ajustes (abajo): todo lo que se toca poco
 //
@@ -28,7 +28,7 @@ export const NAV: NavItem[] = [
   { key: 'today', label: 'Hoy', icon: 'sun', path: '/', group: 'Día a día' },
   { key: 'calendar', label: 'Calendario', icon: 'schedule', path: '/calendar', group: 'Día a día' },
   { key: 'bookings', label: 'Reservas', icon: 'booked', path: '/bookings', group: 'Día a día' },
-  { key: 'clients', label: 'Clientas', icon: 'clients', path: '/clients', group: 'Día a día' },
+  { key: 'clients', label: 'Clientes', icon: 'clients', path: '/clients', group: 'Día a día' },
   { key: 'catalog', label: 'Clases y precios', icon: 'classTypes', path: '/clases-y-precios', group: 'Negocio' },
   { key: 'sales', label: 'Ventas', icon: 'credits', path: '/ventas', group: 'Negocio' },
   { key: 'web', label: 'Mi web', icon: 'web', path: '/mi-web', group: 'Negocio' },
@@ -91,9 +91,9 @@ export const WEB_HUB: HubGroup[] = [
     title: 'Lo que dice',
     icon: 'announce',
     links: [
-      { label: 'Textos de la web', hint: 'Títulos, «sobre nosotras» e inglés', icon: 'announce', path: '/ajustes?tab=textos', keywords: 'contenido inglés' },
+      { label: 'Textos de la web', hint: 'Títulos, «quiénes somos» e inglés', icon: 'announce', path: '/ajustes?tab=textos', keywords: 'contenido inglés' },
       { label: 'Preguntas frecuentes', hint: 'Dudas típicas, respondidas', icon: 'help', path: '/ajustes?tab=preguntas', keywords: 'faq' },
-      { label: 'Opiniones', hint: 'Lo que dicen tus clientas', icon: 'celebrate', path: '/ajustes?tab=opiniones', keywords: 'reseñas testimonios' },
+      { label: 'Opiniones', hint: 'Lo que dicen tus clientes', icon: 'celebrate', path: '/ajustes?tab=opiniones', keywords: 'reseñas testimonios' },
     ],
   },
   {
@@ -116,14 +116,14 @@ export const SETTINGS_HUB: HubGroup[] = [
       { label: 'Profesores', hint: 'Quién da las clases', icon: 'instructors', path: '/clases-y-precios?tab=profes', keywords: 'profesoras instructores instructoras equipo' },
       { label: 'Categorías', hint: 'Grupos de clases en la web', icon: 'categories', path: '/clases-y-precios?tab=categorias' },
       { label: 'Salas', hint: 'Espacios y aforo', icon: 'rooms', path: '/clases-y-precios?tab=salas', keywords: 'aforo capacidad' },
-      { label: 'Clases fijas de clientas', hint: 'Plaza guardada cada semana', icon: 'fixedClasses', path: '/assign-classes', keywords: 'apuntar reserva fija' },
+      { label: 'Clases fijas de clientes', hint: 'Plaza guardada cada semana', icon: 'fixedClasses', path: '/assign-classes', keywords: 'apuntar reserva fija' },
     ],
   },
   {
-    title: 'Tus clientas',
+    title: 'Tus clientes',
     icon: 'clients',
     links: [
-      { label: 'Avisos a clientas', hint: 'Enviar un mensaje a todas', icon: 'notices', path: '/mails', keywords: 'email mensaje aviso' },
+      { label: 'Avisos a clientes', hint: 'Enviar un mensaje a todo el mundo', icon: 'notices', path: '/mails', keywords: 'email mensaje aviso' },
       { label: 'Emails', hint: 'Desde qué cuenta salen los emails', icon: 'notices', path: '/ajustes?tab=emails', keywords: 'smtp gmail correo' },
       { label: 'Avisos al móvil', hint: 'Notificaciones de la app', icon: 'notices', path: '/ajustes?tab=avisos', keywords: 'push notificaciones' },
     ],

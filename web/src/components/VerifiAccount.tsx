@@ -5,7 +5,7 @@
  * El código de 6 dígitos es la vía principal; este enlace sigue funcionando.
  *
  * - "La cuenta ya ha sido verificada" se trata como éxito (no es un error
- *   para la clienta; además React StrictMode puede lanzar la petición dos veces).
+ *   para el cliente; además React StrictMode puede lanzar la petición dos veces).
  * - Enlace caducado/no válido: si hay sesión, se ofrece el código de 6 dígitos
  *   (EmailVerifyCard); si no, entrar para recibir uno nuevo.
  */

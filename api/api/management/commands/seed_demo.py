@@ -1,4 +1,4 @@
-"""Carga un estudio de ejemplo (clases, horarios, instructora y bonos) para
+"""Carga un estudio de ejemplo (clases, horarios, equipo y bonos) para
 ver la web funcionando desde el primer minuto. Todo se puede editar o borrar
 después desde el panel."""
 from datetime import date, time
@@ -48,7 +48,7 @@ FAQS = [
      'Do I need previous experience?',
      'No. Classes are for all levels and every exercise is adapted to your starting point.'),
     ('¿Qué tengo que traer?',
-     'Ropa cómoda y calcetines antideslizantes (para Pilates). Si quieres, una botella de agua. El material lo ponemos nosotras.',
+     'Ropa cómoda y calcetines antideslizantes (para Pilates). Si quieres, una botella de agua. El material lo pone el estudio.',
      'What should I bring?',
      'Comfortable clothes and grip socks (for Pilates). A water bottle if you like. We provide all the equipment.'),
     ('¿Cómo funcionan los créditos?',
@@ -83,7 +83,7 @@ class Command(BaseCommand):
         instructor, _ = Instructor.objects.get_or_create(
             slug='instructora-ejemplo',
             defaults={'name': 'Laura (ejemplo)', 'experience_years': 8,
-                      'short_bio': 'Instructora certificada de Pilates y Yoga. Cámbiala por tu equipo en el panel.'},
+                      'short_bio': 'Formación certificada en Pilates y Yoga. Cambia esta ficha por la de tu equipo en el panel.'},
         )
         room, _ = Room.objects.get_or_create(name='Sala principal', defaults={'capacity': 10})
 

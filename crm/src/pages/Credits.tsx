@@ -138,7 +138,7 @@ export default function CreditsManagement() {
 
   const navigate = useNavigate();
   const [selectedUser, setSelectedUser] = useState<UserOption | null>(null);
-  // Recién registrada aquí: tras añadirle créditos se le proponen los siguientes pasos
+  // Recién registrado aquí: tras añadirle créditos se le proponen los siguientes pasos
   const [justCreated, setJustCreated] = useState(false);
   const [plan, setPlan] = useState<StudioPlan | null>(null);
   const [bookOpen, setBookOpen] = useState(false);
@@ -225,14 +225,14 @@ export default function CreditsManagement() {
       setEntries([]);
       setWalletError('');
     }
-    // La URL recuerda a la clienta (volver atrás vuelve al buscador)
+    // La URL recuerda al cliente (volver atrás vuelve al buscador)
     const next = new URLSearchParams(searchParams);
     if (user) next.set('clienta', String(user.id)); else next.delete('clienta');
     next.delete('nueva');
     setSearchParams(next);
   };
 
-  // Enlaces directos: ?clienta=<id> la abre; ?accion=anadir abre la ventana al elegirla; ?nueva=1 abre el alta
+  // Enlaces directos: ?clienta=<id> abre su ficha; ?accion=anadir abre la ventana al elegir cliente; ?nueva=1 abre el alta
   useEffect(() => {
     const accion = searchParams.get('accion');
     const clienta = Number(searchParams.get('clienta'));
@@ -256,7 +256,7 @@ export default function CreditsManagement() {
           fetchWallet(u.id);
           fetchPlan(u.id);
         })
-        .catch(async (e) => notify(`No se ha podido abrir la ficha de la clienta. ${await friendlyError(e)}`, 'error'));
+        .catch(async (e) => notify(`No se ha podido abrir la ficha del cliente. ${await friendlyError(e)}`, 'error'));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
@@ -276,7 +276,7 @@ export default function CreditsManagement() {
     setOpenAdjust(true);
   };
 
-  // Viene de Inicio ("Añadir o quitar créditos"): al elegir clienta se abre la ventana
+  // Viene de Inicio ("Añadir o quitar créditos"): al elegir cliente se abre la ventana
   useEffect(() => {
     if (pendingAdd && wallet && !loading) {
       setPendingAdd(false);
@@ -317,7 +317,7 @@ export default function CreditsManagement() {
   const paidNum = Number(paidAmount.replace(',', '.'));
   const paidError = paidAmount.trim() && (!Number.isFinite(paidNum) || paidNum < 0) ? 'Escribe el importe con números, p. ej. 45.' : '';
   const newBalance = amountError ? null : balance + (adjustMode === 'add' ? amountNum : -amountNum);
-  const clientName = displayName(selectedUser) || 'la clienta';
+  const clientName = displayName(selectedUser) || 'esta persona';
 
   const handleAdjust = async () => {
     setAmountTouched(true);
@@ -334,7 +334,7 @@ export default function CreditsManagement() {
             <p style={{ marginTop: 0 }}>
               Ahora tiene <b>{creditsText(balance)}</b> y se quedará con <b>{creditsText(balance - amountNum)}</b>.
             </p>
-            <p>A la clienta no le llega ningún aviso. No se le devuelve ni se le cobra dinero: solo cambia su saldo de clases.</p>
+            <p>Al cliente no le llega ningún aviso. No se le devuelve ni se le cobra dinero: solo cambia su saldo de clases.</p>
             <p style={{ marginBottom: 0 }}>Si te equivocas, puedes volver a añadírselos desde esta misma pantalla.</p>
           </>
         ),
@@ -427,7 +427,7 @@ export default function CreditsManagement() {
   const creditsHelp = (
     <HelpTip title="¿Qué es un crédito?">
       Es lo que «cuesta» reservar una clase. Una clase de suelo (mat, yoga, barre, dance) gasta 1 crédito y una
-      de máquinas (Reformer o Chair) gasta 2. Las clientas los consiguen comprando un bono o con su membresía.
+      de máquinas (Reformer o Chair) gasta 2. Tus clientes los consiguen comprando un bono o con su membresía.
     </HelpTip>
   );
 
@@ -438,12 +438,12 @@ export default function CreditsManagement() {
       <PageIntro
         pageKey="credits"
         title="Créditos"
-        subtitle="Elige a la clienta y añade o quita clases en un momento."
+        subtitle="Elige al cliente y añade o quita clases en un momento."
         actions={
           <>
             <GuideLink chapter="en-mano">Pagos en mano: cómo se hace</GuideLink>
             <Button variant="outlined" startIcon={<StorefrontOutlinedIcon />} onClick={() => navigate('/clientas/estudio/nueva')}>
-              Nueva clienta del estudio
+              Nuevo cliente del estudio
             </Button>
           </>
         }
@@ -454,11 +454,11 @@ export default function CreditsManagement() {
           <Paper sx={{ p: { xs: 2, md: 3 } }}>
             {pendingAdd && (
               <Alert severity="info" sx={{ mb: 1.5, fontSize: '0.92rem' }}>
-                Elige a la clienta: al tocarla se abre la ventana para añadirle créditos.
+                Elige al cliente: al tocar su nombre se abre la ventana para añadirle créditos.
               </Alert>
             )}
             <ClientPicker
-              newLabel="Registrarla y añadir créditos"
+              newLabel="Dar de alta y añadir créditos"
               startNew={searchParams.get('nueva') === '1'}
               onPick={(u, isNew) => {
                 if (isNew) setPendingAdd(true);
@@ -472,10 +472,10 @@ export default function CreditsManagement() {
             </Typography>
             <Stack spacing={1.5} sx={{ mb: 2 }}>
               <Typography sx={{ color: 'var(--studio-ink)', fontSize: '0.95rem' }}>
-                <b>Buscar</b>: si ya ha venido, escribe su nombre o móvil, o tócala en la lista.
+                <b>Buscar</b>: si ya ha venido, escribe su nombre o móvil, o tócalo en la lista.
               </Typography>
               <Typography sx={{ color: 'var(--studio-ink)', fontSize: '0.95rem' }}>
-                <b>Registrar nueva</b>: si es su primera vez, nombre y móvil, y sigues aquí con sus créditos.
+                <b>Dar de alta</b>: si es su primera vez, nombre y móvil, y sigues aquí con sus créditos.
               </Typography>
             </Stack>
             <Box sx={{ p: 1.5, borderRadius: 'var(--studio-radius-md)', background: 'var(--studio-surf2)' }}>
@@ -483,7 +483,7 @@ export default function CreditsManagement() {
                 ¿Te paga un mes fijo en el estudio, p. ej. 8 clases por 60 €?
               </Typography>
               <Button startIcon={<StorefrontOutlinedIcon />} onClick={() => navigate('/clientas/estudio/nueva')} sx={{ minHeight: 44, mt: 0.5 }}>
-                Hazla clienta del estudio
+                Dar de alta como cliente del estudio
               </Button>
             </Box>
           </Paper>
@@ -491,7 +491,7 @@ export default function CreditsManagement() {
       ) : (
         <>
           <Button startIcon={<ArrowBackRoundedIcon />} onClick={() => handleSelectUser(null)} sx={{ minHeight: 44, mb: 1.5 }}>
-            Elegir otra clienta
+            Elegir otro cliente
           </Button>
           <Box sx={{ display: 'grid', gap: 3, gridTemplateColumns: { xs: 'minmax(0, 1fr)', md: 'minmax(0, 5fr) minmax(0, 7fr)' }, alignItems: 'start' }}>
             {loading ? (
@@ -579,15 +579,15 @@ export default function CreditsManagement() {
                 </Typography>
                 {justCreated && (
                   <Alert severity="success" sx={{ mb: 1.5, fontSize: '0.92rem' }}>
-                    Ficha de {clientName} creada. Añádele créditos y apúntala a su primera clase.
+                    Ficha de {clientName} creada. Añádele créditos y resérvale su primera clase.
                   </Alert>
                 )}
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25} sx={{ mb: 2 }}>
                   <Button variant="outlined" startIcon={<EventAvailableOutlinedIcon />} onClick={() => setBookOpen(true)} sx={{ ...nextBtn, flex: 1 }}>
-                    Apuntarla a una clase
+                    Reservarle una clase
                   </Button>
                   <Button variant="outlined" startIcon={<EventRepeatOutlinedIcon />} onClick={() => setFixedOpen(true)} sx={{ ...nextBtn, flex: 1 }}>
-                    Hacerla clienta frecuente
+                    Convertir en cliente frecuente
                   </Button>
                 </Stack>
                 {plan ? (

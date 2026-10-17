@@ -595,7 +595,7 @@ const ClassTypeManagement = forwardRef<CatalogHandle, EmbedProps>(function Class
                       label="Nivel"
                       value={cur.level || 'all'}
                       onChange={(e) => update({ level: e.target.value as EditableClassType['level'] })}
-                      helperText="Sale en la tarjeta de la clase para que cada clienta sepa si es para ella."
+                      helperText="Sale en la tarjeta de la clase para que cada persona sepa si es para ella."
                     >
                       {levelOptions.map((level) => (
                         <MenuItem key={level.value} value={level.value} sx={{ minHeight: 44 }}>
@@ -631,7 +631,7 @@ const ClassTypeManagement = forwardRef<CatalogHandle, EmbedProps>(function Class
                   minRows={4}
                   value={cur.description || ''}
                   onChange={(e) => update({ description: e.target.value })}
-                  helperText="Sale en la página de la clase (cuando la clienta pulsa en la tarjeta). Cuenta en qué consiste, para quién es y qué beneficios tiene."
+                  helperText="Sale en la página de la clase (cuando alguien pulsa en la tarjeta). Cuenta en qué consiste, para quién es y qué beneficios tiene."
                 />
               </FormStep>
 
@@ -678,7 +678,7 @@ const ClassTypeManagement = forwardRef<CatalogHandle, EmbedProps>(function Class
                       error={errors.credits}
                       helperText={errors.credits
                         ? 'Pon cuántos créditos cuesta (normalmente 1).'
-                        : 'Cuántos créditos del bono gasta la clienta al reservar. Normalmente 1.'}
+                        : 'Cuántos créditos del bono se gastan al reservar. Normalmente 1.'}
                     />
                     <TextField
                       fullWidth

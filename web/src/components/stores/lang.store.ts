@@ -89,7 +89,7 @@ const useLangStoreBase = create<LangState>()(
 // Las islas que se renderizan en el servidor (portada, precios…) reciben el
 // idioma de la página (`lang`) y lo usan en el HTML del servidor Y en el
 // primer render del navegador (hidratación), para que coincidan. Después
-// manda el idioma guardado de la usuaria (zustand + localStorage).
+// manda el idioma guardado del usuario (zustand + localStorage).
 
 const LangSsrContext = createContext<Lang | null>(null);
 

@@ -1,7 +1,7 @@
-// «Formas de pago en tu web»: qué ve la clienta al pagar (tarjeta, Apple Pay,
+// «Formas de pago en tu web»: qué ve el cliente al pagar (tarjeta, Apple Pay,
 // Bizum, MB WAY, OXXO…) y un interruptor por método. Va en Ajustes → Cobros,
 // dentro de «Pagos online» (PaymentsSection), y se enlaza desde el paso
-// «¡Listo!» de «Conectar pagos» y desde la guía «Cómo se cobra» → Clientas
+// «¡Listo!» de «Conectar pagos» y desde la guía «Cómo se cobra» → Clientes
 // online. El API cambia la configuración de métodos de pago de Stripe de la
 // cuenta que cobra (api/api/utils/payment_methods.py).
 import { useCallback, useEffect, useId, useState, type ReactNode } from 'react';
@@ -226,7 +226,7 @@ export default function PaymentMethodsCard() {
             <p style={{ marginTop: 0 }}>Es un pago que <b>tarda días</b> en confirmarse. {m.limits}</p>
             <p style={{ marginBottom: 0 }}>
               Las <b>reservas de clase no lo ofrecen</b>: se quita solo al reservar, para que una plaza nunca quede guardada
-              sin cobrar. Tus clientas lo verán al comprar bonos{m.works.subs ? ' y cuotas' : ''}; los créditos se les ponen cuando llega el pago.
+              sin cobrar. Tus clientes lo verán al comprar bonos{m.works.subs ? ' y cuotas' : ''}; los créditos se les ponen cuando llega el pago.
             </p>
           </>
         ),
@@ -294,7 +294,7 @@ export default function PaymentMethodsCard() {
         {data?.ready && !data.live && <Pill tone="warn">Modo prueba</Pill>}
       </Box>
       <Typography sx={{ fontSize: '0.9rem', color: 'var(--studio-muted)', mt: 0.5 }}>
-        Lo que ve tu clienta al pagar. Stripe enseña a cada una solo lo que puede usar (por su país, su móvil y el importe).
+        Lo que ve tu cliente al pagar. Stripe enseña a cada persona solo lo que puede usar (por su país, su móvil y el importe).
       </Typography>
       {children}
     </Box>

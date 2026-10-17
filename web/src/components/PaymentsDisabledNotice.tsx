@@ -7,7 +7,7 @@ import { addressLine, mapsUrl, phoneHref, useSite, whatsappUrl } from '../lib/si
 import { studioMethodsText, studioPayNote } from '../utils/payments';
 
 interface Props {
-  /** 'guest' = invitada sin cuenta (necesita cuenta + créditos para reservar). */
+  /** 'guest' = invitado sin cuenta (necesita cuenta + créditos para reservar). */
   variant?: 'default' | 'guest';
   /** Solo algunos productos se compran en el estudio («Formas de cobro»): cuáles. */
   offline?: { packs: boolean; memberships: boolean };

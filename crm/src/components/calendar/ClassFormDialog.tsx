@@ -74,7 +74,7 @@ export default function ClassFormDialog({ open, mode, catalog, today, preset, oc
   }, [open, isEdit, occurrence, preset, catalog, today]);
 
   const ct = useMemo(() => catalog.class_types.find((c) => c.id === classType), [catalog, classType]);
-  // Al elegir el tipo de clase (crear), su duración y su profesora por defecto
+  // Al elegir el tipo de clase (crear), su duración y su profesor por defecto
   const pickClassType = (id: number) => {
     setClassType(id);
     const c = catalog.class_types.find((x) => x.id === id);
@@ -210,16 +210,16 @@ export default function ClassFormDialog({ open, mode, catalog, today, preset, oc
             </TextField>
             <TextField type="number" label="Plazas" value={capacity} onChange={(e) => setCapacity(Number(e.target.value))}
               slotProps={{ htmlInput: { min: 1 } }} error={!!show('capacity')}
-              helperText={show('capacity') || (isEdit && capacity < booked ? `Hay ${booked} apuntadas` : ' ')} sx={{ width: { sm: 120 } }} />
+              helperText={show('capacity') || (isEdit && capacity < booked ? `Hay ${booked} reservas` : ' ')} sx={{ width: { sm: 120 } }} />
           </Stack>
-          <TextField select label="Profesora" value={instructor} onChange={(e) => setInstructor(e.target.value === '' ? '' : Number(e.target.value))}
+          <TextField select label="Profesor" value={instructor} onChange={(e) => setInstructor(e.target.value === '' ? '' : Number(e.target.value))}
             helperText={ct?.instructor_id && !isEdit ? 'Por defecto, la de esta clase' : ' '}>
             <MenuItem value="">Sin asignar</MenuItem>
             {catalog.instructors.map((i) => <MenuItem key={i.id} value={i.id}>{i.name}</MenuItem>)}
           </TextField>
           {isEdit && booked > 0 && whenChanged && (
             <FormControlLabel control={<Checkbox checked={notify} onChange={(e) => setNotify(e.target.checked)} />}
-              label={`Avisar a las ${booked} apuntadas del cambio (email y app)`} />
+              label={`Avisar a las ${booked} personas apuntadas del cambio (email y app)`} />
           )}
           {isEdit && scope === 'following' && occurrence && date !== occurrence.date && weekdayOf(date) !== weekdayOf(occurrence.date) && booked > 0 && (
             <Alert severity="warning">Cambias el día de la semana: las reservas ya hechas desde esta fecha se cancelan y se devuelve la clase a su bono.</Alert>
@@ -227,7 +227,7 @@ export default function ClassFormDialog({ open, mode, catalog, today, preset, oc
           {error && <Alert severity="error">{error}</Alert>}
           {!isEdit && date && start && (
             <Alert severity="info" icon={false}>
-              Se añadirá <b>{ct?.title || 'la clase'}</b> {weekly ? <>todos los <b>{plural(DAYS[weekdayOf(date)].toLowerCase())}</b> desde el {longDay(date).toLowerCase()}</> : <>el <b>{longDay(date).toLowerCase()}</b></>} de <b>{start} a {m2t(endMin)}</b>. Tus clientas la verán al momento en la web.
+              Se añadirá <b>{ct?.title || 'la clase'}</b> {weekly ? <>todos los <b>{plural(DAYS[weekdayOf(date)].toLowerCase())}</b> desde el {longDay(date).toLowerCase()}</> : <>el <b>{longDay(date).toLowerCase()}</b></>} de <b>{start} a {m2t(endMin)}</b>. Tus clientes la verán al momento en la web.
             </Alert>
           )}
         </Stack>

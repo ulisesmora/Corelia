@@ -1,4 +1,4 @@
-"""Avisos de cancelación a clientas (email + WhatsApp opcional) y formato de
+"""Avisos de cancelación a clientes (email + WhatsApp opcional) y formato de
 fechas en lenguaje natural."""
 import logging
 import os
@@ -25,14 +25,14 @@ def format_class_date(value) -> str:
 
 
 def _refund_line(person) -> str:
-    # GuestProfile (invitada) pagó con tarjeta; User usa créditos
+    # GuestProfile (invitado) pagó con tarjeta; User usa créditos
     if not hasattr(person, 'first_name'):
         return "Si la pagaste con tarjeta, te devolvemos el importe automáticamente (tarda unos días en verse en tu banco)."
     return "Si usaste créditos, ya los tienes de vuelta en tu cuenta para reservar otra clase."
 
 
 def _app_hint(person) -> str:
-    """Si la clienta no tiene la app con avisos, este es el mejor momento
+    """Si el cliente no tiene la app con avisos, este es el mejor momento
     para sugerirla: acaba de ver por qué sirve."""
     try:
         if hasattr(person, 'push_subscriptions') and not person.push_subscriptions.exists():
@@ -44,7 +44,7 @@ def _app_hint(person) -> str:
 
 
 def notify_cancellation_email(user, class_name, date_str):
-    """Acepta User o GuestProfile (las invitadas tienen `name`, no `first_name`)."""
+    """Acepta User o GuestProfile (los invitados tienen `name`, no `first_name`)."""
     if not user.email:
         return
     from api.utils.emailing import send_templated_email

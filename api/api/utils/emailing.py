@@ -68,8 +68,8 @@ def _smtp_settings() -> Optional[dict]:
             'use_ssl': settings.EMAIL_USE_SSL,
             'from_address': settings.DEFAULT_FROM_EMAIL,
             'from_name': cfg.studio_name,
-            # La dirección de envío es la del servidor: las respuestas de las
-            # clientas tienen que llegar al estudio, no a ese buzón.
+            # La dirección de envío es la del servidor: las respuestas de los
+            # clientes tienen que llegar al estudio, no a ese buzón.
             'reply_to': cfg.contact_email or settings.DEFAULT_FROM_EMAIL,
             'source': 'server',
         }
@@ -110,7 +110,7 @@ def _render(template_id: str, context: dict) -> Optional[str]:
 
 def _build_message(smtp, to_email, subject, html, connection, kind='transactional'):
     """kind: 'transactional' (reservas, avisos, códigos) o 'bulk' (comunicados a
-    muchas clientas). Va en la cabecera X-Email-Kind para el servicio de envío."""
+    muchos clientes). Va en la cabecera X-Email-Kind para el servicio de envío."""
     msg = EmailMultiAlternatives(
         subject=subject,
         body=strip_tags(html),
@@ -207,7 +207,7 @@ def send_test_email(to_email: str, smtp_override: Optional[dict] = None) -> None
     html = _render('generic-notice', {
         'name': '',
         'headline': '¡Los emails funcionan! ✅',
-        'intro_copy': 'Este es un email de prueba. A partir de ahora tus clientas recibirán '
+        'intro_copy': 'Este es un email de prueba. A partir de ahora tus clientes recibirán '
                       'las confirmaciones de reserva, avisos y recordatorios desde esta dirección.',
         'cta_text': '', 'cta_url': '',
     })

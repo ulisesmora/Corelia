@@ -128,7 +128,7 @@ export default function CustomerViewer() {
 
   const [currentTab, setCurrentTab] = useState(() => (searchParams.get('vista') === 'estudio' ? 2 : 0));
 
-  // --- Clientas del estudio (plan mensual cobrado en el estudio) ---
+  // --- Clientes del estudio (plan mensual cobrado en el estudio) ---
   const [studioPlans, setStudioPlans] = useState<StudioPlan[] | null>(null);
   const [studioError, setStudioError] = useState('');
   const fetchStudioPlans = () => {
@@ -138,14 +138,14 @@ export default function CustomerViewer() {
       .catch((e) => { setStudioPlans([]); setStudioError(e instanceof Error ? e.message : String(e)); });
   };
 
-  // --- Clientas con ficha ---
+  // --- Clientes con ficha ---
   const [users, setUsers] = useState<User[]>([]);
   const [usersLoading, setUsersLoading] = useState(true);
   const [usersError, setUsersError] = useState('');
   const [userCurrentPage, setUserCurrentPage] = useState(1);
   const [verifyingId, setVerifyingId] = useState<number | null>(null);
 
-  // --- Invitadas ---
+  // --- Invitados ---
   const [guests, setGuests] = useState<GuestProfile[]>([]);
   const [guestsLoading, setGuestsLoading] = useState(true);
   const [guestsError, setGuestsError] = useState('');
@@ -184,7 +184,7 @@ export default function CustomerViewer() {
       if (!res.ok) throw res;
       const data = await res.json();
       const list: User[] = Array.isArray(data) ? data : data.results || [];
-      // Las más recientes primero: así la que acabas de dar de alta sale arriba
+      // Las fichas más recientes primero: así la que acabas de dar de alta sale arriba
       list.sort((a, b) => (b.date_joined || '').localeCompare(a.date_joined || ''));
       setUsers(list);
     } catch (err) {
@@ -217,9 +217,9 @@ export default function CustomerViewer() {
     fetchStudioPlans();
   }, []);
 
-  // El estudio confirma a mano el email de una clienta que conoce en persona
+  // El estudio confirma a mano el email de un cliente que conoce en persona
   const verifyEmail = async (user: User) => {
-    const name = fullName(user) || 'esta clienta';
+    const name = fullName(user) || 'este cliente';
     const ok = await confirm({
       title: `¿Dar por bueno el email de ${name}?`,
       message: (
@@ -228,10 +228,10 @@ export default function CustomerViewer() {
             Email: <b>{user.email}</b>
           </p>
           <p>
-            Hazlo solo si conoces a la clienta y sabes que ese email es suyo. Así podrá contratar una
+            Hazlo solo si conoces a esta persona y sabes que ese email es suyo. Así podrá contratar una
             membresía por la web sin tener que meter el código que le enviamos.
           </p>
-          <p style={{ marginBottom: 0 }}>A la clienta no le llega ningún aviso. Esto no se puede deshacer desde aquí.</p>
+          <p style={{ marginBottom: 0 }}>Al cliente no le llega ningún aviso. Esto no se puede deshacer desde aquí.</p>
         </>
       ),
       confirmText: 'Sí, confirmar su email',
@@ -396,22 +396,22 @@ export default function CustomerViewer() {
     const p = planByUser.get(userId);
     return (
       <Chip size="small" variant="outlined" color={p?.overdue ? 'warning' : 'primary'} icon={<StorefrontOutlinedIcon />}
-        label={p?.overdue ? 'Del estudio · toca renovar' : 'Clienta del estudio'} onClick={() => setCurrentTab(2)}
+        label={p?.overdue ? 'Del estudio · toca renovar' : 'Cliente del estudio'} onClick={() => setCurrentTab(2)}
         sx={{ mt: 0.5, minHeight: 32 }} />
     );
   };
 
   const renderStudioTab = () => {
-    if (studioPlans === null) return loadingBox('Cargando clientas del estudio…');
+    if (studioPlans === null) return loadingBox('Cargando clientes del estudio…');
     if (studioError) return errorBox(studioError, fetchStudioPlans);
     if (filteredPlans.length === 0) {
       return (
         <EmptyState
-          title={searchTerm ? `Ninguna clienta del estudio coincide con «${searchTerm}»` : 'Todavía no hay clientas del estudio'}
-          text="Son las que te pagan en mano un mes fijo (p. ej. 8 clases por 60 €). Tú renuevas su mes desde aquí o desde Hoy."
+          title={searchTerm ? `Ningún cliente del estudio coincide con «${searchTerm}»` : 'Todavía no hay clientes del estudio'}
+          text="Son quienes te pagan en mano un mes fijo (p. ej. 8 clases por 60 €). Tú renuevas su mes desde aquí o desde Hoy."
           action={
             <Button variant="contained" startIcon={<StorefrontOutlinedIcon />} onClick={() => navigate('/clientas/estudio/nueva')} sx={{ minHeight: 44 }}>
-              Nueva clienta del estudio
+              Nuevo cliente del estudio
             </Button>
           }
         />
@@ -455,35 +455,35 @@ export default function CustomerViewer() {
     ) : null;
 
   const renderUsersTab = () => {
-    if (usersLoading) return loadingBox('Cargando clientas…');
+    if (usersLoading) return loadingBox('Cargando clientes…');
     if (usersError) return errorBox(usersError, fetchUsers);
 
     if (filteredUsers.length === 0) {
       return searchTerm ? (
         <EmptyState
-          title={`No hay ninguna clienta con ficha que coincida con «${searchTerm}»`}
+          title={`No hay ningún cliente con ficha que coincida con «${searchTerm}»`}
           text={
             filteredGuests.length > 0
-              ? 'Pero sí hay invitadas (reservaron sin crear cuenta) con ese dato.'
-              : 'Revisa cómo está escrito o prueba solo con el nombre o el teléfono. Si es nueva, dale de alta.'
+              ? 'Pero sí hay invitados (reservaron sin crear cuenta) con ese dato.'
+              : 'Revisa cómo está escrito o prueba solo con el nombre o el teléfono. Si aún no tiene ficha, dale de alta.'
           }
           action={
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
-              {searchHasOtherTab(filteredGuests.length, 1, filteredGuests.length === 1 ? 'invitada' : 'invitadas')}
+              {searchHasOtherTab(filteredGuests.length, 1, filteredGuests.length === 1 ? 'invitado' : 'invitados')}
               {clearSearchButton}
               <Button variant="outlined" startIcon={<PersonAddIcon />} onClick={() => setQuickCreateOpen(true)} sx={{ minHeight: 44 }}>
-                Dar de alta a una clienta
+                Dar de alta a un cliente
               </Button>
             </Stack>
           }
         />
       ) : (
         <EmptyState
-          title="Todavía no hay clientas"
+          title="Todavía no hay clientes"
           text="Cuando alguien se registre en la web o la des de alta tú, aparecerá aquí."
           action={
             <Button variant="contained" startIcon={<PersonAddIcon />} onClick={() => setQuickCreateOpen(true)} sx={{ minHeight: 44 }}>
-              Dar de alta a una clienta
+              Dar de alta a un cliente
             </Button>
           }
         />
@@ -522,7 +522,7 @@ export default function CustomerViewer() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Clienta</TableCell>
+                  <TableCell>Cliente</TableCell>
                   <TableCell>Teléfono</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Otros datos</TableCell>
@@ -584,24 +584,24 @@ export default function CustomerViewer() {
   };
 
   const renderGuestsTab = () => {
-    if (guestsLoading) return loadingBox('Cargando invitadas…');
+    if (guestsLoading) return loadingBox('Cargando invitados…');
     if (guestsError) return errorBox(guestsError, fetchGuests);
 
     if (filteredGuests.length === 0) {
       return searchTerm ? (
         <EmptyState
-          title={`No hay ninguna invitada que coincida con «${searchTerm}»`}
-          text={filteredUsers.length > 0 ? 'Pero sí hay clientas con ficha con ese dato.' : 'Revisa cómo está escrito o prueba solo con el nombre o el teléfono.'}
+          title={`No hay ningún invitado que coincida con «${searchTerm}»`}
+          text={filteredUsers.length > 0 ? 'Pero sí hay clientes con ficha con ese dato.' : 'Revisa cómo está escrito o prueba solo con el nombre o el teléfono.'}
           action={
             <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.25}>
-              {searchHasOtherTab(filteredUsers.length, 0, filteredUsers.length === 1 ? 'clienta' : 'clientas')}
+              {searchHasOtherTab(filteredUsers.length, 0, filteredUsers.length === 1 ? 'cliente' : 'clientes')}
               {clearSearchButton}
             </Stack>
           }
         />
       ) : (
         <EmptyState
-          title="No hay invitadas"
+          title="No hay invitados"
           text="Aquí aparecerán las personas que reserven y paguen en la web sin crear una cuenta."
         />
       );
@@ -636,7 +636,7 @@ export default function CustomerViewer() {
             <Table>
               <TableHead>
                 <TableRow>
-                  <TableCell>Invitada</TableCell>
+                  <TableCell>Invitado</TableCell>
                   <TableCell>Teléfono</TableCell>
                   <TableCell>Email</TableCell>
                   <TableCell>Nacimiento</TableCell>
@@ -684,18 +684,18 @@ export default function CustomerViewer() {
     <Box>
       <PageIntro
         pageKey="clients"
-        title="Clientas"
+        title="Clientes"
         subtitle="Todas las personas que vienen a tu estudio."
         actions={
           <Button variant="contained" size="large" startIcon={<PersonAddIcon />} onClick={() => setQuickCreateOpen(true)}>
-            Dar de alta a una clienta
+            Dar de alta a un cliente
           </Button>
         }
       />
 
       <TextField
         fullWidth
-        data-tour="search" label="Buscar clienta"
+        data-tour="search" label="Buscar cliente"
         placeholder="Nombre, teléfono o email"
         helperText="Ej.: Marta, García o 612 345 678. Busca a la vez en las dos pestañas."
         value={searchTerm}
@@ -717,26 +717,26 @@ export default function CustomerViewer() {
         <SectionTabs
           value={currentTab}
           onChange={(_, v: number) => setCurrentTab(v)}
-          aria-label="Tipo de clienta"
+          aria-label="Tipo de cliente"
           variant="scrollable"
           allowScrollButtonsMobile
         >
           <Tab
-            label={`Clientas con ficha${usersLoading ? '' : ` (${filteredUsers.length})`}`}
+            label={`Clientes con ficha${usersLoading ? '' : ` (${filteredUsers.length})`}`}
             icon={<PeopleIcon />}
             iconPosition="start"
             id="tab-0"
             sx={{ minHeight: 52 }}
           />
           <Tab
-            label={`Invitadas (sin cuenta)${guestsLoading ? '' : ` (${filteredGuests.length})`}`}
+            label={`Invitados (sin cuenta)${guestsLoading ? '' : ` (${filteredGuests.length})`}`}
             icon={<ContactPageIcon />}
             iconPosition="start"
             id="tab-1"
             sx={{ minHeight: 52 }}
           />
           <Tab
-            label={`Clientas del estudio${studioPlans === null ? '' : ` (${filteredPlans.length})`}`}
+            label={`Clientes del estudio${studioPlans === null ? '' : ` (${filteredPlans.length})`}`}
             icon={<StorefrontOutlinedIcon />}
             iconPosition="start"
             id="tab-2"
@@ -750,7 +750,7 @@ export default function CustomerViewer() {
           <Typography sx={{ fontSize: '0.95rem', color: 'var(--studio-text-strong)' }}>
             Personas que reservaron por la web sin crear cuenta.
           </Typography>
-          <HelpTip title="¿Qué es una invitada?">
+          <HelpTip title="¿Qué es un invitado?">
             Alguien que reservó una clase en la web y la pagó con tarjeta, pero sin crearse una cuenta.
             No tiene créditos. Si más tarde se crea una cuenta con el mismo email, verás «Ya tiene ficha».
           </HelpTip>
@@ -762,7 +762,7 @@ export default function CustomerViewer() {
           <StudioClientsNote />
           <Box>
             <Button variant="outlined" startIcon={<StorefrontOutlinedIcon />} onClick={() => navigate('/clientas/estudio/nueva')} sx={{ minHeight: 44 }}>
-              Nueva clienta del estudio
+              Nuevo cliente del estudio
             </Button>
           </Box>
         </Stack>

@@ -817,7 +817,7 @@ function MemberDashboardInner() {
         setUpcomingBookings(
           all.filter(b => new Date(b.start_datetime) >= now && b.status !== 'canceled')
         );
-        // Ya es clienta: cuenta como recurrente para el aviso de instalar la app
+        // Ya es cliente: cuenta como recurrente para el aviso de instalar la app
         if (all.length > 0) { try { localStorage.setItem('domHasBooked', '1'); } catch {} }
       }
       if (pastR.status === 'fulfilled' && pastR.value.ok) {
@@ -848,7 +848,7 @@ function MemberDashboardInner() {
       if (subR.status === 'fulfilled' && subR.value.ok) {
         const d = await subR.value.json();
         const subs: Subscription[] = Array.isArray(d) ? d : (d.results || []);
-        // past_due también se muestra: la usuaria debe enterarse de que su
+        // past_due también se muestra: el usuario debe enterarse de que su
         // pago falló y la auto-reserva está en pausa (antes veíamos "sin
         // suscripción", que era mentira y no daba ninguna vía de arreglo).
         setSubscription(
@@ -1130,7 +1130,7 @@ function MemberDashboardInner() {
   }, [locale]);
 
   const existingScheduleIds = useMemo(() => new Set(preferences.map(p => p.schedule)), [preferences]);
-  // Clases fijas: herramienta del estudio. La clienta las elige aquí solo si el
+  // Clases fijas: herramienta del estudio. El cliente las elige aquí solo si el
   // estudio lo enciende (Ajustes → Cobros); si no, ve las suyas (si tiene) y
   // el reemplazo cuando el estudio cierra una, sin explicaciones ni «Añadir».
   const fixed = clientFixedClasses();
@@ -1594,7 +1594,7 @@ function MemberDashboardInner() {
       )}
 
       {/* Sin suscripción activa las favoritas NO se reservan solas: decirlo
-          claro con su vía de solución, en vez de dejar que lo descubra sola. */}
+          claro con su vía de solución, en vez de dejar que lo descubra por su cuenta. */}
       {fixed && !subscription && preferences.length > 0 && (
         <Box p={4} borderRadius="var(--radius-card)"
           bg="var(--accent-soft)" border={`1px solid ${C.borderStrong}`}>
@@ -1632,7 +1632,7 @@ function MemberDashboardInner() {
         </Box>
       )}
 
-      {/* Clases fijas como herramienta del estudio: la clienta ve SUS plazas
+      {/* Clases fijas como herramienta del estudio: el cliente ve SUS plazas
           (las asigna el estudio), sin poder añadir ni quitar y sin explicaciones */}
       {!fixed && (
         <>

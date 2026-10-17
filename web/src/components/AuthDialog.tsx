@@ -118,7 +118,7 @@ export default function AuthEntrypoint({ scrolled }: AuthEntrypointProps) {
   }, []);
 
 
-  // === Con sesión: menú de usuaria ===
+  // === Con sesión: menú de usuario ===
   if (isAuthenticated) {
     const itemStyle = { minH: '44px', fontFamily: 'var(--font-body)', fontWeight: 600, fontSize: '15px', color: 'var(--page-text)', cursor: 'pointer', textTransform: 'none' as const };
     return (

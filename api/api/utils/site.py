@@ -123,7 +123,7 @@ def brand_context() -> dict:
 
 
 def placeholder_email(local_part: str) -> str:
-    """Email interno para clientas sin email (nunca se les escribe)."""
+    """Email interno para clientes sin email (nunca se les escribe)."""
     return f"{local_part}@{settings.PLACEHOLDER_EMAIL_DOMAIN}"
 
 

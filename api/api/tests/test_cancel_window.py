@@ -1,4 +1,4 @@
-"""Las clientas cancelan hasta BOOKING_CANCEL_MIN_HOURS antes; el estudio, siempre."""
+"""Los clientes cancelan hasta BOOKING_CANCEL_MIN_HOURS antes; el estudio, siempre."""
 from datetime import timedelta
 
 from django.test import override_settings

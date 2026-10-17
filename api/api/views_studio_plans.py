@@ -1,5 +1,5 @@
-"""Clientas del estudio (planes mensuales que se cobran en el estudio) y
-atajos de «Créditos». Solo administradoras. Lógica en api/utils/studio_plans.py.
+"""Clientes del estudio (planes mensuales que se cobran en el estudio) y
+atajos de «Créditos». Solo administración. Lógica en api/utils/studio_plans.py.
 
   GET   /api/v1/studio-plans/?user=&status=&due=1   planes (due=1: vencidos o esta semana)
   POST  /api/v1/studio-plans/                       alta {user, credits_per_month, price, payment_method,
@@ -13,7 +13,7 @@ atajos de «Créditos». Solo administradoras. Lógica en api/utils/studio_plans
   POST  /api/v1/studio-plans/<id>/pause/ · /resume/ · /end/
   POST  /api/v1/studio-plans/renewals/<id>/pay/     {method}  cobrar una renovación pendiente
   GET   /api/v1/studio-plans/upcoming/              renovaciones de este mes (Hoy)
-  GET   /api/v1/studio-plans/shortcuts/             «Créditos»: clientas recientes y con pocas clases
+  GET   /api/v1/studio-plans/shortcuts/             «Créditos»: clientes recientes y con pocas clases
   POST  /api/v1/studio-plans/credit-sale/           {user, credits, expires_days?|expires_at?, amount?, method?, reason?}
                                                     clases sueltas con créditos (+ cobro en mano opcional)
 """
@@ -157,7 +157,7 @@ class StudioPlanViewSet(viewsets.ViewSet):
         user = User.objects.filter(pk=data.get('user'), is_staff=False).first() if str(
             data.get('user') or '').isdigit() else None
         if user is None:
-            return _bad('Elige una clienta.', 'bad_user', field='user')
+            return _bad('Elige un cliente.', 'bad_user', field='user')
         start = str(data.get('start') or 'paid')
         if start not in ('paid', 'later', 'none'):
             return _bad("start debe ser 'paid', 'later' o 'none'.")
@@ -179,7 +179,7 @@ class StudioPlanViewSet(viewsets.ViewSet):
                         created_by=request.user, **fields,
                     )
                 except IntegrityError:
-                    return Response({'error': f'{user.first_name or "Esta clienta"} ya tiene un plan del estudio. '
+                    return Response({'error': f'{user.first_name or "Este cliente"} ya tiene un plan del estudio. '
                                               'Renuévalo o termínalo antes de crear otro.',
                                      'code': 'already_open'}, status=409)
             renewal = None
@@ -248,7 +248,7 @@ class StudioPlanViewSet(viewsets.ViewSet):
         except sp.StudioPlanError as e:
             return _err(e)
         plan = self._get(pk)
-        name = (plan.user.first_name or 'la clienta').split(' ')[0]
+        name = (plan.user.first_name or '').split(' ')[0] or 'el cliente'
         done = (f"Renovado: {name} empieza con {sp.num(r.balance_after)} clases"
                 + (f" · cobrado {sp.num(r.amount)} {r.currency}" if r.paid_at else ' · cobro pendiente'))
         return Response({'done': done, 'renewal': sp.renewal_json(r), 'plan': sp.plan_json(plan, with_preview=True)})
@@ -288,8 +288,8 @@ class StudioPlanViewSet(viewsets.ViewSet):
 
     @action(detail=False, methods=['get'])
     def shortcuts(self, request):
-        """Clientas tocadas hace poco (movimientos de créditos o recién dadas de
-        alta) y las que se están quedando sin clases, para elegir de un toque."""
+        """Clientes tocados hace poco (movimientos de créditos o recién dados de
+        alta) y los que se están quedando sin clases, para elegir de un toque."""
         from api.utils.dashboard import user_name
         now = timezone.now()
         since = now - timedelta(days=60)
@@ -337,7 +337,7 @@ class StudioPlanViewSet(viewsets.ViewSet):
         user = User.objects.filter(pk=data.get('user'), is_staff=False).first() if str(
             data.get('user') or '').isdigit() else None
         if user is None:
-            return _bad('Elige una clienta.', 'bad_user', field='user')
+            return _bad('Elige un cliente.', 'bad_user', field='user')
         try:
             credits = _int(data.get('credits'), 1, 200, 'credits', 'Clases')
             amount = _money(data.get('amount'), 'amount')

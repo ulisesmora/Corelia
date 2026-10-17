@@ -64,7 +64,7 @@ function WaitlistDialog({ open, onClose }: { open: boolean; onClose: () => void 
       <DialogTitle id="wl-title">Lista de espera</DialogTitle>
       <DialogContent>
         <Typography sx={{ color: 'var(--studio-muted)', mb: 2 }}>
-          Cuando una clase se llena, tus clientas pueden apuntarse a la lista. Si alguien cancela, la primera recibe un aviso para quedarse la plaza.
+          Cuando una clase se llena, tus clientes pueden apuntarse a la lista. Si alguien cancela, quien va primero recibe un aviso para quedarse la plaza.
         </Typography>
         {!cfg ? <Skeleton height={120} /> : (
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
@@ -97,12 +97,12 @@ function CancelDialog({ open, onClose, hours }: { open: boolean; onClose: () => 
       <DialogTitle id="cn-title">Cancelaciones</DialogTitle>
       <DialogContent>
         <Typography sx={{ mb: 1.5 }}>
-          Tus clientas pueden cancelar una reserva hasta <b>{hours ?? 8} horas antes</b> de la clase y recuperan la clase en su bono.
+          Tus clientes pueden cancelar una reserva hasta <b>{hours ?? 8} horas antes</b> de la clase y recuperan la clase en su bono.
           Después ya no se devuelve.
         </Typography>
         <Typography sx={{ color: 'var(--studio-muted)', fontSize: '0.9rem' }}>
           Este plazo lo fija quien instaló el panel (variable <code>BOOKING_CANCEL_MIN_HOURS</code>). Si cancelas tú una clase desde el
-          calendario, eliges qué devolver a cada clienta.
+          calendario, eliges qué devolver a cada cliente.
         </Typography>
       </DialogContent>
       <DialogActions sx={{ flexWrap: 'wrap' }}>

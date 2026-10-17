@@ -17,10 +17,10 @@ responden:
                               también POST /v1/recurrences/{id}/apply_from/)
   cancel_occurrence()         cancelar con devolución (bono / dinero / nada)
   reactivate_occurrence()     deshacer la cancelación (sin rehacer reservas)
-  add_client_to_occurrence()  apuntar a una clienta desde el panel
-  remove_booking()            quitar a una clienta (con o sin devolución)
+  add_client_to_occurrence()  apuntar a un cliente desde el panel
+  remove_booking()            quitar a un cliente (con o sin devolución)
   set_attendance()            «Ha venido»
-  notify_attendees()          mensaje a las apuntadas
+  notify_attendees()          mensaje a las personas apuntadas
 """
 import logging
 from collections import defaultdict
@@ -398,7 +398,7 @@ def _move_bookings(bookings, target_schedule, new_date, new_start, new_end, noti
 
 
 def _apply_simple_changes(target, changes):
-    """Cambios que no mueven la sesión: profesora, plazas, tipo de clase."""
+    """Cambios que no mueven la sesión: instructor, plazas, tipo de clase."""
     if 'instructor' in changes:
         target.override_instructor_id = changes['instructor'] or None
     if 'capacity_max' in changes:
@@ -411,13 +411,13 @@ def _apply_simple_changes(target, changes):
 
 def move_occurrence(schedule, d, new_date=None, new_start=None, new_end=None, new_room_id=None,
                     notify=True, user=None, changes=None, force=False):
-    """Mueve UNA sesión (y opcionalmente cambia profesora/plazas solo ese día).
+    """Mueve UNA sesión (y opcionalmente cambia instructor/plazas solo ese día).
 
     - Regla semanal: se crea una sesión puntual con los cambios, se cierra el
       hueco original de ese día (blackout «moved») y se trasladan las
       reservas y la lista de espera.
     - Sesión puntual: se edita ella misma.
-    Avisa a las apuntadas (email + push) si cambia día, hora o sala."""
+    Avisa a las personas apuntadas (email + push) si cambia día, hora o sala."""
     changes = changes or {}
     if not occurs_on(schedule, d):
         raise CalendarError('no_session', 'Esa clase no tiene sesión ese día.', status=404)
@@ -667,7 +667,7 @@ def edit_occurrence(schedule, d, scope, changes, notify=True, existing_mode='mov
                               existing_mode=existing_mode if timing else 'keep', user=user)
     old, new = res['old_schedule'], res['new_schedule']
     if not timing:
-        # Solo cambia la profesora, las plazas o el tipo: misma hora y sala, así
+        # Solo cambia el instructor, las plazas o el tipo: misma hora y sala, así
         # que las reservas y la lista de espera pasan a la regla nueva sin avisar.
         ids = [b.id for b in Booking.objects.filter(occurrence=old, status__in=('reserved', 'attended', 'pending'))
                if (wall_date(b.start_datetime) or d) >= d]
@@ -904,7 +904,7 @@ def reactivate_occurrence(schedule, d, user=None, restore_bookings=False):
 
 def add_client_to_occurrence(schedule, d, client, charge='credits', force=False, notify=True, admin=None,
                              source='calendar'):
-    """Apunta a una clienta (User) a la sesión.
+    """Apunta a un cliente (User) a la sesión.
     charge='credits' descuenta la clase de su bono; 'free' la apunta sin coste.
     force=True permite pasarse del aforo. Lanza CalendarError."""
     if charge not in ('credits', 'free'):
@@ -918,7 +918,7 @@ def add_client_to_occurrence(schedule, d, client, charge='credits', force=False,
     with transaction.atomic():
         RecurringSchedule.objects.select_for_update().filter(pk=schedule.id).first()
         if any(b.user_id == client.id for b in bookings_on(schedule.id, d, select=False)):
-            raise CalendarError('already_booked', f'{person_name(client)} ya está apuntada a esta clase.')
+            raise CalendarError('already_booked', f'{person_name(client)} ya tiene plaza en esta clase.')
         if not force and seats_taken(schedule, d, exclude_user_id=client.id) >= schedule.capacity_max:
             raise CalendarError('full', 'La clase está llena.', status=409)
         wallet = None

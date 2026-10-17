@@ -1,4 +1,4 @@
-// «Renovaciones de este mes» (Hoy): clientas del estudio cuyo mes vence. Un
+// «Renovaciones de este mes» (Hoy): clientes del estudio cuyo mes vence. Un
 // toque: «Cobrado y renovar» (eligiendo cómo pagó), «Renovar, cobro después»
 // o «Pausar». Datos: today_payload()['renewals'] (api/utils/studio_plans.py).
 import { useState } from 'react';
@@ -64,7 +64,7 @@ export default function RenewalsCard({ data, onChanged }: { data: RenewalsCardDa
       <CardHead id="ren-h" title="Renovaciones de este mes"
         right={pending > 0 ? <CountPill n={pending} label={`${pending} por renovar`} /> : undefined} />
       <Typography sx={{ fontSize: '0.86rem', color: 'var(--studio-muted)', mt: -0.75, mb: 1 }}>
-        {data && data.this_week ? `${data.this_week} ${data.this_week === 1 ? 'clienta del estudio renueva' : 'clientas del estudio renuevan'} esta semana. ` : ''}
+        {data && data.this_week ? `${data.this_week} ${data.this_week === 1 ? 'cliente del estudio renueva' : 'clientes del estudio renuevan'} esta semana. ` : ''}
         Te pagan en mano: nada se cobra solo.
       </Typography>
       <Box component="ul" sx={{ listStyle: 'none', m: 0, p: 0 }} aria-live="polite">

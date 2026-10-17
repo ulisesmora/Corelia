@@ -14,7 +14,7 @@ interface Props {
   showLegal?: boolean;
 }
 
-/** Nombre, logo y datos de contacto: lo que ven las clientas en la web. */
+/** Nombre, logo y datos de contacto: lo que ven tus clientes en la web. */
 export default function StudioSection({ value, onChange, onBusyChange, showLegal }: Props) {
   const field = (key: keyof StudioSettings) => ({
     value: (value[key] as string) ?? '',
@@ -55,7 +55,7 @@ export default function StudioSection({ value, onChange, onBusyChange, showLegal
       <Box>
         <Typography fontWeight={600} sx={{ mb: 0.5 }}>Icono de la app (opcional)</Typography>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-          Es el dibujo que aparece en el móvil de tus clientas al instalar la app y en la pestaña del navegador.
+          Es el dibujo que aparece en el móvil de tus clientes al instalar la app y en la pestaña del navegador.
           Tiene que ser <b>cuadrado</b> y sencillo (tu símbolo, sin letras pequeñas). Si no subes ninguno,
           usamos la inicial de tu estudio con tus colores.
         </Typography>
@@ -104,7 +104,7 @@ export default function StudioSection({ value, onChange, onBusyChange, showLegal
       {/* Punto del mapa de «Cómo llegar» (se busca solo al guardar la dirección) */}
       <LocationPicker value={value} onChange={onChange} />
       <TextField
-        label="Zonas desde donde vienen tus clientas (opcional)"
+        label="Zonas desde donde vienen tus clientes (opcional)"
         {...field('area_served')}
         placeholder="Centro, Ensanche, Playa…"
         helperText="Barrios o pueblos separados por comas. Google y los asistentes de IA lo usan para recomendarte."
@@ -125,7 +125,7 @@ export default function StudioSection({ value, onChange, onBusyChange, showLegal
             Aparecen en los Términos y condiciones de la web. Son obligatorios para vender online.
           </Typography>
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-            <TextField label="Nombre de la empresa o autónoma" {...field('legal_name')} />
+            <TextField label="Nombre legal (empresa o autónomo)" {...field('legal_name')} />
             <TextField label="NIF / CIF" {...field('tax_id')} sx={{ maxWidth: { sm: 220 } }} />
           </Stack>
           <TextField

@@ -6,11 +6,11 @@ import { useSetupProgress } from './progressContext';
 
 // ====================================================================
 // Qué partes del panel se abren mientras la puesta en marcha no está
-// terminada. Siempre abiertas: Hoy, Clientas, Mi web y Ajustes (y todo lo de
+// terminada. Siempre abiertas: Hoy, Clientes, Mi web y Ajustes (y todo lo de
 // Ajustes: salas, profesores, tipos de clase…). El resto, al terminar el paso
 // del que depende:
 //
-//   Calendario (y clases fijas de clientas)  → al terminar «Horario» (paso 6)
+//   Calendario (y clases fijas de clientes)  → al terminar «Horario» (paso 6)
 //   Ventas (pagos, bonos, cupones, créditos…) → al terminar «Bonos» (paso 7)
 //   Reservas                                  → al publicar la web (paso 8)
 //

@@ -486,7 +486,7 @@ function HoverCard({ o, tone }: { o: Occurrence; tone: ClassTone }) {
       </Stack>
       <Stack spacing={0.5} sx={{ fontSize: '.86rem', '& svg': { fontSize: 16, verticalAlign: '-3px', mr: 0.5, color: 'text.secondary' } }}>
         <span><AccessTimeIcon />{DAYS[weekdayOf(o.date)]} · {o.start.slice(11)}–{o.end.slice(11)}</span>
-        <span><PersonOutlineIcon />{o.instructor?.name || 'Sin profesora'} · {o.room.name}</span>
+        <span><PersonOutlineIcon />{o.instructor?.name || 'Sin profesor'} · {o.room.name}</span>
         <span><GroupOutlinedIcon />{o.booked} de {o.capacity} plazas{o.waitlist ? ` · ${o.waitlist} en espera` : ''}</span>
       </Stack>
       <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>

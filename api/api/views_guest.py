@@ -1,15 +1,15 @@
 """Reservar y pagar en el estudio.
 
-POST /api/v1/checkout/guest-reserve/   (invitadas, sin cuenta)
+POST /api/v1/checkout/guest-reserve/   (invitados, sin cuenta)
     {email, name, phone, cart_items: [...], turnstile_token?}
     → 201 {status: 'reserved', bookings: [...], total, currency, pay_at_studio: true}
 
-POST /api/v1/checkout/studio-reserve/  (clientas con cuenta)
+POST /api/v1/checkout/studio-reserve/  (clientes con cuenta)
     {cart_items: [...]}  → lo mismo, a su nombre
 
 Las dos dependen de «Formas de cobro» (Ajustes → Cobros,
 api/utils/payment_options.py): «Pagar en el estudio» encendido para quien
-reserva (invitadas y/o clientas con cuenta) y, para las invitadas, «Reservar
+reserva (invitados y/o clientes con cuenta) y, para los invitados, «Reservar
 sin cuenta». Por defecto (automático) solo se paga en el estudio cuando la
 web no cobra con tarjeta, como antes. Si no se puede: 409 con
 code='pay_at_studio_disabled' o 'guest_booking_disabled' (y `card: true` si
@@ -19,7 +19,7 @@ Las reservas quedan confirmadas sin pago asociado; el precio de la clase se
 guarda en booking.metadata (pay_at_studio, price, currency) para que el
 estudio sepa cuánto cobrar al llegar: salen en Ventas → «Quién me debe» hasta
 que el estudio las marca como cobradas (api/utils/dashboard.py). Límite por IP
-y captcha (si el estudio lo tiene configurado) para las invitadas.
+y captcha (si el estudio lo tiene configurado) para los invitados.
 """
 import logging
 from decimal import Decimal
@@ -82,7 +82,7 @@ def _reserved_response(bookings, lines, total, currency, email):
 
 class GuestReserveView(APIView):
     permission_classes = [AllowAny]
-    authentication_classes = []  # solo para invitadas: un token caducado no debe dar 401
+    authentication_classes = []  # solo para invitados: un token caducado no debe dar 401
     throttle_classes = [scoped('checkout')]
 
     def post(self, request, *args, **kwargs):
@@ -118,8 +118,8 @@ class GuestReserveView(APIView):
 
 
 class StudioReserveView(APIView):
-    """Clienta con cuenta que reserva y paga en el estudio (si el estudio lo
-    permite: «Pagar en el estudio» → «Clientas con cuenta»)."""
+    """Cliente con cuenta que reserva y paga en el estudio (si el estudio lo
+    permite: «Pagar en el estudio» → «Clientes con cuenta»)."""
     permission_classes = [IsAuthenticated]
     throttle_classes = [scoped('checkout')]
 

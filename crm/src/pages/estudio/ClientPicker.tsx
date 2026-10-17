@@ -1,6 +1,6 @@
-// Elegir a la clienta en un toque: buscador grande + las recientes y las que se
-// quedan sin clases; o «¿Es nueva? Regístrala» (ficha sin cuenta, aquí mismo).
-// Lo usan «Créditos» y el asistente «Nueva clienta del estudio».
+// Elegir al cliente en un toque: buscador grande + recientes y quienes se
+// quedan sin clases; o «¿Primera vez? Dar de alta» (ficha sin cuenta, aquí mismo).
+// Lo usan «Créditos» y el asistente «Nuevo cliente del estudio».
 import { useEffect, useRef, useState } from 'react';
 import { Alert, Box, ButtonBase, CircularProgress, InputAdornment, Skeleton, TextField, Typography } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -14,7 +14,7 @@ interface Props {
   onPick: (u: ClientLite, isNew: boolean) => void;
   /** Texto del botón del alta */
   newLabel?: string;
-  /** Empieza con el alta abierta (p. ej. «+ Nuevo → Clienta del estudio») */
+  /** Empieza con el alta abierta (p. ej. «+ Nuevo → Cliente del estudio») */
   startNew?: boolean;
   autoFocus?: boolean;
 }
@@ -40,7 +40,7 @@ function Row({ u, onClick, balance, low, plan }: {
   );
 }
 
-export default function ClientPicker({ onPick, newLabel = 'Registrarla y seguir', startNew = false, autoFocus = true }: Props) {
+export default function ClientPicker({ onPick, newLabel = 'Dar de alta y seguir', startNew = false, autoFocus = true }: Props) {
   const [q, setQ] = useState('');
   const [results, setResults] = useState<ClientLite[] | null>(null);
   const [searching, setSearching] = useState(false);
@@ -75,7 +75,7 @@ export default function ClientPicker({ onPick, newLabel = 'Registrarla y seguir'
       {/* Camino 1: buscar */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
         <SearchIcon sx={{ color: 'var(--studio-primary-text)' }} aria-hidden />
-        <Typography sx={{ fontWeight: 700, color: 'var(--studio-ink)' }}>¿Ya ha venido? <Box component="span" sx={{ fontWeight: 400, color: 'var(--studio-muted)' }}>Búscala o tócala abajo.</Box></Typography>
+        <Typography sx={{ fontWeight: 700, color: 'var(--studio-ink)' }}>¿Ya ha venido? <Box component="span" sx={{ fontWeight: 400, color: 'var(--studio-muted)' }}>Busca su nombre o tócalo abajo.</Box></Typography>
       </Box>
       <TextField
         fullWidth autoFocus={autoFocus && !startNew} value={q} onChange={(e) => setQ(e.target.value)}
@@ -86,7 +86,7 @@ export default function ClientPicker({ onPick, newLabel = 'Registrarla y seguir'
             endAdornment: searching ? <InputAdornment position="end"><CircularProgress size={18} /></InputAdornment> : undefined,
             sx: { minHeight: 52, fontSize: '1.05rem' },
           },
-          htmlInput: { autoComplete: 'off', enterKeyHint: 'search', 'aria-label': 'Buscar clienta' },
+          htmlInput: { autoComplete: 'off', enterKeyHint: 'search', 'aria-label': 'Buscar cliente' },
         }}
       />
       {error && <Alert severity="error" sx={{ mt: 1 }}>No se ha podido buscar. {error}</Alert>}
@@ -95,7 +95,7 @@ export default function ClientPicker({ onPick, newLabel = 'Registrarla y seguir'
         {results !== null ? (
           results.length === 0 && !searching ? (
             <Typography sx={{ p: 1.5, color: 'var(--studio-muted)' }}>
-              Nadie con «{q.trim()}». ¿Es nueva? Regístrala aquí abajo.
+              Nadie con «{q.trim()}». ¿Primera vez? Dale de alta aquí abajo.
             </Typography>
           ) : results.map((u) => {
             const s = bal.get(u.id);
@@ -120,21 +120,21 @@ export default function ClientPicker({ onPick, newLabel = 'Registrarla y seguir'
             )}
             {!short.low.length && !short.recent.length && (
               <Typography sx={{ p: 1.5, color: 'var(--studio-muted)', fontSize: '0.92rem' }}>
-                Aquí verás a las clientas que tocas más a menudo.
+                Aquí verás a los clientes que tocas más a menudo.
               </Typography>
             )}
           </>
         )}
       </Box>
 
-      {/* Camino 2: registrar nueva */}
+      {/* Camino 2: dar de alta */}
       <Box data-tour="new-client" sx={{
         mt: 2, p: { xs: 1.5, sm: 2 }, borderRadius: 'var(--studio-radius-md)',
         border: '1.5px dashed var(--studio-border-strong)', background: creating ? 'var(--studio-surf)' : 'transparent',
       }}>
         {creating ? (
           <>
-            <Typography sx={{ fontWeight: 700, color: 'var(--studio-ink)', mb: 1.5 }}>Registrar a una clienta nueva</Typography>
+            <Typography sx={{ fontWeight: 700, color: 'var(--studio-ink)', mb: 1.5 }}>Dar de alta a un cliente nuevo</Typography>
             <NewClientForm
               initialName={results !== null && results.length === 0 ? q.trim() : ''}
               submitLabel={newLabel}
@@ -152,7 +152,7 @@ export default function ClientPicker({ onPick, newLabel = 'Registrarla y seguir'
               <PersonAddAlt1OutlinedIcon />
             </Box>
             <Box>
-              <Typography sx={{ fontWeight: 700, color: 'var(--studio-ink)' }}>¿Es nueva? Regístrala</Typography>
+              <Typography sx={{ fontWeight: 700, color: 'var(--studio-ink)' }}>¿Primera vez? Dale de alta</Typography>
               <Typography sx={{ fontSize: '0.86rem', color: 'var(--studio-muted)' }}>Nombre y móvil, y sigues sin salir de aquí.</Typography>
             </Box>
           </ButtonBase>

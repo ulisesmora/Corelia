@@ -460,9 +460,9 @@ export default function RecurringScheduleManagement() {
       const data = await res.json();
       const extra =
         data.bookings_moved > 0
-          ? ` ${data.bookings_moved} ${data.bookings_moved === 1 ? 'reserva se ha pasado' : 'reservas se han pasado'} a la hora nueva y se ha avisado a cada clienta.`
+          ? ` ${data.bookings_moved} ${data.bookings_moved === 1 ? 'reserva se ha pasado' : 'reservas se han pasado'} a la hora nueva y se ha avisado a cada cliente.`
           : data.bookings_cancelled > 0
-            ? ` Se han cancelado ${data.bookings_cancelled} reservas, se ha devuelto lo pagado y se ha avisado a cada clienta.`
+            ? ` Se han cancelado ${data.bookings_cancelled} reservas, se ha devuelto lo pagado y se ha avisado a cada cliente.`
             : '';
       notify(`Cambio programado: ${title} tendrá el horario nuevo desde el ${fmtLong(afDate)}.${extra}`, 'success');
       setApplyFromTarget(null);
@@ -522,7 +522,7 @@ export default function RecurringScheduleManagement() {
         message: (
           <>
             Se {endAffected.count === 1 ? 'cancelará 1 reserva' : `cancelarán ${endAffected.failed ? 'las' : endAffected.count} reservas`} desde el{' '}
-            {fmtLong(endDate)}, se devolverá lo pagado y cada clienta recibirá un aviso. <b>No se puede deshacer.</b>
+            {fmtLong(endDate)}, se devolverá lo pagado y cada cliente recibirá un aviso. <b>No se puede deshacer.</b>
           </>
         ),
         confirmText: 'Sí, terminar la clase',
@@ -544,9 +544,9 @@ export default function RecurringScheduleManagement() {
       notify(
         `Hecho: ${title} (${whenPhrase(endTarget)}) deja de darse desde el ${fmtLong(endDate)}.` +
           (data.bookings_cancelled > 0
-            ? ` Se han cancelado ${data.bookings_cancelled} reservas, se ha devuelto lo pagado y se ha avisado a cada clienta.`
+            ? ` Se han cancelado ${data.bookings_cancelled} reservas, se ha devuelto lo pagado y se ha avisado a cada cliente.`
             : '') +
-          ' Si alguna clienta con membresía la tenía como clase fija, ya ha recibido un aviso para elegir otra.',
+          ' Si algún cliente con membresía la tenía como clase fija, ya ha recibido un aviso para elegir otra.',
         'success',
       );
       setEndTarget(null);
@@ -620,7 +620,7 @@ export default function RecurringScheduleManagement() {
       notify(
         `Hecho: el ${fmtLong(msDate)} ${moveTarget.class_type.title} será a las ${msStart}. ` +
           (moved > 0
-            ? `${moved} ${moved === 1 ? 'clienta se ha pasado' : 'clientas se han pasado'} a la hora nueva y ya tienen el aviso.`
+            ? `${moved} ${moved === 1 ? 'cliente se ha pasado' : 'clientes se han pasado'} a la hora nueva y ya tienen el aviso.`
             : 'No había nadie apuntado ese día.') +
           ' El resto de semanas sigue igual.',
         'success',
@@ -637,7 +637,7 @@ export default function RecurringScheduleManagement() {
   // ── Eliminar ──────────────────────────────────────────────────────
   const handleDeleteSchedule = async (schedule: RecurringSchedule) => {
     const title = schedule.class_type.title;
-    setBusyMsg('Comprobando si hay clientas apuntadas…');
+    setBusyMsg('Comprobando si hay gente apuntada…');
     const affected = await findAffected({ fromWall: madridWall(new Date()), scheduleId: schedule.id, search: title });
     setBusyMsg('');
 
@@ -650,7 +650,7 @@ export default function RecurringScheduleManagement() {
             La clase <b>desaparece del horario desde hoy mismo</b>.
           </p>
           {affected.failed ? (
-            <p>No hemos podido comprobar si hay clientas apuntadas. Si las hay:</p>
+            <p>No hemos podido comprobar si hay reservas. Si las hay:</p>
           ) : affected.count > 0 ? (
             <p>
               <b>
@@ -665,13 +665,13 @@ export default function RecurringScheduleManagement() {
           <ul style={{ paddingLeft: 20, margin: '0 0 12px' }}>
             {(affected.failed || affected.count > 0) && (
               <li>
-                Se cancelan, se devuelve el crédito (a las invitadas que pagaron con tarjeta, el dinero a su tarjeta) y
-                cada una recibe un aviso por email, WhatsApp y móvil.
+                Se cancelan, se devuelve el crédito (a quien pagó con tarjeta, el dinero a su tarjeta) y
+                cada persona recibe un aviso por email, WhatsApp y móvil.
               </li>
             )}
             {schedule.is_recurrent && (
               <li>
-                Las clientas con membresía que la tienen como <b>clase fija</b> la pierden y reciben un aviso con otras
+                Los clientes con membresía que la tienen como <b>clase fija</b> la pierden y reciben un aviso con otras
                 clases parecidas para elegir (tienen 7 días).
               </li>
             )}
@@ -692,7 +692,7 @@ export default function RecurringScheduleManagement() {
       await sendApiRequest(`${API_BASE_URL}v1/recurrences/${schedule.id}/`, 'DELETE');
       notify(
         `Clase eliminada: ${title} (${whenPhrase(schedule)}).` +
-          (affected.count > 0 ? ' Sus reservas se han cancelado, se ha devuelto lo pagado y se ha avisado a cada clienta.' : ''),
+          (affected.count > 0 ? ' Sus reservas se han cancelado, se ha devuelto lo pagado y se ha avisado a cada cliente.' : ''),
         'success',
       );
     } catch (err) {
@@ -710,10 +710,10 @@ export default function RecurringScheduleManagement() {
           <ul style={{ paddingLeft: 20, margin: 0 }}>
             <li>Deja de salir en la web y nadie nuevo podrá apuntarse. No se borra nada.</li>
             <li>
-              Las clientas que ya tenían reserva <b>la conservan</b>: no se cancela ni se les avisa.
+              Quienes ya tenían reserva <b>la conservan</b>: no se cancela ni se les avisa.
             </li>
             <li>
-              A las clientas con membresía que la tienen como clase fija no se les reservará sola mientras esté
+              A los clientes con membresía que la tienen como clase fija no se les reservará sola mientras esté
               pausada; al volver a activarla, sí.
             </li>
             <li>
@@ -969,7 +969,7 @@ export default function RecurringScheduleManagement() {
       notify(
         isEdit
           ? `Cambios guardados en ${title}.`
-          : `Clase añadida: ${title}. Ya se puede reservar en la web${data.is_active !== false ? ' y las clientas han recibido el aviso de «clase nueva»' : ''}.`,
+          : `Clase añadida: ${title}. Ya se puede reservar en la web${data.is_active !== false ? ' y tus clientes han recibido el aviso de «clase nueva»' : ''}.`,
         'success',
       );
       setOpenDialog(false);
@@ -1242,7 +1242,7 @@ export default function RecurringScheduleManagement() {
     { icon: <AddCircleOutlineIcon />, title: 'Añadir una clase', text: 'Nueva, para todas las semanas o para un solo día.', onClick: () => handleOpenCreate() },
     { icon: <EventRepeatIcon />, title: 'Cambiar la hora o el día desde una fecha', text: 'Ej.: desde octubre, Pilates pasa a las 18:00.', onClick: () => startPick('change') },
     { icon: <SwapHorizIcon />, title: 'Mover solo un día', text: 'Ej.: el jueves 9 se da a las 19:00. Las demás semanas, igual.', onClick: () => startPick('move') },
-    { icon: <StopCircleOutlinedIcon />, title: 'Dejar de dar una clase', text: 'A partir de una fecha, avisando a las clientas.', onClick: () => startPick('end') },
+    { icon: <StopCircleOutlinedIcon />, title: 'Dejar de dar una clase', text: 'A partir de una fecha, avisando a tus clientes.', onClick: () => startPick('end') },
     { icon: <BeachAccessIcon />, title: 'Cerrar días (vacaciones, festivos)', text: 'Todo el estudio o solo una clase, sin borrar nada.', onClick: () => goTab(3) },
     { icon: <CalendarMonthIcon />, title: `Preparar el horario de ${planMonthName}`, text: 'Te guiamos paso a paso por los cambios del mes que viene.', onClick: () => setPlanOpen(true) },
   ];
@@ -1419,8 +1419,8 @@ export default function RecurringScheduleManagement() {
                 <TableCell sx={{ whiteSpace: 'nowrap' }}>
                   ¿Se ofrece?
                   <HelpTip title="Pausar una clase">
-                    Si la pausas, deja de salir en la web y nadie nuevo puede apuntarse, pero no se borra. Las que ya
-                    estaban apuntadas conservan su reserva (no se les avisa). Las reservas automáticas de las
+                    Si la pausas, deja de salir en la web y nadie nuevo puede apuntarse, pero no se borra. Quien ya
+                    tenía reserva la conserva (no se le avisa). Las reservas automáticas de las
                     membresías se detienen hasta que la vuelvas a activar.
                   </HelpTip>
                 </TableCell>
@@ -1676,7 +1676,7 @@ export default function RecurringScheduleManagement() {
             {
               n: 1,
               q: '¿Alguna clase cambia de hora, de día o de sala?',
-              hint: `Se programa desde el 1 de ${planMonthName}; hasta entonces sigue como ahora. Las clientas apuntadas se pasan solas a la hora nueva.`,
+              hint: `Se programa desde el 1 de ${planMonthName}; hasta entonces sigue como ahora. Las reservas ya hechas se pasan solas a la hora nueva.`,
               btn: 'Cambiar una clase',
               icon: <EventRepeatIcon />,
               go: () => { setPlanOpen(false); startPick('change', nextMonth); },
@@ -1684,7 +1684,7 @@ export default function RecurringScheduleManagement() {
             {
               n: 2,
               q: '¿Alguna clase deja de darse?',
-              hint: 'Eliges el último día y decides qué pasa con las clientas apuntadas después.',
+              hint: 'Eliges el último día y decides qué pasa con las reservas de después.',
               btn: 'Terminar una clase',
               icon: <StopCircleOutlinedIcon />,
               go: () => { setPlanOpen(false); startPick('end', nextMonth); },
@@ -1763,9 +1763,9 @@ export default function RecurringScheduleManagement() {
                 />
               </FormStep>
 
-              <FormStep n={2} title="¿Qué hacemos con las clientas apuntadas a partir de ese día?">
+              <FormStep n={2} title="¿Qué hacemos con las reservas a partir de ese día?">
                 {!endDate ? (
-                  <Typography sx={{ color: 'text.secondary' }}>Cuando elijas el día te diremos si hay alguien apuntada.</Typography>
+                  <Typography sx={{ color: 'text.secondary' }}>Cuando elijas el día te diremos si hay reservas.</Typography>
                 ) : (
                   <>
                     <AffectedSummary affected={endAffected} when={`desde el ${fmtLong(endDate)}`} />
@@ -1775,8 +1775,8 @@ export default function RecurringScheduleManagement() {
                           selected={endExisting === 'cancel'}
                           onClick={() => setEndExisting('cancel')}
                           recommended
-                          title="Cancelar sus reservas, devolverles lo pagado y avisarlas"
-                          text="A las clientas se les devuelve el crédito; a las invitadas que pagaron con tarjeta, el dinero a la tarjeta. Cada una recibe un aviso por email, WhatsApp y notificación al móvil."
+                          title="Cancelar las reservas, devolver lo pagado y avisar a cada cliente"
+                          text="A los clientes se les devuelve el crédito; a quien pagó con tarjeta, el dinero a la tarjeta. Cada persona recibe un aviso por email, WhatsApp y notificación al móvil."
                         />
                         <OptionCard
                           selected={endExisting === 'keep'}
@@ -1790,7 +1790,7 @@ export default function RecurringScheduleManagement() {
                       </Box>
                     )}
                     <Alert severity="info" icon={false} sx={{ mt: 1 }}>
-                      <b>Clientas con membresía:</b> si alguna tiene esta clase como <b>clase fija</b>, se le quita de sus
+                      <b>Clientes con membresía:</b> si alguien tiene esta clase como <b>clase fija</b>, se le quita de sus
                       clases fijas y recibe un aviso por email y en el móvil con hasta 3 clases parecidas para elegir
                       (tiene 7 días para hacerlo).
                     </Alert>
@@ -1808,7 +1808,7 @@ export default function RecurringScheduleManagement() {
                   Desde el <b>{fmtLong(endDate)}</b> ya no saldrá en el horario ni en la web.{' '}
                   {endMustChoose
                     ? endExisting === 'cancel'
-                      ? <>Las reservas desde esa fecha se cancelarán, se devolverá lo pagado y se avisará a cada clienta.</>
+                      ? <>Las reservas desde esa fecha se cancelarán, se devolverá lo pagado y se avisará a cada cliente.</>
                       : endExisting === 'keep'
                         ? <>Las reservas desde esa fecha se quedan como están y no se avisa a nadie.</>
                         : <>Falta que elijas en el paso 2 qué hacer con las reservas.</>
@@ -1901,15 +1901,15 @@ export default function RecurringScheduleManagement() {
                 )}
               </FormStep>
 
-              <FormStep n={3} title="¿Y las clientas apuntadas ese día?">
+              <FormStep n={3} title="¿Y quien ya tiene reserva ese día?">
                 {!msDate ? (
-                  <Typography sx={{ color: 'text.secondary' }}>Cuando elijas el día te diremos si hay alguien apuntada.</Typography>
+                  <Typography sx={{ color: 'text.secondary' }}>Cuando elijas el día te diremos si hay reservas.</Typography>
                 ) : (
                   <>
                     <AffectedSummary affected={msAffected} when={`el ${fmtLong(msDate)}`} />
                     <Typography sx={{ fontSize: '0.95rem' }}>
-                      No tienes que hacer nada: <b>se pasan solas a la hora nueva</b> conservando su plaza y su crédito,
-                      y reciben un aviso por email y en el móvil.
+                      No tienes que hacer nada: <b>su reserva pasa sola a la hora nueva</b> conservando su plaza y su crédito,
+                      y le llega un aviso por email y en el móvil.
                     </Typography>
                   </>
                 )}
@@ -2028,7 +2028,7 @@ export default function RecurringScheduleManagement() {
                   onChange={(e) => setAfFields((p) => ({ ...p!, capacity_max: Number(e.target.value) }))}
                   inputProps={{ min: 1 }}
                   error={!!afErrors.capacity}
-                  helperText={afErrors.capacity || 'Cuántas clientas pueden apuntarse como máximo'}
+                  helperText={afErrors.capacity || 'Cuántas personas pueden apuntarse como máximo'}
                   sx={{ maxWidth: 260 }}
                 />
                 {Object.keys(afChanges).length > 0 && (
@@ -2055,9 +2055,9 @@ export default function RecurringScheduleManagement() {
                 )}
               </FormStep>
 
-              <FormStep n={3} title="¿Qué hacemos con las clientas ya apuntadas desde ese día?">
+              <FormStep n={3} title="¿Qué hacemos con las reservas que ya hay desde ese día?">
                 {!afDate ? (
-                  <Typography sx={{ color: 'text.secondary' }}>Cuando elijas el día te diremos si hay alguien apuntada.</Typography>
+                  <Typography sx={{ color: 'text.secondary' }}>Cuando elijas el día te diremos si hay reservas.</Typography>
                 ) : (
                   <>
                     <AffectedSummary affected={afAffected} when={`desde el ${fmtLong(afDate)}`} />
@@ -2072,21 +2072,21 @@ export default function RecurringScheduleManagement() {
                           text={
                             afWeekdayChanged
                               ? 'No se puede porque cambia el día de la semana: elige una de las otras dos.'
-                              : 'Conservan su plaza y su crédito en la misma fecha, a la hora o sala nueva. Reciben un aviso por email y en el móvil.'
+                              : 'Cada cliente conserva su plaza y su crédito en la misma fecha, a la hora o sala nueva, y recibe un aviso por email y en el móvil.'
                           }
                         />
                         <OptionCard
                           selected={afChoice === 'cancel'}
                           onClick={() => setAfExisting('cancel')}
                           recommended={afWeekdayChanged}
-                          title="Cancelar sus reservas, devolverles lo pagado y avisarlas"
-                          text="A las clientas se les devuelve el crédito; a las invitadas que pagaron con tarjeta, el dinero. Aviso por email, WhatsApp y móvil."
+                          title="Cancelar las reservas, devolver lo pagado y avisar a cada cliente"
+                          text="A los clientes se les devuelve el crédito; a quien pagó con tarjeta, el dinero. Aviso por email, WhatsApp y móvil."
                         />
                         <OptionCard
                           selected={afChoice === 'keep'}
                           onClick={() => setAfExisting('keep')}
                           title="Dejarlas como están (a la hora de antes)"
-                          text="Siguen apuntadas al horario antiguo y no se les avisa. Solo si esas clases las vas a dar igualmente."
+                          text="Siguen en el horario antiguo y no se avisa a nadie. Solo si esas clases las vas a dar igualmente."
                         />
                         {afSubmitted && afErrors.existing && (
                           <Typography sx={{ color: 'error.main', fontSize: '0.9rem' }}>{afErrors.existing}</Typography>
@@ -2094,9 +2094,9 @@ export default function RecurringScheduleManagement() {
                       </Box>
                     )}
                     <Alert severity="info" icon={false} sx={{ mt: 1 }}>
-                      <b>Clientas con membresía:</b> las que tienen esta clase como <b>clase fija</b> pasan solas al
+                      <b>Clientes con membresía:</b> quienes tienen esta clase como <b>clase fija</b> pasan directamente al
                       horario nuevo: desde esa fecha se les reservará automáticamente con el horario nuevo.
-                      {afWeekdayChanged && ' Como cambia el día, no reciben un aviso aparte: si quieres, avísalas desde «Avisos a clientas».'}
+                      {afWeekdayChanged && ' Como cambia el día, no reciben un aviso aparte: si quieres, avísales desde «Avisos a clientes».'}
                     </Alert>
                   </>
                 )}
@@ -2111,9 +2111,9 @@ export default function RecurringScheduleManagement() {
                   <b>{rooms.find((r) => r.id === afFields.room)?.name || applyFromTarget.room.name}</b>, {afFields.capacity_max} plazas.{' '}
                   {afMustChoose
                     ? afChoice === 'move'
-                      ? 'Las clientas apuntadas desde esa fecha se pasan a la hora nueva y se les avisa.'
+                      ? 'Las reservas desde esa fecha se pasan a la hora nueva y se avisa a cada cliente.'
                       : afChoice === 'cancel'
-                        ? 'Las reservas desde esa fecha se cancelan, se devuelve lo pagado y se avisa a cada clienta.'
+                        ? 'Las reservas desde esa fecha se cancelan, se devuelve lo pagado y se avisa a cada cliente.'
                         : afChoice === 'keep'
                           ? 'Las reservas desde esa fecha se quedan en el horario antiguo y no se avisa a nadie.'
                           : 'Falta que elijas en el paso 3 qué hacer con las reservas.'
@@ -2341,13 +2341,13 @@ export default function RecurringScheduleManagement() {
                         ? `Ojo: en ${formRoom.name} caben ${formRoom.capacity}. Pon ${formRoom.capacity} o menos.`
                         : formRoom?.capacity
                           ? `En ${formRoom.name} caben ${formRoom.capacity}.`
-                          : 'Cuántas clientas pueden apuntarse como máximo.')
+                          : 'Cuántas personas pueden apuntarse como máximo.')
                     }
                     FormHelperTextProps={{ sx: formRoom?.capacity && Number(form.capacity_max) > formRoom.capacity ? { color: 'warning.dark' } : undefined }}
                     sx={{ maxWidth: 280 }}
                   />
                   <HelpTip title="¿Qué son las plazas (aforo)?">
-                    Es cuántas clientas pueden apuntarse como máximo. Cuando se llena, la web ya no deja reservar. No
+                    Es cuántas personas pueden apuntarse como máximo. Cuando se llena, la web ya no deja reservar. No
                     debería ser más de lo que cabe en la sala.
                   </HelpTip>
                 </Stack>
@@ -2355,7 +2355,7 @@ export default function RecurringScheduleManagement() {
 
               <Accordion disableGutters elevation={0} sx={{ mb: 2, border: '1px solid rgb(var(--studio-line-rgb) / 0.35)', borderRadius: 2, '&:before': { display: 'none' } }}>
                 <AccordionSummary expandIcon={<ExpandMoreIcon />} sx={{ minHeight: 48 }}>
-                  <Typography sx={{ fontSize: '0.98rem' }}>Opciones poco habituales (precio especial, mínimo de clientas)</Typography>
+                  <Typography sx={{ fontSize: '0.98rem' }}>Opciones poco habituales (precio especial, mínimo de personas)</Typography>
                 </AccordionSummary>
                 <AccordionDetails>
                   <Typography sx={{ fontSize: '0.93rem', color: 'text.secondary', mb: 1.5 }}>
@@ -2385,7 +2385,7 @@ export default function RecurringScheduleManagement() {
                   </Stack>
                   <Stack direction="row" alignItems="flex-start" gap={0.5}>
                     <TextField
-                      label="Mínimo de clientas"
+                      label="Mínimo de personas"
                       type="number"
                       value={form.capacity_min ?? ''}
                       onChange={(e) => setF({ capacity_min: Number(e.target.value) })}
@@ -2393,8 +2393,8 @@ export default function RecurringScheduleManagement() {
                       helperText={fErrors?.capacity_min || 'Solo orientativo'}
                       sx={{ maxWidth: 220 }}
                     />
-                    <HelpTip title="Mínimo de clientas">
-                      Con cuántas clientas merece la pena dar la clase. Ahora mismo es solo orientativo: la clase{' '}
+                    <HelpTip title="Mínimo de personas">
+                      Con cuántas personas merece la pena dar la clase. Ahora mismo es solo orientativo: la clase{' '}
                       <b>no</b> se cancela sola si no se llega.
                     </HelpTip>
                   </Stack>
@@ -2427,9 +2427,9 @@ export default function RecurringScheduleManagement() {
                 >
                   <b>Ojo, cambias el día, la hora o la sala.</b>{' '}
                   {editAffected.loading
-                    ? 'Comprobando si hay clientas apuntadas…'
+                    ? 'Comprobando si hay gente apuntada…'
                     : editAffected.failed
-                      ? 'No hemos podido comprobar si hay clientas apuntadas.'
+                      ? 'No hemos podido comprobar si hay reservas.'
                       : editAffected.count > 0
                         ? `Esta clase tiene ${editAffected.count} ${editAffected.count === 1 ? 'reserva' : 'reservas'} de aquí en adelante.`
                         : 'No tiene reservas de aquí en adelante, así que no afecta a nadie.'}{' '}
@@ -2437,7 +2437,7 @@ export default function RecurringScheduleManagement() {
                     <>
                       Si guardas aquí, esas reservas <b>no se mueven</b>: se quedan con la hora de antes y no se avisa a
                       nadie.
-                      {canSuggestApplyFrom && ' Es mejor «Hacerlo desde una fecha»: las pasa a la hora nueva y las avisa.'}
+                      {canSuggestApplyFrom && ' Es mejor «Hacerlo desde una fecha»: las pasa a la hora nueva y avisa a cada cliente.'}
                     </>
                   )}
                 </Alert>
@@ -2448,7 +2448,7 @@ export default function RecurringScheduleManagement() {
                   {formSummary}
                   {!isEdit && form.is_active !== false && (
                     <>
-                      {' '}Al guardarla, <b>todas las clientas recibirán un email y una notificación en el móvil</b>{' '}
+                      {' '}Al guardarla, <b>todos tus clientes recibirán un email y una notificación en el móvil</b>{' '}
                       anunciando la clase nueva.
                     </>
                   )}

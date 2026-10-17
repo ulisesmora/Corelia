@@ -368,7 +368,7 @@ function CheckoutPageInner() {
   const paymentsOn = paymentsEnabled();
   // «Formas de cobro» del estudio (Ajustes → Cobros): qué se ofrece aquí
   const opts = paymentOptions();
-  // Clases fijas: solo si el estudio deja que las clientas las elijan en la web
+  // Clases fijas: solo si el estudio deja que los clientes las elijan en la web
   const fixedForClients = clientFixedClasses();
   const lang = useLangStore(s => s.lang);
   const items = useCartStore(s => s.items);
@@ -473,7 +473,7 @@ function CheckoutPageInner() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) {
-        // Sesión caducada o de otro estudio: se sigue como invitada (antes se
+        // Sesión caducada o de otro estudio: se sigue como invitado (antes se
         // quedaba en «no se pudo cargar tu saldo» sin poder reservar).
         clearSession();
         setAuthToken(null);
@@ -1375,7 +1375,7 @@ function CheckoutPageInner() {
       </VStack>
     );
 
-    // Elegir clases fijas: solo si el estudio deja que las clientas las elijan
+    // Elegir clases fijas: solo si el estudio deja que los clientes las elijan
     if (subStep === 'enroll' && fixedForClients) return card(
       <>
         <Box mb={5}>
@@ -1462,7 +1462,7 @@ function CheckoutPageInner() {
           </Box>
         )}
 
-        {/* Sin clases fijas para clientas: siguiente paso = reservar con sus créditos */}
+        {/* Sin clases fijas para clientes: siguiente paso = reservar con sus créditos */}
         {!fixedForClients && (
           <Flex align="flex-start" gap={3} p={4} borderRadius="var(--radius-card)" border={`1px solid ${C.border}`}
             bg="var(--accent-soft)" data-testid="sub-done-next">

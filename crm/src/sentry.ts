@@ -2,7 +2,7 @@ import * as Sentry from '@sentry/react';
 
 // Sentry del panel (opcional). Solo se activa en producción y cuando existe la
 // variable VITE_SENTRY_DSN en el momento de compilar; sin ella no hace nada.
-// El panel maneja datos personales de clientas: nada de IPs, ni grabación de
+// El panel maneja datos personales de clientes: nada de IPs, ni grabación de
 // sesiones, ni cuerpos de peticiones.
 const dsn = import.meta.env.VITE_SENTRY_DSN;
 

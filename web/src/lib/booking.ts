@@ -1,7 +1,7 @@
 // Reservar una sesión del horario desde cualquier sitio de la web (portada,
 // horario, ficha de clase): la añade a «Tu reserva» (carrito) y abre el panel
 // con lo elegido y «Continuar al pago». El checkout ya sabe pagar con créditos,
-// con tarjeta, pedir que entres o —sin pagos online— reservar como invitada y
+// con tarjeta, pedir que entres o —sin pagos online— reservar como invitado y
 // pagar en el estudio.
 //
 // Lista de espera (api/api/views_calendar.py + utils/waitlist.py):

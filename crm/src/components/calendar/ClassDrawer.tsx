@@ -48,7 +48,7 @@ const credits = (v: string | null) => {
 };
 
 function subtitle(a: Attendee | WaitlistItem) {
-  if ('guest' in a && a.guest) return 'Invitada · pagó con tarjeta';
+  if ('guest' in a && a.guest) return 'Invitado · pagó con tarjeta';
   if (a.plan) return a.plan;
   if ('paid_with' in a && a.paid_with === 'free') return 'Sin coste';
   const n = Number(a.balance || 0);
@@ -160,12 +160,12 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
     const ok = await confirm({
       title: `¿Quitar a ${a.name} de esta clase?`,
       message: how === 'credits' ? 'Le devolvemos la clase a su bono y le avisamos.' : 'No le devolvemos nada. Le avisamos por email.',
-      confirmText: 'Sí, quitarla', cancelText: 'No, volver', tone: 'danger',
+      confirmText: 'Sí, quitar de la clase', cancelText: 'No, volver', tone: 'danger',
     });
     if (!ok) return;
     try {
       await calendarApi.removeBooking(a.booking_id, how, true);
-      toast(`${a.name} ya no está apuntada.`);
+      toast(`${a.name} ya no está en esta clase.`);
       await refresh();
     } catch (e) {
       toast(errorText(e), { severity: 'error' });
@@ -244,7 +244,7 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
             {mode === 'cancel' ? (
               <Box>
                 <Typography component="h3" sx={{ fontSize: '1.1rem', fontWeight: 700 }}>¿Cancelar esta clase?</Typography>
-                <Typography color="text.secondary" sx={{ mb: 2 }}>Avisaremos a quien esté apuntada.</Typography>
+                <Typography color="text.secondary" sx={{ mb: 2 }}>Avisaremos a quien tenga reserva.</Typography>
                 {occ.recurring && (
                   <Box component="fieldset" sx={{ border: 0, p: 0, m: 0, mb: 2 }}>
                     <Typography component="legend" sx={{ fontWeight: 600, mb: 1 }}>¿Qué clases?</Typography>
@@ -267,10 +267,10 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
                 <FormControlLabel
                   sx={{ border: 1, borderColor: 'divider', borderRadius: 3, m: 0, px: 1, py: 0.5, width: '100%' }}
                   control={<Checkbox checked={notify} onChange={(e) => setNotify(e.target.checked)} />}
-                  label={`Avisar a ${booked === 1 ? 'la apuntada' : `las ${booked} apuntadas`} por email y app`}
+                  label={`Avisar ${booked === 1 ? 'a la persona apuntada' : `a las ${booked} personas apuntadas`} por email y app`}
                 />
                 {notify && (
-                  <TextField label="Mensaje (opcional)" placeholder="Ej.: La profesora está enferma. ¡Perdona las molestias!"
+                  <TextField label="Mensaje (opcional)" placeholder="Ej.: Tenemos una baja por enfermedad. ¡Perdona las molestias!"
                     value={message} onChange={(e) => setMessage(e.target.value)} multiline minRows={2} fullWidth sx={{ mt: 2 }} />
                 )}
               </Box>
@@ -279,7 +279,7 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
                 <Box sx={{ p: 2, borderRadius: 4, bgcolor: t?.tint, mb: 2 }}>
                   <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                     {occ.instructor && <span className="kc-av" style={{ background: 'var(--k-surf)' }}>{initials(occ.instructor.name)}</span>}
-                    <Typography sx={{ fontWeight: 700 }}>{occ.instructor?.name || 'Sin profesora'}</Typography>
+                    <Typography sx={{ fontWeight: 700 }}>{occ.instructor?.name || 'Sin profesor'}</Typography>
                     <Typography color="text.secondary">·</Typography>
                     <Typography>{occ.room.name}</Typography>
                   </Stack>
@@ -308,8 +308,8 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
                   <>
                     <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mt: 1 }}>
                       <Typography component="h3" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 0.25 }}>
-                        Apuntadas · {detail.attendees.length}
-                        <GuideLink chapter="en-mano" iconOnly>Pagos en mano y clientas fijas</GuideLink>
+                        Asistentes · {detail.attendees.length}
+                        <GuideLink chapter="en-mano" iconOnly>Pagos en mano y clientes fijos</GuideLink>
                       </Typography>
                       {canCheck && detail.attendees.length > 0 && (
                         <Typography variant="body2" color="text.secondary" aria-live="polite">{presentCount} han venido</Typography>
@@ -348,7 +348,7 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
                             <span className="kc-av" aria-hidden="true">{initials(w.name)}</span>
                             <div className="who">
                               <b>{w.name}</b>
-                              <small>{w.status === 'offered' && w.offer_alive ? `Plaza ofrecida hasta las ${w.offer_expires_at?.slice(11)}` : i === 0 ? 'Primera en la lista' : 'Esperando'} · {subtitle(w)}</small>
+                              <small>{w.status === 'offered' && w.offer_alive ? `Plaza ofrecida hasta las ${w.offer_expires_at?.slice(11)}` : i === 0 ? 'Primer puesto en la lista' : 'Esperando'} · {subtitle(w)}</small>
                             </div>
                             {(detail.free_seats > 0 || (w.status === 'offered' && w.offer_alive)) && !occ.canceled ? (
                               <Button size="small" variant="contained" color="secondary" disabled={busy} onClick={() => giveSpot(w)} sx={{ borderRadius: 99, whiteSpace: 'nowrap' }}>Dar plaza</Button>
@@ -362,7 +362,7 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
                             <IconButton aria-label={`Quitar a ${w.name} de la lista de espera`} onClick={() => removeFromWaitlist(w)}><CloseIcon fontSize="small" /></IconButton>
                           </div>
                         ))}
-                        {detail.free_seats === 0 && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Si alguien cancela, la primera recibe la plaza sola (por email y app).</Typography>}
+                        {detail.free_seats === 0 && <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>Si alguien cancela, la plaza pasa sola a quien va primero (por email y app).</Typography>}
                       </>
                     )}
                   </>
@@ -409,7 +409,7 @@ export default function ClassDrawer({ occurrence, mobile, today, tone, onClose, 
           full={!!detail && detail.free_seats <= 0} price={Number(occ.price_credits)}
           onAdded={async (name, bookingId) => {
             setAddOpen(false);
-            toast(`${name} apuntada a ${occ.title}.`, { undo: async () => { await calendarApi.removeBooking(bookingId, 'credits'); await refresh(); } });
+            toast(`${name}: reserva hecha en ${occ.title}.`, { undo: async () => { await calendarApi.removeBooking(bookingId, 'credits'); await refresh(); } });
             await refresh();
           }} />
       )}
@@ -476,7 +476,7 @@ function AddClientDialog({ open, onClose, sessionRef, title, full, price, onAdde
       onAdded(name(pick), r.booking_id);
     } catch (e) {
       if (e instanceof ApiError && e.code === 'full') setForce(true);
-      setError(errorText(e) + (e instanceof ApiError && e.code === 'full' ? ' Marca «Apuntarla aunque esté llena» para añadir una plaza más.' : ''));
+      setError(errorText(e) + (e instanceof ApiError && e.code === 'full' ? ' Marca «Apuntar aunque esté llena» para añadir una plaza más.' : ''));
     } finally {
       setSaving(false);
     }
@@ -486,7 +486,7 @@ function AddClientDialog({ open, onClose, sessionRef, title, full, price, onAdde
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs" aria-labelledby="kc-add-title">
       <DialogTitle id="kc-add-title">Apuntar a {title}</DialogTitle>
       <DialogContent>
-        <TextField autoFocus fullWidth label="Buscar clienta" placeholder="Nombre, email o teléfono" value={q}
+        <TextField autoFocus fullWidth label="Buscar cliente" placeholder="Nombre, email o teléfono" value={q}
           onChange={(e) => { setQ(e.target.value); setPick(null); }} sx={{ mt: 1 }} />
         {loading && <Box sx={{ py: 1 }}><CircularProgress size={20} /></Box>}
         {!pick && hits.length > 0 && (
@@ -499,14 +499,14 @@ function AddClientDialog({ open, onClose, sessionRef, title, full, price, onAdde
           </List>
         )}
         {!pick && q.trim().length >= 2 && !loading && !hits.length && (
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>No encontramos a nadie. Puedes darla de alta en «Clientas».</Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>No encontramos a nadie. Puedes crear su ficha en «Clientes».</Typography>
         )}
         {pick && (
           <Stack spacing={1} sx={{ mt: 2 }}>
             <Alert severity="info" icon={false} action={<Button onClick={() => setPick(null)}>Cambiar</Button>}><b>{name(pick)}</b><br />{pick.email}</Alert>
             {price > 0 && <FormControlLabel control={<Checkbox checked={charge} onChange={(e) => setCharge(e.target.checked)} />} label={`Descontar ${price === 1 ? '1 clase' : `${price} clases`} de su bono`} />}
             <GuideLink chapter="en-mano" sx={{ alignSelf: 'flex-start' }}>¿Te paga en mano?</GuideLink>
-            {(full || force) && <FormControlLabel control={<Checkbox checked={force} onChange={(e) => setForce(e.target.checked)} />} label="Apuntarla aunque esté llena" />}
+            {(full || force) && <FormControlLabel control={<Checkbox checked={force} onChange={(e) => setForce(e.target.checked)} />} label="Apuntar aunque esté llena" />}
           </Stack>
         )}
         {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
@@ -540,7 +540,7 @@ function NotifyDialog({ open, onClose, sessionRef, people, title, onSent }: {
   };
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm" aria-labelledby="kc-notify-title">
-      <DialogTitle id="kc-notify-title">Avisar a {people === 1 ? 'la apuntada' : `las ${people} apuntadas`} de {title}</DialogTitle>
+      <DialogTitle id="kc-notify-title">Avisar {people === 1 ? 'a la persona apuntada' : `a las ${people} personas apuntadas`} de {title}</DialogTitle>
       <DialogContent>
         <TextField autoFocus fullWidth multiline minRows={3} label="Mensaje" placeholder="Ej.: Hoy entramos por la puerta lateral." value={msg}
           onChange={(e) => setMsg(e.target.value)} sx={{ mt: 1 }} helperText="Les llega por email y como aviso en la app." />

@@ -99,7 +99,7 @@ def _cobro_en_estudio(payment) -> bool:
 
 @receiver(post_save, sender=Payment)
 def send_payment_confirmation_email(sender, instance: Payment, **kwargs):
-    """Recibo de un pago de RESERVAS con tarjeta (invitada o clienta con
+    """Recibo de un pago de RESERVAS con tarjeta (invitado o cliente con
     cuenta). Los pagos de bonos/cuotas (sin reservas) los cubre el signal de
     abajo."""
     if instance.guest_id is None and instance.user_id is None:

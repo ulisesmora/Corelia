@@ -1,7 +1,7 @@
 """«Formas de cobro» (Ajustes → Cobros): lo que la web ofrece y lo que cada
 ruta de pago acepta según los interruptores de SiteConfig
 (api/utils/payment_options.py), y las clases fijas como herramienta del
-estudio (las clientas solo las eligen si el estudio lo enciende)."""
+estudio (los clientes solo las eligen si el estudio lo enciende)."""
 from datetime import time, timedelta
 from decimal import Decimal
 from unittest import mock
@@ -343,7 +343,7 @@ class FixedClassesAreAdminOnlyTests(Base):
 
 
 class FixedClassesCopyTests(StudioTestCase):
-    """Los avisos a clientas no explican ni venden las clases fijas salvo que
+    """Los avisos a clientes no explican ni venden las clases fijas salvo que
     el estudio deje que las elijan en la web."""
 
     def facts(self):

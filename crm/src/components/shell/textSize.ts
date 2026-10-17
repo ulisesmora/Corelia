@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 
 // Tamaño del texto del panel (botón A/A del menú): «normal» o «grande».
-// Se guarda por persona (cada administradora en su navegador) y agranda todo
+// Se guarda por persona (cada persona del equipo en su navegador) y agranda todo
 // el panel: MUI usa rem, así que basta con cambiar la letra de <html>.
 
 export type TextSize = 'normal' | 'large';

@@ -105,7 +105,7 @@ export const baseDict: Record<ReturnType<typeof getLangConst>, Dict> = {
       },
        welcome: {
         title: "{studio}",
-        heading: "Bienvenid@ a {studio}",
+        heading: "Te damos la bienvenida a {studio}",
         intro1:
           "Un espacio único donde el movimiento, la calma y la conexión se dan cita.",
         intro2:
@@ -234,7 +234,7 @@ export const baseDict: Record<ReturnType<typeof getLangConst>, Dict> = {
     },
 
    auth: {
-        loginTitle: "Bienvenido de nuevo",
+        loginTitle: "Hola de nuevo",
         registerTitle: "Crea tu cuenta",
         googleLogin: "Iniciar sesión con Google",
         googleRegister: "Registrarse con Google",
@@ -274,7 +274,7 @@ export const baseDict: Record<ReturnType<typeof getLangConst>, Dict> = {
       "exportOutlook": "Outlook / .ICS",
       "exportIcal": "Exportar como .ICS (Outlook/Apple)",
       "cancelSuccess": "Clase cancelada con éxito.",
-      "cancelConfirmTitle": "¿Estás seguro de cancelar esta clase?",
+      "cancelConfirmTitle": "¿Seguro que quieres cancelar esta clase?",
       "cancelConfirmBody": "Se te devolverán los créditos utilizados."
     },
     

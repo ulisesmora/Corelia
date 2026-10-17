@@ -303,7 +303,7 @@ export default function AssignClassesManagement() {
     setUsers([]);
   };
 
-  /** Reservas futuras de la clienta (opcionalmente solo de una clase). */
+  /** Reservas futuras del cliente (opcionalmente solo de una clase). */
   const futureBookings = async (scheduleId?: number): Promise<FutureBooking[]> => {
     if (!selectedUser) return [];
     const res = await fetch(
@@ -339,7 +339,7 @@ export default function AssignClassesManagement() {
               : 'No tiene reservas futuras de esta clase.'}
           </li>
           <li>No se le envía ningún aviso.</li>
-          <li>Se puede deshacer: vuelve a apuntarla aquí cuando quieras.</li>
+          <li>Se puede deshacer: vuelve a añadirla aquí cuando quieras.</li>
         </Box>
       ),
     });
@@ -489,7 +489,7 @@ export default function AssignClassesManagement() {
           Apuntar otra clase a {firstName(u)}
         </Button>
         <Button variant="outlined" startIcon={<PersonAddAlt1Icon />} onClick={resetForNewClient} sx={{ minHeight: 48 }}>
-          Apuntar a otra clienta
+          Apuntar a otro cliente
         </Button>
       </Stack>
     </Box>
@@ -499,8 +499,8 @@ export default function AssignClassesManagement() {
     <>
       <FormStep
         n={1}
-        title="¿A qué clienta?"
-        hint="Escribe al menos 2 letras de su nombre, email o teléfono y elígela de la lista."
+        title="¿A qué cliente?"
+        hint="Escribe al menos 2 letras de su nombre, email o teléfono y elige su nombre en la lista."
       >
         <Autocomplete
           options={users}
@@ -532,7 +532,7 @@ export default function AssignClassesManagement() {
           clearText="Borrar"
           isOptionEqualToValue={(o, v) => o.id === v.id}
           renderInput={(params) => (
-            <TextField {...params} data-tour="search" label="Buscar clienta" placeholder="p. ej. Marta, marta@gmail.com o 612345678" />
+            <TextField {...params} data-tour="search" label="Buscar cliente" placeholder="p. ej. Marta, marta@gmail.com o 612345678" />
           )}
           fullWidth
         />
@@ -729,8 +729,8 @@ export default function AssignClassesManagement() {
     <Box>
       <PageIntro
         pageKey="assign-classes"
-        title="Clases fijas de clientas"
-        subtitle="Para tus clientas frecuentes: su plaza guardada cada semana, sin que tenga que reservar. Lo gestionas tú desde aquí."
+        title="Clases fijas de clientes"
+        subtitle="Para tus clientes frecuentes: su plaza guardada cada semana, sin que tenga que reservar. Lo gestionas tú desde aquí."
         actions={<GuideLink chapter="en-mano">¿Clase fija o créditos?</GuideLink>}
       />
 
@@ -758,8 +758,8 @@ export default function AssignClassesManagement() {
             <EmptyState
               compact
               icon={<PersonSearchIcon />}
-              title="Primero elige una clienta"
-              text="Búscala en el paso 1 y aquí verás sus clases fijas."
+              title="Primero elige un cliente"
+              text="Busca su nombre en el paso 1 y aquí verás sus clases fijas."
             />
           ) : loadingAssignments ? (
             <Stack alignItems="center" spacing={1} sx={{ py: 4 }}>

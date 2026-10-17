@@ -89,7 +89,7 @@ class SetupProgressTests(StudioTestCase):
     def test_complete_studio_can_publish(self):
         fill_studio()
         self.admin.post('/api/v1/setup/steps/style/', {'status': 'done'}, format='json')
-        make_studio()  # sala, profesora, tipo de clase y una clase semanal
+        make_studio()  # sala, instructor, tipo de clase y una clase semanal
         r = self.admin.post(PUBLISH)
         self.assertEqual(r.status_code, 400)
         self.assertEqual(r.json()['missing'], ['plans'])
@@ -206,7 +206,7 @@ class ClassTemplatesTests(StudioTestCase):
         self.assertEqual(reformer.title_en, 'Reformer Pilates')
         self.assertTrue(reformer.description_en)
         self.assertEqual(reformer.default_price_credits, 2)
-        self.assertEqual(reformer.instructor, inst)  # la única profesora
+        self.assertEqual(reformer.instructor, inst)  # el único instructor
         hatha = ClassType.objects.get(title='Hatha suave')
         self.assertEqual(hatha.duration_minutes, 75)
         self.assertEqual(hatha.category.slug, 'yoga')

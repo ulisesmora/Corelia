@@ -69,7 +69,7 @@ export interface SiteContent {
   about_image_url: string;
 }
 
-/** Formas de pago en el estudio que se enseñan a las clientas. */
+/** Formas de pago en el estudio que se enseñan a los clientes. */
 export type StudioPayMethod = 'cash' | 'bizum' | 'card' | 'transfer';
 
 /**
@@ -83,16 +83,16 @@ export interface PaymentOptions {
   drop_in_online: boolean;
   packs_online: boolean;
   memberships_online: boolean;
-  /** Reservar sin cuenta (invitadas). */
+  /** Reservar sin cuenta (invitados). */
   guest_booking: boolean;
   /** «Pagar en el estudio»: quién puede. */
   pay_at_studio: { guests: boolean; clients: boolean };
-  /** Reservar con créditos (clientas con cuenta): siempre. */
+  /** Reservar con créditos (clientes con cuenta): siempre. */
   credits: boolean;
   studio_methods: StudioPayMethod[];
   studio_note: string;
   studio_note_en: string;
-  /** Las clientas eligen sus clases fijas en la web (si no, solo el estudio). */
+  /** Los clientes eligen sus clases fijas en la web (si no, solo el estudio). */
   client_fixed_classes: boolean;
 }
 
@@ -354,8 +354,8 @@ const PAY_METHODS: readonly StudioPayMethod[] = ['cash', 'bizum', 'card', 'trans
 
 /**
  * «Formas de cobro» del API. Con un API antiguo (sin payment_options) se
- * deduce lo de siempre: con tarjeta se vende todo online; sin tarjeta, las
- * invitadas pagan en el estudio.
+ * deduce lo de siempre: con tarjeta se vende todo online; sin tarjeta, los
+ * invitados pagan en el estudio.
  */
 function paymentOptions(raw: unknown, card: boolean): PaymentOptions {
   const o = (raw && typeof raw === 'object' ? raw : null) as Record<string, any> | null;

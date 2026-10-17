@@ -141,7 +141,7 @@ export function GuideStepper({ steps, current, done = false, label }: { steps: S
 
 export interface CheckItem { key: string; title: string; hint?: ReactNode }
 
-/** Lista para marcar («Prepara tus datos»). Solo ayuda a la usuaria: no se guarda. */
+/** Lista para marcar («Prepara tus datos»). Solo te ayuda a ti: no se guarda. */
 export function Checklist({ items, label }: { items: CheckItem[]; label: string }) {
   const [on, setOn] = useState<Record<string, boolean>>({});
   return (

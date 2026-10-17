@@ -185,7 +185,7 @@ export default function LocationPicker({ value, onChange }: Props) {
     <Box>
       <Typography fontWeight={600}>Ajusta el punto exacto</Typography>
       <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-        Es el punto que verán tus clientas en el mapa de la web («Cómo llegar»). Arrastra el marcador hasta la
+        Es el punto que verán tus clientes en el mapa de la web («Cómo llegar»). Arrastra el marcador hasta la
         puerta de tu estudio o toca el mapa donde está.
       </Typography>
 

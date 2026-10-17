@@ -1,7 +1,7 @@
 "use client";
 
 /**
- * Acceso y registro de clientas (modal del Navbar y página /login).
+ * Acceso y registro de clientes (modal del Navbar y página /login).
  *
  * - Textos en ES/EN con un diccionario local (idioma de useLangStore).
  * - Los errores del backend llegan en español: se traducen por código HTTP y

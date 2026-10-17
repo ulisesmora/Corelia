@@ -28,7 +28,7 @@ RESEND_COOLDOWN_SECONDS = 60
 LINK_TTL_DAYS = 30
 TEMPLATE_ID = 'verification'
 def is_placeholder_email(email: str) -> bool:
-    """Email interno de una clienta dada de alta sin email (nunca se le escribe)."""
+    """Email interno de un cliente dado de alta sin email (nunca se le escribe)."""
     from django.conf import settings
     return not email or email.lower().endswith('@' + settings.PLACEHOLDER_EMAIL_DOMAIN.lower())
 

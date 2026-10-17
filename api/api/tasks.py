@@ -202,7 +202,7 @@ def _run_auto_reserve(start_date, end_date, filter_user_id=None):
             status='active', cancel_at_period_end=False
         ).values_list('user_id', flat=True)
     )
-    # Clientas del estudio con plan mensual activo (se cobra en el estudio)
+    # Clientes del estudio con plan mensual activo (se cobra en el estudio)
     from api.models import StudioPlan
     active_subscriber_ids |= set(StudioPlan.objects.filter(status='active').values_list('user_id', flat=True))
 
@@ -217,7 +217,7 @@ def _run_auto_reserve(start_date, end_date, filter_user_id=None):
 
         # ¿La clase ya no existe? (eliminada, o su vigencia terminó antes de la
         # semana a reservar). Desactivar la preferencia, ofrecer alternativas
-        # y avisar por push+email — antes se saltaba EN SILENCIO y la clienta
+        # y avisar por push+email — antes se saltaba EN SILENCIO y el cliente
         # se quedaba esperando una clase que nunca llegaba.
         if schedule.deleted_at or (schedule.end_date and schedule.end_date < start_date):
             from api.utils.replacement import retire_schedule_preferences
@@ -365,7 +365,7 @@ def _run_auto_reserve(start_date, end_date, filter_user_id=None):
             if failed_full:
                 user_results[uid]['full_classes'].append(schedule.class_type.title)
 
-    # ── Un resumen por usuaria: email siempre; push además si algo falló ───────
+    # ── Un resumen por usuario: email siempre; push además si algo falló ───────
     from api.utils.push import send_push_to_user
 
     for uid, data in user_results.items():
@@ -636,7 +636,7 @@ MEMBERSHIP_DISMISS_COOLDOWN_DAYS = 21
 
 
 def _fixed_classes_for_clients() -> bool:
-    """¿Se habla de clases fijas con las clientas? Solo si el estudio deja que
+    """¿Se habla de clases fijas con los clientes? Solo si el estudio deja que
     las elijan en la web (Ajustes → Cobros, SiteConfig.client_fixed_classes).
     Si no, las clases fijas son una herramienta del panel y los avisos no las
     explican ni las venden."""
@@ -646,7 +646,7 @@ def _fixed_classes_for_clients() -> bool:
 
 def _membership_message(user, a):
     """Texto personal con SU ahorro real (y su clase fija solo si el estudio
-    deja que las clientas elijan sus clases fijas en la web)."""
+    deja que los clientes elijan sus clases fijas en la web)."""
     plan = a['plan']
     fixed = _fixed_classes_for_clients()
     slot = a['fixed_slots'][0] if (fixed and a['fixed_slots']) else None
@@ -676,7 +676,7 @@ def _membership_message(user, a):
 @shared_task
 def send_membership_suggestions():
     """Diaria (beat). Envía la recomendación personal por email (y push si
-    tiene la app) a las regulares sin membresía, respetando los límites."""
+    tiene la app) a los clientes regulares sin membresía, respetando los límites."""
     from api.models import MembershipNudge
     from api.utils.emailing import send_templated_email
     from api.utils.membership import candidates
@@ -800,8 +800,8 @@ def expire_waitlist_offers():
 @shared_task
 def studio_plans_daily():
     """Cada mañana (hora del estudio): marca los planes del estudio que vencen
-    (salen en Hoy → «Renovaciones de este mes») y, solo si la dueña lo encendió
-    en el plan, avisa a la clienta unos días antes. No cobra ni renueva nada
+    (salen en Hoy → «Renovaciones de este mes») y, solo si el estudio lo encendió
+    en el plan, avisa al cliente unos días antes. No cobra ni renueva nada
     (api/utils/studio_plans.py)."""
     from api.utils.studio_plans import daily
     return daily()

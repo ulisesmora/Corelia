@@ -116,7 +116,7 @@ export default function StudioSettings() {
         {tab === 8 && <PushSection value={settings} />}
         {tab === 9 && (
           <Stack spacing={3}>
-            {/* «Formas de cobro»: qué ofrece la web (tarjeta, en el estudio, invitadas, qué se vende online) */}
+            {/* «Formas de cobro»: qué ofrece la web (tarjeta, en el estudio, invitados, qué se vende online) */}
             <PaymentOptionsCard onSaved={onSaved} />
             <PaymentsSection value={settings} onSaved={onSaved} />
           </Stack>

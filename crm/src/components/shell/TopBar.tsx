@@ -44,14 +44,14 @@ function EntryMenu({ anchor, onClose, entries, label }: { anchor: HTMLElement | 
   );
 }
 
-/** «+ Nuevo»: reserva, clienta, clase o bono (las ventanas/pantallas de crear de siempre). */
+/** «+ Nuevo»: reserva, cliente, clase o bono (las ventanas/pantallas de crear de siempre). */
 function useNewEntries(): MenuEntry[] {
   const navigate = useNavigate();
   const { openNewClient } = useShell();
   return [
-    { icon: 'booked', label: 'Reserva', hint: 'Apuntar a una clienta a una clase', onClick: () => openNewClient('existing'), badge: true },
-    { icon: 'addClient', label: 'Clienta', hint: 'Dar de alta una ficha', onClick: () => openNewClient('new'), badge: true },
-    { icon: 'studio', label: 'Clienta del estudio', hint: 'Te paga en mano: clases o un mes fijo', onClick: () => navigate('/clientas/estudio/nueva'), badge: true },
+    { icon: 'booked', label: 'Reserva', hint: 'Apuntar a alguien a una clase', onClick: () => openNewClient('existing'), badge: true },
+    { icon: 'addClient', label: 'Cliente', hint: 'Dar de alta una ficha', onClick: () => openNewClient('new'), badge: true },
+    { icon: 'studio', label: 'Cliente del estudio', hint: 'Te paga en mano: clases o un mes fijo', onClick: () => navigate('/clientas/estudio/nueva'), badge: true },
     { icon: 'add', label: 'Clase', hint: 'Añadir una clase al horario', onClick: () => navigate('/calendar?accion=nueva'), badge: true },
     { icon: 'plans', label: 'Bono', hint: 'Un bono o una cuota para vender', onClick: () => navigate('/clases-y-precios?tab=precios&accion=nueva'), badge: true },
   ];
@@ -121,8 +121,8 @@ export function TopBar({ style }: { style: string }) {
       </ButtonBase>
       <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 0.5 }}>
         {webUrl && (
-          <Tooltip title="Ver como clienta">
-            <IconButton component="a" href={webUrl} target="_blank" rel="noopener" aria-label="Ver mi web como clienta" sx={iconBtn}>
+          <Tooltip title="Ver como cliente">
+            <IconButton component="a" href={webUrl} target="_blank" rel="noopener" aria-label="Ver mi web como cliente" sx={iconBtn}>
               <StudioIcon name="eye" />
             </IconButton>
           </Tooltip>
@@ -172,7 +172,7 @@ export function MobileTopBar() {
   );
 }
 
-/** Barra de abajo del móvil: Hoy, Calendario, Reservas, Clientas y «Más». */
+/** Barra de abajo del móvil: Hoy, Calendario, Reservas, Clientes y «Más». */
 export function BottomNav({ active }: { active: SectionKey | null }) {
   const navigate = useNavigate();
   const webUrl = useStudioWebUrl();

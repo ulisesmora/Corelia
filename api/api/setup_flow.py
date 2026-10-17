@@ -7,7 +7,7 @@ necesitan las pantallas para guardar solas («Se guarda solo») y los consejos
 del panel ya vistos por cada persona.
 
   POST   /api/v1/setup/flow/                 {"confirm": "<paso>"} | {"later": true|false}
-  POST   /api/v1/setup/instructors/          {"name"}            → crea una profesora
+  POST   /api/v1/setup/instructors/          {"name"}            → crea un instructor
   DELETE /api/v1/setup/class-types/<id>/                         → quita una clase (y su horario)
   GET    /api/v1/setup/week/                                     → semana tipo
   POST   /api/v1/setup/week/                 {"weekday", "start_time", "class_type_id", "room_id"?}
@@ -129,7 +129,7 @@ def _free_slug(model, base: str) -> str:
 
 
 class SetupInstructorView(APIView):
-    """POST {"name"}: crea una profesora con lo mínimo (el resto, en Ajustes)."""
+    """POST {"name"}: crea un instructor con lo mínimo (el resto, en Ajustes)."""
     permission_classes = [IsAdminUser]
 
     def post(self, request):

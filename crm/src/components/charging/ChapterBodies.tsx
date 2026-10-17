@@ -2,7 +2,7 @@
 // estudio (moneda, precios, plazo para cancelar, minutos para aceptar una
 // plaza…): ver ./facts.ts y api/api/views_guide.py.
 //
-//   1 Dos formas de cobrar (resumen) · 2 Clientas online · 3 Clientas del
+//   1 Dos formas de cobrar (resumen) · 2 Clientes online · 3 Clientes del
 //   estudio · 4 Cancelaciones y devoluciones · 5 Lista de espera
 import { Box, Button, Typography } from '@mui/material';
 import StudioIcon from '../../site/StudioIcon';
@@ -30,7 +30,7 @@ const OPTIONS_PATH = '/ajustes?tab=pagos#formas-de-cobro';
 export function OverviewChapter({ facts: f, go, open }: ChapterProps) {
   return (
     <>
-      <Typography sx={lead}>Hay dos tipos de clientas. Cada una paga a su manera.</Typography>
+      <Typography sx={lead}>Hay dos tipos de clientes. Cada uno paga a su manera.</Typography>
       <Box sx={{ mt: 2 }}>
         <TwoWorlds variant="full" facts={f} go={go} open={open} />
       </Box>
@@ -43,23 +43,23 @@ export function OverviewChapter({ facts: f, go, open }: ChapterProps) {
   );
 }
 
-// ── 2) Clientas online ───────────────────────────────────────────────────
+// ── 2) Clientes online ───────────────────────────────────────────────────
 
 export function OnlineChapter({ facts: f, go }: ChapterProps) {
   const pack = f.pack;
   const sub = f.subscription;
   const o = f.options || defaultOptions(f.payments.enabled);
   const notSold = 'Ahora no se vende en tu web.';
-  const studioWho = o.pay_at_studio.guests && o.pay_at_studio.clients ? 'invitadas y clientas con cuenta'
-    : o.pay_at_studio.guests ? 'invitadas (sin cuenta)' : o.pay_at_studio.clients ? 'clientas con cuenta' : '';
+  const studioWho = o.pay_at_studio.guests && o.pay_at_studio.clients ? 'invitados y clientes con cuenta'
+    : o.pay_at_studio.guests ? 'invitados (sin cuenta)' : o.pay_at_studio.clients ? 'clientes con cuenta' : '';
   return (
     <>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-        <Typography sx={lead}>Ella lo hace todo en tu web. Stripe cobra y el panel lo apunta.</Typography>
+        <Typography sx={lead}>Tu cliente lo hace todo en tu web. Stripe cobra y el panel lo apunta.</Typography>
         <Value tone={o.card ? 'ok' : 'warn'}>{o.card ? 'Activado' : 'Sin activar'}</Value>
       </Box>
       <Box sx={{ mt: 2 }}>
-        <Flow label="Clienta online, paso a paso" steps={[
+        <Flow label="Cliente online, paso a paso" steps={[
           { icon: 'web', title: 'Reserva o compra en tu web', text: 'Una clase, un bono o una membresía.' },
           { icon: 'card', title: 'Paga con tarjeta', text: 'O con Apple Pay, Google Pay, Bizum… (las que actives).' },
           { icon: 'repeat', title: 'Todo se apunta solo', text: 'Sus créditos, el recibo por email y la renovación de cada mes.' },
@@ -152,7 +152,7 @@ export function OnlineChapter({ facts: f, go }: ChapterProps) {
   );
 }
 
-// ── 3) Clientas del estudio ──────────────────────────────────────────────
+// ── 3) Clientes del estudio ──────────────────────────────────────────────
 
 export function InStudioChapter({ facts: f, go }: ChapterProps) {
   const pack = f.pack;
@@ -161,7 +161,7 @@ export function InStudioChapter({ facts: f, go }: ChapterProps) {
     <>
       <Typography sx={lead}>Te paga en mano y tú lo apuntas. Así:</Typography>
       <Box sx={{ mt: 2 }}>
-        <Flow label="Clienta del estudio, paso a paso" steps={[
+        <Flow label="Cliente del estudio, paso a paso" steps={[
           {
             icon: 'payments', title: 'Te paga en mano',
             text: pack
@@ -169,15 +169,15 @@ export function InStudioChapter({ facts: f, go }: ChapterProps) {
               : `${methods ? `En ${methods}.` : 'Efectivo, Bizum o datáfono.'} Por ejemplo, un bono de 10 clases.`,
           },
           {
-            icon: 'addClient', title: 'Dala de alta', text: 'Su nombre y su móvil. Un minuto.',
-            action: { label: 'Nueva clienta del estudio', onClick: () => go(WORLD_PATHS.newStudioClient) },
+            icon: 'addClient', title: 'Dale de alta', text: 'Su nombre y su móvil. Un minuto.',
+            action: { label: 'Nuevo cliente del estudio', onClick: () => go(WORLD_PATHS.newStudioClient) },
           },
           {
             icon: 'credits', title: 'Añádele sus créditos', text: 'Los que ha pagado. Queda apuntado con el motivo.',
             action: { label: 'Ir a Créditos', onClick: () => go(WORLD_PATHS.credits) },
           },
           {
-            icon: 'booked', title: 'Apúntala o dale una clase fija', text: 'Ella reserva en la web con sus créditos, o se la guardas tú.',
+            icon: 'booked', title: 'Resérvale o dale una clase fija', text: 'Reserva en la web con sus créditos, o le guardas tú la plaza.',
           },
           {
             icon: 'repeat', title: 'Cada mes: corte de créditos', text: 'Al empezar el mes le cobras otra vez y le pones los créditos nuevos. Lo que no usó, caduca.',
@@ -191,21 +191,21 @@ export function InStudioChapter({ facts: f, go }: ChapterProps) {
           {
             icon: 'fixedClasses', when: 'Viene siempre el mismo día y hora', use: 'Clase fija',
             hint: f.options?.client_fixed_classes
-              ? 'Su plaza queda guardada cada semana. También pueden elegirlas ellas en la web.'
+              ? 'Su plaza queda guardada cada semana. También puede elegirlas en la web.'
               : 'Le guardas la plaza cada semana. Lo gestionas tú; la web no lo explica.',
             action: { label: 'Ir a Clases fijas', onClick: () => go('/assign-classes') },
           },
           {
-            icon: 'chat', when: 'Te pide una clase por WhatsApp', use: 'Apúntala tú',
+            icon: 'chat', when: 'Te pide una clase por WhatsApp', use: 'Haz tú la reserva',
             hint: 'Calendario → toca la clase → «Añadir».',
             action: { label: 'Ir al calendario', onClick: () => go('/calendar') },
           },
         ]} />
       </Block>
 
-      <Block title="Al apuntarla tú" icon="addClient" id="g-add">
-        <Options label="Al apuntar a una clienta" items={[
-          { icon: 'credits', title: 'Descontar de sus créditos', text: 'Como si reservara ella.', chip: 'Lo normal' },
+      <Block title="Al hacer tú la reserva" icon="addClient" id="g-add">
+        <Options label="Al apuntar a un cliente" items={[
+          { icon: 'credits', title: 'Descontar de sus créditos', text: 'Como si reservara por su cuenta.', chip: 'Lo normal' },
           { icon: 'celebrate', title: 'Gratis', text: 'No gasta nada. Si luego cancela, no se le devuelve.' },
         ]} />
         <Note>Las semanas que guardas con «Clase fija» no gastan créditos: cóbralas aparte (en mano o con membresía).</Note>
@@ -231,7 +231,7 @@ export function RefundsChapter({ facts: f }: ChapterProps) {
     <>
       <Typography sx={lead}>Lo que se devuelve depende de quién cancela y cuándo.</Typography>
 
-      <Block title="Si cancela ella" icon="clients" id="g-client">
+      <Block title="Si cancela tu cliente" icon="clients" id="g-client">
         <CancelWindow hours={h} />
         <Box component="ul" sx={{ listStyle: 'none', p: 0, m: 0, mt: 1.5, display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Box component="li" sx={row}>
@@ -240,10 +240,10 @@ export function RefundsChapter({ facts: f }: ChapterProps) {
           </Box>
           <Box component="li" sx={row}>
             <Value tone="warn">Últimas {h} h</Value>
-            <span>Ya no puede cancelar. Si te escribe, tú decides: quitarla devolviendo la clase o sin devolver.</span>
+            <span>Ya no puede cancelar. Si te escribe, tú decides: quitarle la reserva devolviendo la clase o sin devolver.</span>
           </Box>
         </Box>
-        <Note icon="card">Si pagó con tarjeta sin cuenta, no puede cancelar sola: al quitarla tú, le devolvemos el dinero.</Note>
+        <Note icon="card">Si pagó con tarjeta sin cuenta, no puede cancelar por su cuenta: si quitas tú su reserva, le devolvemos el dinero.</Note>
       </Block>
 
       <Block title="Si cancelas tú una clase" icon="studio" id="g-studio">
@@ -279,12 +279,12 @@ export function WaitlistChapter({ facts: f, go }: ChapterProps) {
       </Box>
       <Box sx={{ mt: 2 }}>
         <Flow label="Lista de espera, paso a paso" steps={[
-          { icon: 'hourglass', title: 'La clase se llena', text: 'Las demás pueden apuntarse a la lista.' },
+          { icon: 'hourglass', title: 'La clase se llena', text: 'El resto puede apuntarse a la lista.' },
           { icon: 'undo', title: 'Alguien cancela', text: 'Queda una plaza libre.' },
           wl.auto_offer
-            ? { icon: 'mail', title: 'La primera recibe un aviso', text: <>Por email y en la app. Tiene <Value>{claim}</Value> para aceptarla. Mientras, la plaza es suya.</> }
+            ? { icon: 'mail', title: 'Quien va primero recibe un aviso', text: <>Por email y en la app. Tiene <Value>{claim}</Value> para aceptarla. Mientras, la plaza es suya.</> }
             : { icon: 'mail', title: 'Tú das la plaza', text: 'La oferta automática está apagada: elige a quién en la clase.' },
-          { icon: 'next', title: '¿No contesta a tiempo?', text: 'La plaza pasa a la siguiente de la lista.' },
+          { icon: 'next', title: '¿No contesta a tiempo?', text: 'La plaza pasa a quien va después en la lista.' },
         ]} />
       </Box>
       <Note icon="credits">Al aceptar la plaza, se le descuenta de su bono.</Note>

@@ -78,7 +78,7 @@ def cancel_session_logic(occurrence_id, start_datetime_aware):
             if person:
                 users_to_notify.append(person)
 
-    # Reembolso Stripe a invitadas (fuera de la transacción)
+    # Reembolso Stripe a invitados (fuera de la transacción)
     from api.utils.guest_refund import refund_guest_booking_stripe
     for booking in guest_refunds:
         if refund_guest_booking_stripe(booking, reason='session_cancellation'):
@@ -90,7 +90,7 @@ def cancel_session_logic(occurrence_id, start_datetime_aware):
         logger.info(f"Notificando a {person.email}...")
         notify_cancellation_email(person, class_title, start_datetime_aware)
         send_whatsapp_cancellation(person, class_title, start_datetime_aware)
-        if hasattr(person, 'push_subscriptions'):  # invitadas: sin push
+        if hasattr(person, 'push_subscriptions'):  # invitados: sin push
             send_cancellation_push(person, class_title, start_datetime_aware)
             
 
@@ -176,7 +176,7 @@ def cancel_all_schedule_bookings(schedule_id):
 
     schedule.soft_delete()
 
-    # Reembolso Stripe a invitadas (fuera de la transacción)
+    # Reembolso Stripe a invitados (fuera de la transacción)
     from api.utils.guest_refund import refund_guest_booking_stripe
     for booking in guest_refund_queue:
         if refund_guest_booking_stripe(booking, reason='schedule_deleted'):
@@ -189,7 +189,7 @@ def cancel_all_schedule_bookings(schedule_id):
             send_whatsapp_cancellation(user, class_title, now)
         except Exception as e:
             logger.error(f"Error notifying {user.email}: {e}")
-        if hasattr(user, 'push_subscriptions'):  # invitadas: sin push
+        if hasattr(user, 'push_subscriptions'):  # invitados: sin push
             send_cancellation_push(user, class_title, now)
     return {
         "status": "success",

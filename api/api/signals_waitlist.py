@@ -1,5 +1,5 @@
 """Lista de espera: cuando una reserva deja de ocupar su plaza (se cancela,
-se reembolsa o se mueve a otra sesión), se ofrece la plaza a la primera de la
+se reembolsa o se mueve a otra sesión), se ofrece la plaza a la primera persona de la
 lista (api/utils/waitlist.py:offer_next). Y si alguien de la lista reserva por
 la web normal, su entrada pasa a «claimed».
 

@@ -91,10 +91,10 @@ const STATUS_INFO: Record<
     label: 'Sin terminar',
     color: 'default',
     icon: <HourglassEmptyIcon />,
-    text: 'La clienta abrió la página de pago pero no la terminó (o la está terminando ahora). No se ha cobrado nada.',
+    text: 'El cliente abrió la página de pago pero no la terminó (o la está terminando ahora). No se ha cobrado nada.',
   },
   requires_action: {
-    label: 'Esperando a la clienta',
+    label: 'Esperando al cliente',
     color: 'info',
     icon: <TouchAppIcon />,
     text: 'Su banco le pidió una confirmación y todavía no la ha hecho. Aún no se ha cobrado.',
@@ -182,10 +182,10 @@ const sameCurrency = (p: Payment) => (p.currency || 'EUR').toUpperCase() === STU
 function clientName(p: Payment): string {
   if (p.user) {
     const full = [p.user.first_name, p.user.last_name].filter(Boolean).join(' ').trim();
-    return full || p.user.email || 'Clienta sin nombre';
+    return full || p.user.email || 'Cliente sin nombre';
   }
-  if (p.guest) return p.guest.name || p.guest.email || 'Invitada';
-  return 'Sin clienta asociada';
+  if (p.guest) return p.guest.name || p.guest.email || 'Invitado';
+  return 'Sin cliente asociado';
 }
 
 function clientEmail(p: Payment): string | null {
@@ -506,9 +506,9 @@ export default function PaymentViewer() {
           </Stack>
           <TextField
             fullWidth
-            data-tour="search" label="Buscar clienta"
+            data-tour="search" label="Buscar cliente"
             placeholder="Nombre, email o importe"
-            helperText="Ej.: Marta, marta@gmail.com o 50"
+            helperText="Ej.: Javier, javier@gmail.com o 50"
             value={searchTerm}
             onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
             slotProps={{
@@ -566,7 +566,7 @@ export default function PaymentViewer() {
                 <TableHead>
                   <TableRow>
                     <TableCell>Fecha</TableCell>
-                    <TableCell>Clienta</TableCell>
+                    <TableCell>Cliente</TableCell>
                     <TableCell align="right">Importe</TableCell>
                     <TableCell>Estado</TableCell>
                     <TableCell align="right">Detalle</TableCell>
@@ -579,7 +579,7 @@ export default function PaymentViewer() {
                       <TableCell sx={{ fontSize: '0.95rem' }}>
                         <Typography sx={{ fontWeight: 600, color: 'var(--studio-dark)', fontSize: 'inherit' }}>{clientName(p)}</Typography>
                         <Typography sx={{ color: 'text.secondary', fontSize: '0.9rem' }}>
-                          {p.user ? clientEmail(p) : `Invitada${p.guest?.email ? ` · ${p.guest.email}` : ''}`}
+                          {p.user ? clientEmail(p) : `Invitado${p.guest?.email ? ` · ${p.guest.email}` : ''}`}
                         </Typography>
                       </TableCell>
                       <TableCell align="right" sx={{ fontWeight: 700, fontSize: '1.05rem', whiteSpace: 'nowrap' }}>
@@ -633,11 +633,11 @@ export default function PaymentViewer() {
                   <Typography sx={{ '&::first-letter': { textTransform: 'uppercase' } }}>
                     {longDateTimeFmt.format(new Date(detail.created_at))}
                   </Typography>
-                  <Typography sx={{ color: 'text.secondary' }}>Clienta</Typography>
+                  <Typography sx={{ color: 'text.secondary' }}>Cliente</Typography>
                   <Box>
                     <Typography>{clientName(detail)}</Typography>
                     <Typography sx={{ color: 'text.secondary', fontSize: '0.92rem' }}>
-                      {detail.user ? 'Tiene cuenta en la web' : detail.guest ? 'Invitada (pagó sin crear cuenta)' : ''}
+                      {detail.user ? 'Tiene cuenta en la web' : detail.guest ? 'Invitado (pagó sin crear cuenta)' : ''}
                     </Typography>
                   </Box>
                   {clientEmail(detail) && (
@@ -689,7 +689,7 @@ export default function PaymentViewer() {
                   onClick={() => navigate(`/clients?buscar=${encodeURIComponent(clientEmail(detail) as string)}`)}
                   sx={{ minHeight: 48 }}
                 >
-                  Ver su ficha de clienta
+                  Ver su ficha de cliente
                 </Button>
               )}
               <Button variant="contained" onClick={() => setDetail(null)} sx={{ minHeight: 48, ml: '0 !important' }}>

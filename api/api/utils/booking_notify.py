@@ -1,9 +1,9 @@
 """
 Confirmación de reserva — push + email en cuanto la reserva queda confirmada,
-tanto para usuarias registradas como para invitadas (guest checkout).
+tanto para usuarios registrados como para invitados (guest checkout).
 
 Antes no existía NINGUNA confirmación fuera de la pantalla de "pago
-completado": si la clienta cerraba la pestaña o el webhook tardaba, no le
+completado": si el cliente cerraba la pestaña o el webhook tardaba, no le
 quedaba ningún rastro de su reserva.
 """
 import logging
@@ -38,13 +38,13 @@ def _booking_line(booking):
 
 
 def notify_booking_confirmation(bookings, send_email=True):
-    """Confirma por push (usuarias) y email (usuarias e invitadas) un lote de
+    """Confirma por push (usuarios) y email (usuarios e invitados) un lote de
     reservas ya confirmadas. Agrupa por persona para mandar UN aviso aunque
     haya reservado varias clases. Nunca lanza.
 
     send_email=False cuando otro email detallado ya cubre la confirmación
-    (reserva con créditos → email del ledger; pago de invitada → recibo del
-    Payment): si no, a la clienta le llegaban DOS emails por la misma reserva.
+    (reserva con créditos → email del ledger; pago de invitado → recibo del
+    Payment): si no, al cliente le llegaban DOS emails por la misma reserva.
     El push se manda igual."""
     from api.utils.emailing import send_templated_email
     from api.utils.push import send_push_to_user
@@ -109,7 +109,7 @@ _DIAS = ['lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábados', 'domi
 
 
 def notify_fixed_class_assigned(user, schedule, booked: int, first_start, last_start):
-    """Aviso único cuando el estudio le guarda a una clienta una clase fija
+    """Aviso único cuando el estudio le guarda a un cliente una clase fija
     semanal (asignación desde el CRM). Estas reservas no gastan créditos, así
     que no se usa el texto genérico de confirmación. Nunca lanza."""
     if not booked:

@@ -341,7 +341,7 @@ const RoomsManagement = forwardRef<CatalogHandle, EmbedProps>(function RoomsMana
                     error={nameError}
                     helperText={nameError
                       ? 'Escribe el nombre de la sala.'
-                      : 'Ej.: «Sala Reformer». Lo ven las clientas en el horario y en sus reservas.'}
+                      : 'Ej.: «Sala Reformer». Lo ven tus clientes en el horario y en sus reservas.'}
                   />
                   <TextField
                     label="Personas que caben"

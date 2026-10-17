@@ -29,7 +29,7 @@ export default function DomainSection({ value, onSaved }: Props) {
       <DomainCard
         kind="web"
         icon={<LanguageIcon color="primary" />}
-        title="Tu web (la que ven tus clientas)"
+        title="Tu web (la que ven tus clientes)"
         service="web"
         example="www.tuestudio.com"
         current={value.web_domain}

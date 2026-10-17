@@ -106,7 +106,7 @@ function SessionRow({ event, onBook, onWaitlist, entry, mine, busy, hideDetailLi
   event: CalendarEvent;
   onBook: (e: CalendarEvent) => void;
   onWaitlist: (e: CalendarEvent) => void;
-  /** Su entrada en la lista de espera de esta sesión (si está apuntada). */
+  /** Su entrada en la lista de espera de esta sesión (si se ha apuntado). */
   entry?: WaitlistEntry;
   /** Ya tiene plaza (lo dijo el API al intentar apuntarse) */
   mine?: boolean;

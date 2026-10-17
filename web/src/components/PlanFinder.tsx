@@ -493,7 +493,7 @@ export default function PlanFinder({ packs, subs, onSeeAll }: {
 
                 <Box as="ul" listStyleType="none" m={0} p={0} mb={5}>
                   {(result.isSub
-                    // Las clases fijas solo se mencionan si las clientas las eligen en la web
+                    // Las clases fijas solo se mencionan si los clientes las eligen en la web
                     ? (clientFixedClasses() ? [lang === 'en' ? 'Your regular classes are booked every Sunday' : 'Tus clases fijas se reservan solas cada domingo', ...tx.subPerks.slice(1)] : tx.subPerks)
                     : tx.packPerks).map((perk, i) => (
                     <Flex as="li" key={i} align="center" gap={2.5} mb={2}>

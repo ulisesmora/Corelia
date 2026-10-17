@@ -141,7 +141,7 @@ function couponState(c: Coupon, used: number | undefined): CouponState {
   if (c.valid_to && now > new Date(c.valid_to).getTime()) return { label: 'Caducado', color: 'error', text: 'Ya pasó su fecha de fin.' };
   if (c.valid_from && now < new Date(c.valid_from).getTime()) return { label: 'Aún no empieza', color: 'info', text: 'Funcionará a partir de su fecha de inicio.' };
   if (c.usage_limit && used !== undefined && used >= c.usage_limit) return { label: 'Agotado', color: 'warning', text: 'Ya se ha usado todas las veces permitidas.' };
-  return { label: 'Funciona', color: 'success', text: 'Las clientas lo pueden usar ahora en la web.' };
+  return { label: 'Funciona', color: 'success', text: 'Tus clientes lo pueden usar ahora en la web.' };
 }
 
 function authHeader(): Record<string, string> {
@@ -265,7 +265,7 @@ export default function CouponManagement() {
             title: `¿Desactivar el cupón ${coupon.code}?`,
             message: (
               <>
-                Si una clienta lo escribe en la web verá «El cupón no está activo» y no tendrá descuento. Las compras que ya
+                Si alguien lo escribe en la web verá «El cupón no está activo» y no tendrá descuento. Las compras que ya
                 se hicieron con él no cambian. Puedes volver a activarlo cuando quieras.
               </>
             ),
@@ -273,7 +273,7 @@ export default function CouponManagement() {
           }
         : {
             title: `¿Activar el cupón ${coupon.code}?`,
-            message: `Las clientas podrán usarlo en la web (${discountText(coupon.discount_type, coupon.value)}) mientras esté dentro de sus fechas.`,
+            message: `Tus clientes podrán usarlo en la web (${discountText(coupon.discount_type, coupon.value)}) mientras esté dentro de sus fechas.`,
             confirmText: 'Sí, activar',
           },
     );
@@ -636,7 +636,7 @@ export default function CouponManagement() {
         <DialogContent dividers>
           {c && (
             <>
-              <FormStep n={1} title="¿Qué código escribirán las clientas?">
+              <FormStep n={1} title="¿Qué código escribirán tus clientes?">
                 <TextField
                   fullWidth
                   required
@@ -766,7 +766,7 @@ export default function CouponManagement() {
                   />
                   <Box sx={{ pt: 1.5 }}>
                     <HelpTip title="Veces en total">
-                      Entre todas las clientas. Si pones 50, cuando se haya usado 50 veces la web dirá «Este cupón ha agotado
+                      Entre todos los clientes. Si pones 50, cuando se haya usado 50 veces la web dirá «Este cupón ha agotado
                       sus usos». Cuenta cada vez que alguien lo aplica al pagar, aunque luego no termine el pago.
                     </HelpTip>
                   </Box>
@@ -809,7 +809,7 @@ export default function CouponManagement() {
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                       <TextField
                         fullWidth
-                        label="Veces por clienta"
+                        label="Veces por cliente"
                         type="number"
                         value={c.per_user_limit}
                         onChange={(e) => update({ per_user_limit: e.target.value === '' ? '' : Number(e.target.value) })}

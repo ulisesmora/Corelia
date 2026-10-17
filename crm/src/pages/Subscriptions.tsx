@@ -26,7 +26,7 @@ import { money } from '../site/money';
 
 interface Subscription {
   id: number;
-  // La API devuelve el id de la clienta (número); se admite también el objeto por compatibilidad
+  // La API devuelve el id del cliente (número); se admite también el objeto por compatibilidad
   user: number | { id: number; email: string };
   plan: { id: number; name: string; credits?: number; price_eur?: string; interval?: string | null } | null;
   status: string;
@@ -67,7 +67,7 @@ const STATUS_HELP: Record<string, string> = {
   past_due: 'El banco no aceptó el último cobro. Se reintentará solo; mientras tanto sus clases fijas no se reservan solas.',
   unpaid: 'El banco no aceptó el último cobro.',
   canceled: 'Ya no se cobra ni recibe créditos nuevos.',
-  incomplete: 'Se creó pero la clienta todavía no ha pagado el primer cobro.',
+  incomplete: 'Se creó pero el cliente todavía no ha pagado el primer cobro.',
   incomplete_expired: 'No se pagó a tiempo y se anuló.',
   trialing: 'Periodo de prueba.',
 };
@@ -163,7 +163,7 @@ export default function SubscriptionsPage() {
       if (!res.ok) throw res;
       const d = await res.json();
       setSubscriptions(Array.isArray(d) ? d : d.results || []);
-      // Los nombres son un extra: si falla, se muestra el email o el número de clienta
+      // Los nombres son un extra: si falla, se muestra el email o el número de cliente
       if (uRes.ok) {
         const uD = await uRes.json();
         const list: UserOption[] = Array.isArray(uD) ? uD : uD.results || [];
@@ -185,7 +185,7 @@ export default function SubscriptionsPage() {
   };
   const nameOf = (s: Subscription) => {
     const u = userOf(s);
-    if (!u) return `Clienta nº ${userIdOf(s)}`;
+    if (!u) return `Cliente nº ${userIdOf(s)}`;
     return [u.first_name, u.last_name].filter(Boolean).join(' ').trim() || u.email;
   };
 
@@ -235,7 +235,7 @@ export default function SubscriptionsPage() {
       const d = await res.json();
       setClientSecret(d.client_secret);
       setCreated(true);
-      notify('Membresía creada ✓ Queda pendiente de que la clienta pague el primer cobro.');
+      notify('Membresía creada ✓ Queda pendiente de que el cliente pague el primer cobro.');
       fetchSubs();
     } catch (e) {
       notify(await friendlyError(e), 'error');
@@ -310,7 +310,7 @@ export default function SubscriptionsPage() {
     const wa = waLink(
       u.phone,
       `¡Hola${first ? ` ${first}` : ''}! Te escribimos de ${studioName}. No se ha podido cobrar tu membresía ${s.plan?.name || ''}. ` +
-      `Cuando puedas, revisa tu tarjeta desde tu cuenta en ${webName || 'la web'} para que tus clases se sigan reservando solas, o dinos y lo vemos juntas. ¡Gracias! 💛`,
+      `Cuando puedas, revisa tu tarjeta desde tu cuenta en ${webName || 'la web'} para que tus clases se sigan reservando solas, o dinos y lo revisamos contigo. ¡Gracias! 💛`,
     );
     return (
       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
@@ -375,7 +375,7 @@ export default function SubscriptionsPage() {
           action={<Button color="inherit" onClick={() => setFilter('todas')} sx={{ minHeight: 44, whiteSpace: 'nowrap' }}>Ver todas</Button>}
         >
           <b>¿Qué significa «pago pendiente»?</b> El banco no aceptó el último cobro automático (tarjeta caducada, sin
-          saldo…). La clienta <b>ya ha recibido un email y una notificación</b> pidiéndole que revise su tarjeta, y el
+          saldo…). El cliente <b>ya ha recibido un email y una notificación</b> pidiéndole que revise su tarjeta, y el
           cobro se reintentará solo durante unos días. Mientras tanto, sus clases fijas no se reservan solas.
           <br />
           <b>Qué puedes hacer:</b> escríbele por WhatsApp con el botón de su fila para recordárselo. No hace falta nada más.
@@ -384,7 +384,7 @@ export default function SubscriptionsPage() {
 
       <TextField
         data-tour="search" label="Buscar"
-        placeholder="Nombre, email o plan (p. ej. Marta o Starter)"
+        placeholder="Nombre, email o plan (p. ej. Javier o Starter)"
         value={search}
         onChange={(e) => { setSearch(e.target.value); setPage(1); }}
         fullWidth
@@ -415,7 +415,7 @@ export default function SubscriptionsPage() {
           <EmptyState
             icon={<CardMembershipIcon />}
             title="Todavía no hay membresías"
-            text="Cuando una clienta contrate una membresía en la web aparecerá aquí."
+            text="Cuando alguien contrate una membresía en la web aparecerá aquí."
           />
         </Paper>
       ) : filtered.length === 0 ? (
@@ -470,7 +470,7 @@ export default function SubscriptionsPage() {
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Clienta</TableCell>
+                    <TableCell>Cliente</TableCell>
                     <TableCell>Membresía</TableCell>
                     <TableCell>
                       Estado{' '}
@@ -530,11 +530,11 @@ export default function SubscriptionsPage() {
           {created ? (
             <Stack spacing={2}>
               <Alert severity="success" sx={{ fontSize: '0.97rem' }}>
-                Membresía creada. Aparecerá en la lista como <b>«Sin completar»</b> hasta que la clienta pague el primer
+                Membresía creada. Aparecerá en la lista como <b>«Sin completar»</b> hasta que el cliente pague el primer
                 cobro con su tarjeta. Hasta entonces no recibe créditos.
               </Alert>
               <Typography sx={{ fontSize: '0.95rem', color: 'var(--studio-text-strong)' }}>
-                Si la clienta tiene dudas, lo más sencillo es que la contrate ella misma en la web ({webName ? `${webName} → ` : ''}Precios).
+                Si tiene dudas, lo más sencillo es que la contrate por su cuenta en la web ({webName ? `${webName} → ` : ''}Precios).
               </Typography>
               {clientSecret && (
                 <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary', wordBreak: 'break-all' }}>
@@ -545,17 +545,17 @@ export default function SubscriptionsPage() {
           ) : createLoading ? (
             <Stack alignItems="center" spacing={1} sx={{ py: 4 }}>
               <CircularProgress />
-              <Typography color="text.secondary">Cargando clientas y planes…</Typography>
+              <Typography color="text.secondary">Cargando clientes y planes…</Typography>
             </Stack>
           ) : (
             <>
               <Alert severity="info" sx={{ mb: 3, fontSize: '0.95rem' }}>
-                Esto prepara el cobro automático en Stripe, pero <b>la clienta tiene que pagar el primer cobro con su
-                tarjeta</b> para que empiece a funcionar. Lo normal es que se apunte ella misma en la web.
+                Esto prepara el cobro automático en Stripe, pero <b>el cliente tiene que pagar el primer cobro con su
+                tarjeta</b> para que empiece a funcionar. Lo normal es que se apunte por su cuenta en la web.
               </Alert>
-              <FormStep n={1} title="¿Para qué clienta?">
+              <FormStep n={1} title="¿Para qué cliente?">
                 <SearchSelect
-                  label="Clienta"
+                  label="Cliente"
                   placeholder="Escribe su nombre o email"
                   options={allUsers.map((u) => ({
                     id: u.id,
@@ -563,7 +563,7 @@ export default function SubscriptionsPage() {
                   }))}
                   value={selUser}
                   onChange={(id) => setSelUser((id as number) ?? '')}
-                  helperText={tried && !selUser ? 'Elige una clienta de la lista.' : 'Puedes escribir para buscarla.'}
+                  helperText={tried && !selUser ? 'Elige un cliente de la lista.' : 'Puedes escribir para buscar.'}
                 />
               </FormStep>
               <FormStep n={2} title="¿Qué membresía?">
@@ -604,13 +604,13 @@ export default function SubscriptionsPage() {
             <Stack spacing={2.5}>
               {isPending(detailSub) && (
                 <Alert severity="warning" sx={{ fontSize: '0.95rem' }}>
-                  El último cobro no se pudo hacer. La clienta ya ha recibido un email y una notificación; el cobro se
+                  El último cobro no se pudo hacer. El cliente ya ha recibido un email y una notificación; el cobro se
                   reintentará solo. Si quieres, escríbele por WhatsApp.
                 </Alert>
               )}
               <Grid container spacing={2}>
                 <Grid size={{ xs: 12, sm: 6 }}>
-                  <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>Clienta</Typography>
+                  <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>Cliente</Typography>
                   <Typography fontWeight={600}>{nameOf(detailSub)}</Typography>
                   <Typography sx={{ fontSize: '0.9rem', color: 'text.secondary', wordBreak: 'break-word' }}>
                     {[detailUser?.phone, detailUser?.email].filter(Boolean).join(' · ')}

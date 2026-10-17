@@ -169,9 +169,9 @@ export default function MyWebPage() {
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mt: 1.75 }}>
               <IBadge size={34}><PhoneIphoneOutlinedIcon sx={{ fontSize: 18 }} /></IBadge>
               <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Typography sx={{ fontWeight: 700, color: 'var(--studio-ink)', fontSize: '0.92rem' }}>App para tus clientas</Typography>
+                <Typography sx={{ fontWeight: 700, color: 'var(--studio-ink)', fontSize: '0.92rem' }}>App para tus clientes</Typography>
                 <Typography sx={{ fontSize: '0.8rem', color: 'var(--studio-muted)' }}>
-                  Incluida · iPhone y Android{data && data.app.clients ? ` · ${data.app.clients} ${data.app.clients === 1 ? 'clienta la tiene' : 'clientas la tienen'}` : ''}
+                  Incluida · iPhone y Android{data && data.app.clients ? ` · ${data.app.clients} ${data.app.clients === 1 ? 'cliente la tiene' : 'clientes la tienen'}` : ''}
                 </Typography>
               </Box>
               <Tag tone="ok">Activa</Tag>

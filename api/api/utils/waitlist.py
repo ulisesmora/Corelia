@@ -2,16 +2,16 @@
 Lista de espera de una sesión (regla + fecha).
 
 Flujo:
-- La clase está llena → la clienta se apunta (join). Queda «waiting» por
+- La clase está llena → el cliente se apunta (join). Queda «waiting» por
   orden de llegada.
 - Se libera una plaza (alguien cancela, se le quita, se mueve su reserva…)
-  → offer_next() se la ofrece a la primera: pasa a «offered» con caducidad
+  → offer_next() se la ofrece a la primera persona: pasa a «offered» con caducidad
   (WaitlistSettings.claim_minutes, nunca más allá del inicio de la clase) y
   recibe email + push con un enlace para aceptarla. Mientras la oferta está
   viva, esa plaza cuenta como ocupada (seats_taken): nadie se la quita.
 - La acepta (claim) → se crea su Booking pagando con créditos.
 - No contesta a tiempo → expire_offers() (tarea cada 10 min) la marca
-  «expired» y se ofrece a la siguiente.
+  «expired» y se ofrece a la siguiente persona.
 - El estudio puede «Dar plaza» desde el calendario (promote) o quitarla.
 
 Las fechas se comparan en hora de pared del estudio, igual que las reservas
@@ -101,7 +101,7 @@ def _offer_alive(entry, now=None):
 def seats_taken(schedule, d, exclude_user_id=None):
     """Plazas ocupadas de la sesión: reservas activas + ofertas vivas de la
     lista de espera (una oferta guarda la plaza hasta que caduca). Con
-    exclude_user_id no se cuenta la oferta de esa clienta (es la suya)."""
+    exclude_user_id no se cuenta la oferta de ese cliente (es la suya)."""
     now = timezone.now()
     booked = len(bookings_on(schedule.id, d, select=False))
     held = sum(1 for e in entries_on(schedule.id, d, ('offered',))
@@ -123,7 +123,7 @@ def settings_obj():
 
 
 def position_of(entry):
-    """Puesto en la cola (1 = la primera) entre las que siguen esperando."""
+    """Puesto en la cola (1 = la primera persona) entre quienes siguen esperando."""
     ahead = [e for e in entries_on(entry.schedule_id, wall_date(entry.start_datetime), ('waiting', 'offered'))
              if (e.created_at, e.id) < (entry.created_at, entry.id)]
     return len(ahead) + 1
@@ -171,7 +171,7 @@ def leave(entry, status='left'):
     was_offered = entry.status == 'offered'
     entry.status = status
     entry.save(update_fields=['status', 'updated_at'])
-    if was_offered:  # su plaza guardada queda libre → a la siguiente
+    if was_offered:  # su plaza guardada queda libre → a la siguiente persona
         sid, d = entry.schedule_id, wall_date(entry.start_datetime)
         transaction.on_commit(lambda: offer_next(sid, d))
     return entry
@@ -259,7 +259,7 @@ def _notify_offer(entry, schedule):
 
 
 def expire_offers(now=None):
-    """Ofertas sin contestar a tiempo → «expired» y se ofrece a la siguiente."""
+    """Ofertas sin contestar a tiempo → «expired» y se ofrece a la siguiente persona."""
     from api.models import WaitlistEntry
     now = now or timezone.now()
     slots = set()
@@ -273,7 +273,7 @@ def expire_offers(now=None):
     return len(slots)
 
 
-# ── Reservar desde la lista (la clienta acepta / el estudio da plaza) ─────
+# ── Reservar desde la lista (el cliente acepta / el estudio da plaza) ─────
 
 def book_from_entry(entry, charge='credits', force=False, by_admin=None):
     """Crea la reserva de la entrada (aceptar la oferta o «Dar plaza»)."""
@@ -307,7 +307,7 @@ def claim(token, user):
         return book_from_entry(entry, charge='credits')
     except WaitlistError as e:
         if e.code == 'insufficient_credits':
-            # El texto de calendar_ops es para el estudio («Carla no tiene…»): aquí habla la clienta
+            # El texto de calendar_ops es para el estudio («Carla no tiene…»): aquí habla el cliente
             limite = to_madrid_wall(entry.offer_expires_at)
             raise WaitlistError(
                 'insufficient_credits',
@@ -317,7 +317,7 @@ def claim(token, user):
 
 
 def mark_claimed_by_booking(booking):
-    """La clienta reservó por la web normal una sesión en la que estaba en
+    """El cliente reservó por la web normal una sesión en la que estaba en
     lista de espera: su entrada pasa a «claimed»."""
     from api.models import WaitlistEntry
     if not booking.user_id or not booking.occurrence_id:

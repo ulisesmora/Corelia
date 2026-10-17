@@ -242,12 +242,12 @@ export default function StudioStats() {
         </Kpi>
         <Kpi
           icon={<PersonAddAlt1Icon />}
-          label="Clientas nuevas"
+          label="Clientes nuevos"
           value={String(newTotal)}
           help={
             <>
-              Personas nuevas este mes: las que se han creado una cuenta ({k.new_clients}) más las que reservaron como
-              invitadas sin cuenta ({k.new_guests}). Si esta cifra baja, conviene mover redes sociales o hacer una promoción.
+              Personas nuevas este mes: las que se han creado una cuenta ({k.new_clients}) más las que reservaron sin
+              cuenta, como invitados ({k.new_guests}). Si esta cifra baja, conviene mover redes sociales o hacer una promoción.
             </>
           }
         >
@@ -288,7 +288,7 @@ export default function StudioStats() {
           <Stack direction="row" flexWrap="wrap" gap={1} sx={{ mb: 1 }}>
             {([
               ['sales_eur', 'Ventas'],
-              ['new_clients', 'Clientas nuevas'],
+              ['new_clients', 'Clientes nuevos'],
               ['first_timers', 'Primera clase'],
             ] as const).map(([key, label]) => (
               <Chip
@@ -334,8 +334,8 @@ export default function StudioStats() {
           </Paper>
 
           <Paper elevation={0} sx={cardSx}>
-            <SectionTitle help="Miramos a quienes vinieron por primera vez hace entre 1 y 3 meses y contamos cuántas han vuelto al menos una vez más. Si vuelven pocas, prueba a escribirles después de su primera clase.">
-              ¿Vuelven las que prueban?
+            <SectionTitle help="Miramos a quienes vinieron por primera vez hace entre 1 y 3 meses y contamos cuántas personas han vuelto al menos una vez más. Si vuelven pocas, prueba a escribirles después de su primera clase.">
+              ¿Vuelven quienes prueban?
             </SectionTitle>
             {rt.tried === 0 ? (
               <Typography sx={{ color: 'text.secondary' }}>Aún no hay suficientes datos.</Typography>
@@ -398,7 +398,7 @@ export default function StudioStats() {
                 ))}
               </Stack>
               <Typography sx={{ mt: 1.5, fontSize: '0.9rem', color: 'var(--studio-text-strong)' }}>
-                💡 Para llenarlas: envía un aviso a las clientas, prueba otra hora o anúnciala en redes.
+                💡 Para llenarlas: envía un aviso a tus clientes, prueba otra hora o anúnciala en redes.
               </Typography>
             </>
           )}
@@ -416,11 +416,11 @@ export default function StudioStats() {
 
         {/* A quién escribir */}
         <Paper elevation={0} sx={cardSx}>
-          <SectionTitle help="Clientas que venían a menudo (3 o más veces entre hace 1 y 3 meses) y llevan más de un mes sin venir ni tener reservas. Un mensaje personal suele traerlas de vuelta.">
+          <SectionTitle help="Clientes que venían a menudo (3 o más veces entre hace 1 y 3 meses) y llevan más de un mes sin venir ni tener reservas. Un mensaje personal suele hacer que vuelvan.">
             Hace tiempo que no vienen
           </SectionTitle>
           {data.at_risk.length === 0 ? (
-            <Typography sx={{ color: 'text.secondary' }}>¡Ninguna! Todas las habituales siguen viniendo.</Typography>
+            <Typography sx={{ color: 'text.secondary' }}>¡Nadie! Todos tus clientes habituales siguen viniendo.</Typography>
           ) : (
             <Stack spacing={1}>
               {data.at_risk.slice(0, 6).map((c) => {
@@ -491,7 +491,7 @@ export default function StudioStats() {
 
           {data.sources.length > 0 && (
             <Box sx={{ mt: 3 }}>
-              <SectionTitle help="Lo que respondieron las clientas nuevas de los últimos 3 meses al registrarse.">
+              <SectionTitle help="Lo que respondieron los clientes nuevos de los últimos 3 meses al registrarse.">
                 ¿Cómo nos conocieron?
               </SectionTitle>
               <Stack direction="row" flexWrap="wrap" gap={0.75}>

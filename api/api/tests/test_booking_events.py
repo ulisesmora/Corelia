@@ -1,5 +1,5 @@
 """Reserva con créditos (validación de la sesión) y eventos sueltos («E_…»)
-en todas las rutas: créditos, tarjeta (invitada y con cuenta), pagar en el
+en todas las rutas: créditos, tarjeta (invitado y con cuenta), pagar en el
 estudio, cancelar/devolver y el horario público."""
 from datetime import timedelta, timezone as dt_tz
 from decimal import Decimal

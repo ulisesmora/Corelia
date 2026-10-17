@@ -52,7 +52,7 @@ export default function LocaleSection({ value, onChange }: Props) {
     <Stack spacing={2}>
       <Typography variant="h6" sx={{ pt: 1 }}>País y moneda</Typography>
       <Typography color="text.secondary" sx={{ mt: '-8px !important' }}>
-        La moneda es en la que cobras y la que ven tus clientas en la web. El país decide cómo se escriben los
+        La moneda es en la que cobras y la que ven tus clientes en la web. El país decide cómo se escriben los
         precios (con coma o con punto, el símbolo delante o detrás).
       </Typography>
       <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>

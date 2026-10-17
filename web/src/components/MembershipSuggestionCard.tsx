@@ -107,7 +107,7 @@ export function slotLabel(label: string, lang: string): string {
 }
 
 /**
- * Tarjeta personal "te guardamos tu plaza": solo para clientas REGULARES sin
+ * Tarjeta personal "te guardamos tu plaza": solo para clientes REGULARES sin
  * membresía. Habla de SU clase fija y solo menciona precio si de verdad le
  * sale más barato (si no, el valor es la comodidad).
  *
@@ -130,7 +130,7 @@ export default function MembershipSuggestionCard({
   useEffect(() => { if (clientFixedClasses()) fetchMembershipSuggestion().then(setS); }, []);
 
   // Habla de clases fijas y de venir cada semana: solo si el estudio deja que
-  // las clientas elijan sus clases fijas en la web (si no, es cosa del panel)
+  // los clientes elijan sus clases fijas en la web (si no, es cosa del panel)
   const visible = clientFixedClasses() && !!s && s.show && !!s.plan && !hidden;
   const channel = variant === 'checkout' ? 'checkout' : 'app';
   useEffect(() => { if (visible && s) logEvent('shown', channel, s); }, [visible]); // eslint-disable-line

@@ -319,7 +319,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
     fetchPlans();
   }, []);
 
-  /** Cuántas clientas tienen ahora mismo esta membresía activa (null si no se sabe). */
+  /** Cuántos clientes tienen ahora mismo esta membresía activa (null si no se sabe). */
   const countActiveMembers = async (planId: number): Promise<number | null> => {
     try {
       const token = JSON.parse(localStorage.getItem('user') as string).access;
@@ -380,10 +380,10 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
               <>
                 <p style={{ marginTop: 0 }}>Dejará de aparecer en la web y nadie podrá comprarlo.</p>
                 <p>
-                  Las clientas que ya lo compraron <b>no pierden nada</b>
+                  Quienes ya lo compraron <b>no pierden nada</b>
                   {plan.type === 'sub' && (
                     <>
-                      : {members !== null ? <b>las {members} que la tienen ahora</b> : 'las que ya la tienen'} seguirán
+                      : {members !== null ? <b>las {members} personas que la tienen ahora</b> : 'quienes ya la tienen'} seguirán
                       pagando y recibiendo sus créditos como siempre (ocultar no cancela sus membresías)
                     </>
                   )}
@@ -396,7 +396,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
           }
         : {
             title: `¿Mostrar «${plan.name}» en la web?`,
-            message: `Las clientas podrán comprar este ${kind} en la web por ${fmtEur(plan.price_eur)}${
+            message: `Tus clientes podrán comprar este ${kind} en la web por ${fmtEur(plan.price_eur)}${
               plan.type === 'sub' ? ` ${periodText(plan.interval, plan.interval_count)}` : ''
             }. Puede tardar unos minutos en verse.`,
             confirmText: 'Sí, mostrar en la web',
@@ -428,11 +428,11 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
           {isSub ? (
             <p>
               <b>Borrar no cancela las membresías que ya existen</b>
-              {members !== null && members > 0 ? <> (ahora mismo la tienen <b>{members}</b> clientas)</> : ''}: se les
+              {members !== null && members > 0 ? <> (ahora mismo la tienen <b>{members}</b> clientes)</> : ''}: se les
               seguirá cobrando y recibirán sus créditos igual.
             </p>
           ) : (
-            <p>Las clientas que ya lo compraron conservan sus créditos.</p>
+            <p>Quienes ya lo compraron conservan sus créditos.</p>
           )}
           <p>Después no podrás crear otro con el mismo nombre.</p>
           <p style={{ marginBottom: 0 }}>
@@ -554,7 +554,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
       return;
     }
 
-    // Cambios con consecuencias para clientas que ya compraron: confirmar antes
+    // Cambios con consecuencias para clientes que ya compraron: confirmar antes
     if (originalPlan) {
       const p = currentPlan;
       const priceChanged = Number(p.price_eur) !== Number(originalPlan.price_eur);
@@ -572,14 +572,14 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
           lines.push(
             isSub ? (
               <>
-                Las clientas <b>nuevas</b> verán en la web {fmtEur(p.price_eur as number)} {periodText(p.interval, p.interval_count)} (antes{' '}
-                {fmtEur(originalPlan.price_eur)}). Las que <b>ya tienen</b> esta membresía
+                Los clientes <b>nuevos</b> verán en la web {fmtEur(p.price_eur as number)} {periodText(p.interval, p.interval_count)} (antes{' '}
+                {fmtEur(originalPlan.price_eur)}). Quienes <b>ya tienen</b> esta membresía
                 {members !== null ? ` (${members})` : ''} siguen pagando lo mismo que pagaban.
               </>
             ) : (
               <>
                 Desde ahora la web venderá este bono a <b>{fmtEur(p.price_eur as number)}</b> (antes {fmtEur(originalPlan.price_eur)}).
-                Quien ya lo compró no se ve afectada.
+                A quien ya lo compró no le afecta.
               </>
             ),
           );
@@ -588,7 +588,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
           lines.push(
             isSub ? (
               <>
-                Las clientas que ya tienen esta membresía{members !== null ? ` (${members})` : ''} recibirán{' '}
+                Quienes ya tienen esta membresía{members !== null ? ` (${members})` : ''} recibirán{' '}
                 <b>{p.credits} créditos</b> (antes {originalPlan.credits}) en su <b>próxima renovación</b>.
               </>
             ) : (
@@ -600,7 +600,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
           lines.push(
             <>
               Se cobrará <b>{periodText(p.interval, p.interval_count)}</b> (antes {periodText(originalPlan.interval, originalPlan.interval_count)}) solo
-              a las clientas nuevas.
+              a los clientes nuevos.
             </>,
           );
         }
@@ -687,7 +687,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
 
   const summary = cp && !hasErrors ? (
     <>
-      {cp.type === 'sub' ? 'Membresía' : 'Bono'} <b>«{cp.name?.trim()}»</b>: {cp.type === 'sub' ? 'la clienta paga' : 'se paga una vez'}{' '}
+      {cp.type === 'sub' ? 'Membresía' : 'Bono'} <b>«{cp.name?.trim()}»</b>: {cp.type === 'sub' ? 'el cliente paga' : 'se paga una vez'}{' '}
       <b>{fmtEur(cpPrice)}</b>
       {cp.type === 'sub' && <> {periodText(cp.interval, cp.interval_count)}</>}
       {cpPerMonth !== null && <> (= {fmtEur(round2(cpPerMonth))} al mes)</>} y recibe <b>{cpCredits} {cpCredits === 1 ? 'crédito' : 'créditos'}</b>
@@ -756,7 +756,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
       <PageIntro
         pageKey="plans"
         title="Bonos y precios"
-        subtitle="Lo que tus clientas compran en la web."
+        subtitle="Lo que tus clientes compran en la web."
         actions={
           <Button variant="contained" size="large" startIcon={<AddIcon />} onClick={() => handleOpenCreate('pack')}>
             Crear bono o membresía
@@ -806,14 +806,14 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
         <>
           {renderSection(
             'Bonos',
-            <>Un <b>bono</b> se paga <b>una sola vez</b> y da unos créditos para gastar en clases. No se renueva solo: cuando se acaban, la clienta compra otro.</>,
+            <>Un <b>bono</b> se paga <b>una sola vez</b> y da unos créditos para gastar en clases. No se renueva solo: cuando se acaban, el cliente compra otro.</>,
             packs,
             'pack',
           )}
           {renderSection(
             'Membresías',
             <>
-              Una <b>membresía</b> se cobra <b>sola</b> con la tarjeta de la clienta cada cierto tiempo (cada mes, o cada 2-3
+              Una <b>membresía</b> se cobra <b>sola</b> con la tarjeta del cliente cada cierto tiempo (cada mes, o cada 2-3
               meses) y cada vez le da sus créditos. «Cada 2 meses» quiere decir que se le cobra una vez cada dos meses el
               precio completo.
             </>,
@@ -840,7 +840,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
                     onClick={() => update({ type: 'pack', interval: null, interval_count: null, auto_renew: false })}
                     icon={<CreditScoreIcon />}
                     title="Bono (pago único)"
-                    text="La clienta paga una vez y recibe sus créditos."
+                    text="El cliente paga una vez y recibe sus créditos."
                   />
                   <ChoiceCard
                     selected={cp.type === 'sub'}
@@ -869,7 +869,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
                     value={cp.name || ''}
                     onChange={(e) => update({ name: e.target.value })}
                     error={Boolean(errFor('name'))}
-                    helperText={errFor('name') || 'Es lo que ven las clientas en la web, en grande.'}
+                    helperText={errFor('name') || 'Es lo que ven tus clientes en la web, en grande.'}
                     inputProps={{ maxLength: 140 }}
                   />
                   <TextField
@@ -928,7 +928,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
                       value={cp.price_eur ?? ''}
                       onChange={(e) => update({ price_eur: e.target.value === '' ? '' : Number(e.target.value) })}
                       error={Boolean(errFor('price_eur'))}
-                      helperText={errFor('price_eur') || (cp.type === 'sub' ? 'Lo que se cobra cada vez. Ej.: 76' : 'Lo que paga la clienta. Ej.: 50')}
+                      helperText={errFor('price_eur') || (cp.type === 'sub' ? 'Lo que se cobra cada vez. Ej.: 76' : 'Lo que paga el cliente. Ej.: 50')}
                       inputProps={{ min: 0, step: 0.5, inputMode: 'decimal' }}
                       slotProps={{ input: { endAdornment: <InputAdornment position="end">{currencySymbol()}</InputAdornment> } }}
                     />
@@ -940,7 +940,7 @@ const PlanManagement = forwardRef<CatalogHandle, EmbedProps>(function PlanManage
                         <Typography sx={{ fontWeight: 600, color: 'var(--studio-dark)' }}>¿Cada cuánto se cobra?</Typography>
                         <HelpTip title="Cada cuánto se cobra">
                           «Cada 2 meses» quiere decir que se cobra el precio completo una vez cada dos meses, y en ese
-                          momento la clienta recibe sus créditos. Por ejemplo, Pro: {fmtEur(180)} cada 2 meses = {fmtEur(90)} al mes.
+                          momento el cliente recibe sus créditos. Por ejemplo, Pro: {fmtEur(180)} cada 2 meses = {fmtEur(90)} al mes.
                         </HelpTip>
                       </Stack>
                       <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mb: 1.5 }}>

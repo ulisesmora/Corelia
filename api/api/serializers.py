@@ -75,8 +75,8 @@ class RoleSerializer(TimeStampedSerializerMixin):
 
 
 # Campos que NUNCA deben salir en una respuesta: antes /v1/users/ devolvía el
-# hash de la contraseña y los tokens de recuperación/verificación de todas las
-# clientas (con el token de recuperación se podía cambiar su contraseña).
+# hash de la contraseña y los tokens de recuperación/verificación de todos los
+# clientes (con el token de recuperación se podía cambiar su contraseña).
 USER_SECRET_FIELDS = (
     'password', 'reset_token', 'reset_token_expires',
     'verification_token', 'verification_token_expires',

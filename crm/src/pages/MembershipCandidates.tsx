@@ -62,8 +62,8 @@ function waLink(phone: string | null, text: string): string | null {
 }
 
 /**
- * Clientas que vienen cada semana y no tienen membresía. Pensado para que
- * el estudio les escriba personalmente: con pocas clientas, el trato directo es
+ * Clientes que vienen cada semana y no tienen membresía. Pensado para que
+ * el estudio les escriba personalmente: con pocos clientes, el trato directo es
  * lo que más convierte. Cada contacto queda registrado para no repetir.
  */
 export default function MembershipCandidates() {
@@ -206,8 +206,8 @@ export default function MembershipCandidates() {
       {rows && rows.length > 0 && (
         <Alert severity={pending > 0 ? 'info' : 'success'} sx={{ mb: 2, fontSize: '0.97rem' }}>
           {pending > 0
-            ? `${rows.length} ${rows.length === 1 ? 'clienta' : 'clientas'} en la lista · ${pending} ${pending === 1 ? 'aún sin escribirle' : 'aún sin escribirles'}.`
-            : `Ya les has escrito a todas (${rows.length}). ¡Bien hecho!`}
+            ? `${rows.length} ${rows.length === 1 ? 'cliente' : 'clientes'} en la lista · ${pending} ${pending === 1 ? 'aún sin escribirle' : 'aún sin escribirles'}.`
+            : `Ya has escrito a todo el mundo de la lista (${rows.length}). ¡Bien hecho!`}
         </Alert>
       )}
 
@@ -219,7 +219,7 @@ export default function MembershipCandidates() {
       {!rows && !error && (
         <Stack alignItems="center" spacing={1.5} sx={{ py: 6 }}>
           <CircularProgress />
-          <Typography color="text.secondary">Buscando clientas que vienen cada semana…</Typography>
+          <Typography color="text.secondary">Buscando clientes que vienen cada semana…</Typography>
         </Stack>
       )}
 
@@ -228,7 +228,7 @@ export default function MembershipCandidates() {
           <EmptyState
             icon={<WorkspacePremiumIcon />}
             title="Ahora mismo no hay candidatas 🎉"
-            text="Todas las clientas que vienen cada semana ya tienen membresía. Vuelve a mirar dentro de unas semanas."
+            text="Todos los clientes que vienen cada semana ya tienen membresía. Vuelve a mirar dentro de unas semanas."
           />
         </Paper>
       )}
@@ -258,7 +258,7 @@ export default function MembershipCandidates() {
           <Table>
             <TableHead>
               <TableRow>
-                <TableCell>Clienta</TableCell>
+                <TableCell>Cliente</TableCell>
                 <TableCell>Cuánto viene</TableCell>
                 <TableCell>
                   Le recomendamos{' '}

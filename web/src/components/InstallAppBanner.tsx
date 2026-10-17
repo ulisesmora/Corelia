@@ -193,7 +193,7 @@ const TXT = {
 
 function regularHeadline(lang: Lang): { title: string; sub: string } | null {
   try {
-    // «Tu clase de los martes» solo si el estudio habla de clases fijas con las clientas
+    // «Tu clase de los martes» solo si el estudio habla de clases fijas con los clientes
     const slot = clientFixedClasses() ? localStorage.getItem('domFixedSlot') : null;
     if (!slot) return null;
     const L = TXT[lang];

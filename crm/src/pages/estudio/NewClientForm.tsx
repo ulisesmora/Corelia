@@ -1,4 +1,4 @@
-// «¿Es nueva? Regístrala»: ficha de clienta en un momento, sin que ella tenga
+// «¿Primera vez? Dale de alta»: ficha de cliente en un momento, sin que tenga
 // que crear una cuenta en la web (sin contraseña). Nombre obligatorio; móvil y
 // email opcionales. Avisa si ya hay alguien con un nombre parecido.
 import { useEffect, useRef, useState } from 'react';
@@ -8,9 +8,9 @@ import { clientName, studioApi, type ClientLite } from './api';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 
-export default function NewClientForm({ onCreated, onPickExisting, onCancel, submitLabel = 'Registrarla y seguir', initialName = '' }: {
+export default function NewClientForm({ onCreated, onPickExisting, onCancel, submitLabel = 'Dar de alta y seguir', initialName = '' }: {
   onCreated: (u: ClientLite) => void;
-  /** Si es una que ya existe («Es ella») */
+  /** Si es una ficha que ya existe («Es esta ficha») */
   onPickExisting: (u: ClientLite) => void;
   onCancel?: () => void;
   submitLabel?: string;
@@ -64,21 +64,21 @@ export default function NewClientForm({ onCreated, onPickExisting, onCancel, sub
       <Stack spacing={2}>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
           <TextField label="Nombre" value={first} onChange={(e) => setFirst(e.target.value)} onBlur={() => setTouched(true)}
-            required autoFocus fullWidth error={Boolean(nameError)} helperText={nameError || 'Ej.: Marta'}
+            required autoFocus fullWidth error={Boolean(nameError)} helperText={nameError || 'Ej.: Álex'}
             slotProps={{ htmlInput: { maxLength: 150, autoComplete: 'off' } }} />
           <TextField label="Apellidos (opcional)" value={last} onChange={(e) => setLast(e.target.value)} fullWidth
             slotProps={{ htmlInput: { maxLength: 150, autoComplete: 'off' } }} />
         </Stack>
         {similar.length > 0 && (
           <Alert severity="warning" sx={{ fontSize: '0.92rem' }}>
-            Ya hay {similar.length === 1 ? 'una clienta' : 'clientas'} con un nombre parecido. Si es ella, no la registres dos veces.
+            Ya hay {similar.length === 1 ? 'una ficha' : 'fichas'} con un nombre parecido. Si es la misma persona, no la registres dos veces.
             <Stack spacing={1} sx={{ mt: 1 }}>
               {similar.map((u) => (
                 <Stack key={u.id} direction="row" spacing={1} alignItems="center" justifyContent="space-between">
                   <Typography sx={{ fontSize: '0.92rem', minWidth: 0 }}>
                     <b>{clientName(u)}</b>{u.phone ? ` · ${u.phone}` : ''}{u.email && !isPlaceholderEmail(u.email) ? ` · ${u.email}` : ''}
                   </Typography>
-                  <Button size="small" variant="outlined" onClick={() => onPickExisting(u)} sx={{ minHeight: 44, flex: 'none' }}>Es ella</Button>
+                  <Button size="small" variant="outlined" onClick={() => onPickExisting(u)} sx={{ minHeight: 44, flex: 'none' }}>Es esta ficha</Button>
                 </Stack>
               ))}
             </Stack>
@@ -86,7 +86,7 @@ export default function NewClientForm({ onCreated, onPickExisting, onCancel, sub
         )}
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
           <TextField label="Móvil (opcional)" type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} fullWidth
-            error={Boolean(phoneError)} helperText={phoneError || 'Para encontrarla y escribirle.'}
+            error={Boolean(phoneError)} helperText={phoneError || 'Para encontrar su ficha y escribirle.'}
             slotProps={{ htmlInput: { inputMode: 'tel', maxLength: 40 } }} />
           <TextField label="Email (opcional)" type="email" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth
             error={Boolean(emailError)} helperText={emailError || 'Si lo pones, le llega un código para confirmarlo.'}

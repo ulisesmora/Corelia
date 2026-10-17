@@ -1,4 +1,4 @@
-"""Clientas del estudio: la tarea diaria a mano (lo mismo que hace Celery cada
+"""Clientes del estudio: la tarea diaria a mano (lo mismo que hace Celery cada
 mañana, api.tasks.studio_plans_daily) y, solo en desarrollo, «pasar días»
 para probar los cortes sin esperar un mes.
 
@@ -19,7 +19,7 @@ from api.utils import studio_plans as sp
 
 
 class Command(BaseCommand):
-    help = 'Clientas del estudio: marca los planes que vencen (y, en pruebas, simula que pasan días).'
+    help = 'Clientes del estudio: marca los planes que vencen (y, en pruebas, simula que pasan días).'
 
     def add_arguments(self, parser):
         parser.add_argument('--date', help='Día del estudio a usar (AAAA-MM-DD). Por defecto, hoy.')

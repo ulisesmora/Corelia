@@ -28,7 +28,7 @@ export function StripeIntro({ country }: { country: string }) {
         },
         {
           icon: 'payments', title: '¿Para qué?',
-          text: 'Tus clientas pagan al reservar o al comprar un bono. El dinero llega a tu banco en unos 2–7 días.',
+          text: 'Tus clientes pagan al reservar o al comprar un bono. El dinero llega a tu banco en unos 2–7 días.',
         },
         {
           icon: 'ticket', title: '¿Cuánto cuesta?',
@@ -152,7 +152,7 @@ export function StripeFaq({ country }: { country: string }) {
       a: 'No hace falta. «Conectar pagos» te crea una cuenta de Stripe nueva, a tu nombre y enlazada a tu panel: así los cobros, los recibos y las devoluciones van solos. Si ya tenías otra cuenta, sigue siendo tuya y no se toca.',
     },
     {
-      q: '¿Y si una clienta pide una devolución?',
+      q: '¿Y si un cliente pide una devolución?',
       a: 'La haces desde el panel: al cancelar la clase eliges «Devolver el dinero». También puedes hacerlo desde tu Stripe. Le llega en 5–10 días. La comisión de Stripe de ese pago no se recupera.',
     },
     {

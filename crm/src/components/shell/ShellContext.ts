@@ -4,7 +4,7 @@ import type { HubLink } from './navigation';
 export interface ShellContextValue {
   /** Abre el buscador ⌘K (con un texto ya escrito, opcional) */
   openCommand: (query?: string) => void;
-  /** Alta rápida de una clienta ('new') o apuntar a una que ya existe a una clase ('existing') */
+  /** Alta rápida de un cliente ('new') o apuntar a uno que ya existe a una clase ('existing') */
   openNewClient: (mode?: 'new' | 'existing') => void;
   /** Enlaces extra de Ajustes (punto de extensión: ./extensions.tsx) */
   extraSettings: HubLink[];

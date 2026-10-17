@@ -34,7 +34,7 @@ export default function GoogleSection({ value, onSaved }: Props) {
   return (
     <Stack spacing={3}>
       <Typography color="text.secondary">
-        Con esto tus clientas pueden registrarse y entrar en la web con su cuenta de Google en un toque, sin crear
+        Con esto tus clientes pueden registrarse y entrar en la web con su cuenta de Google en un toque, sin crear
         contraseña. Es opcional: sin ello entran con email y contraseña.
       </Typography>
       {value.google_client_id && (

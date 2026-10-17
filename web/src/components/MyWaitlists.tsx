@@ -1,6 +1,6 @@
 "use client";
-// «Mis listas de espera» en Mi cuenta: las clases completas en las que está
-// apuntada, su puesto y un botón para borrarse. Si ya le han ofrecido plaza,
+// «Mis listas de espera» en Mi cuenta: las clases completas en cuya lista de espera
+// se ha apuntado, su puesto y un botón para borrarse. Si ya le han ofrecido plaza,
 // «Aceptar plaza» lleva a /lista-espera?token=… No se pinta si no hay ninguna.
 // Datos: GET /api/v1/waitlist/ y POST /api/v1/waitlist/<id>/leave/.
 import { useCallback, useEffect, useState } from 'react';

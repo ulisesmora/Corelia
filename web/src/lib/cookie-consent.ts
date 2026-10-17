@@ -9,7 +9,7 @@
 //  - La elección se guarda en localStorage con versión y fecha (lib/tracking.ts).
 //  - Cualquier elemento con `data-cookie-settings` (el enlace «Cookies» del pie
 //    de página, el botón de la política de cookies) vuelve a abrirlo.
-//  - Idioma: el de la página (<html lang>), y cambia si la usuaria cambia de idioma.
+//  - Idioma: el de la página (<html lang>), y cambia si el usuario cambia de idioma.
 //  - Accesible: role="dialog", título y descripción enlazados, foco al abrirlo
 //    desde un enlace (y vuelta al enlace al cerrarlo), Escape para cerrar.
 //  - Aspecto: tokens y clases del estilo del estudio (styles/presets.css:
@@ -266,7 +266,7 @@ function show(opts: { prefs?: boolean; trigger?: HTMLElement | null } = {}) {
   setPrefs(!!opts.prefs);
   ui.root.hidden = false;
   if (opts.trigger) {
-    // Abierto por la usuaria: el foco va al panel y vuelve al enlace al cerrar
+    // Abierto por el usuario: el foco va al panel y vuelve al enlace al cerrar
     returnFocus = opts.trigger;
     (ui.analytics || ui.ads || ui.videos || ui.reject).focus();
   }
@@ -316,6 +316,6 @@ export function initCookieConsent() {
   if (stored) applyConsent(stored);
   else show();
   document.addEventListener('click', onDocumentClick, true);
-  // La usuaria cambia de idioma (lang.store actualiza <html lang>): textos al día
+  // El usuario cambia de idioma (lang.store actualiza <html lang>): textos al día
   new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 }

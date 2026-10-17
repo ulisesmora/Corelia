@@ -146,7 +146,7 @@ export default function HeroSection({ value, onChange, onBusyChange }: Props) {
           )}
           <Alert severity="info">
             <b>Sobre las cookies:</b> YouTube pone sus propias cookies, así que la ley obliga a pedir permiso antes de
-            cargar el vídeo. Por eso, al entrar, tus clientas ven una imagen fija del vídeo y el aviso de cookies tiene
+            cargar el vídeo. Por eso, al entrar, tus clientes ven una imagen fija del vídeo y el aviso de cookies tiene
             una opción «Vídeos». Si la aceptan, el vídeo empieza solo (en silencio y en bucle); si no, pueden pulsar
             «Ver vídeo». Quien tiene activado «reducir movimiento» o el ahorro de datos solo ve la imagen.
           </Alert>

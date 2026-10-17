@@ -1,4 +1,4 @@
-// Plazo para que una clienta cancele su reserva (y recupere los créditos).
+// Plazo para que un cliente cancele su reserva (y recupere los créditos).
 // Sale de la config del estudio (cancel_min_hours = BOOKING_CANCEL_MIN_HOURS de
 // la API, que es quien lo exige). 8 h si no llega.
 import { getSiteClient } from '../lib/site';

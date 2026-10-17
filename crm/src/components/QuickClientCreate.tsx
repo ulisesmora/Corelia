@@ -32,9 +32,9 @@ const WEEKS_AHEAD = 8;
 interface Props {
   open: boolean;
   onClose: () => void;
-  /** Recibe el nombre de la clienta para poder buscarla en la lista */
+  /** Recibe el nombre del cliente para poder buscarlo en la lista */
   onCreated?: (name?: string) => void;
-  /** 'existing' = empezar buscando una clienta que ya existe (para apuntarla a una clase) */
+  /** 'existing' = empezar buscando un cliente que ya existe (para apuntarlo a una clase) */
   initialMode?: 'new' | 'existing';
 }
 
@@ -53,7 +53,7 @@ const longDay = (s: string) =>
 const scheduleLabel = (s: Schedule) =>
   `${s.class_type.title} · ${WEEKDAYS[s.weekday]} ${hhmm(s.start_time)}–${hhmm(s.end_time)} · ${s.room.name}`;
 
-/** El alta de clientas devuelve los errores dentro de "user_errors" */
+/** El alta de clientes devuelve los errores dentro de "user_errors" */
 async function signupError(res: Response): Promise<string> {
   try {
     const body = await res.clone().json();
@@ -234,7 +234,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
     }
     if (mode === 'existing' && !existingUser) { setStep(0); return; }
     if (schedule && !bookingDate) {
-      setError('Elige qué día viene a la clase, o pulsa «No la apunto a ninguna clase».');
+      setError('Elige qué día viene a la clase, o pulsa «Sin clase por ahora».');
       return;
     }
 
@@ -271,7 +271,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
       }
     }
 
-    // 2) Apuntarla a la clase
+    // 2) Apuntar a la clase
     if (willBook && schedule && userId) {
       try {
         const [h, m] = schedule.start_time.split(':').map(Number);
@@ -298,7 +298,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
         const why = await friendlyError(err);
         setError(
           createdNow
-            ? `La ficha de ${displayName} SÍ se ha creado, pero no se ha podido apuntar a la clase. ${why} Elige otro día o pulsa «No la apunto a ninguna clase».`
+            ? `La ficha de ${displayName} SÍ se ha creado, pero no se ha podido apuntar a la clase. ${why} Elige otro día o pulsa «Sin clase por ahora».`
             : `No se ha podido apuntar a la clase. ${why}`,
         );
         if (createdNow) onCreated?.(displayName);
@@ -308,12 +308,12 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
     }
 
     const when = willBook && schedule
-      ? ` y apuntada a ${schedule.class_type.title} el ${longDay(bookingDate)} a las ${hhmm(schedule.start_time)}`
+      ? ` con reserva en ${schedule.class_type.title} el ${longDay(bookingDate)} a las ${hhmm(schedule.start_time)}`
       : '';
     notify(
       createdNow
         ? `Ficha de ${displayName} creada${when} ✓`
-        : `${displayName} apuntada a ${schedule?.class_type.title} el ${longDay(bookingDate)} ✓`,
+        : `${displayName}: reserva hecha en ${schedule?.class_type.title} el ${longDay(bookingDate)} ✓`,
     );
     setLoading(false);
     onCreated?.(displayName);
@@ -323,13 +323,13 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
   const finalLabel = loading
     ? 'Guardando…'
     : mode === 'new'
-      ? (willBook ? 'Crear la ficha y apuntarla' : 'Crear la ficha')
-      : (willBook ? 'Apuntarla a la clase' : 'Cerrar');
+      ? (willBook ? 'Crear la ficha y reservar' : 'Crear la ficha')
+      : (willBook ? 'Reservar la clase' : 'Cerrar');
 
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth fullScreen={fullScreen}>
       <DialogTitle sx={{ fontFamily: 'var(--studio-font-heading)', fontSize: '1.4rem', pb: 0.5 }}>
-        {step === 0 ? (mode === 'existing' ? 'Apuntar a una clienta a una clase' : 'Dar de alta a una clienta') : `Apuntar a ${displayName || 'la clienta'} a una clase`}
+        {step === 0 ? (mode === 'existing' ? 'Apuntar a alguien a una clase' : 'Dar de alta a un cliente') : `Apuntar a ${displayName || 'esta persona'} a una clase`}
         <Typography sx={{ fontSize: '0.92rem', color: 'text.secondary', mt: 0.5 }}>
           Paso {step + 1} de 2 · {step === 0 ? '¿Quién es?' : '¿A qué clase viene? (opcional)'}
         </Typography>
@@ -345,7 +345,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
                     selected={mode === 'new'}
                     onClick={() => { setMode('new'); setExistingUser(null); }}
                     icon={<PersonAddIcon />}
-                    title="Es nueva"
+                    title="Primera vez"
                     text="Creo su ficha ahora."
                   />
                   <ChoiceCard
@@ -353,7 +353,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
                     onClick={() => setMode('existing')}
                     icon={<PersonSearchIcon />}
                     title="Ya tiene ficha"
-                    text="La busco para apuntarla a una clase."
+                    text="Busco su ficha para reservarle una clase."
                   />
                 </Stack>
               </FormStep>
@@ -367,7 +367,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
                       No hace falta email ni contraseña.{' '}
                       <HelpTip title="¿Y el email?">
                         Al crear la ficha desde aquí el programa le pone un email interno que no es real
-                        (termina en @sin-email.invalid). No se le envía ningún correo y ella no puede entrar
+                        (termina en @sin-email.invalid). No se le envía ningún correo y no puede entrar
                         en la web con esta ficha.
                       </HelpTip>
                     </>
@@ -389,7 +389,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
                     {similar.length > 0 && (
                       <Alert severity="warning" sx={{ fontSize: '0.92rem' }}>
                         Ojo: ya hay {similar.length === 1 ? 'una ficha' : 'fichas'} con un nombre parecido. Si es
-                        ella, pulsa «Es ella» para no crearla dos veces.
+                        la misma persona, pulsa «Es esta ficha» para no crearla dos veces.
                         <Stack spacing={1} sx={{ mt: 1 }}>
                           {similar.map((u) => (
                             <Stack key={u.id} direction="row" spacing={1} alignItems="center" justifyContent="space-between">
@@ -404,7 +404,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
                                 sx={{ minHeight: 40, flexShrink: 0 }}
                                 onClick={() => { setUsers([u]); setExistingUser(u); setSearchQuery(personName(u) || u.email); setMode('existing'); }}
                               >
-                                Es ella
+                                Es esta ficha
                               </Button>
                             </Stack>
                           ))}
@@ -417,7 +417,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
                       onChange={(e) => setPhone(e.target.value)}
                       onBlur={() => setTouched((t) => ({ ...t, phone: true }))}
                       error={touched.phone && Boolean(phoneError)}
-                      helperText={(touched.phone && phoneError) || 'Ej.: 612 345 678. Sirve para encontrarla y llamarla.'}
+                      helperText={(touched.phone && phoneError) || 'Ej.: 612 345 678. Sirve para buscar su ficha y para llamar.'}
                       fullWidth
                       type="tel"
                       slotProps={{ htmlInput: { inputMode: 'tel', maxLength: 40 } }}
@@ -449,11 +449,11 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
                     }}
                     filterOptions={(x) => x}
                     inputValue={searchQuery}
-                    noOptionsText={searchQuery.trim().length < 2 ? 'Escribe al menos 2 letras' : 'No hay nadie con ese dato. ¿Es nueva? Elige «Es nueva» arriba.'}
+                    noOptionsText={searchQuery.trim().length < 2 ? 'Escribe al menos 2 letras' : 'No hay nadie con ese dato. ¿Primera vez? Elige «Primera vez» arriba.'}
                     loadingText="Buscando…"
                     isOptionEqualToValue={(o, v) => o.id === v.id}
                     renderInput={(params) => (
-                      <TextField {...params} label="Buscar clienta" placeholder="Ej.: Marta o 612 345 678" autoFocus />
+                      <TextField {...params} label="Buscar cliente" placeholder="Ej.: Javier o 612 345 678" autoFocus />
                     )}
                     fullWidth
                   />
@@ -477,7 +477,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
               <FormStep
                 n={3}
                 title="¿A qué clase viene?"
-                hint="Es opcional. Si todavía no lo sabe, pulsa «No la apunto a ninguna clase»."
+                hint="Es opcional. Si todavía no lo sabe, pulsa «Sin clase por ahora»."
               >
                 <Autocomplete
                   options={schedules}
@@ -505,7 +505,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
                   onClick={() => { setSelectedSchedule(''); setBookingDate(''); setError(''); }}
                   sx={{ mt: 1.5, minHeight: 44 }}
                 >
-                  No la apunto a ninguna clase
+                  Sin clase por ahora
                 </Button>
               </FormStep>
 
@@ -535,7 +535,7 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
               )}
 
               <Alert severity="info" sx={{ fontSize: '0.92rem', mb: 2 }}>
-                Apuntarla desde aquí <b>no le gasta créditos</b> y a la clienta no le llega ningún aviso. Si quieres
+                Apuntar desde aquí <b>no le gasta créditos</b> y al cliente no le llega ningún aviso. Si quieres
                 cobrarle la clase, quítale los créditos después en «Créditos».
               </Alert>
 
@@ -544,10 +544,10 @@ export default function QuickClientCreate({ open, onClose, onCreated, initialMod
                 <Typography sx={{ fontSize: '0.95rem', color: 'var(--studio-dark)' }}>
                   {mode === 'new'
                     ? <>Se creará la ficha de <b>{displayName}</b>{phone.trim() ? ` (tel. ${phone.trim()})` : ''}</>
-                    : <>Clienta: <b>{displayName}</b></>}
+                    : <>Cliente: <b>{displayName}</b></>}
                   {willBook && schedule
                     ? <> y se apuntará a <b>{schedule.class_type.title}</b> el <b>{longDay(bookingDate)}</b> a las <b>{hhmm(schedule.start_time)}</b>.</>
-                    : mode === 'new' ? ', sin apuntarla a ninguna clase.' : '. No se apuntará a ninguna clase.'}
+                    : mode === 'new' ? ', sin apuntar a ninguna clase.' : '. No se apuntará a ninguna clase.'}
                 </Typography>
               </Paper>
             </>

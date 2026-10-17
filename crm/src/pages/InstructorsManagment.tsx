@@ -466,7 +466,7 @@ const InstructorManagement = forwardRef<CatalogHandle, EmbedProps>(function Inst
                     onChange={(e) => update({ name: e.target.value })}
                     inputProps={{ maxLength: 120 }}
                     error={nameError}
-                    helperText={nameError ? 'Escribe su nombre.' : 'Ej.: «Laura Martín». Sale debajo de su foto en la web.'}
+                    helperText={nameError ? 'Escribe su nombre.' : 'Ej.: «Álex Martín». Sale debajo de su foto en la web.'}
                   />
                   <TextField
                     label="Años de experiencia"
@@ -501,7 +501,7 @@ const InstructorManagement = forwardRef<CatalogHandle, EmbedProps>(function Inst
                     value={ci.short_bio}
                     onChange={(e) => update({ short_bio: e.target.value })}
                     inputProps={{ maxLength: 240 }}
-                    helperText={`Sale debajo de su nombre en la tarjeta. Ej.: «Instructora de Pilates Reformer y suelo». ${ci.short_bio.length}/240`}
+                    helperText={`Sale debajo de su nombre en la tarjeta. Ej.: «Pilates Reformer y suelo · 10 años dando clase». ${ci.short_bio.length}/240`}
                   />
                   <TextField
                     fullWidth

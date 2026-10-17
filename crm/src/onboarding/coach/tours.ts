@@ -34,7 +34,7 @@ export const WELCOME_TOUR: TourStep[] = [
   { target: [t('nav-today'), t('bnav-today')], title: 'Tu día, en una pantalla', text: 'En Hoy ves solo lo que necesita tu atención.' },
   { target: [t('nav-calendar'), t('bnav-calendar')], title: 'Tus clases de la semana', text: 'Toca una clase para ver quién viene. Horarios y vacaciones, arriba del calendario.' },
   { target: [t('nav-catalog'), t('bnav-more')], title: 'Clases y precios', text: 'Precios, bonos, profesores y salas, en un sitio. Toca un dato y cámbialo.', guide: { chapter: 'cobros', label: 'Cómo se cobra' } },
-  { target: [t('new'), t('new-m')], title: 'Crea en un toque', text: 'Una reserva, una clienta, una clase o un bono.' },
+  { target: [t('new'), t('new-m')], title: 'Crea en un toque', text: 'Una reserva, un cliente, una clase o un bono.' },
   { target: [t('nav-web'), t('bnav-more')], title: 'Tu web, siempre al día', text: 'Cambia fotos y textos y mira el resultado al momento.' },
   { target: [t('nav-settings'), t('bnav-more')], title: 'Tu estilo y tus extras', text: 'Cambia colores o activa los pagos online cuando quieras.' },
 ];
@@ -43,7 +43,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
   // Secciones principales (las páginas nuevas ponen sus data-tour)
   today: [
     { target: [t('today-attention'), ...HEAD], title: 'Lo que necesita tu decisión', text: 'Resuélvelo con un toque. Siempre puedes deshacer.' },
-    { target: [t('today-classes')], title: 'Tus clases de hoy', text: 'Cuántas vienen y quién espera plaza. Toca una para ver la lista.' },
+    { target: [t('today-classes')], title: 'Tus clases de hoy', text: 'Cuántas personas vienen y quién espera plaza. Toca una para ver la lista.' },
     { target: [t('today-quick'), t('new'), t('new-m')], title: 'Accesos rápidos', text: 'Lo que más haces, a un toque.' },
   ],
   calendar: [
@@ -55,12 +55,12 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
   bookings: [
     { target: [t('bookings-tabs'), ...HEAD], title: 'Próximas, pasadas o canceladas', text: 'Cambia de lista con un toque.' },
     { target: [t('search')], title: 'Busca a cualquiera', text: 'Por nombre o por clase.' },
-    { target: ACTIONS, title: 'Reserva por ella', text: 'Si te escribe por WhatsApp, apúntala desde aquí.' },
+    { target: ACTIONS, title: 'Reserva por tu cliente', text: 'Si te escribe por WhatsApp, haz la reserva desde aquí.' },
   ],
   clients: [
-    { target: [t('search'), ...HEAD], title: 'Encuentra a una clienta', text: 'Por nombre, móvil o email.' },
+    { target: [t('search'), ...HEAD], title: 'Encuentra a un cliente', text: 'Por nombre, móvil o email.' },
     { target: [t('list')], title: 'Su estado de un vistazo', text: 'Toca una ficha para ver su bono, sus clases y sus pagos.' },
-    { target: ACTIONS, title: 'Añade clientas', text: 'Dale de alta en un momento, aunque aún no tenga cuenta.' },
+    { target: ACTIONS, title: 'Añade clientes', text: 'Dale de alta en un momento, aunque aún no tenga cuenta.' },
   ],
   sales: [
     { target: [t('sales-period'), ...HEAD], title: 'Elige el periodo', text: 'Comparamos con el periodo anterior.' },
@@ -70,12 +70,12 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
   web: [
     { target: [t('web-sections'), ...HEAD], title: 'Elige qué se ve', text: 'Enciende o apaga secciones de tu web.' },
     { target: [t('web-preview')], title: 'Mira el resultado', text: 'Cambia entre ordenador y móvil.' },
-    { target: [t('web-publish'), ...ACTIONS], title: 'Publica cuando quieras', text: 'Tus clientas lo ven al momento.' },
+    { target: [t('web-publish'), ...ACTIONS], title: 'Publica cuando quieras', text: 'Tus clientes lo ven al momento.' },
   ],
   settings: [
     { target: [t('settings-search'), t('search'), ...HEAD], title: 'Busca un ajuste', text: 'Escribe «festivos», «pagos» o «lista de espera».' },
     { target: [t('settings-review')], title: 'Revisa esto', text: 'Lo que falta para que todo vaya bien.' },
-    { target: [t('settings-groups'), t('list')], title: 'Todo agrupado', text: 'Tu estudio, cobros, clientas y tu web.' },
+    { target: [t('settings-groups'), t('list')], title: 'Todo agrupado', text: 'Tu estudio, cobros, clientes y tu web.' },
   ],
 
   catalog: [
@@ -94,7 +94,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
   instructors: [
     { target: ACTIONS, title: 'Añade a quien da clases', text: 'Con el nombre basta. La foto y la bio salen en tu web.' },
     { target: [t('list')], title: 'Su ficha', text: 'Toca una tarjeta para cambiar su foto, su bio o sus redes.' },
-    { target: [t('search'), ...HEAD], title: 'Búscala rápido', text: 'Por nombre, cuando tengas muchas.' },
+    { target: [t('search'), ...HEAD], title: 'Busca rápido', text: 'Por nombre, cuando el equipo crezca.' },
   ],
   'class-types': [
     { target: ACTIONS, title: 'Crea una clase', text: 'Empieza de una plantilla: ya trae descripción y duración.' },
@@ -104,7 +104,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
   categories: [
     { target: ACTIONS, title: 'Grupos de clases', text: 'Pilates, Yoga… ordenan tus clases en la web.' },
     { target: [t('list')], title: 'Cada clase, en una', text: 'Al crear una clase eliges su categoría.' },
-    { target: HEAD, title: 'Pocas y claras', text: 'Con tres o cuatro categorías tus clientas se orientan mejor.' },
+    { target: HEAD, title: 'Pocas y claras', text: 'Con tres o cuatro categorías tus clientes se orientan mejor.' },
   ],
   plans: [
     { target: ACTIONS, title: 'Crea un bono o una cuota', text: 'Clases sueltas, bonos de varias clases o una cuota mensual.', guide: { chapter: 'cobros', label: 'Cómo se cobra' } },
@@ -114,7 +114,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
   'site-images': [
     { target: ACTIONS, title: 'Fotos de tu web', text: 'Portada, galería y apartados generales.' },
     { target: [t('list')], title: 'Cambia una foto', text: 'Toca una tarjeta para subir otra o cambiar su texto.' },
-    { target: HEAD, title: 'Cada cosa en su sitio', text: 'Las fotos de clases, profesoras y salas se cambian en sus pantallas.' },
+    { target: HEAD, title: 'Cada cosa en su sitio', text: 'Las fotos de clases, profesores y salas se cambian en sus pantallas.' },
   ],
   'studio-settings': [
     { target: [t('tabs'), ...HEAD], title: 'Todo por pestañas', text: 'Datos, estilo, portada, textos, emails y pagos.' },
@@ -122,7 +122,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
     { target: [t('save'), ...ACTIONS], title: 'No olvides guardar', text: 'Verás un aviso verde abajo cuando esté guardado.' },
   ],
   payments: [
-    { target: [t('search'), ...HEAD], title: 'Lo que has cobrado', text: 'Busca por clienta o por concepto.' },
+    { target: [t('search'), ...HEAD], title: 'Lo que has cobrado', text: 'Busca por cliente o por concepto.' },
     { target: [t('list')], title: 'Cada pago', text: 'Toca uno para ver qué compró y cuándo.' },
     { target: ACTIONS, title: 'Solo para mirar', text: 'Aquí no se cobra ni se devuelve nada.' },
   ],
@@ -134,17 +134,17 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
   coupons: [
     { target: ACTIONS, title: 'Crea un cupón', text: 'Un código como VERANO10 con su descuento.' },
     { target: [t('list')], title: 'Tus cupones', text: 'Cuántas veces se han usado y hasta cuándo valen.' },
-    { target: HEAD, title: 'Se escribe al pagar', text: 'La clienta lo pone en la web antes de pagar.' },
+    { target: HEAD, title: 'Se escribe al pagar', text: 'El cliente lo pone en la web antes de pagar.' },
   ],
   credits: [
-    { target: [t('search'), t('balance'), ...HEAD], title: '¿Ya ha venido? Búscala', text: 'Por nombre o móvil. Abajo tienes las recientes y las que se quedan sin clases: un toque y listo.' },
-    { target: [t('new-client'), t('next-actions'), ...HEAD], title: '¿Es nueva? Regístrala aquí', text: 'Nombre y móvil, sin cuenta ni contraseña. Sigues con sus créditos sin salir.' },
-    { target: [t('list'), t('next-actions'), ...ACTIONS], title: 'Y después, apúntala', text: 'A una clase, a su clase fija de cada semana o a un plan mensual del estudio.', guide: { chapter: 'en-mano', label: 'Pagos en mano' } },
+    { target: [t('search'), t('balance'), ...HEAD], title: '¿Ya ha venido? Busca su ficha', text: 'Por nombre o móvil. Abajo tienes las fichas recientes y las de quien se queda sin clases: un toque y listo.' },
+    { target: [t('new-client'), t('next-actions'), ...HEAD], title: '¿Primera vez? Dale de alta aquí', text: 'Nombre y móvil, sin cuenta ni contraseña. Sigues con sus créditos sin salir.' },
+    { target: [t('list'), t('next-actions'), ...ACTIONS], title: 'Y después, su reserva', text: 'Una clase suelta, su clase fija de cada semana o un plan mensual del estudio.', guide: { chapter: 'en-mano', label: 'Pagos en mano' } },
   ],
   mails: [
     { target: ACTIONS, title: 'Escribe un aviso', text: 'Por email, al móvil o de las dos formas.' },
-    { target: [t('list')], title: 'Lo que ya enviaste', text: 'Con la fecha y a cuántas llegó.' },
-    { target: HEAD, title: 'Para todas a la vez', text: 'Un cierre por festivo, una clase nueva…' },
+    { target: [t('list')], title: 'Lo que ya enviaste', text: 'Con la fecha y a cuántas personas llegó.' },
+    { target: HEAD, title: 'Para todo el mundo a la vez', text: 'Un cierre por festivo, una clase nueva…' },
   ],
   'membership-candidates': [
     { target: [t('list'), ...HEAD], title: 'Vienen casi cada semana', text: 'Y todavía pagan con bonos.' },
@@ -152,7 +152,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
     { target: HEAD, title: 'Marca a quién avisaste', text: 'Así no se lo repites.' },
   ],
   'assign-classes': [
-    { target: [t('search'), ...HEAD], title: 'Elige a la clienta', text: 'Búscala por nombre.' },
+    { target: [t('search'), ...HEAD], title: 'Elige al cliente', text: 'Busca por nombre.' },
     { target: [t('list')], title: 'Su clase de cada semana', text: 'Guárdale la plaza sin que tenga que reservar.', guide: { chapter: 'en-mano', label: '¿Clase fija o créditos?' } },
     { target: ACTIONS, title: 'Se reserva sola', text: 'Cada semana, mientras le queden clases.' },
   ],
@@ -166,10 +166,10 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
     { target: [t('list'), ...ACTIONS], title: 'Actívalo en un minuto', text: 'Escanea el código con una app de autenticación.' },
     { target: ACTIONS, title: 'Guarda los códigos de emergencia', text: 'Por si pierdes el móvil.' },
   ],
-  // Clientas del estudio (pages/estudio): alta guiada
+  // Clientes del estudio (pages/estudio): alta guiada
   'studio-client-new': [
-    { target: [t('wizard-steps'), ...HEAD], title: 'Cinco pasos cortos', text: 'Quién es, cómo viene, el precio, si la apuntas ya y un resumen antes de guardar.' },
-    { target: [t('wizard-kind'), t('search'), ...HEAD], title: 'Te paga en mano', text: 'Clases sueltas, un mes fijo o su clase de cada semana. Las clientas online las renueva Stripe; estas, tú.' },
+    { target: [t('wizard-steps'), ...HEAD], title: 'Cinco pasos cortos', text: 'Quién es, cómo viene, el precio, si le reservas ya una clase y un resumen antes de guardar.' },
+    { target: [t('wizard-kind'), t('search'), ...HEAD], title: 'Te paga en mano', text: 'Clases sueltas, un mes fijo o su clase de cada semana. A los clientes online los renueva Stripe; a estos, tú.' },
     { target: [t('wizard-details'), t('wizard-steps'), ...HEAD], title: 'Nada se cobra solo', text: 'Cada mes te sale en Hoy: «Cobrado y renovar» y listo. Tú decides qué pasa con las clases que sobran.' },
   ],
 };
@@ -177,7 +177,7 @@ export const PAGE_TOURS: Record<string, TourStep[]> = {
 export const FIRST_TIPS: Record<string, TourStep> = {
   calendar: { target: [t('cal-event'), t('cal-views'), ...HEAD], title: 'Toca una clase', text: 'Verás quién viene. Arrástrala para cambiarla de hora.' },
   bookings: { target: [t('bookings-tabs'), ...HEAD], title: 'Todas tus reservas', text: 'Próximas, pasadas y canceladas, en un sitio.' },
-  clients: { target: [t('search'), ...HEAD], title: 'Tus clientas', text: 'Busca a cualquiera por nombre o móvil.' },
+  clients: { target: [t('search'), ...HEAD], title: 'Tus clientes', text: 'Busca a cualquiera por nombre o móvil.' },
   sales: { target: [t('sales-period'), ...HEAD], title: 'Tus cobros', text: 'Quién te debe y lo que ya has cobrado.' },
   web: { target: [t('web-sections'), ...HEAD], title: 'Tu web, a tu manera', text: 'Enciende secciones y mira el resultado.' },
   settings: { target: [t('settings-search'), t('search'), ...HEAD], title: 'Busca un ajuste', text: 'Más rápido que ir menú por menú.' },

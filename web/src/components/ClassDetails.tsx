@@ -157,7 +157,7 @@ function ClassDetailInner() {
   };
   const levelLabel = LEVEL_MAP[classData.level] ?? classData.level;
 
-  // La profesora suele asignarse en cada horario (override_instructor), no en la
+  // El instructor suele asignarse en cada horario (override_instructor), no en la
   // clase: se toma de los horarios vigentes, prefiriendo la que tiene foto.
   const sessionTeachers = (sessions ?? []).map(s => s.override_instructor).filter(Boolean) as NonNullable<ApiRecurrence['override_instructor']>[];
   const instructor = classData.instructor

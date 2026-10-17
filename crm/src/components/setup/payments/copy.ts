@@ -65,12 +65,12 @@ const FIELD_TEXT: [RegExp, string][] = [
   [/^business_profile\.url$/, 'La dirección de tu web'],
   [/^business_profile\.mcc$/, 'A qué se dedica tu negocio (actividad)'],
   [/^business_profile\.product_description$/, 'Una frase sobre lo que vendes'],
-  [/^business_profile\.support_(phone|email|address.*)$/, 'Un teléfono o email de atención a clientas'],
+  [/^business_profile\.support_(phone|email|address.*)$/, 'Un teléfono o email de atención al cliente'],
   [/^business_profile\.name$/, 'El nombre de tu negocio'],
-  [/^business_type$/, 'Si eres autónoma o empresa'],
+  [/^business_type$/, 'Si trabajas por tu cuenta o como empresa'],
   [/^tos_acceptance\./, 'Aceptar las condiciones de Stripe'],
-  [/^settings\.payments\.statement_descriptor$/, 'El nombre que verán tus clientas en su extracto del banco'],
-  [/^settings\.card_payments\.statement_descriptor_prefix$/, 'El nombre que verán tus clientas en su extracto del banco'],
+  [/^settings\.payments\.statement_descriptor$/, 'El nombre que verán tus clientes en su extracto del banco'],
+  [/^settings\.card_payments\.statement_descriptor_prefix$/, 'El nombre que verán tus clientes en su extracto del banco'],
   [/^company\.verification\.document$/, 'Un documento de la empresa (escrituras o certificado del registro)'],
   [/^company\.tax_id$/, 'El NIF/CIF de la empresa'],
   [/^company\.name$/, 'El nombre legal de la empresa'],
@@ -91,7 +91,7 @@ const FIELD_TEXT: [RegExp, string][] = [
   [/\.nationality$/, 'Tu nacionalidad'],
 ];
 
-/** Quién: la persona responsable de una empresa (no la autónoma). */
+/** Quién: la persona responsable de una empresa (no quien trabaja como autónomo). */
 const IS_REPRESENTATIVE = /^(representative|person_[^.]+)\./;
 
 export interface Requirement {
@@ -115,7 +115,7 @@ export function translateRequirements(keys: string[]): Requirement[] {
     }
     let text = FIELD_TEXT[order][1];
     if (IS_REPRESENTATIVE.test(key)) {
-      // Datos de la persona responsable de una empresa, no de la autónoma
+      // Datos de la persona responsable de una empresa, no de quien trabaja como autónomo
       text = text.replace(/^Tu /, '').replace(/^Foto de tu /, 'Foto del ');
       text = `${text.charAt(0).toUpperCase()}${text.slice(1)} (de la persona responsable)`;
     }

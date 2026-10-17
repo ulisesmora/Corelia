@@ -227,7 +227,7 @@ export default function CalendarPage() {
 
   const filterCount = Number(filters.room !== 'all') + Number(filters.instructor !== 'all') + Number(filters.hiddenTypes.length > 0);
   const roomName = filters.room === 'all' ? 'Todas las salas' : catalog.rooms.find((r) => r.id === filters.room)?.name || 'Sala';
-  const instName = filters.instructor === 'all' ? 'Todas las profesoras' : catalog.instructors.find((i) => i.id === filters.instructor)?.name || 'Profesora';
+  const instName = filters.instructor === 'all' ? 'Todos los profesores' : catalog.instructors.find((i) => i.id === filters.instructor)?.name || 'Profesor';
 
   const toolbar = (
     <div className="kc-bar">
@@ -419,9 +419,9 @@ export default function CalendarPage() {
           )),
         ]}
         {(filterEl?.kind === 'instructor' || filterEl?.kind === 'all') && [
-          filterEl?.kind === 'all' && <Typography key="h2" variant="overline" sx={{ px: 2, display: 'block', mt: 1 }}>Profesora</Typography>,
+          filterEl?.kind === 'all' && <Typography key="h2" variant="overline" sx={{ px: 2, display: 'block', mt: 1 }}>Profesor</Typography>,
           <MenuItem key="i-all" selected={filters.instructor === 'all'} onClick={() => { setFilters((f) => ({ ...f, instructor: 'all' })); setFilterEl(null); }}>
-            <ListItemIcon>{filters.instructor === 'all' && <CheckIcon />}</ListItemIcon>Todas las profesoras
+            <ListItemIcon>{filters.instructor === 'all' && <CheckIcon />}</ListItemIcon>Todos los profesores
           </MenuItem>,
           ...catalog.instructors.map((i) => (
             <MenuItem key={`i${i.id}`} selected={filters.instructor === i.id} onClick={() => { setFilters((f) => ({ ...f, instructor: i.id })); setFilterEl(null); }}>
@@ -535,7 +535,7 @@ function EmptyCalendar({ onCreate, onTemplates }: { onCreate: () => void; onTemp
       </Box>
       <Typography component="h2" sx={{ fontSize: '1.25rem', fontWeight: 700 }}>Tu horario todavía está vacío</Typography>
       <Typography color="text.secondary" sx={{ maxWidth: 420 }}>
-        Crea tu primera clase o empieza con una plantilla. Tus clientas la verán al momento en tu web y en la app.
+        Crea tu primera clase o empieza con una plantilla. Tus clientes la verán al momento en tu web y en la app.
       </Typography>
       <Box sx={{ textAlign: 'left', bgcolor: 'action.hover', borderRadius: 3, p: 2, minWidth: { sm: 400 }, maxWidth: '100%' }}>
         <Typography variant="overline" color="text.secondary" sx={{ fontWeight: 700 }}>Ejemplos</Typography>

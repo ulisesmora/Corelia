@@ -216,7 +216,7 @@ export const ScheduleCalendar: React.FC<Props> = ({ initialDate, onMoveDay, onCl
       <style>{ROOM_COLORS.map((c, i) => `.rbc-event.room-c${i}{border-left:5px solid ${c} !important;}`).join('\n')}</style>
 
       <Alert icon={<TouchAppIcon />} severity="info" sx={{ mb: 2, fontSize: '0.95rem' }}>
-        <b>Pulsa una clase para ver sus detalles</b> (cuántas clientas hay apuntadas, quién la da…). Usa «Anterior» y
+        <b>Pulsa una clase para ver sus detalles</b> (cuántas personas hay apuntadas, quién la da…). Usa «Anterior» y
         «Siguiente» para cambiar de semana, y «Mes», «Semana» o «Día» para ver más o menos. Aquí solo se mira: para
         cambiar una clase ve a la pestaña «Mis clases semanales». Puedes ver hasta el {limitLabel}.
       </Alert>
@@ -296,7 +296,7 @@ export const ScheduleCalendar: React.FC<Props> = ({ initialDate, onMoveDay, onCl
                 <Typography><b>Sala:</b> {selected.resource.room}</Typography>
                 <Typography><b>La da:</b> {selected.resource.instructor || 'Sin asignar'}</Typography>
                 <Typography>
-                  <b>Apuntadas:</b>{' '}
+                  <b>Personas apuntadas:</b>{' '}
                   {occupied == null
                     ? `${cap} plazas`
                     : `${occupied} de ${cap} plazas${cap - occupied > 0 ? ` (quedan ${cap - occupied})` : ' (completa)'}`}

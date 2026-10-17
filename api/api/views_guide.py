@@ -2,12 +2,12 @@
 «Cómo se cobra» (crm/src/components/charging): los datos reales del estudio
 para que las explicaciones del panel usen SUS números, no ejemplos inventados.
 
-  GET /api/v1/guide/charging/   (solo administradoras, solo lectura)
+  GET /api/v1/guide/charging/   (solo administración, solo lectura)
 
 Devuelve la moneda, el precio de la clase suelta, el plazo para cancelar
 (BOOKING_CANCEL_MIN_HOURS), la lista de espera (activada, oferta automática y
 minutos para aceptar), si se cobra online, las «Formas de cobro» de Ajustes →
-Cobros (`options`: tarjeta, pagar en el estudio, invitadas, qué se vende
+Cobros (`options`: tarjeta, pagar en el estudio, invitados, qué se vende
 online, formas de pago en el estudio; api/utils/payment_options.py) y un
 ejemplo de cada cosa que se vende (bono, membresía y créditos por tipo de
 clase).

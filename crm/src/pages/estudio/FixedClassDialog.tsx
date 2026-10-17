@@ -1,4 +1,4 @@
-// «Hacerla clienta frecuente»: su clase de cada semana (clase fija). Se le
+// «Convertir en cliente frecuente»: su clase de cada semana (clase fija). Se le
 // reserva sola cada semana gastando sus créditos, si tiene plan del estudio o
 // membresía. Usa la ruta de «Clases fijas» (users/<id>/class-preferences/).
 import { useEffect, useState } from 'react';
@@ -28,7 +28,7 @@ export default function FixedClassDialog({ open, client, plan, onClose, onDone }
   const [pick, setPick] = useState<number | null>(null);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const name = client.name || client.first_name || 'la clienta';
+  const name = client.name || client.first_name || 'esta persona';
 
   useEffect(() => {
     if (!open) return;

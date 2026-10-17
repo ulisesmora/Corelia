@@ -1,6 +1,6 @@
-// «Plan en el estudio» de una clienta: sus clases, el próximo corte y
+// «Plan en el estudio» de un cliente: sus clases, el próximo corte y
 // «Renovar mes» (corte de créditos + cobro en mano o pendiente). Lo usan
-// «Créditos» y «Clientas → Clientas del estudio».
+// «Créditos» y «Clientes → Clientes del estudio».
 import { useState } from 'react';
 import {
   Alert, Box, Button, CircularProgress, Dialog, DialogActions, DialogContent, DialogTitle, IconButton, Menu, MenuItem,
@@ -22,7 +22,7 @@ export function RenewDialog({ plan, open, onClose, onDone }: {
   const [saving, setSaving] = useState<'' | 'paid' | 'later'>('');
   const [error, setError] = useState('');
   const c: Cutoff | undefined = plan.preview;
-  const first = plan.name.split(' ')[0] || 'la clienta';
+  const first = plan.name.split(' ')[0] || 'este cliente';
 
   const go = async (charge: 'paid' | 'later') => {
     setSaving(charge);
@@ -167,7 +167,7 @@ export default function StudioPlanBlock({ plan, onChanged, compact = false }: {
 export function StudioClientsNote() {
   return (
     <Alert severity="info" icon={false} sx={{ fontSize: '0.9rem' }}>
-      <b>Clientas del estudio:</b> te pagan en mano y tú renuevas su mes desde aquí. Las clientas <b>online</b> pagan con
+      <b>Clientes del estudio:</b> te pagan en mano y tú renuevas su mes desde aquí. Los clientes <b>online</b> pagan con
       tarjeta y su cuota la renueva sola Stripe.
     </Alert>
   );

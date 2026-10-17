@@ -1,4 +1,4 @@
-"""«Formas de pago en tu web»: qué métodos de pago ve la clienta en el pago
+"""«Formas de pago en tu web»: qué métodos de pago ve el cliente en el pago
 de Stripe (Checkout embebido con métodos dinámicos) y cómo se encienden desde
 el panel (Ajustes → Cobros). Guía: docs/STRIPE_CONNECT.md → «Formas de pago».
 
@@ -64,7 +64,7 @@ class Method:
     key: str                 # nombre del campo en la configuración de Stripe
     name: str
     icon: str                # clave del icono en el panel
-    why: str                 # una línea: qué es para la clienta
+    why: str                 # una línea: qué es para el cliente
     limits: str = ''         # una línea: límites y dónde no sirve
     delayed: bool = False    # tarda días en confirmarse (vales, domiciliación)
     countries: frozenset | None = None   # None = todos
@@ -82,7 +82,7 @@ METHODS: tuple[Method, ...] = (
            'Visa, Mastercard y las demás. Es la base: Apple Pay y Google Pay van con ella.',
            'Siempre activa.', toggle='locked'),
     Method('apple_pay', 'Apple Pay', 'apple_pay',
-           'Tus clientas pagan con Face ID en iPhone. Ya activado si tu web está verificada.',
+           'Tus clientes pagan con Face ID en iPhone. Ya activado si tu web está verificada.',
            'En la web, con Safari o iPhone actualizados (iOS 17 o más).', needs_domain=True),
     Method('google_pay', 'Google Pay', 'google_pay',
            'Pagan con la tarjeta guardada en su Android o en Chrome, sin teclearla.',

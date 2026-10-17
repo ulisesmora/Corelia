@@ -1,9 +1,9 @@
 "use client";
 // «Pagar en el estudio»: guardar la plaza ahora y pagar al llegar, si el
 // estudio lo tiene encendido en Ajustes → Cobros («Formas de cobro»).
-//  - Invitada (sin cuenta): deja email, nombre y teléfono.
+//  - Invitado (sin cuenta): deja email, nombre y teléfono.
 //    API: POST /api/v1/checkout/guest-reserve/
-//  - Clienta con cuenta (`account`): sin formulario.
+//  - Cliente con cuenta (`account`): sin formulario.
 //    API: POST /api/v1/checkout/studio-reserve/
 // (api/api/views_guest.py). Enseña las formas de pago y la nota del estudio.
 import React, { useState } from 'react';
@@ -68,7 +68,7 @@ interface Done { email: string; total: number; items: CartItem[] }
 
 export default function GuestStudioBooking({ onBooked, account, hideTitle = false }: {
   onBooked?: () => void;
-  /** Clienta con sesión: reserva a su nombre, sin formulario */
+  /** Cliente con sesión: reserva a su nombre, sin formulario */
   account?: { token: string; email?: string | null };
   /** Sin título propio (va debajo de «¿Cómo quieres pagar?») */
   hideTitle?: boolean;
@@ -134,7 +134,7 @@ export default function GuestStudioBooking({ onBooked, account, hideTitle = fals
     }
   };
 
-  // Clienta con cuenta: mismas reservas, a su nombre
+  // Cliente con cuenta: mismas reservas, a su nombre
   const submitAccount = async () => {
     if (!account) return;
     setError(null);

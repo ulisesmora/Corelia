@@ -151,7 +151,7 @@ export interface StudioSettings {
   studio_payment_methods: StudioPayMethod[];
   studio_payment_note: string;
   studio_payment_note_en: string;
-  /** Las clientas eligen sus clases fijas en la web (si no, solo el estudio) */
+  /** Los clientes eligen sus clases fijas en la web (si no, solo el estudio) */
   client_fixed_classes: boolean;
   /** Solo lectura: lo que la web ofrece de verdad con estos ajustes */
   payment_options: PaymentOptions;

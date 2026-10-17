@@ -2,8 +2,8 @@
 
 - Horario público: plazas libres por sesión (reservas + plazas ofrecidas a la
   lista de espera), `waitlist_enabled` y sin consultas por sesión.
-- Lista de espera desde la web: enlace /lista-espera y aviso claro si a la
-  clienta no le quedan clases al aceptar.
+- Lista de espera desde la web: enlace /lista-espera y aviso claro si al
+  cliente no le quedan clases al aceptar.
 - «Mi web» → Secciones (SiteConfig.web_sections): se guardan en el servidor,
   se publican en la config pública y apagan opiniones, preguntas y galería.
 - Vista previa del panel: PANEL_URL entre los orígenes que pueden enmarcar la web.

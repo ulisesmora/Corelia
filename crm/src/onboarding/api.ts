@@ -19,7 +19,7 @@ export interface StepState {
   /** Sub-tareas (logo, emails, stripe, hero…). `state`: solo en «stripe»
    *  (active | none | onboarding | pending | restricted | mismatch). */
   items: { key: string; done: boolean; state?: string }[];
-  /** Hay datos de ejemplo (p. ej. la instructora de ejemplo) */
+  /** Hay datos de ejemplo (p. ej. el profesor de ejemplo) */
   sample: boolean;
   can_skip: boolean;
 }

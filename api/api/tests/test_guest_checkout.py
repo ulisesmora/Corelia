@@ -1,4 +1,4 @@
-"""Reservar como invitada (sin cuenta): pago con tarjeta (create-session) y
+"""Reservar como invitado (sin cuenta): pago con tarjeta (create-session) y
 «pagar en el estudio» (guest-reserve) cuando el estudio no cobra online."""
 from datetime import time, timedelta
 from decimal import Decimal
@@ -169,7 +169,7 @@ class PayAtStudioTests(GuestCheckoutBase):
         self.fill(self.sched, 7)
         r = self.c.post(RESERVE, {**self.guest(), 'cart_items': [self.item()]}, format='json')
         self.assertEqual(r.status_code, 201, r.content)
-        # La misma invitada otra vez en la misma sesión
+        # El mismo invitado otra vez en la misma sesión
         r = self.c.post(RESERVE, {**self.guest(), 'cart_items': [self.item()]}, format='json')
         self.assertEqual((r.status_code, r.json()['code']), (400, 'already_booked'))
         # Otra persona: ya está llena (8/8)

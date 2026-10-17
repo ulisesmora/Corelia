@@ -126,9 +126,9 @@ def date_label(d: date) -> str:
 
 def user_name(u) -> str:
     if u is None:
-        return 'Clienta'
+        return 'Cliente'
     full = f"{u.first_name or ''} {u.last_name or ''}".strip()
-    return full or (u.email or '').split('@')[0] or 'Clienta'
+    return full or (u.email or '').split('@')[0] or 'Cliente'
 
 
 def person_of(obj):
@@ -138,9 +138,9 @@ def person_of(obj):
     if getattr(obj, 'guest_id', None) and obj.guest:
         g = obj.guest
         if g.linked_user_id:
-            return ('u', g.linked_user_id), g.name or g.email or 'Invitada', g.email or ''
-        return ('g', g.id), g.name or (g.email or '').split('@')[0] or 'Invitada', g.email or ''
-    return None, 'Clienta', ''
+            return ('u', g.linked_user_id), g.name or g.email or 'Invitado', g.email or ''
+        return ('g', g.id), g.name or (g.email or '').split('@')[0] or 'Invitado', g.email or ''
+    return None, 'Cliente', ''
 
 
 def first_name(name: str) -> str:
@@ -216,7 +216,7 @@ def sales_rows(start: date, end: date, statuses=('succeeded',)):
         books = list(p.bookings.all())
         plan = plans.get(grants.get(str(p.id))) if str(p.id) in grants else None
         if p.id in studio:
-            # Clientas del estudio: mes del plan o clases sueltas cobradas en mano
+            # Clientes del estudio: mes del plan o clases sueltas cobradas en mano
             kind, concept = studio[p.id]
         elif books:
             kind = 'classes'
@@ -268,7 +268,7 @@ def sales_rows(start: date, end: date, statuses=('succeeded',)):
 
 
 def _studio_concepts(payments):
-    """{payment_id: (kind, concepto)} de los cobros de clientas del estudio
+    """{payment_id: (kind, concepto)} de los cobros de clientes del estudio
     (api/utils/studio_plans.py): el mes de su plan o clases sueltas en mano."""
     from api.models import StudioPlanRenewal
     raws = {p.id: p.raw_response for p in payments if isinstance(p.raw_response, dict)
@@ -299,7 +299,7 @@ STUDIO_OWED_DAYS = 45
 
 
 def studio_owed_bookings(limit=100):
-    """Reservas «pagar en el estudio» (web: invitadas o clientas con cuenta,
+    """Reservas «pagar en el estudio» (web: invitados o clientes con cuenta,
     api/views_guest.py) que aún no se han cobrado: con precio, sin pago y sin
     cancelar, desde hace STUDIO_OWED_DAYS días en adelante (las de clases que
     aún no han llegado también: «paga al llegar»)."""
@@ -344,7 +344,7 @@ def owed_items(limit=50, include_studio=True):
                 'date': when.date().isoformat() if when else '',
             })
     if include_studio:
-        # Clientas del estudio: meses renovados con «cobro después»
+        # Clientes del estudio: meses renovados con «cobro después»
         from api.utils.studio_plans import METHOD_LABELS, unpaid_renewals
         for r in unpaid_renewals():
             u = r.plan.user
@@ -463,7 +463,7 @@ def _money(v, currency) -> str:
 # ── Necesita tu atención ──────────────────────────────────────────────────
 
 def _class_fans(class_type_id, exclude_user_ids=(), days=90, limit=80):
-    """Clientas registradas que han venido a ese tipo de clase últimamente."""
+    """Clientes registrados que han venido a ese tipo de clase últimamente."""
     since = timezone.now() - timedelta(days=days)
     ids = set(Booking.objects.filter(
         occurrence__class_type_id=class_type_id, status__in=ACTIVE, start_datetime__gte=since, user__isnull=False,
@@ -498,7 +498,7 @@ def attention_items(today=None, sessions=None):
                 items.append({
                     'id': f"wait-{first.id}", 'kind': 'waitlist', 'tone': 'info', 'icon': 'hourglass',
                     'title': f"Plaza libre en {o['title']} {start:%H:%M}{when}",
-                    'subtitle': f"{user_name(first.user)} es la primera en espera",
+                    'subtitle': f"{user_name(first.user)} va primero en la lista de espera",
                     'action': {'type': 'api', 'label': 'Dar plaza',
                                'done': f"Plaza dada a {first_name(user_name(first.user))}. Le llega un aviso.",
                                'payload': {'kind': 'waitlist_promote', 'entry_id': first.id}},
@@ -540,7 +540,7 @@ def attention_items(today=None, sessions=None):
     for o, d, start in (sorted(near_empty, key=lambda t: t[2])[:2] if any_booking else []):
         fans = len(_class_fans(o['class_type']['id'], exclude_user_ids=()))
         when = '' if d == today else f" ({_when_label(d, today)})"
-        action = ({'type': 'api', 'label': 'Avisar', 'done': f"Aviso enviado a las clientas de {o['title']}",
+        action = ({'type': 'api', 'label': 'Avisar', 'done': f"Aviso enviado a los clientes de {o['title']}",
                    'payload': {'kind': 'promote_class', 'schedule_id': o['schedule_id'], 'date': o['date']}}
                   if fans else
                   {'type': 'navigate', 'label': 'Escribir aviso', 'to': '/mails?accion=nuevo'})
@@ -578,7 +578,7 @@ def attention_items(today=None, sessions=None):
         if n:
             items.append({
                 'id': 'candidates', 'kind': 'candidates', 'tone': 'p', 'icon': 'star',
-                'title': f"{n} {'clienta viene' if n == 1 else 'clientas vienen'} cada semana sin membresía",
+                'title': f"{n} {'cliente viene' if n == 1 else 'clientes vienen'} cada semana sin membresía",
                 'subtitle': 'Escríbeles: es lo que más convierte',
                 'action': {'type': 'navigate', 'label': 'Ver', 'to': '/membership-candidates'},
             })
@@ -588,7 +588,7 @@ def attention_items(today=None, sessions=None):
 
 
 def _send_notice(person, headline, intro, cta_text, cta_url, subject, push_title=None, push_url='/dashboard'):
-    """Email (y push si es usuaria). Devuelve cuántos canales salieron."""
+    """Email (y push si tiene cuenta). Devuelve cuántos canales salieron."""
     from api.utils.emailing import send_templated_email
     from api.utils.push import send_push_to_user
     sent = 0
@@ -644,7 +644,7 @@ def _mark_studio_paid(data, admin=None):
         b.save(update_fields=['payment', 'metadata', 'updated_at'])
     logger.info("dashboard.mark_studio_paid booking=%s payment=%s method=%s admin=%s",
                 b.id, payment.id, method, getattr(admin, 'id', None))
-    who = person_name(b.user or b.guest) if (b.user or b.guest) else 'Clienta'
+    who = person_name(b.user or b.guest) if (b.user or b.guest) else 'Cliente'
     return {'done': f"Cobrado: {first_name(who)} · {_money(amount, currency)}", 'payment_id': payment.id}
 
 
@@ -700,7 +700,7 @@ def run_action(data, admin=None):
         return _mark_studio_paid(data, admin)
 
     if kind in ('studio_plan_paid', 'studio_plan_renew'):
-        # Clientas del estudio (api/utils/studio_plans.py): cobrar un mes
+        # Clientes del estudio (api/utils/studio_plans.py): cobrar un mes
         # pendiente o renovar el mes desde Hoy («Cobrado y renovar» / «Renovar,
         # cobro después»)
         from api.utils import studio_plans as sp
@@ -763,7 +763,7 @@ def run_action(data, admin=None):
         booked = {b.user_id for b in bookings_on(schedule.id, d) if b.user_id}
         fans = _class_fans(schedule.class_type_id, exclude_user_ids=booked)
         if not fans:
-            raise DashboardError('nobody', 'No hay clientas a las que avisar de esta clase.')
+            raise DashboardError('nobody', 'No hay clientes a los que avisar de esta clase.')
         s_wall, _ = slot_bounds(schedule, d)
         title = schedule.class_type.title
         when = f"{_when_label(d, local_today())} a las {s_wall:%H:%M}"
@@ -779,7 +779,7 @@ def run_action(data, admin=None):
                                  status=409)
         logger.info("dashboard.promote_class schedule=%s date=%s people=%s admin=%s",
                     schedule.id, d, n, getattr(admin, 'id', None))
-        return {'done': f"Aviso enviado a {n} {'clienta' if n == 1 else 'clientas'} de {title}", 'people': n}
+        return {'done': f"Aviso enviado a {n} {'cliente' if n == 1 else 'clientes'} de {title}", 'people': n}
 
     raise DashboardError('bad_request', 'Acción desconocida.')
 
@@ -876,7 +876,7 @@ def kpis(today: date):
                          and ps.isoformat() <= r['date'] <= pe.isoformat()), 2)
     revenue = monthly[-1]
 
-    # 3) Clientas activas: han venido (o tienen reserva) en los últimos 30 días
+    # 3) Clientes activos: han venido (o tienen reserva) en los últimos 30 días
     def active_until(end):
         s = set()
         for i in range(30):
@@ -921,7 +921,7 @@ def kpis(today: date):
          'value': revenue, 'format': 'money', 'spark': monthly if any(monthly) else None,
          'delta': delta(revenue, rev_prev, 'pct', f'vs {prev_month}') if any(monthly) else None,
          'hint': 'Cuando cobres, lo verás aquí.', 'to': '/ventas'},
-        {'key': 'active_clients', 'label': 'Clientas activas', 'icon': 'users', 'tint': 'yoga',
+        {'key': 'active_clients', 'label': 'Clientes activos', 'icon': 'users', 'tint': 'yoga',
          'value': active_now, 'format': 'count', 'spark': active_series if any(active_series) else None,
          'delta': delta(active_now, active_prev, 'abs', 'en 30 días') if any(active_series) else None,
          'hint': 'Aún nadie ha venido a clase.', 'to': '/clients'},
@@ -993,7 +993,7 @@ def extras_state(cfg=None):
     return [
         {'key': 'payments', 'label': 'Cobrar online', 'done': bool(payments_status(cfg)['ready']),
          'to': '/ajustes?tab=pagos'},
-        {'key': 'emails', 'label': 'Emails a clientas', 'done': bool(email_enabled()), 'to': '/ajustes?tab=emails'},
+        {'key': 'emails', 'label': 'Emails a clientes', 'done': bool(email_enabled()), 'to': '/ajustes?tab=emails'},
         {'key': 'google', 'label': 'Google (ficha y búsquedas)', 'done': bool(cfg.google_business_url),
          'to': '/ajustes?tab=google'},
         {'key': 'content', 'label': 'Fotos y textos de tu web', 'done': hero_ok and texts_ok,
@@ -1030,7 +1030,7 @@ def today_payload():
 
 
 def _renewals_card(today):
-    """«Renovaciones de este mes» (clientas del estudio). Opcional: nunca rompe Hoy."""
+    """«Renovaciones de este mes» (clientes del estudio). Opcional: nunca rompe Hoy."""
     try:
         from api.utils.studio_plans import today_card
         return today_card(today)
@@ -1170,7 +1170,7 @@ def sales_csv(period='month', offset=0):
     w.writerow([f"Cierre de {data['label']}", fiscal['legal_name'], fiscal['tax_id'] or 'NIF sin poner'])
     w.writerow([f"Del {data['start']} al {data['end']}"])
     w.writerow([])
-    w.writerow(['Fecha', 'Hora', 'Nº recibo', 'Clienta', 'Email', 'Concepto', 'Tipo', 'Método', 'Importe',
+    w.writerow(['Fecha', 'Hora', 'Nº recibo', 'Cliente', 'Email', 'Concepto', 'Tipo', 'Método', 'Importe',
                 'Moneda', 'Estado'])
 
     def num(v):
@@ -1233,11 +1233,11 @@ def web_summary():
             empty='Aparece al crear tu primera clase'),
         sec('prices', 'Precios', 'Bonos y cuotas a la venta', 'ticket', '/plans', n_plans, n_plans,
             empty='Aparece al crear un bono'),
-        sec('team', 'Profesoras', 'Fotos y nombres', 'user', '/instructors', n_team, n_team,
+        sec('team', 'Equipo', 'Fotos y nombres', 'user', '/instructors', n_team, n_team,
             empty='Aparece al añadir a tu equipo'),
         sec('about', 'Sobre el estudio', 'Quiénes sois, en tus palabras', 'text', '/ajustes?tab=textos',
             bool(cfg.about_text), empty='Escribe unas líneas sobre ti'),
-        sec('testimonials', 'Opiniones', 'Lo que dicen tus clientas', 'star', '/ajustes?tab=opiniones',
+        sec('testimonials', 'Opiniones', 'Lo que dicen tus clientes', 'star', '/ajustes?tab=opiniones',
             n_testimonials, n_testimonials, empty='Añade la primera opinión'),
         sec('faqs', 'Preguntas frecuentes', 'Dudas típicas, respondidas', 'help', '/ajustes?tab=preguntas',
             n_faqs, n_faqs, empty='Añade tus preguntas'),
@@ -1294,7 +1294,7 @@ def checklist(user=None):
         review.append({'key': 'payments', 'title': 'Activa los pagos online para cobrar al reservar',
                        'action': 'Activar', 'to': '/ajustes?tab=pagos', 'tone': 'warn'})
     if not done['emails']:
-        review.append({'key': 'emails', 'title': 'Configura los emails: tus clientas no reciben confirmaciones',
+        review.append({'key': 'emails', 'title': 'Configura los emails: tus clientes no reciben confirmaciones',
                        'action': 'Configurar', 'to': '/ajustes?tab=emails', 'tone': 'warn'})
     if not (cfg.tax_id or '').strip():
         review.append({'key': 'tax_id', 'title': 'Falta tu NIF para los recibos', 'action': 'Añadir',

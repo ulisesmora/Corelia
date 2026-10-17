@@ -80,7 +80,7 @@ const PUSH_DESTINATIONS = [
   { id: '/classes', label: 'Listado de clases' },
   { id: '/prices', label: 'Precios y planes' },
   { id: '/promociones', label: 'Promociones' },
-  { id: '/dashboard', label: 'Mi cuenta de la clienta' },
+  { id: '/dashboard', label: 'Mi cuenta (área de cliente)' },
 ];
 
 const EMPTY_FORM: BroadcastForm = {
@@ -333,12 +333,12 @@ export default function BroadcastManagement() {
   const errFor = (k: string) => (showErrors ? errors[k] : undefined);
 
   // Alcance real (lo que calcula el servidor)
-  const reachEmail = audience ? `Llega a ${plural(audience.email_recipients, 'persona', 'personas')}` : 'Todas las clientas con email';
+  const reachEmail = audience ? `Llega a ${plural(audience.email_recipients, 'persona', 'personas')}` : 'Todos los clientes con email';
   const reachPush = audience
     ? audience.push_people > 0
       ? `Llega a ${plural(audience.push_people, 'persona', 'personas')} (${plural(audience.push_devices, 'móvil', 'móviles')})`
       : 'Aún nadie ha activado las notificaciones'
-    : 'Clientas con la app y las notificaciones activadas';
+    : 'Clientes con la app y las notificaciones activadas';
 
   const recipientsCount = audience
     ? formData.send_email
@@ -376,11 +376,11 @@ export default function BroadcastManagement() {
               </Typography>
             </Stack>
           )}
-          <Alert severity="warning">Se manda a <b>todas</b> a la vez y, una vez enviado, <b>no se puede retirar</b>.</Alert>
+          <Alert severity="warning">Se manda a <b>todo el mundo</b> a la vez y, una vez enviado, <b>no se puede retirar</b>.</Alert>
         </Stack>
       ),
       confirmText:
-        recipientsCount !== null ? `Sí, enviar a ${plural(recipientsCount, 'clienta', 'clientas')}` : 'Sí, enviar a todas',
+        recipientsCount !== null ? `Sí, enviar a ${plural(recipientsCount, 'cliente', 'clientes')}` : 'Sí, enviar a todo el mundo',
       cancelText: 'No, volver a editar',
     });
     if (!ok) return;
@@ -402,7 +402,7 @@ export default function BroadcastManagement() {
       });
       if (!response.ok) throw response;
       await fetchBroadcasts();
-      notify('¡Aviso enviado! Llegará a las clientas en unos minutos. Abajo, en el historial, verás a cuántas les ha llegado.');
+      notify('¡Aviso enviado! Llegará a tus clientes en unos minutos. Abajo, en el historial, verás a cuántas personas les ha llegado.');
       setOpenDialog(false);
       setFormData(EMPTY_FORM);
       setCopiedFrom(null);
@@ -418,7 +418,7 @@ export default function BroadcastManagement() {
       tone: 'danger',
       title: `¿Borrar «${item.title}» del historial?`,
       message:
-        'Solo se borra de esta lista. El aviso NO se retira: las clientas que ya lo recibieron lo siguen teniendo en su email o en su móvil.',
+        'Solo se borra de esta lista. El aviso NO se retira: quienes ya lo recibieron lo siguen teniendo en su email o en su móvil.',
       confirmText: 'Sí, borrar del historial',
     });
     if (!ok) return;
@@ -468,8 +468,8 @@ export default function BroadcastManagement() {
     <Box sx={{ maxWidth: 1180, mx: 'auto' }}>
       <PageIntro
         pageKey="mails"
-        title="Avisos a clientas"
-        subtitle="Un mensaje a todas tus clientas: por email, al móvil o las dos cosas."
+        title="Avisos a clientes"
+        subtitle="Un mensaje a todos tus clientes: por email, al móvil o las dos cosas."
         actions={
           <Button variant="contained" size="large" startIcon={<SendIcon />} onClick={openNew}>
             Escribir un aviso nuevo
@@ -479,17 +479,17 @@ export default function BroadcastManagement() {
 
       {audience && (
         <Stack direction="row" spacing={1} mb={2.5} flexWrap="wrap" useFlexGap alignItems="center">
-          <Chip icon={<EmailIcon />} label={`${plural(audience.email_recipients, 'clienta', 'clientas')} con email`} variant="outlined" sx={{ fontSize: '0.92rem' }} />
+          <Chip icon={<EmailIcon />} label={`${plural(audience.email_recipients, 'cliente', 'clientes')} con email`} variant="outlined" sx={{ fontSize: '0.92rem' }} />
           <Chip
             icon={<NotificationsActiveIcon />}
-            label={`${plural(audience.push_people, 'clienta', 'clientas')} con notificaciones en el móvil`}
+            label={`${plural(audience.push_people, 'cliente', 'clientes')} con notificaciones en el móvil`}
             variant="outlined"
             color={audience.push_people > 0 ? 'success' : 'default'}
             sx={{ fontSize: '0.92rem' }}
           />
           <HelpTip title="¿A quién llega?">
-            El <b>email</b> llega a todas las personas con cuenta activa. La <b>notificación al móvil</b> solo a las que
-            instalaron la app del estudio y dijeron «Permitir» a las notificaciones (una misma clienta puede tener varios móviles).
+            El <b>email</b> llega a todas las personas con cuenta activa. La <b>notificación al móvil</b> solo a quienes
+            instalaron la app del estudio y dijeron «Permitir» a las notificaciones (un mismo cliente puede tener varios móviles).
           </HelpTip>
         </Stack>
       )}
@@ -544,7 +544,7 @@ export default function BroadcastManagement() {
             <EmptyState
               icon={<CampaignIcon />}
               title="Todavía no has mandado ningún aviso"
-              text="Cuando mandes el primero, aparecerá aquí con la fecha y a cuántas clientas les llegó."
+              text="Cuando mandes el primero, aparecerá aquí con la fecha y a cuántas personas les llegó."
               action={
                 <Button variant="contained" startIcon={<SendIcon />} onClick={openNew} sx={{ minHeight: 48 }}>
                   Escribir el primer aviso
@@ -638,7 +638,7 @@ export default function BroadcastManagement() {
       {/* ── FORMULARIO ── */}
       <Dialog open={openDialog} onClose={closeForm} maxWidth="lg" fullWidth scroll="paper">
         <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1, fontSize: '1.3rem' }}>
-          <CampaignIcon /> {copiedFrom ? `Aviso nuevo (copia de «${copiedFrom}»)` : 'Aviso nuevo a clientas'}
+          <CampaignIcon /> {copiedFrom ? `Aviso nuevo (copia de «${copiedFrom}»)` : 'Aviso nuevo a clientes'}
         </DialogTitle>
         <DialogContent dividers>
           <Box display="grid" gridTemplateColumns={{ xs: '1fr', md: '1.35fr 1fr' }} gap={3}>

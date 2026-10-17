@@ -21,7 +21,7 @@ export function paymentOptions(): PaymentOptions {
   return { ...o, card: false, drop_in_online: false, packs_online: false, memberships_online: false };
 }
 
-/** ¿Las clientas eligen sus clases fijas en la web? (si no, solo el estudio) */
+/** ¿Los clientes eligen sus clases fijas en la web? (si no, solo el estudio) */
 export function clientFixedClasses(): boolean {
   return getSiteClient().payment_options.client_fixed_classes === true;
 }

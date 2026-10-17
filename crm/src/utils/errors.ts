@@ -60,7 +60,7 @@ const FIELD_NAMES: Record<string, string> = {
   instructor: 'Instructor/a',
   class_type: 'Clase',
   capacity_max: 'Plazas',
-  user: 'Clienta',
+  user: 'Cliente',
   plan: 'Plan',
   description: 'Descripción',
   non_field_errors: '',

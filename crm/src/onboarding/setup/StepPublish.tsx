@@ -63,7 +63,7 @@ export function PublishReview({ summary, onGo }: { summary: Summary; onGo: (step
 
 const EXTRAS: { icon: StudioIconName; label: string; path: string }[] = [
   { icon: 'payments', label: 'Cobrar online', path: '/ajustes?tab=pagos' },
-  { icon: 'notices', label: 'Emails a clientas', path: '/ajustes?tab=emails' },
+  { icon: 'notices', label: 'Emails a clientes', path: '/ajustes?tab=emails' },
   { icon: 'google', label: 'Google y tu ficha', path: '/ajustes?tab=google' },
   { icon: 'photos', label: 'Fotos y textos', path: '/ajustes?tab=portada' },
 ];
@@ -107,7 +107,7 @@ export function Published({ webUrl, titleRef, titleId }: { webUrl: string; progr
               <Button size="small" variant="outlined" component="a" href={webUrl} target="_blank" rel="noopener" startIcon={<StudioIcon name="external" sx={{ fontSize: 16 }} />} sx={{ minHeight: 40 }}>
                 Ver mi web
               </Button>
-              <Chip icon={<StudioIcon name="phone" sx={{ fontSize: 16 }} />} label="App para clientas incluida" sx={{ fontWeight: 700, background: 'var(--studio-ok-soft)', color: 'var(--studio-ink)', '& .MuiChip-icon': { color: 'var(--studio-ok)' } }} />
+              <Chip icon={<StudioIcon name="phone" sx={{ fontSize: 16 }} />} label="App para clientes incluida" sx={{ fontWeight: 700, background: 'var(--studio-ok-soft)', color: 'var(--studio-ink)', '& .MuiChip-icon': { color: 'var(--studio-ok)' } }} />
             </Box>
             <Typography sx={{ color: 'var(--studio-muted)', fontSize: '0.86rem' }}>¿Tienes dominio propio? Lo conectas cuando quieras en Ajustes.</Typography>
           </Box>

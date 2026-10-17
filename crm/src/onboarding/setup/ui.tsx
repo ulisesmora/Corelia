@@ -22,7 +22,7 @@ export const StepHead = forwardRef<HTMLHeadingElement, { icon: StudioIconName; t
   },
 );
 
-/** Fila editable (sala, profesora…). */
+/** Fila editable (sala, profesor…). */
 export function EditRow({ children }: { children: ReactNode }) {
   return (
     <Box sx={{

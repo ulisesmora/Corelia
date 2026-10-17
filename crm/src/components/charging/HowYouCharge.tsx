@@ -9,13 +9,13 @@ import TwoWorlds from './TwoWorlds';
 import { Badge, Note, Value, type Tint } from './visuals';
 
 /**
- * «Así cobrarás»: las dos formas de cobrar (clientas online / del estudio,
+ * «Así cobrarás»: las dos formas de cobrar (clientes online / del estudio,
  * <TwoWorlds/>), lo que vendes (clase suelta, bono, membresía) y un «Ver
  * cómo funciona» desplegable. Va en el paso 7 de la puesta en marcha y en
  * «Clases y precios» → Precios y bonos.
  * `onGuide`: enlace a la guía completa (solo dentro del panel; sin él, como
  * en la puesta en marcha, no hay botones que lleven a otras pantallas).
- * «Formas de cobro» (tarjeta, pagar en el estudio, invitadas, qué se vende
+ * «Formas de cobro» (tarjeta, pagar en el estudio, invitados, qué se vende
  * online) se cambian aquí mismo, sin salir (PaymentOptionsCard compacta).
  */
 export default function HowYouCharge({ onGuide, defaultOpen = false, version }: {

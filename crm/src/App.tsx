@@ -70,7 +70,7 @@ const App = () => (
           <Route path="/configuracion" element={<SettingsHub />} />
           {/* Clases y precios: tipos de clase, precios y bonos, profesores, categorías y salas */}
           <Route path="/clases-y-precios" element={<CatalogPage />} />
-          {/* Clientas del estudio: alta guiada (plan mensual cobrado en el estudio) */}
+          {/* Clientes del estudio: alta guiada (plan mensual cobrado en el estudio) */}
           <Route path="/clientas/estudio/nueva" element={<NewStudioClientWizard />} />
         </Route>
         </Route>

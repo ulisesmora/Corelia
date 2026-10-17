@@ -309,7 +309,7 @@ class RecurringSchedule(TimeStampedSoftDelete):
         constraints = [
             # Solo una regla ABIERTA (sin fecha de fin) por sala/día/hora. Las
             # que ya tienen fecha de fin no cuentan: así «esta y las siguientes»
-            # (apply_from) puede cambiar solo la profesora o las plazas desde
+            # (apply_from) puede cambiar solo el instructor o las plazas desde
             # una fecha, dejando la regla vieja hasta la víspera.
             models.UniqueConstraint(
                 fields=['room', 'weekday', 'start_time'],
@@ -981,7 +981,7 @@ class SiteImage(TimeStampedSoftDelete):
 
 
 class MembershipNudge(models.Model):
-    """Registro de cada recomendación de membresía a una clienta regular:
+    """Registro de cada recomendación de membresía a un cliente regular:
     sirve para no repetir (frecuencia máxima por canal) y para medir qué
     canal convierte."""
     CHANNELS = [('app', 'Panel'), ('checkout', 'Checkout'), ('email', 'Email'),
@@ -1252,7 +1252,7 @@ class SiteConfig(models.Model):
         help_text='Nota corta para quien paga en el estudio, p. ej. «Paga al llegar, 5 min antes».')
     studio_payment_note_en = models.CharField(max_length=140, blank=True, default='')
     # Clases fijas: herramienta del estudio (Clases fijas en el panel). Solo si
-    # se enciende, las clientas pueden elegir sus clases fijas desde la web.
+    # se enciende, los clientes pueden elegir sus clases fijas desde la web.
     client_fixed_classes = models.BooleanField(
         default=False,
         help_text='Las clientas con membresía eligen sus clases fijas en la web. Apagado = solo las asigna el estudio.')
@@ -1384,7 +1384,7 @@ class FAQItem(TimeStampedSoftDelete):
 
 
 class Testimonial(TimeStampedSoftDelete):
-    """Opinión de una clienta para la portada (con su permiso)."""
+    """Opinión de un cliente para la portada (con su permiso)."""
     author = models.CharField(max_length=120)
     text = models.TextField()
     text_en = models.TextField(blank=True, default='')
@@ -1406,8 +1406,8 @@ class Testimonial(TimeStampedSoftDelete):
 # ===========
 class WaitlistSettings(models.Model):
     """Ajustes de la lista de espera (singleton, siempre id=1). Activada por
-    defecto: cuando una clase está llena, la clienta puede apuntarse a la
-    lista; si alguien cancela, se le ofrece la plaza a la primera por email y
+    defecto: cuando una clase está llena, el cliente puede apuntarse a la
+    lista; si alguien cancela, se le ofrece la plaza a la primera persona por email y
     push, con un plazo para aceptarla (claim_minutes)."""
     enabled = models.BooleanField(default=True)
     auto_offer = models.BooleanField(
@@ -1436,14 +1436,14 @@ class WaitlistSettings(models.Model):
 
 
 class WaitlistEntry(TimeStampedSoftDelete):
-    """Una clienta esperando plaza en UNA sesión (regla + fecha/hora).
+    """Un cliente esperando plaza en UNA sesión (regla + fecha/hora).
 
     Igual que Booking, la sesión se identifica con la regla (RecurringSchedule)
     y el instante de inicio. Estados:
       waiting → offered (se le ofrece una plaza libre, con caducidad)
               → claimed (la acepta: se crea su Booking)
-              → expired (no contestó a tiempo: pasa a la siguiente)
-      left (se borró ella) · removed (la quitó el estudio)
+              → expired (no contestó a tiempo: pasa a la siguiente persona)
+      left (se borró por su cuenta) · removed (la quitó el estudio)
     Una oferta activa (offered y sin caducar) RESERVA la plaza: nadie más
     puede reservarla mientras tanto (api/utils/waitlist.py:seats_taken)."""
     STATUS = [
@@ -1482,13 +1482,13 @@ class WaitlistEntry(TimeStampedSoftDelete):
 
 
 # ===========
-# CLIENTAS DEL ESTUDIO (plan mensual que se cobra en el estudio, sin Stripe)
+# CLIENTES DEL ESTUDIO (plan mensual que se cobra en el estudio, sin Stripe)
 # ===========
 class StudioPlan(TimeStampedSoftDelete):
-    """Plan mensual de una «clienta del estudio»: lo lleva la dueña desde el
+    """Plan mensual de un «cliente del estudio»: lo lleva el estudio desde el
     panel y se cobra en mano (efectivo, Bizum, datáfono o transferencia), p. ej.
     «8 clases al mes por 60 €». Nada se cobra ni se renueva solo: cada mes la
-    dueña pulsa «Renovar» (= corte de créditos, api/utils/studio_plans.py).
+    el estudio pulsa «Renovar» (= corte de créditos, api/utils/studio_plans.py).
 
     - credits_pool: clases del plan con las que empezó el ciclo actual (las
       del mes + las que se acumularon). Sirve para saber, en el corte, cuántas
@@ -1496,7 +1496,7 @@ class StudioPlan(TimeStampedSoftDelete):
     - carry_over: qué pasa con las clases sin usar al cortar: «lose» se
       pierden, «keep» se acumulan, «cap» se acumulan hasta carry_over_cap.
     - next_due_date: día del próximo corte (cycle_day de cada mes).
-    - remind_client: email opcional a la clienta unos días antes («Tu mes
+    - remind_client: email opcional al cliente unos días antes («Tu mes
       empieza el día X»). Apagado por defecto.
     """
     METHODS = [('cash', 'Efectivo'), ('bizum', 'Bizum'), ('card', 'Tarjeta / datáfono'), ('transfer', 'Transferencia')]

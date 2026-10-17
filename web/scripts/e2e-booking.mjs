@@ -1,9 +1,9 @@
 // Comprobación E2E de la reserva en la web (no se ejecuta en el build):
-//   - invitada sin cuenta en un estudio sin pagos online: varias clases en el
+//   - invitado sin cuenta en un estudio sin pagos online: varias clases en el
 //     panel «Tu reserva», quitar una, «Continuar al pago» y pagar en el estudio;
-//   - invitada con tarjeta (pagos simulados en el navegador: no llama a Stripe);
-//   - clienta registrada que reserva con créditos (CLIENT_JSON={"id","access"});
-//   - eventos sueltos («E_…»): invitada que paga en el estudio y clienta con
+//   - invitado con tarjeta (pagos simulados en el navegador: no llama a Stripe);
+//   - cliente registrado que reserva con créditos (CLIENT_JSON={"id","access"});
+//   - eventos sueltos («E_…»): invitado que paga en el estudio y cliente con
 //     créditos (EVENT_TITLE=título de un evento futuro con plazas).
 //
 // Uso (con la web y el API de PRUEBA arrancados y datos de ejemplo, SEED_DEMO=1):
@@ -56,7 +56,7 @@ async function bookFromCalendar(page, n) {
   return booked;
 }
 
-// ── A) Invitada, estudio sin pagos online: varias clases, quitar, pagar en el estudio ──
+// ── A) Invitado, estudio sin pagos online: varias clases, quitar, pagar en el estudio ──
 if (only === 'all' || only === 'guest') {
   const { ctx, page } = await newPage(390);
   await page.goto(BASE + '/calendar', { waitUntil: 'networkidle' });
@@ -114,7 +114,7 @@ if (only === 'all' || only === 'guest') {
   await dlg.getByRole('link', { name: /Continuar al pago/ }).click();
   await page.waitForURL('**/checkout');
   await page.waitForSelector('input[name="email"]', { timeout: 15000 });
-  ok(true, 'A11 «Continuar al pago» lleva al checkout con el formulario de invitada');
+  ok(true, 'A11 «Continuar al pago» lleva al checkout con el formulario de invitado');
   await page.screenshot({ path: `${OUT}/after-e2e-390-checkout-guest.png`, fullPage: true });
   await page.fill('input[name="email"]', 'invitada.e2e@example.com');
   await page.fill('input[name="name"]', 'Inés E2E');
@@ -123,13 +123,13 @@ if (only === 'all' || only === 'guest') {
   await page.waitForSelector('[data-testid="guest-studio-done"]', { timeout: 15000 }).catch(async (e) => {
     console.log('  alert:', await page.locator('[data-status="error"]').allInnerTexts()); throw e; });
   const done = await page.locator('[data-testid="guest-studio-done"]').innerText();
-  ok(/Plaza reservada/.test(done) && done.replace(/[^\d]/g, '').includes(panelTotal), 'A12 reserva de invitada confirmada (pagar en el estudio)');
+  ok(/Plaza reservada/.test(done) && done.replace(/[^\d]/g, '').includes(panelTotal), 'A12 reserva de invitado confirmada (pagar en el estudio)');
   ok(await page.evaluate(() => JSON.parse(localStorage.getItem('site-cart-storage') || '{}')?.state?.items?.length === 0), 'A13 carrito vacío tras reservar');
   await page.screenshot({ path: `${OUT}/after-e2e-390-guest-done.png`, fullPage: true });
   await ctx.close();
 }
 
-// ── B) Invitada con tarjeta (pagos online simulados: sin Stripe real) ──
+// ── B) Invitado con tarjeta (pagos online simulados: sin Stripe real) ──
 if (only === 'all' || only === 'card') {
   const { ctx, page } = await newPage(1280, { cardPayments: true });
   let payload = null;
@@ -156,7 +156,7 @@ if (only === 'all' || only === 'card') {
   await page.waitForTimeout(1500);
   ok(payload && payload.email === 'tarjeta.e2e@example.com' && payload.name === 'Tina Tarjeta'
      && Array.isArray(payload.cart_items) && payload.cart_items.length === 1 && payload.cart_items[0].id_source > 0
-     && /Z$/.test(payload.cart_items[0].sessionDate), 'B2 la web pide la sesión de pago con los datos de la invitada y el carrito');
+     && /Z$/.test(payload.cart_items[0].sessionDate), 'B2 la web pide la sesión de pago con los datos del invitado y el carrito');
   // vuelta de Stripe
   await page.route('**/api/v1/checkout/verify-checkout/', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ status: 'success', amount_total: '14.00', currency: 'EUR' }) }));
   await page.goto(BASE + '/checkout/success?session_id=cs_test_mock', { waitUntil: 'networkidle' });
@@ -166,7 +166,7 @@ if (only === 'all' || only === 'card') {
   await ctx.close();
 }
 
-// ── C) Clienta registrada con créditos ──
+// ── C) Cliente registrado con créditos ──
 if ((only === 'all' && process.env.CLIENT_JSON) || only === 'client') {
   const creds = JSON.parse(fs.readFileSync(process.env.CLIENT_JSON, 'utf8'));
   const { ctx, page } = await newPage(390);
@@ -193,7 +193,7 @@ if ((only === 'all' && process.env.CLIENT_JSON) || only === 'client') {
   await ctx.close();
 }
 
-// ── D) Evento suelto: invitada (pagar en el estudio) y clienta con créditos ──
+// ── D) Evento suelto: invitado (pagar en el estudio) y cliente con créditos ──
 async function bookEvent(page, title) {
   // Busca el día del evento en el horario y pulsa su «Reservar»
   for (let i = 0; i < 8; i++) {
@@ -228,7 +228,7 @@ if ((only === 'all' || only === 'event') && EVENT_TITLE) {
   await page.locator('input[name="phone"]').click(); await page.locator('input[name="phone"]').pressSequentially('600987654');
   await page.getByRole('button', { name: /Reservar y pagar en el estudio/ }).click();
   await page.waitForSelector('[data-testid="guest-studio-done"]', { timeout: 15000 });
-  ok((await page.locator('[data-testid="guest-studio-done"]').innerText()).includes(EVENT_TITLE), 'D3 invitada: evento reservado para pagar en el estudio');
+  ok((await page.locator('[data-testid="guest-studio-done"]').innerText()).includes(EVENT_TITLE), 'D3 invitado: evento reservado para pagar en el estudio');
   await page.screenshot({ path: `${OUT}/after-e2e-390-event-guest-done.png`, fullPage: true });
   await ctx.close();
 
@@ -251,7 +251,7 @@ if ((only === 'all' || only === 'event') && EVENT_TITLE) {
     const confirm = p2.getByRole('button', { name: /Confirmar|Sí, reservar|Reservar ahora/ }).last();
     if (await confirm.isVisible().catch(() => false)) await confirm.click();
     await p2.waitForTimeout(2500);
-    ok(reserveRes && reserveRes.status === 'success' && Number(reserveRes.credits_spent) === 2, 'D5 clienta: evento reservado con 2 créditos');
+    ok(reserveRes && reserveRes.status === 'success' && Number(reserveRes.credits_spent) === 2, 'D5 cliente: evento reservado con 2 créditos');
     await p2.screenshot({ path: `${OUT}/after-e2e-390-event-client-done.png` });
     await c2.close();
   }

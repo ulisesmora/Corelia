@@ -1,9 +1,9 @@
-"""Reserva como invitada (sin cuenta): lo que comparten el pago con tarjeta
+"""Reserva como invitado (sin cuenta): lo que comparten el pago con tarjeta
 (POST /api/v1/checkout/create-session/) y «pagar en el estudio»
 (POST /api/v1/checkout/guest-reserve/).
 
   - guest_details(data)       → nombre, email y teléfono validados (o un error).
-  - guest_profile(...)        → la ficha de la invitada: reutiliza la que ya
+  - guest_profile(...)        → la ficha del invitado: reutiliza la que ya
                                 exista con ese email (también si estaba borrada).
   - validate_cart(...)        → comprueba cada clase o evento del carrito (es
                                 una sesión real, está activa, no ha empezado,
@@ -11,9 +11,9 @@
                                 reservada…) y devuelve las líneas con precio.
                                 También lo usa la reserva con créditos.
 
-Antes, el pago de invitada creaba el Payment y las reservas pendientes ANTES de
+Antes, el pago de invitado creaba el Payment y las reservas pendientes ANTES de
 comprobar las plazas (si la 2.ª clase estaba llena quedaban huérfanos), fallaba
-con 500 si la invitada ya existía borrada o no mandaba nombre, y con el estudio
+con 500 si el invitado ya existía borrado o no mandaba nombre, y con el estudio
 sin pagos online no había forma de reservar sin cuenta.
 """
 from __future__ import annotations
@@ -32,7 +32,7 @@ from rest_framework.response import Response
 
 logger = logging.getLogger(__name__)
 
-# Tope de clases por reserva de invitada (evita carritos absurdos o abusivos)
+# Tope de clases por reserva de invitado (evita carritos absurdos o abusivos)
 MAX_GUEST_ITEMS = 10
 
 
@@ -92,7 +92,7 @@ def guest_details(data) -> tuple[dict | None, Response | None]:
     teléfono (opcional). Devuelve (datos, None) o (None, respuesta de error)."""
     email = str(data.get('email') or '').strip().lower()
     if not email:
-        return None, _bad('Falta el email de la invitada.', 'guest_email')
+        return None, _bad('Falta tu email.', 'guest_email')
     try:
         validate_email(email)
     except ValidationError:
@@ -106,7 +106,7 @@ def guest_details(data) -> tuple[dict | None, Response | None]:
 
 
 def guest_profile(email: str, name: str, phone: str):
-    """Ficha de la invitada con ese email: la reutiliza (aunque estuviera
+    """Ficha del invitado con ese email: la reutiliza (aunque estuviera
     borrada) y actualiza nombre y teléfono con lo último que ha escrito."""
     from api.models import GuestProfile
 
@@ -149,8 +149,8 @@ def _aware(value) -> datetime | None:
 
 def validate_cart(cart_items, guest=None, user=None, lock=False,
                   max_items=MAX_GUEST_ITEMS) -> tuple[list[CartLine] | None, Response | None]:
-    """Comprueba un carrito (clases del horario y eventos sueltos) para una
-    invitada (`guest`) o una clienta con cuenta (`user`). Con lock=True bloquea
+    """Comprueba un carrito (clases del horario y eventos sueltos) para un
+    invitado (`guest`) o un cliente con cuenta (`user`). Con lock=True bloquea
     las clases y eventos (select_for_update) para que dos reservas a la vez no
     pasen del aforo: llámalo dentro de transaction.atomic().
 
@@ -280,7 +280,7 @@ def studio_payment_hint() -> tuple[str, str]:
 
 
 def notify_guest_reservation(bookings, total, currency) -> None:
-    """Email a quien reservó para pagar en el estudio (invitada o clienta con
+    """Email a quien reservó para pagar en el estudio (invitado o cliente con
     cuenta). Nunca lanza."""
     from api.utils.booking_notify import GENERIC_TEMPLATE, _booking_line
     from api.utils.emailing import send_templated_email

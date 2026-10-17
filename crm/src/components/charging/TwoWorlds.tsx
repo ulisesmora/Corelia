@@ -1,4 +1,4 @@
-// «Dos formas de cobrar»: las clientas online (Stripe se encarga) y las que
+// «Dos formas de cobrar»: los clientes online (Stripe se encarga) y los que
 // gestionas tú en el estudio (pagan en mano). Una idea por ficha, con icono.
 // La misma pieza va en el capítulo 1 de «Cómo se cobra», en la cabecera de
 // «Formas de cobro» (Ajustes → Cobros) y en «Así cobrarás» (paso 7 de la
@@ -35,7 +35,7 @@ function worlds(f: ChargingFacts | null): World[] {
   const methods = f ? methodsText(f) : '';
   return [
     {
-      key: 'online', icon: 'web', title: 'Clientas online', badge: 'Stripe se encarga',
+      key: 'online', icon: 'web', title: 'Clientes online', badge: 'Stripe se encarga',
       lines: [
         { icon: 'web', text: 'Reserva o compra en tu web.' },
         { icon: 'card', text: 'Paga con tarjeta, Apple Pay o Google Pay.' },
@@ -45,11 +45,11 @@ function worlds(f: ChargingFacts | null): World[] {
       products: 'Clase suelta, bono o membresía: se cobran solos y los créditos se le ponen solos.',
     },
     {
-      key: 'en-estudio', icon: 'studio', title: 'Clientas del estudio', badge: 'Las gestionas tú',
+      key: 'en-estudio', icon: 'studio', title: 'Clientes del estudio', badge: 'Los gestionas tú',
       lines: [
         { icon: 'payments', text: `Te paga en mano: ${methods || 'efectivo, Bizum o datáfono'}.` },
-        { icon: 'addClient', text: 'La das de alta y le añades sus créditos.' },
-        { icon: 'booked', text: 'La apuntas a clases o le das una clase fija.' },
+        { icon: 'addClient', text: 'Le das de alta y le añades sus créditos.' },
+        { icon: 'booked', text: 'Le reservas clases o le das una clase fija.' },
         { icon: 'repeat', text: 'Cada mes renuevas a mano: el «corte de créditos».' },
       ],
       you: 'Cobras y lo apuntas en el panel.',
@@ -159,7 +159,7 @@ export default function TwoWorlds({ facts = null, variant = 'compact', go, open 
                   )}
                   {!isOnline && go && (
                     <Button size="small" variant={full ? 'contained' : 'outlined'} onClick={() => go(WORLD_PATHS.newStudioClient)} startIcon={<StudioIcon name="addClient" />} sx={{ minHeight: 44 }}>
-                      Nueva clienta del estudio
+                      Nuevo cliente del estudio
                     </Button>
                   )}
                   {!isOnline && go && full && (

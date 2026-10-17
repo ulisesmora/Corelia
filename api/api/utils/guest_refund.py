@@ -1,9 +1,9 @@
 """
-Reembolso automático en Stripe para reservas de INVITADAS canceladas por el
+Reembolso automático en Stripe para reservas de INVITADOS canceladas por el
 estudio (blackout, horario eliminado, cambio de horario, cancelación de sesión).
 
-Las usuarias registradas pagan con créditos y se les reembolsa al monedero;
-las invitadas pagaron con tarjeta, así que lo justo es devolverles el dinero
+Los usuarios registrados pagan con créditos y se les reembolsa al monedero;
+los invitados pagaron con tarjeta, así que lo justo es devolverles el dinero
 a la tarjeta sin que tengan que reclamar.
 
 Seguridad del importe: nunca se devuelve más de lo que queda reembolsable en
@@ -42,11 +42,11 @@ def _booking_price_cents(booking, currency):
 
 
 def refund_guest_booking_stripe(booking, reason='', any_owner=False):
-    """Devuelve a la tarjeta el precio de la reserva de una invitada.
+    """Devuelve a la tarjeta el precio de la reserva de un invitado.
     Retorna lo reembolsado en la unidad mínima de la moneda del pago
     (céntimos; en CLP, pesos) o 0 si no aplica. Nunca lanza.
 
-    any_owner=True: también para reservas de usuarias registradas que pagaron
+    any_owner=True: también para reservas de usuarios registrados que pagaron
     esa clase con tarjeta («Devolver el dinero» del calendario del panel)."""
     payment = booking.payment
     if not payment or not (booking.guest_id or any_owner):
