@@ -83,7 +83,7 @@ frozenlist==1.8.0
     #   aiosignal
 google-auth==2.62.0
     # via corelia-api
-granian==2.7.5
+granian==2.8.4
     # via corelia-api
 http-ece==1.2.1
     # via pywebpush
@@ -103,7 +103,7 @@ multidict==7.1.0
     # via
     #   aiohttp
     #   yarl
-orjson==3.11.9
+orjson==3.13.0
     # via corelia-api
 packaging==26.3
     # via kombu
@@ -115,11 +115,11 @@ propcache==0.5.4
     # via
     #   aiohttp
     #   yarl
-psycopg==3.2.3
+psycopg==3.3.6
     # via corelia-api
-psycopg-binary==3.2.3 ; implementation_name != 'pypy'
+psycopg-binary==3.3.6 ; implementation_name != 'pypy'
     # via psycopg
-py-vapid==1.9.4
+py-vapid==1.9.6
     # via pywebpush
 pyasn1==0.6.4
     # via pyasn1-modules
@@ -131,7 +131,7 @@ pyjwt==2.15.1
     # via djangorestframework-simplejwt
 python-dateutil==2.9.0.post0
     # via celery
-python-dotenv==1.2.2
+python-dotenv==1.2.4
     # via corelia-api
 pywebpush==2.5.0
     # via corelia-api
@@ -185,7 +185,7 @@ urllib3==2.8.0
     # via
     #   requests
     #   sentry-sdk
-uvloop==0.22.1
+uvloop==0.23.0
     # via corelia-api
 vine==5.1.0
     # via
