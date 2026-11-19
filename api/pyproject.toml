@@ -26,7 +26,7 @@ dependencies = [
     # Base de datos y tareas programadas
     "psycopg[binary]==3.2.3",
     "celery==5.6.3",
-    "redis==7.1.0",
+    "redis==8.1.0",
     # Servidor
     "granian==2.7.5",
     "uvloop==0.22.1",
